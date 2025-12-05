@@ -365,4 +365,293 @@ router.get('/gold-sgb/maturity-alerts', authMiddleware, async (req, res) => {
   }
 });
 
+// Bill Dates analytics (Monthly Provisions, Yearly Schedule, Upcoming)
+router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
+  try {
+    const yearParam = parseInt(req.query.year, 10);
+    const horizonDaysParam = parseInt(req.query.horizonDays, 10);
+    const now = new Date();
+    const currentYear = !isNaN(yearParam) ? yearParam : now.getFullYear();
+    const horizonDays = !isNaN(horizonDaysParam) ? horizonDaysParam : 60;
+
+    const investments = await Investment.find({ userId: req.userId, category: 'daily-bill-checklist' });
+
+    const normalize = (inv) => {
+      let notes = {};
+      try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { notes = {}; }
+      return {
+        billType: notes.billType || 'Bill',
+        provider: inv.provider || notes.provider || '',
+        accountNumber: inv.accountNumber || notes.accountNumber || '',
+        cycle: inv.frequency || notes.cycle || 'monthly',
+        amount: inv.amount || notes.amount || 0,
+        dueDate: inv.maturityDate || (notes.dueDate ? new Date(notes.dueDate) : null),
+        startDate: inv.startDate || (notes.startDate ? new Date(notes.startDate) : null),
+        status: notes.status || 'pending',
+      };
+    };
+
+    const entries = investments.map(normalize);
+
+    const months = Array.from({ length: 12 }, (_, i) => ({ idx: i, name: new Date(currentYear, i, 1).toLocaleString('en-US', { month: 'short' }), total: 0 }));
+    const addToMonth = (monthIdx, amt) => { if (monthIdx >= 0 && monthIdx < 12) months[monthIdx].total += amt; };
+
+    for (const e of entries) {
+      const amt = Number(e.amount) || 0;
+      if (!amt) continue;
+      const due = e.dueDate ? new Date(e.dueDate) : null;
+      const start = e.startDate ? new Date(e.startDate) : null;
+      const startMonth = start && start.getFullYear() === currentYear ? start.getMonth() : 0;
+      const baseMonth = due && due.getFullYear() === currentYear ? due.getMonth() : startMonth;
+      if (e.cycle === 'monthly') {
+        for (let m = Math.max(0, startMonth); m < 12; m++) addToMonth(m, amt);
+      } else if (e.cycle === 'quarterly') {
+        const first = Math.max(0, baseMonth);
+        for (let m = first; m < 12; m += 3) addToMonth(m, amt);
+      } else if (e.cycle === 'yearly' || e.cycle === 'one-time') {
+        addToMonth(Math.max(0, baseMonth), amt);
+      } else {
+        addToMonth(Math.max(0, baseMonth), amt);
+      }
+    }
+
+    const monthlyProvisions = months.map(m => ({ name: m.name, total: m.total }));
+    const annualTotal = monthlyProvisions.reduce((s, m) => s + m.total, 0);
+
+    const cycleMixMap = new Map();
+    for (const e of entries) {
+      const key = e.cycle || 'monthly';
+      const prev = cycleMixMap.get(key) || { name: key, value: 0 };
+      prev.value += 1;
+      cycleMixMap.set(key, prev);
+    }
+    const cycleMix = Array.from(cycleMixMap.values());
+
+    const byMonth = Array.from({ length: 12 }, (_, i) => ({
+      monthIdx: i,
+      name: new Date(currentYear, i, 1).toLocaleString('en-US', { month: 'long' }),
+      items: [],
+      total: 0,
+    }));
+    for (const e of entries) {
+      if (!e.dueDate) continue;
+      const d = new Date(e.dueDate);
+      if (d.getFullYear() !== currentYear) continue;
+      const bucket = byMonth[d.getMonth()];
+      bucket.items.push({ day: d.getDate(), provider: e.provider || e.billType, billType: e.billType, cycle: e.cycle, amount: Number(e.amount) || 0 });
+      bucket.total += Number(e.amount) || 0;
+    }
+    for (const m of byMonth) { m.items.sort((a, b) => a.day - b.day); }
+    const yearlySchedule = byMonth;
+
+    const end = new Date(now);
+    end.setDate(end.getDate() + horizonDays);
+    const upcoming = [];
+    for (const e of entries) {
+      if (!e.dueDate) continue;
+      const d = new Date(e.dueDate);
+      if (d >= now && d <= end) {
+        upcoming.push({ date: d.toISOString().slice(0,10), provider: e.provider || e.billType, billType: e.billType, amount: Number(e.amount) || 0, cycle: e.cycle });
+      }
+    }
+    upcoming.sort((a, b) => (a.date > b.date ? 1 : -1));
+    const upcomingTotal = upcoming.reduce((s, i) => s + i.amount, 0);
+    const scheduledCount = yearlySchedule.reduce((s, m) => s + m.items.length, 0);
+
+    res.json({
+      summary: {
+        annualTotal,
+        upcomingTotal,
+        scheduledCount,
+        year: currentYear,
+        horizonDays,
+      },
+      monthlyProvisions,
+      cycleMix,
+      yearlySchedule,
+      upcoming,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching bill dates analytics', error: error.message });
+  }
+});
+
+// Weekly Appointments analytics (for Telephone Conversation entries)
+router.get('/appointments/weekly', authMiddleware, async (req, res) => {
+  try {
+    const weekStartParam = req.query.weekStart ? new Date(req.query.weekStart) : null;
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun..6=Sat
+    const mondayOffset = (day === 0 ? -6 : 1 - day); // shift to Monday
+    const defaultStart = new Date(now);
+    defaultStart.setDate(now.getDate() + mondayOffset);
+    defaultStart.setHours(0,0,0,0);
+    const weekStart = weekStartParam && !isNaN(weekStartParam) ? new Date(weekStartParam) : defaultStart;
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23,59,59,999);
+
+    const investments = await Investment.find({
+      userId: req.userId,
+      category: 'daily-telephone-conversation',
+      $or: [
+        { startDate: { $gte: weekStart, $lte: weekEnd } },
+        { maturityDate: { $gte: weekStart, $lte: weekEnd } },
+      ]
+    }).sort({ startDate: 1 });
+
+    const normalize = (inv) => {
+      let notes = {};
+      try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { notes = {}; }
+      const dateTime = notes.dateTime ? new Date(notes.dateTime) : (inv.startDate ? new Date(inv.startDate) : null);
+      const followUpDate = notes.followUpDate ? new Date(notes.followUpDate) : (inv.maturityDate ? new Date(inv.maturityDate) : null);
+      return {
+        contactName: notes.contactName || '',
+        phoneNumber: inv.provider || notes.phoneNumber || '',
+        callType: notes.callType || 'Outgoing',
+        status: notes.status || 'open',
+        priority: notes.priority || 'medium',
+        dateTime,
+        followUpDate,
+      };
+    };
+
+    const entries = investments.map(normalize);
+    const weekdays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const counts = Array.from({ length: 7 }, (_, i) => ({ name: weekdays[i], count: 0 }));
+    const statusMap = new Map();
+    const upcoming = [];
+    for (const e of entries) {
+      const d = e.dateTime || e.followUpDate;
+      if (d) {
+        const index = (d.getDay() + 6) % 7; // convert Sun(0) to 6
+        counts[index].count += 1;
+        upcoming.push({
+          date: d.toISOString().slice(0,16).replace('T',' '),
+          contactName: e.contactName || e.phoneNumber,
+          callType: e.callType,
+          status: e.status,
+          priority: e.priority,
+        });
+      }
+      const sKey = e.status || 'open';
+      const prev = statusMap.get(sKey) || { name: sKey, value: 0 };
+      prev.value += 1;
+      statusMap.set(sKey, prev);
+    }
+    upcoming.sort((a, b) => (a.date > b.date ? 1 : -1));
+
+    const total = entries.length;
+    const summary = {
+      total,
+      open: (statusMap.get('open')?.value || 0),
+      closed: (statusMap.get('closed')?.value || 0),
+      weekStart: weekStart,
+      weekEnd: weekEnd,
+    };
+
+    res.json({ summary, weekdayCounts: counts, statusDistribution: Array.from(statusMap.values()), upcoming });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching weekly appointments', error: error.message });
+  }
+});
+
+// Yearly Calendar analytics combining multiple categories
+router.get('/calendar/yearly', authMiddleware, async (req, res) => {
+  try {
+    const yearParam = parseInt(req.query.year, 10);
+    const currentYear = !isNaN(yearParam) ? yearParam : (new Date()).getFullYear();
+    const categoriesParam = (req.query.categories || '').split(',').filter(Boolean);
+    const categories = categoriesParam.length ? categoriesParam : ['daily-bill-checklist', 'daily-telephone-conversation'];
+
+    const investments = await Investment.find({ userId: req.userId, category: { $in: categories } }).sort({ startDate: 1 });
+
+    const normalize = (inv) => {
+      let notes = {};
+      try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { notes = {}; }
+      const base = {
+        category: inv.category,
+        type: inv.type,
+        name: inv.name,
+        provider: inv.provider,
+        amount: inv.amount || 0,
+        startDate: inv.startDate ? new Date(inv.startDate) : null,
+        maturityDate: inv.maturityDate ? new Date(inv.maturityDate) : null,
+      };
+      if (inv.category === 'daily-bill-checklist') {
+        return {
+          ...base,
+          billType: notes.billType || inv.name,
+          dueDate: base.maturityDate || (notes.dueDate ? new Date(notes.dueDate) : null),
+        };
+      } else if (inv.category === 'daily-telephone-conversation') {
+        const dateTime = notes.dateTime ? new Date(notes.dateTime) : base.startDate;
+        const followUpDate = notes.followUpDate ? new Date(notes.followUpDate) : base.maturityDate;
+        return {
+          ...base,
+          contactName: notes.contactName || base.provider,
+          callType: notes.callType || 'Outgoing',
+          dateTime,
+          followUpDate,
+        };
+      }
+      return base;
+    };
+
+    const entries = investments.map(normalize);
+
+    const months = Array.from({ length: 12 }, (_, i) => ({
+      idx: i,
+      name: new Date(currentYear, i, 1).toLocaleString('en-US', { month: 'short' }),
+      count: 0,
+      amount: 0,
+      days: {},
+    }));
+
+    const categoryMix = new Map();
+
+    for (const e of entries) {
+      let eventDate = null;
+      if (e.category === 'daily-bill-checklist') {
+        eventDate = e.dueDate;
+      } else if (e.category === 'daily-telephone-conversation') {
+        eventDate = e.dateTime || e.followUpDate;
+      } else {
+        eventDate = e.startDate || e.maturityDate;
+      }
+      if (!eventDate) continue;
+      const d = new Date(eventDate);
+      if (d.getFullYear() !== currentYear) continue;
+      const m = months[d.getMonth()];
+      const dayKey = String(d.getDate()).padStart(2, '0');
+      if (!m.days[dayKey]) m.days[dayKey] = [];
+      m.days[dayKey].push({
+        category: e.category,
+        title: e.category === 'daily-bill-checklist' ? (e.billType || e.name) : (e.contactName || e.name),
+        subtitle: e.category === 'daily-bill-checklist' ? (e.provider || '') : (e.callType || ''),
+        amount: e.amount || 0,
+      });
+      m.count += 1;
+      if (e.category === 'daily-bill-checklist') m.amount += Number(e.amount) || 0;
+      const cmPrev = categoryMix.get(e.category) || { name: e.category, value: 0 };
+      cmPrev.value += 1;
+      categoryMix.set(e.category, cmPrev);
+    }
+
+    const eventsPerMonth = months.map(m => ({ name: m.name, count: m.count }));
+    const billAmountPerMonth = months.map(m => ({ name: m.name, amount: m.amount }));
+    const calendar = months.map(m => ({ name: m.name, days: m.days, count: m.count, amount: m.amount }));
+    const summary = {
+      year: currentYear,
+      totalEvents: eventsPerMonth.reduce((s, x) => s + x.count, 0),
+      totalBillsAmount: billAmountPerMonth.reduce((s, x) => s + x.amount, 0),
+      busiestMonth: eventsPerMonth.reduce((max, x) => (x.count > (max.count || 0) ? x : max), {}).name || '',
+    };
+
+    res.json({ summary, eventsPerMonth, billAmountPerMonth, categoryMix: Array.from(categoryMix.values()), calendar });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching yearly calendar', error: error.message });
+  }
+});
+
 module.exports = router;

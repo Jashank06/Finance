@@ -180,17 +180,172 @@ const PersonalRecordsSchema = new mongoose.Schema({
 
 const DigitalAssetsSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  assetType: String,
-  platform: String,
-  identifier: String,
-  link: String,
-  storageLocation: String,
-  twoFA: Boolean,
-  recoveryEmail: String,
-  recoveryPhone: String,
+  
+  // Basic Information
+  projectName: { type: String, required: true },
+  purpose: String,
+  projectType: { type: String, default: 'business' },
+  
+  // Domain Information
+  domain: {
+    domainName: String,
+    registrar: String,
+    renewalDate: String,
+    serviceProvider: String,
+    adminId: String,
+    adminPassword: String, // Note: Should be encrypted in production
+    nameservers: [String],
+    sslStatus: { type: String, default: 'active' },
+    sslExpiry: String
+  },
+  
+  // Admin Section
+  admin: {
+    adminUrl: String,
+    adminId: String,
+    adminPassword: String, // Note: Should be encrypted in production
+    twoFactorEnabled: { type: Boolean, default: false },
+    backupCodes: String,
+    recoveryEmail: String
+  },
+  
+  // Hosting Server Section
+  hosting: {
+    serverHosting: { type: String, default: 'shared' },
+    serverType: String,
+    renewalDate: String,
+    serviceProvider: String,
+    userId: String,
+    password: String, // Note: Should be encrypted in production
+    controlPanel: String,
+    ftpHost: String,
+    ftpUsername: String,
+    ftpPassword: String, // Note: Should be encrypted in production
+    sshAccess: { type: Boolean, default: false },
+    sshKey: String, // Note: Should be encrypted in production
+    ipAddresses: [String],
+    serverLocation: String
+  },
+  
+  // GitHub Details
+  github: {
+    repoName: String,
+    repoUrl: String,
+    accessToken: String, // Note: Should be encrypted in production
+    deploymentBranch: { type: String, default: 'main' },
+    ciCdEnabled: { type: Boolean, default: false },
+    collaborators: [String],
+    repoVisibility: { type: String, default: 'private' }
+  },
+  
+  // Database
+  database: {
+    type: { type: String, default: 'mongodb' },
+    host: String,
+    port: String,
+    databaseName: String,
+    username: String,
+    password: String, // Note: Should be encrypted in production
+    connectionUrl: String,
+    backupEnabled: { type: Boolean, default: true },
+    backupFrequency: { type: String, default: 'daily' },
+    lastBackupDate: String
+  },
+  
+  // Technology Stack
+  technology: {
+    frontend: [String],
+    backend: [String],
+    frameworks: [String],
+    libraries: [String],
+    apis: [String],
+    versionControl: { type: String, default: 'git' },
+    packageManager: { type: String, default: 'npm' }
+  },
+  
+  // Project Documentation
+  documentation: {
+    projectDocs: String,
+    apiDocs: String,
+    userManual: String,
+    deploymentGuide: String,
+    architectureDiagrams: String,
+    changeLog: String
+  },
+  
+  // Environment & Configuration
+  environment: {
+    envFile: String,
+    stagingUrl: String,
+    productionUrl: String,
+    testingUrl: String,
+    developmentNotes: String
+  },
+  
+  // Landing Pages & Frontend
+  frontend: {
+    landingPages: [String],
+    components: [String],
+    themes: [String],
+    assets: [String],
+    buildTools: [String],
+    bundler: { type: String, default: 'webpack' }
+  },
+  
+  // Backend Services
+  backend: {
+    apis: [String],
+    services: [String],
+    middleware: [String],
+    authentication: { type: String, default: 'jwt' },
+    rateLimiting: { type: Boolean, default: true },
+    corsEnabled: { type: Boolean, default: true }
+  },
+  
+  // Security & Monitoring
+  security: {
+    sslCertificate: { type: Boolean, default: true },
+    firewallEnabled: { type: Boolean, default: true },
+    monitoringEnabled: { type: Boolean, default: true },
+    analytics: String,
+    errorTracking: String,
+    uptimeMonitoring: String,
+    securityHeaders: { type: Boolean, default: true }
+  },
+  
+  // Maintenance & Support
+  maintenance: {
+    lastUpdateDate: String,
+    nextScheduledMaintenance: String,
+    supportContact: String,
+    emergencyContact: String,
+    maintenanceWindow: String,
+    downtimeHistory: [String]
+  },
+  
+  // Development Information
+  development: {
+    developerName: String,
+    developmentCost: String,
+    developmentDuration: String,
+    developmentDurationUnit: { type: String, default: 'months' },
+    totalMonths: String
+  },
+  
+  // Monitoring Information
+  monitoring: {
+    monitoringProvider: String,
+    monitoringCost: String,
+    monitoringDuration: String,
+    monitoringDurationUnit: { type: String, default: 'months' },
+    totalMonths: String
+  },
+  
+  // Additional fields
   notes: String,
-  password: String, // Note: Should be encrypted in production
-  securityQuestions: String
+  tags: [String],
+  status: { type: String, default: 'active' },
+  priority: { type: String, default: 'medium' }
 }, { timestamps: true });
 
 const CustomerSupportSchema = new mongoose.Schema({
@@ -310,15 +465,92 @@ const FamilyProfile = mongoose.model('FamilyProfile', FamilyProfileSchema);
 const LandRecords = mongoose.model('LandRecords', LandRecordsSchema);
 const MembershipList = mongoose.model('MembershipList', MembershipListSchema);
 
-// Generic controller functions
-const createStaticController = (Model) => ({
+// Custom DigitalAssets controller with proper validation
+// Generic controller factory function
+const createStaticController = (Model) => {
+  return {
+    // Get all records for a user
+    getAll: async (req, res) => {
+      try {
+        const records = await Model.find({ userId: req.userId });
+        res.json(records);
+      } catch (error) {
+        console.error(`Error fetching ${Model.modelName}:`, error);
+        res.status(500).json({ message: `Failed to fetch ${Model.modelName}`, error: error.message });
+      }
+    },
+
+    // Get single record
+    getOne: async (req, res) => {
+      try {
+        const record = await Model.findOne({ _id: req.params.id, userId: req.userId });
+        if (!record) {
+          return res.status(404).json({ message: 'Record not found' });
+        }
+        res.json(record);
+      } catch (error) {
+        console.error(`Error fetching ${Model.modelName}:`, error);
+        res.status(500).json({ message: 'Failed to fetch record', error: error.message });
+      }
+    },
+
+    // Create new record
+    create: async (req, res) => {
+      try {
+        const record = new Model({
+          ...req.body,
+          userId: req.userId
+        });
+        await record.save();
+        res.status(201).json(record);
+      } catch (error) {
+        console.error(`Error creating ${Model.modelName}:`, error);
+        res.status(500).json({ message: 'Failed to create record', error: error.message });
+      }
+    },
+
+    // Update record
+    update: async (req, res) => {
+      try {
+        const record = await Model.findOneAndUpdate(
+          { _id: req.params.id, userId: req.userId },
+          req.body,
+          { new: true, runValidators: true }
+        );
+        if (!record) {
+          return res.status(404).json({ message: 'Record not found' });
+        }
+        res.json(record);
+      } catch (error) {
+        console.error(`Error updating ${Model.modelName}:`, error);
+        res.status(500).json({ message: 'Failed to update record', error: error.message });
+      }
+    },
+
+    // Delete record
+    delete: async (req, res) => {
+      try {
+        const record = await Model.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+        if (!record) {
+          return res.status(404).json({ message: 'Record not found' });
+        }
+        res.json({ message: 'Record deleted successfully' });
+      } catch (error) {
+        console.error(`Error deleting ${Model.modelName}:`, error);
+        res.status(500).json({ message: 'Failed to delete record', error: error.message });
+      }
+    }
+  };
+};
+
+const DigitalAssetsController = {
   // Get all records for a user
   getAll: async (req, res) => {
     try {
-      const records = await Model.find({ userId: req.userId });
+      const records = await DigitalAssets.find({ userId: req.userId });
       res.json(records);
     } catch (error) {
-      console.error(`Error fetching ${Model.modelName}:`, error);
+      console.error('Error fetching DigitalAssets:', error);
       res.status(500).json({ message: 'Failed to fetch records', error: error.message });
     }
   },
@@ -326,26 +558,38 @@ const createStaticController = (Model) => ({
   // Get single record
   getOne: async (req, res) => {
     try {
-      const record = await Model.findOne({ _id: req.params.id, userId: req.userId });
+      const record = await DigitalAssets.findOne({ _id: req.params.id, userId: req.userId });
       if (!record) {
         return res.status(404).json({ message: 'Record not found' });
       }
       res.json(record);
     } catch (error) {
-      console.error(`Error fetching ${Model.modelName}:`, error);
+      console.error('Error fetching DigitalAssets:', error);
       res.status(500).json({ message: 'Failed to fetch record', error: error.message });
     }
   },
 
-  // Create new record
+  // Create new record with validation
   create: async (req, res) => {
     try {
-      const recordData = { ...req.body, userId: req.userId };
-      const record = new Model(recordData);
+      const { projectName, ...rest } = req.body;
+      
+      // Validate required fields
+      if (!projectName || projectName.trim() === '') {
+        return res.status(400).json({ message: 'Project Name is required' });
+      }
+      
+      const recordData = { 
+        projectName: projectName.trim(),
+        ...rest,
+        userId: req.userId 
+      };
+      
+      const record = new DigitalAssets(recordData);
       await record.save();
       res.status(201).json(record);
     } catch (error) {
-      console.error(`Error creating ${Model.modelName}:`, error);
+      console.error('Error creating DigitalAssets:', error);
       res.status(500).json({ message: 'Failed to create record', error: error.message });
     }
   },
@@ -353,9 +597,21 @@ const createStaticController = (Model) => ({
   // Update record
   update: async (req, res) => {
     try {
-      const record = await Model.findOneAndUpdate(
+      const { projectName, ...rest } = req.body;
+      
+      // Validate required fields
+      if (!projectName || projectName.trim() === '') {
+        return res.status(400).json({ message: 'Project Name is required' });
+      }
+      
+      const updateData = {
+        projectName: projectName.trim(),
+        ...rest
+      };
+      
+      const record = await DigitalAssets.findOneAndUpdate(
         { _id: req.params.id, userId: req.userId },
-        req.body,
+        updateData,
         { new: true, runValidators: true }
       );
       
@@ -365,7 +621,7 @@ const createStaticController = (Model) => ({
       
       res.json(record);
     } catch (error) {
-      console.error(`Error updating ${Model.modelName}:`, error);
+      console.error('Error updating DigitalAssets:', error);
       res.status(500).json({ message: 'Failed to update record', error: error.message });
     }
   },
@@ -373,27 +629,24 @@ const createStaticController = (Model) => ({
   // Delete record
   delete: async (req, res) => {
     try {
-      const record = await Model.findOneAndDelete({ _id: req.params.id, userId: req.userId });
-      
+      const record = await DigitalAssets.findOneAndDelete({ _id: req.params.id, userId: req.userId });
       if (!record) {
         return res.status(404).json({ message: 'Record not found' });
       }
-      
       res.json({ message: 'Record deleted successfully' });
     } catch (error) {
-      console.error(`Error deleting ${Model.modelName}:`, error);
+      console.error('Error deleting DigitalAssets:', error);
       res.status(500).json({ message: 'Failed to delete record', error: error.message });
     }
   }
-});
+};
 
-// Export controllers for each type
 module.exports = {
   BasicDetailsController: createStaticController(BasicDetails),
   CompanyRecordsController: createStaticController(CompanyRecords),
   MobileEmailDetailsController: createStaticController(MobileEmailDetails),
   PersonalRecordsController: createStaticController(PersonalRecords),
-  DigitalAssetsController: createStaticController(DigitalAssets),
+  DigitalAssetsController: DigitalAssetsController,
   CustomerSupportController: createStaticController(CustomerSupport),
   FamilyProfileController: createStaticController(FamilyProfile),
   LandRecordsController: createStaticController(LandRecords),

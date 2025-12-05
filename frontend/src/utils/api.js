@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.PROD 
-  ? 'https://finance-backend.onrender.com/api'
-  : 'http://localhost:5001/api';
+  ? 'https://finance-qr54.onrender.com/api'
+  : '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

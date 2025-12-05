@@ -25,7 +25,7 @@ const ContactManagement = () => {
   const [formData, setFormData] = useState(defaultEntry);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [editMode, setEditMode] = useState(true);
+  const [editMode, setEditMode] = useState(false);
 
   const CATEGORY_KEY = 'static-contact-management';
 
@@ -124,92 +124,63 @@ const ContactManagement = () => {
           <button className="btn-primary" onClick={() => setEditMode(!editMode)}>
             {editMode ? 'Lock Form' : 'Edit Form'}
           </button>
-          <button className="btn-success" onClick={resetForm}>
-            <FiPlus /> New Contact
+          <button className="btn-success" onClick={() => {
+            resetForm();
+            setEditMode(true);
+          }}>
+            <FiPlus /> New Entry
           </button>
         </div>
       </div>
 
-      <div className="static-section">
-        <div className="section-header">
-          <FiMapPin className="section-icon" />
-          <h3>Contact Information</h3>
+      {editMode && (
+        <div className="static-section">
+          <div className="section-header">
+            <FiMapPin className="section-icon" />
+            <h3>Contact Information</h3>
+          </div>
+          <div className="section-content">
+            <form onSubmit={handleSubmit}>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Name</label>
+                  <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Relation</label>
+                  <input type="text" value={formData.relation} onChange={(e) => setFormData({ ...formData, relation: e.target.value })} placeholder="e.g., Self, Father, Vendor" />
+                </div>
+                <div className="form-group">
+                  <label>Mobile</label>
+                  <input type="tel" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Address</label>
+                  <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Notes</label>
+                  <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} />
+                </div>
+              </div>
+
+              <div className="header-actions">
+                <button type="submit" className="btn-success">
+                  {editingIndex !== null ? 'Update' : 'Save'}
+                </button>
+                <button type="button" className="btn-secondary" onClick={() => {
+                  resetForm();
+                  setEditMode(false);
+                }}>Cancel</button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div className="section-content">
-          <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Name</label>
-                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} disabled={!editMode} />
-              </div>
-              <div className="form-group">
-                <label>Relation</label>
-                <input type="text" value={formData.relation} onChange={(e) => setFormData({ ...formData, relation: e.target.value })} disabled={!editMode} placeholder="e.g., Self, Father, Vendor" />
-              </div>
-              <div className="form-group">
-                <label>Company</label>
-                <input type="text" value={formData.company} onChange={(e) => setFormData({ ...formData, company: e.target.value })} disabled={!editMode} />
-              </div>
-
-              <div className="form-group">
-                <label>Phone</label>
-                <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} disabled={!editMode} />
-              </div>
-              <div className="form-group">
-                <label>Email</label>
-                <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} disabled={!editMode} />
-              </div>
-              <div className="form-group">
-                <label>Alt. Phone</label>
-                <input type="tel" value={formData.altPhone} onChange={(e) => setFormData({ ...formData, altPhone: e.target.value })} disabled={!editMode} />
-              </div>
-              <div className="form-group">
-                <label>Alt. Email</label>
-                <input type="email" value={formData.altEmail} onChange={(e) => setFormData({ ...formData, altEmail: e.target.value })} disabled={!editMode} />
-              </div>
-
-              <div className="form-group full-width">
-                <label>Address Line 1</label>
-                <input type="text" value={formData.addressLine1} onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })} disabled={!editMode} />
-              </div>
-              <div className="form-group full-width">
-                <label>Address Line 2</label>
-                <input type="text" value={formData.addressLine2} onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })} disabled={!editMode} />
-              </div>
-
-              <div className="form-group">
-                <label>City</label>
-                <input type="text" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} disabled={!editMode} />
-              </div>
-              <div className="form-group">
-                <label>State</label>
-                <input type="text" value={formData.state} onChange={(e) => setFormData({ ...formData, state: e.target.value })} disabled={!editMode} />
-              </div>
-              <div className="form-group">
-                <label>Pincode</label>
-                <input type="text" value={formData.pincode} onChange={(e) => setFormData({ ...formData, pincode: e.target.value })} disabled={!editMode} />
-              </div>
-
-              <div className="form-group full-width">
-                <label>Tags</label>
-                <input type="text" value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} disabled={!editMode} placeholder="Comma separated (e.g., vendor, family)" />
-              </div>
-
-              <div className="form-group full-width">
-                <label>Notes</label>
-                <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} disabled={!editMode} />
-              </div>
-            </div>
-
-            <div className="header-actions">
-              <button type="submit" className="btn-success" disabled={!editMode}>
-                {editingIndex !== null ? 'Update' : 'Save'}
-              </button>
-              <button type="button" className="btn-secondary" onClick={resetForm}>Reset</button>
-            </div>
-          </form>
-        </div>
-      </div>
+      )}
 
       {entries.length > 0 && (
         <div className="static-section">

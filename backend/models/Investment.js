@@ -27,6 +27,9 @@ const investmentSchema = new mongoose.Schema({
       'static-family-profile'
       , 'static-inventory-record'
       , 'static-contact-management'
+      , 'daily-loan-ledger'
+      , 'daily-bill-checklist'
+      , 'daily-telephone-conversation'
     ],
   },
   type: {

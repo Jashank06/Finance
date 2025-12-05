@@ -26,6 +26,16 @@ import DigitalAssets from './pages/family/static/DigitalAssets';
 import CustomerSupport from './pages/family/static/CustomerSupport';
 import LandRecords from './pages/family/static/LandRecords';
 import MembershipList from './pages/family/static/MembershipList';
+import CashCardsBank from './pages/family/daily/CashCardsBank';
+import LoanLedger from './pages/family/daily/LoanLedger';
+import BillChecklist from './pages/family/daily/BillChecklist';
+import TelephoneConversation from './pages/family/daily/TelephoneConversation';
+import BillDates from './pages/family/monitoring/BillDates';
+import WeeklyAppointments from './pages/family/monitoring/WeeklyAppointments';
+import YearlyCalendar from './pages/family/monitoring/YearlyCalendar';
+import MultipleCalendars from './pages/family/monitoring/MultipleCalendars';
+import RemindersNotifications from './pages/family/monitoring/RemindersNotifications';
+import IncomeExpenses from './pages/family/daily/IncomeExpenses';
 import './App.css';
 
 function App() {
@@ -322,6 +332,114 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <MembershipList />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Daily Routes under Family */}
+          <Route
+            path="/family/daily/cash-cards-bank"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CashCardsBank />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/family/daily/loan-udhar"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <LoanLedger />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/family/daily/bill-paying"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <BillChecklist />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/family/daily/income-expenses"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <IncomeExpenses />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/family/daily/telephone-conversation"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TelephoneConversation />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/family/monitoring/bill-dates"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <BillDates />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/family/monitoring/weekly-appointment"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <WeeklyAppointments />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/family/monitoring/yearly-calendar"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <YearlyCalendar />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/family/monitoring/multiple-calendars"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <MultipleCalendars />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/family/monitoring/reminders-notifications"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <RemindersNotifications />
                 </Layout>
               </ProtectedRoute>
             }

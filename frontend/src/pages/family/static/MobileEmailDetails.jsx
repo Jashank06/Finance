@@ -23,7 +23,7 @@ const MobileEmailDetails = () => {
   const [formData, setFormData] = useState(defaultEntry);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [editMode, setEditMode] = useState(true);
+  const [editMode, setEditMode] = useState(false);
   
 
   const CATEGORY_KEY = 'static-mobile-email';
@@ -120,167 +120,126 @@ const MobileEmailDetails = () => {
           <button className="btn-primary" onClick={() => setEditMode(!editMode)}>
             {editMode ? 'Lock Form' : 'Edit Form'}
           </button>
-          <button className="btn-success" onClick={resetForm}>
+          <button className="btn-success" onClick={() => {
+            resetForm();
+            setEditMode(true);
+          }}>
             <FiPlus /> New Entry
           </button>
         </div>
       </div>
 
-      <div className="static-section">
-        <div className="section-header">
-          <FiMail className="section-icon" />
-          <h3>Contact Information</h3>
+      {editMode && (
+        <div className="static-section">
+          <div className="section-header">
+            <FiMail className="section-icon" />
+            <h3>Contact Information</h3>
+          </div>
+          <div className="section-content">
+            <form onSubmit={handleSubmit}>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Type</label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  >
+                    <option>Mobile</option>
+                    <option>Email</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Mobile/Email</label>
+                  <input
+                    type="text"
+                    value={formData.type === 'Mobile' ? formData.mobile : formData.email}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      [formData.type === 'Mobile' ? 'mobile' : 'email']: e.target.value 
+                    })}
+                    placeholder={formData.type === 'Mobile' ? '+91 9876543210' : 'example@email.com'}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Provider/Carrier</label>
+                  <input
+                    type="text"
+                    value={formData.type === 'Mobile' ? formData.carrier : formData.provider}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      [formData.type === 'Mobile' ? 'carrier' : 'provider']: e.target.value 
+                    })}
+                    placeholder={formData.type === 'Mobile' ? 'Airtel, Jio, etc.' : 'Gmail, Yahoo, etc.'}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Owner Name</label>
+                  <input
+                    type="text"
+                    value={formData.ownerName}
+                    onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
+                    placeholder="Family member name"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Relationship</label>
+                  <input
+                    type="text"
+                    value={formData.relationship}
+                    onChange={(e) => setFormData({ ...formData, relationship: e.target.value })}
+                    placeholder="Self, Spouse, Child, Parent, etc."
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Is Primary</label>
+                  <select
+                    value={formData.isPrimary ? 'Yes' : 'No'}
+                    onChange={(e) => setFormData({ ...formData, isPrimary: e.target.value === 'Yes' })}
+                  >
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Two-Factor Authentication</label>
+                  <select
+                    value={formData.twoFA ? 'Enabled' : 'Disabled'}
+                    onChange={(e) => setFormData({ ...formData, twoFA: e.target.value === 'Enabled' })}
+                  >
+                    <option value="Disabled">Disabled</option>
+                    <option value="Enabled">Enabled</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Notes</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Additional information"
+                  />
+                </div>
+              </div>
+
+              <div className="header-actions">
+                <button type="submit" className="btn-success">
+                  {editingIndex !== null ? 'Update' : 'Save'}
+                </button>
+                <button type="button" className="btn-secondary" onClick={() => {
+                  resetForm();
+                  setEditMode(false);
+                }}>Cancel</button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div className="section-content">
-          <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Type</label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  disabled={!editMode}
-                >
-                  <option>Mobile</option>
-                  <option>Email</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Name</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  disabled={!editMode}
-                  placeholder="e.g., Jay"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Relation</label>
-                <input
-                  type="text"
-                  value={formData.relation}
-                  onChange={(e) => setFormData({ ...formData, relation: e.target.value })}
-                  disabled={!editMode}
-                  placeholder="e.g., Self, Father, Mother"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Mobile Number</label>
-                <input
-                  type="tel"
-                  value={formData.mobile}
-                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                  disabled={!editMode}
-                  placeholder="e.g., +91-9876543210"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Carrier</label>
-                <input
-                  type="text"
-                  value={formData.carrier}
-                  onChange={(e) => setFormData({ ...formData, carrier: e.target.value })}
-                  disabled={!editMode}
-                  placeholder="e.g., Jio, Airtel, VI"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>SIM Type</label>
-                <select
-                  value={formData.simType}
-                  onChange={(e) => setFormData({ ...formData, simType: e.target.value })}
-                  disabled={!editMode}
-                >
-                  <option>Prepaid</option>
-                  <option>Postpaid</option>
-                  <option>eSIM</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Email Address</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  disabled={!editMode}
-                  placeholder="e.g., jay@example.com"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Email Provider</label>
-                <select
-                  value={formData.provider}
-                  onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-                  disabled={!editMode}
-                >
-                  <option>Gmail</option>
-                  <option>Outlook</option>
-                  <option>Yahoo</option>
-                  <option>Proton</option>
-                  <option>Other</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Recovery Email</label>
-                <input
-                  type="email"
-                  value={formData.recoveryEmail}
-                  onChange={(e) => setFormData({ ...formData, recoveryEmail: e.target.value })}
-                  disabled={!editMode}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Recovery Phone</label>
-                <input
-                  type="tel"
-                  value={formData.recoveryPhone}
-                  onChange={(e) => setFormData({ ...formData, recoveryPhone: e.target.value })}
-                  disabled={!editMode}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Two-Factor Authentication</label>
-                <select
-                  value={formData.twoFA ? 'Enabled' : 'Disabled'}
-                  onChange={(e) => setFormData({ ...formData, twoFA: e.target.value === 'Enabled' })}
-                  disabled={!editMode}
-                >
-                  <option value="Disabled">Disabled</option>
-                  <option value="Enabled">Enabled</option>
-                </select>
-              </div>
-
-              <div className="form-group full-width">
-                <label>Notes</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  disabled={!editMode}
-                  placeholder="Plan details, pack info, forwarding rules, etc."
-                />
-              </div>
-            </div>
-
-            <div className="header-actions">
-              <button type="submit" className="btn-success" disabled={!editMode}>
-                {editingIndex !== null ? 'Update' : 'Save'}
-              </button>
-              <button type="button" className="btn-secondary" onClick={resetForm}>Reset</button>
-            </div>
-          </form>
-        </div>
-      </div>
+      )}
 
       {entries.length > 0 && (
         <div className="static-section">

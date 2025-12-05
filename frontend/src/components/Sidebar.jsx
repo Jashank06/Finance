@@ -8,6 +8,9 @@ const Sidebar = () => {
   const [businessOpen, setBusinessOpen] = useState(false);
   const [investmentsOpen, setInvestmentsOpen] = useState(false);
   const [staticOpen, setStaticOpen] = useState(false);
+  const [dailyOpen, setDailyOpen] = useState(false);
+  const [monitoringOpen, setMonitoringOpen] = useState(false);
+  const [businessDailyOpen, setBusinessDailyOpen] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -58,8 +61,23 @@ const Sidebar = () => {
                   </div>
                 )}
               </div>
-              <Link to="/family/daily-transactions" className="submenu-item">Daily Transactions</Link>
-              <Link to="/family/monitoring" className="submenu-item">Monitoring</Link>
+              <div className="nav-subsection">
+                <div 
+                  className={`submenu-item nav-header ${dailyOpen ? 'active' : ''}`}
+                  onClick={() => setDailyOpen(!dailyOpen)}
+                >
+                  Daily
+                </div>
+                {dailyOpen && (
+                  <div className="nested-submenu">
+                    <Link to="/family/daily/cash-cards-bank" className="nested-submenu-item">Cash, Cards & Bank Transactions</Link>
+                    <Link to="/family/daily/loan-udhar" className="nested-submenu-item">Loan Ledger</Link>
+                    <Link to="/family/daily/bill-paying" className="nested-submenu-item">Bill Paying Checklist</Link>
+                    <Link to="/family/daily/income-expenses" className="nested-submenu-item">Income & Expenses</Link>
+                    <Link to="/family/daily/telephone-conversation" className="nested-submenu-item">Telephone Conversation</Link>
+                  </div>
+                )}
+              </div>
               <div className="nav-subsection">
                 <div 
                   className={`submenu-item nav-header ${staticOpen ? 'active' : ''}`}
@@ -86,6 +104,23 @@ const Sidebar = () => {
               </div>
               <Link to="/family/analytics" className="submenu-item">Analytics</Link>
               <Link to="/family/tasks" className="submenu-item">Tasks to Do</Link>
+              <div className="nav-subsection">
+                <div 
+                  className={`submenu-item nav-header ${monitoringOpen ? 'active' : ''}`}
+                  onClick={() => setMonitoringOpen(!monitoringOpen)}
+                >
+                  Monitoring
+                </div>
+                {monitoringOpen && (
+                  <div className="nested-submenu">
+                    <Link to="/family/monitoring/bill-dates" className="nested-submenu-item">Bill Dates</Link>
+                    <Link to="/family/monitoring/multiple-calendars" className="nested-submenu-item">Multiple Calendars</Link>
+                    <Link to="/family/monitoring/reminders-notifications" className="nested-submenu-item">Reminders, Notifications</Link>
+                    <Link to="/family/monitoring/yearly-calendar" className="nested-submenu-item">Yearly Calendar</Link>
+                    <Link to="/family/monitoring/weekly-appointment" className="nested-submenu-item">Weekly Appointment Chart</Link>
+                  </div>
+                )}
+              </div>
               <Link to="/family/files" className="submenu-item">Files & Folders</Link>
             </div>
           )}
@@ -102,7 +137,23 @@ const Sidebar = () => {
           {businessOpen && (
             <div className="submenu">
               <Link to="/business/investments" className="submenu-item">Investments</Link>
-              <Link to="/business/daily-transactions" className="submenu-item">Daily Transactions</Link>
+              <div className="nav-subsection">
+                <div 
+                  className={`submenu-item nav-header ${businessDailyOpen ? 'active' : ''}`}
+                  onClick={() => setBusinessDailyOpen(!businessDailyOpen)}
+                >
+                  Daily
+                </div>
+                {businessDailyOpen && (
+                  <div className="nested-submenu">
+                    <Link to="/business/daily/cash-cards-bank" className="nested-submenu-item">Cash, Cards & Bank Transactions</Link>
+                    <Link to="/business/daily/loan-udhar" className="nested-submenu-item">Loan Ledger</Link>
+                    <Link to="/business/daily/bill-paying" className="nested-submenu-item">Bill Paying Checklist</Link>
+                    <Link to="/business/daily/income-expenses" className="nested-submenu-item">Income & Expenses</Link>
+                    <Link to="/business/daily/telephone-conversation" className="nested-submenu-item">Telephone Conversation</Link>
+                  </div>
+                )}
+              </div>
               <Link to="/business/monitoring" className="submenu-item">Monitoring</Link>
               <Link to="/business/static" className="submenu-item">Static</Link>
               <Link to="/business/analytics" className="submenu-item">Analytics</Link>

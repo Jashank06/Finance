@@ -74,7 +74,7 @@ router.post('/login', async (req, res) => {
 // Get current user (protected route)
 router.get('/me', authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('-password');
+    const user = await User.findById(req.user.id).select('-password');
     res.json({ user });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching user', error: error.message });

@@ -15,6 +15,26 @@ export const investmentAPI = {
   delete: (id) => api.delete(`/investments/${id}`),
   
   getStats: () => api.get('/investments/stats/summary'),
+  getBillDatesAnalytics: (params = {}) => {
+    const year = params.year ? `year=${params.year}` : '';
+    const horizon = params.horizonDays ? `horizonDays=${params.horizonDays}` : '';
+    const qs = [year, horizon].filter(Boolean).join('&');
+    const suffix = qs ? `?${qs}` : '';
+    return api.get(`/investments/bill-dates/analytics${suffix}`);
+  },
+  getWeeklyAppointments: (params = {}) => {
+    const weekStart = params.weekStart ? `weekStart=${params.weekStart}` : '';
+    const qs = [weekStart].filter(Boolean).join('&');
+    const suffix = qs ? `?${qs}` : '';
+    return api.get(`/investments/appointments/weekly${suffix}`);
+  },
+  getYearlyCalendar: (params = {}) => {
+    const year = params.year ? `year=${params.year}` : '';
+    const categories = params.categories && params.categories.length ? `categories=${params.categories.join(',')}` : '';
+    const qs = [year, categories].filter(Boolean).join('&');
+    const suffix = qs ? `?${qs}` : '';
+    return api.get(`/investments/calendar/yearly${suffix}`);
+  },
 };
 
 // Gold/SGB specific API endpoints

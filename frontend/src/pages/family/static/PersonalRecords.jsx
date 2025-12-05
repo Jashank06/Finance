@@ -20,7 +20,7 @@ const PersonalRecords = () => {
   const [formData, setFormData] = useState(defaultEntry);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [editMode, setEditMode] = useState(true);
+  const [editMode, setEditMode] = useState(false);
   
 
   const CATEGORY_KEY = 'static-personal-records';
@@ -118,132 +118,122 @@ const PersonalRecords = () => {
           <button className="btn-primary" onClick={() => setEditMode(!editMode)}>
             {editMode ? 'Lock Form' : 'Edit Form'}
           </button>
-          <button className="btn-success" onClick={resetForm}>
-            <FiPlus /> New Record
+          <button className="btn-success" onClick={() => {
+            resetForm();
+            setEditMode(true);
+          }}>
+            <FiPlus /> New Entry
           </button>
         </div>
       </div>
 
-      <div className="static-section">
-        <div className="section-header">
-          <FiFileText className="section-icon" />
-          <h3>Document Information</h3>
+      {editMode && (
+        <div className="static-section">
+          <div className="section-header">
+            <FiFileText className="section-icon" />
+            <h3>Document Information</h3>
+          </div>
+          <div className="section-content">
+            <form onSubmit={handleSubmit}>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Document Type</label>
+                  <select
+                    value={formData.docType}
+                    onChange={(e) => setFormData({ ...formData, docType: e.target.value })}
+                  >
+                    <option>Aadhaar</option>
+                    <option>PAN</option>
+                    <option>Voter ID</option>
+                    <option>Passport</option>
+                    <option>Driving License</option>
+                    <option>Birth Certificate</option>
+                    <option>Marriage Certificate</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Name on ID</label>
+                  <input
+                    type="text"
+                    value={formData.nameOnId}
+                    onChange={(e) => setFormData({ ...formData, nameOnId: e.target.value })}
+                    placeholder="Name as printed on document"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>ID Number</label>
+                  <input
+                    type="text"
+                    value={formData.idNumber}
+                    onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
+                    placeholder="Document identification number"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Issuing Authority</label>
+                  <input
+                    type="text"
+                    value={formData.issuingAuthority}
+                    onChange={(e) => setFormData({ ...formData, issuingAuthority: e.target.value })}
+                    placeholder="Government department or authority"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Issue Date</label>
+                  <input
+                    type="date"
+                    value={formData.issueDate}
+                    onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Expiry Date</label>
+                  <input
+                    type="date"
+                    value={formData.expiryDate}
+                    onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>File URL</label>
+                  <input
+                    type="url"
+                    value={formData.fileUrl}
+                    onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
+                    placeholder="Link to scanned document"
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label>Notes</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Additional remarks or information"
+                  />
+                </div>
+              </div>
+
+              <div className="header-actions">
+                <button type="submit" className="btn-success">
+                  {editingIndex !== null ? 'Update' : 'Save'}
+                </button>
+                <button type="button" className="btn-secondary" onClick={() => {
+                  resetForm();
+                  setEditMode(false);
+                }}>Cancel</button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div className="section-content">
-          <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Document Type</label>
-                <select
-                  value={formData.docType}
-                  onChange={(e) => setFormData({ ...formData, docType: e.target.value })}
-                  disabled={!editMode}
-                >
-                  <option>Aadhaar</option>
-                  <option>PAN</option>
-                  <option>Passport</option>
-                  <option>Driving License</option>
-                  <option>Voter ID</option>
-                  <option>Birth Certificate</option>
-                  <option>Marriage Certificate</option>
-                  <option>Other</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>ID Number</label>
-                <input
-                  type="text"
-                  value={formData.idNumber}
-                  onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
-                  disabled={!editMode}
-                  placeholder="e.g., PAN ABCDE1234F"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Name on ID</label>
-                <input
-                  type="text"
-                  value={formData.nameOnId}
-                  onChange={(e) => setFormData({ ...formData, nameOnId: e.target.value })}
-                  disabled={!editMode}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Issue Date</label>
-                <input
-                  type="date"
-                  value={formData.issueDate}
-                  onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })}
-                  disabled={!editMode}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Expiry Date</label>
-                <input
-                  type="date"
-                  value={formData.expiryDate}
-                  onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                  disabled={!editMode}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Place of Issue</label>
-                <input
-                  type="text"
-                  value={formData.placeOfIssue}
-                  onChange={(e) => setFormData({ ...formData, placeOfIssue: e.target.value })}
-                  disabled={!editMode}
-                  placeholder="City, State"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Issuing Authority</label>
-                <input
-                  type="text"
-                  value={formData.issuingAuthority}
-                  onChange={(e) => setFormData({ ...formData, issuingAuthority: e.target.value })}
-                  disabled={!editMode}
-                  placeholder="e.g., UIDAI, RTO, Passport Office"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Document File URL</label>
-                <input
-                  type="url"
-                  value={formData.fileUrl}
-                  onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
-                  disabled={!editMode}
-                  placeholder="Link to PDF/Image in your drive"
-                />
-              </div>
-
-              <div className="form-group full-width">
-                <label>Notes</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  disabled={!editMode}
-                  placeholder="Additional details, renewal reminders, etc."
-                />
-              </div>
-            </div>
-
-            <div className="header-actions">
-              <button type="submit" className="btn-success" disabled={!editMode}>
-                {editingIndex !== null ? 'Update' : 'Save'}
-              </button>
-              <button type="button" className="btn-secondary" onClick={resetForm}>Reset</button>
-            </div>
-          </form>
-        </div>
-      </div>
+      )}
 
       {entries.length > 0 && (
         <div className="static-section">
