@@ -12,6 +12,12 @@ const defaultEntry = {
   placeOfIssue: '',
   issuingAuthority: '',
   fileUrl: '',
+  mobileNumber: '',
+  emailId: '',
+  url: '',
+  userId: '',
+  password: '',
+  additional: '',
   notes: '',
 };
 
@@ -208,6 +214,66 @@ const PersonalRecords = () => {
                     value={formData.fileUrl}
                     onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
                     placeholder="Link to scanned document"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Mobile Number</label>
+                  <input
+                    type="tel"
+                    value={formData.mobileNumber}
+                    onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
+                    placeholder="Mobile number"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Email Id</label>
+                  <input
+                    type="email"
+                    value={formData.emailId}
+                    onChange={(e) => setFormData({ ...formData, emailId: e.target.value })}
+                    placeholder="Email address"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>URL</label>
+                  <input
+                    type="url"
+                    value={formData.url}
+                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                    placeholder="Website or portal URL"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>User Id</label>
+                  <input
+                    type="text"
+                    value={formData.userId}
+                    onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+                    placeholder="User ID or username"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Password</label>
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Password"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Additional</label>
+                  <input
+                    type="text"
+                    value={formData.additional}
+                    onChange={(e) => setFormData({ ...formData, additional: e.target.value })}
+                    placeholder="Any additional details"
                   />
                 </div>
 

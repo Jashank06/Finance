@@ -28,7 +28,7 @@ import LandRecords from './pages/family/static/LandRecords';
 import MembershipList from './pages/family/static/MembershipList';
 import CashCardsBank from './pages/family/daily/CashCardsBank';
 import LoanLedger from './pages/family/daily/LoanLedger';
-import BillChecklist from './pages/family/daily/BillChecklist';
+import BillChecklistNew from './pages/family/daily/BillChecklistNew';
 import TelephoneConversation from './pages/family/daily/TelephoneConversation';
 import BillDates from './pages/family/monitoring/BillDates';
 import WeeklyAppointments from './pages/family/monitoring/WeeklyAppointments';
@@ -363,7 +363,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout>
-                  <BillChecklist />
+<BillChecklistNew />
                 </Layout>
               </ProtectedRoute>
             }

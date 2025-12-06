@@ -227,6 +227,48 @@ const FinancialOverviewChart = ({ cashRecords, cardRecords, bankRecords, cardTra
   const balanceData = prepareBalanceData();
   const typeData = prepareTypeData();
 
+  // Prepare transaction type data
+  const prepareTransactionTypeData = () => {
+    const transactionTypeData = {};
+    
+    // Process all records for transaction types
+    const allRecords = [...filteredCashRecords, ...filteredCardRecords, ...filteredBankRecords, ...filteredCardTransactions, ...filteredBankTransactions];
+    
+    allRecords.forEach(record => {
+      if (record.transactionType) {
+        const type = record.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        if (!transactionTypeData[type]) {
+          transactionTypeData[type] = { name: type, value: 0 };
+        }
+        const amount = parseFloat(record.amount) || 0;
+        transactionTypeData[type].value += amount;
+      }
+    });
+
+    return Object.values(transactionTypeData).filter(item => item.value > 0);
+  };
+
+  // Prepare expense type data
+  const prepareExpenseTypeData = () => {
+    const expenseTypeData = {};
+    
+    // Process all records for expense types
+    const allRecords = [...filteredCashRecords, ...filteredCardRecords, ...filteredBankRecords, ...filteredCardTransactions, ...filteredBankTransactions];
+    
+    allRecords.forEach(record => {
+      if (record.expenseType) {
+        const type = record.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        if (!expenseTypeData[type]) {
+          expenseTypeData[type] = { name: type, value: 0 };
+        }
+        const amount = parseFloat(record.amount) || 0;
+        expenseTypeData[type].value += amount;
+      }
+    });
+
+    return Object.values(expenseTypeData).filter(item => item.value > 0);
+  };
+
   // Debug logs
   console.log('Chart Data:', chartData);
 
@@ -394,24 +436,55 @@ const FinancialOverviewChart = ({ cashRecords, cardRecords, bankRecords, cardTra
           </ResponsiveContainer>
         </div>
 
-        {/* Stacked Area Chart */}
-        <div className="chart-container full-width">
-          <h3>Currency Breakdown Trend</h3>
+        {/* Transaction Type Chart */}
+        <div className="chart-container">
+          <h3>Transaction Type Distribution</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="currency" />
-              <YAxis tickFormatter={formatYAxis} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Area type="monotone" dataKey="cash" stackId="1" stroke={CATEGORY_COLORS.cash} fill={CATEGORY_COLORS.cash} name="Cash" />
-              <Area type="monotone" dataKey="cards" stackId="1" stroke={CATEGORY_COLORS.cards} fill={CATEGORY_COLORS.cards} name="Card Spending" />
-              <Area type="monotone" dataKey="bank" stackId="1" stroke={CATEGORY_COLORS.bank} fill={CATEGORY_COLORS.bank} name="Bank Transactions" />
-              <Area type="monotone" dataKey="bankBalance" stackId="2" stroke="#ff6b6b" fill="#ff6b6b" name="Bank Balance" />
-            </AreaChart>
+            <PieChart>
+              <Pie
+                data={prepareTransactionTypeData()}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {prepareTransactionTypeData().map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
           </ResponsiveContainer>
         </div>
-      </div>
+
+        {/* Expense Type Chart */}
+        <div className="chart-container">
+          <h3>Expense Type Distribution</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={prepareExpenseTypeData()}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {prepareExpenseTypeData().map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+              </div>
     </div>
   );
 };

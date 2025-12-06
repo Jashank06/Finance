@@ -27,6 +27,41 @@ const BillDates = () => {
     reminderDays: 3,
     notes: '',
     startDate: new Date().toISOString().slice(0, 10),
+    // Electricity specific fields
+    billingUnit: '',
+    nameOnBill: '',
+    paidAmount: '',
+    paymentDate: '',
+    description: '',
+    // Water specific fields
+    meterNumber: '',
+    connectionType: 'Domestic',
+    // Gas specific fields
+    consumerNumber: '',
+    gasAgency: '',
+    // Internet specific fields
+    planType: 'Broadband',
+    dataLimit: '',
+    // Mobile specific fields
+    simNumber: '',
+    networkProvider: '',
+    // Credit Card specific fields
+    cardNumber: '',
+    bankName: '',
+    // Rent specific fields
+    propertyAddress: '',
+    ownerName: '',
+    // Insurance specific fields
+    policyNumber: '',
+    insuranceCompany: '',
+    // School Fees specific fields
+    studentName: '',
+    schoolName: '',
+    grade: '',
+    // Maintenance specific fields
+    societyName: '',
+    wing: '',
+    flatNumber: '',
   });
 
   const CATEGORY_KEY = 'daily-bill-checklist';
@@ -436,6 +471,171 @@ const BillDates = () => {
                 <input type="date" value={inputs.dueDate} onChange={(e) => setInputs({ ...inputs, dueDate: e.target.value })} required />
               </div>
             </div>
+
+            {/* Bill Type Specific Fields */}
+            {inputs.billType === 'Electricity' && (
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Billing Unit</label>
+                  <input type="text" value={inputs.billingUnit} onChange={(e) => setInputs({ ...inputs, billingUnit: e.target.value })} placeholder="e.g., kWh" />
+                </div>
+                <div className="form-field">
+                  <label>Name on the Bill</label>
+                  <input type="text" value={inputs.nameOnBill} onChange={(e) => setInputs({ ...inputs, nameOnBill: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>Paid Amount</label>
+                  <input type="number" value={inputs.paidAmount} onChange={(e) => setInputs({ ...inputs, paidAmount: Number(e.target.value) })} />
+                </div>
+              </div>
+            )}
+
+            {inputs.billType === 'Electricity' && (
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Payment Date</label>
+                  <input type="date" value={inputs.paymentDate} onChange={(e) => setInputs({ ...inputs, paymentDate: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>Description</label>
+                  <input type="text" value={inputs.description} onChange={(e) => setInputs({ ...inputs, description: e.target.value })} />
+                </div>
+              </div>
+            )}
+
+            {inputs.billType === 'Water' && (
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Meter Number</label>
+                  <input type="text" value={inputs.meterNumber} onChange={(e) => setInputs({ ...inputs, meterNumber: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>Connection Type</label>
+                  <select value={inputs.connectionType} onChange={(e) => setInputs({ ...inputs, connectionType: e.target.value })}>
+                    <option>Domestic</option>
+                    <option>Commercial</option>
+                    <option>Industrial</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {inputs.billType === 'Gas' && (
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Consumer Number</label>
+                  <input type="text" value={inputs.consumerNumber} onChange={(e) => setInputs({ ...inputs, consumerNumber: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>Gas Agency</label>
+                  <input type="text" value={inputs.gasAgency} onChange={(e) => setInputs({ ...inputs, gasAgency: e.target.value })} />
+                </div>
+              </div>
+            )}
+
+            {inputs.billType === 'Internet' && (
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Plan Type</label>
+                  <select value={inputs.planType} onChange={(e) => setInputs({ ...inputs, planType: e.target.value })}>
+                    <option>Broadband</option>
+                    <option>Fiber</option>
+                    <option>DSL</option>
+                    <option>Mobile Data</option>
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label>Data Limit</label>
+                  <input type="text" value={inputs.dataLimit} onChange={(e) => setInputs({ ...inputs, dataLimit: e.target.value })} placeholder="e.g., 500GB" />
+                </div>
+              </div>
+            )}
+
+            {inputs.billType === 'Mobile' && (
+              <div className="form-row">
+                <div className="form-field">
+                  <label>SIM Number</label>
+                  <input type="text" value={inputs.simNumber} onChange={(e) => setInputs({ ...inputs, simNumber: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>Network Provider</label>
+                  <input type="text" value={inputs.networkProvider} onChange={(e) => setInputs({ ...inputs, networkProvider: e.target.value })} />
+                </div>
+              </div>
+            )}
+
+            {inputs.billType === 'Credit Card' && (
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Card Number</label>
+                  <input type="text" value={inputs.cardNumber} onChange={(e) => setInputs({ ...inputs, cardNumber: e.target.value })} placeholder="Last 4 digits" />
+                </div>
+                <div className="form-field">
+                  <label>Bank Name</label>
+                  <input type="text" value={inputs.bankName} onChange={(e) => setInputs({ ...inputs, bankName: e.target.value })} />
+                </div>
+              </div>
+            )}
+
+            {inputs.billType === 'Rent' && (
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Property Address</label>
+                  <input type="text" value={inputs.propertyAddress} onChange={(e) => setInputs({ ...inputs, propertyAddress: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>Owner Name</label>
+                  <input type="text" value={inputs.ownerName} onChange={(e) => setInputs({ ...inputs, ownerName: e.target.value })} />
+                </div>
+              </div>
+            )}
+
+            {inputs.billType === 'Insurance' && (
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Policy Number</label>
+                  <input type="text" value={inputs.policyNumber} onChange={(e) => setInputs({ ...inputs, policyNumber: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>Insurance Company</label>
+                  <input type="text" value={inputs.insuranceCompany} onChange={(e) => setInputs({ ...inputs, insuranceCompany: e.target.value })} />
+                </div>
+              </div>
+            )}
+
+            {inputs.billType === 'School Fees' && (
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Student Name</label>
+                  <input type="text" value={inputs.studentName} onChange={(e) => setInputs({ ...inputs, studentName: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>School Name</label>
+                  <input type="text" value={inputs.schoolName} onChange={(e) => setInputs({ ...inputs, schoolName: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>Grade</label>
+                  <input type="text" value={inputs.grade} onChange={(e) => setInputs({ ...inputs, grade: e.target.value })} />
+                </div>
+              </div>
+            )}
+
+            {inputs.billType === 'Maintenance' && (
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Society Name</label>
+                  <input type="text" value={inputs.societyName} onChange={(e) => setInputs({ ...inputs, societyName: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>Wing</label>
+                  <input type="text" value={inputs.wing} onChange={(e) => setInputs({ ...inputs, wing: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>Flat Number</label>
+                  <input type="text" value={inputs.flatNumber} onChange={(e) => setInputs({ ...inputs, flatNumber: e.target.value })} />
+                </div>
+              </div>
+            )}
 
             <div className="form-actions">
               <button className="btn-success" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>

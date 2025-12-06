@@ -10,10 +10,23 @@ const defaultEntry = {
   mobile: '',
   carrier: '',
   simType: 'Prepaid',
+  planName: '',
+  planAmount: '',
+  address: '',
+  alternateNumber: '',
+  customerCareNo: '',
+  customerCareEmail: '',
+  billingCycle: '',
+  accountNo: '',
   email: '',
   provider: 'Gmail',
+  googleAccountEmail: '',
   recoveryEmail: '',
-  recoveryPhone: '',
+  recoveryNumber: '',
+  alternateEmails: '',
+  passkeysAndSecurityKey: '',
+  password: '',
+  purpose: '',
   twoFA: false,
   notes: '',
 };
@@ -216,6 +229,164 @@ const MobileEmailDetails = () => {
                     <option value="Enabled">Enabled</option>
                   </select>
                 </div>
+
+                {formData.type === 'Mobile' && (
+                  <>
+                    <div className="form-group">
+                      <label>Plan Name</label>
+                      <input
+                        type="text"
+                        value={formData.planName}
+                        onChange={(e) => setFormData({ ...formData, planName: e.target.value })}
+                        placeholder="Mobile plan name"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Plan Amount</label>
+                      <input
+                        type="text"
+                        value={formData.planAmount}
+                        onChange={(e) => setFormData({ ...formData, planAmount: e.target.value })}
+                        placeholder="Monthly/Annual plan amount"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Address</label>
+                      <input
+                        type="text"
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        placeholder="Registered address"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Alternate Number</label>
+                      <input
+                        type="text"
+                        value={formData.alternateNumber}
+                        onChange={(e) => setFormData({ ...formData, alternateNumber: e.target.value })}
+                        placeholder="Alternate contact number"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Customer Care No.</label>
+                      <input
+                        type="text"
+                        value={formData.customerCareNo}
+                        onChange={(e) => setFormData({ ...formData, customerCareNo: e.target.value })}
+                        placeholder="Customer service number"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Customer Care Email</label>
+                      <input
+                        type="email"
+                        value={formData.customerCareEmail}
+                        onChange={(e) => setFormData({ ...formData, customerCareEmail: e.target.value })}
+                        placeholder="Customer service email"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Billing Cycle</label>
+                      <input
+                        type="text"
+                        value={formData.billingCycle}
+                        onChange={(e) => setFormData({ ...formData, billingCycle: e.target.value })}
+                        placeholder="Monthly, Quarterly, Yearly"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Account No. / Customer No.</label>
+                      <input
+                        type="text"
+                        value={formData.accountNo}
+                        onChange={(e) => setFormData({ ...formData, accountNo: e.target.value })}
+                        placeholder="Account or customer number"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {formData.type === 'Email' && (
+                  <>
+                    <div className="form-group">
+                      <label>Google Account Email</label>
+                      <input
+                        type="email"
+                        value={formData.googleAccountEmail}
+                        onChange={(e) => setFormData({ ...formData, googleAccountEmail: e.target.value })}
+                        placeholder="Google account email address"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Recovery Email</label>
+                      <input
+                        type="email"
+                        value={formData.recoveryEmail}
+                        onChange={(e) => setFormData({ ...formData, recoveryEmail: e.target.value })}
+                        placeholder="Recovery email address"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Recovery Number</label>
+                      <input
+                        type="tel"
+                        value={formData.recoveryNumber}
+                        onChange={(e) => setFormData({ ...formData, recoveryNumber: e.target.value })}
+                        placeholder="Recovery phone number"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Alternate Emails</label>
+                      <input
+                        type="text"
+                        value={formData.alternateEmails}
+                        onChange={(e) => setFormData({ ...formData, alternateEmails: e.target.value })}
+                        placeholder="Alternate email addresses (comma separated)"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Passkeys and Security Key</label>
+                      <input
+                        type="text"
+                        value={formData.passkeysAndSecurityKey}
+                        onChange={(e) => setFormData({ ...formData, passkeysAndSecurityKey: e.target.value })}
+                        placeholder="Passkeys and security key information"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Password</label>
+                      <input
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        placeholder="Email password"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Purpose</label>
+                      <input
+                        type="text"
+                        value={formData.purpose}
+                        onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
+                        placeholder="Purpose of this email account"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="form-group">
                   <label>Notes</label>

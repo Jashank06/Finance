@@ -217,6 +217,25 @@
   overflow: hidden;
 }
 
+.table-container.weekly-grid {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.investments-table thead tr th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #f1f5f9;
+}
+
+.investments-table tbody tr td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #f8fafc;
+}
+
 .table-container h2 {
   font-size: 24px;
   font-weight: 700;
@@ -493,6 +512,55 @@
   display: flex;
   align-items: center;
   gap: 15px;
+  flex-wrap: wrap;
+}
+
+/* Project Filter Styles */
+.project-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.project-filter:hover {
+  border-color: #C084FC;
+  box-shadow: 0 2px 8px rgba(192, 132, 252, 0.1);
+}
+
+.project-filter label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.project-filter-select {
+  padding: 6px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  background: white;
+  transition: all 0.2s ease;
+  min-width: 150px;
+  cursor: pointer;
+}
+
+.project-filter-select:focus {
+  outline: none;
+  border-color: #C084FC;
+  box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.1);
+}
+
+.project-filter-select:hover {
+  border-color: #C084FC;
 }
 
 .view-toggle {

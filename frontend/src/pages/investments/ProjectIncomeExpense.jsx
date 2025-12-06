@@ -9,6 +9,7 @@ const ProjectIncomeExpense = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [selectedProject, setSelectedProject] = useState('all');
   const formRef = useRef(null);
   const [formData, setFormData] = useState({
     category: 'project-wise',
@@ -171,6 +172,53 @@ const ProjectIncomeExpense = () => {
     return Array.from(map.values());
   }, [entries]);
 
+  const uniqueProjects = useMemo(() => {
+    const projects = [...new Set(entries.map(e => e.name).filter(Boolean))];
+    return projects.sort();
+  }, [entries]);
+
+  const filteredEntries = useMemo(() => {
+    if (selectedProject === 'all') return entries;
+    return entries.filter(e => e.name === selectedProject);
+  }, [entries, selectedProject]);
+
+  const filteredTotals = useMemo(() => {
+    const income = filteredEntries.filter(e => e.type === 'Income').reduce((s, e) => s + (e.amount || 0), 0);
+    const expense = filteredEntries.filter(e => e.type === 'Expense').reduce((s, e) => s + (e.amount || 0), 0);
+    const net = income - expense;
+    const expensePercent = income > 0 ? ((expense / income) * 100).toFixed(2) : 0;
+    return { income, expense, net, expensePercent };
+  }, [filteredEntries]);
+
+  const filteredProjectAgg = useMemo(() => {
+    const map = new Map();
+    for (const e of filteredEntries) {
+      const key = e.name || 'Unnamed Project';
+      const prev = map.get(key) || { name: key, income: 0, expense: 0, net: 0, count: 0 };
+      if (e.type === 'Income') prev.income += e.amount || 0; else prev.expense += e.amount || 0;
+      prev.net = prev.income - prev.expense;
+      prev.count += 1;
+      map.set(key, prev);
+    }
+    return Array.from(map.values());
+  }, [filteredEntries]);
+
+  const filteredProviderAgg = useMemo(() => {
+    const map = new Map();
+    for (const e of filteredEntries) {
+      const key = e.provider || 'Unknown';
+      const prev = map.get(key) || { name: key, value: 0 };
+      prev.value += e.amount || 0;
+      map.set(key, prev);
+    }
+    return Array.from(map.values());
+  }, [filteredEntries]);
+
+  const filteredPieData = useMemo(() => ([
+    { name: 'Income', value: filteredTotals.income },
+    { name: 'Expense', value: filteredTotals.expense },
+  ]), [filteredTotals]);
+
   const providerAgg = useMemo(() => {
     const map = new Map();
     for (const e of entries) {
@@ -187,11 +235,33 @@ const ProjectIncomeExpense = () => {
     { name: 'Expense', value: totals.expense },
   ]), [totals]);
 
+  const handleProjectFilterChange = (project) => {
+    setSelectedProject(project);
+  };
+
   return (
     <div className="investment-container">
       <div className="investment-header">
         <h1>Project Wise Income / Expense</h1>
         <div className="header-actions">
+          {uniqueProjects.length > 0 && (
+            <div className="project-filter">
+              <label htmlFor="project-filter">Filter by Project:</label>
+              <select
+                id="project-filter"
+                value={selectedProject}
+                onChange={(e) => handleProjectFilterChange(e.target.value)}
+                className="project-filter-select"
+              >
+                <option value="all">All Projects</option>
+                {uniqueProjects.map(project => (
+                  <option key={project} value={project}>
+                    {project}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
             <FiPlus /> {showForm ? 'Cancel' : 'Add Record'}
           </button>
@@ -205,7 +275,7 @@ const ProjectIncomeExpense = () => {
           </div>
           <div className="stat-content">
             <p className="stat-label">Total Income</p>
-            <h3 className="stat-value">₹{totals.income.toLocaleString('en-IN')}</h3>
+            <h3 className="stat-value">₹{filteredTotals.income.toLocaleString('en-IN')}</h3>
           </div>
         </div>
 
@@ -215,7 +285,7 @@ const ProjectIncomeExpense = () => {
           </div>
           <div className="stat-content">
             <p className="stat-label">Total Expense</p>
-            <h3 className="stat-value">₹{totals.expense.toLocaleString('en-IN')}</h3>
+            <h3 className="stat-value">₹{filteredTotals.expense.toLocaleString('en-IN')}</h3>
           </div>
         </div>
 
@@ -225,7 +295,7 @@ const ProjectIncomeExpense = () => {
           </div>
           <div className="stat-content">
             <p className="stat-label">Net</p>
-            <h3 className="stat-value" style={{ color: totals.net >= 0 ? '#10B981' : '#EF4444' }}>₹{totals.net.toLocaleString('en-IN')}</h3>
+            <h3 className="stat-value" style={{ color: filteredTotals.net >= 0 ? '#10B981' : '#EF4444' }}>₹{filteredTotals.net.toLocaleString('en-IN')}</h3>
           </div>
         </div>
 
@@ -235,16 +305,16 @@ const ProjectIncomeExpense = () => {
           </div>
           <div className="stat-content">
             <p className="stat-label">Projects</p>
-            <h3 className="stat-value">{projectAgg.length}</h3>
+            <h3 className="stat-value">{filteredProjectAgg.length}</h3>
           </div>
         </div>
       </div>
 
-      {entries.length > 0 && (
+      {filteredEntries.length > 0 && (
         <div className="charts-section">
           <div className="charts-header">
             <h2>Project Analytics</h2>
-            <p>Income vs Expense and project-wise distribution</p>
+            <p>{selectedProject === 'all' ? 'Income vs Expense and project-wise distribution' : `Analytics for: ${selectedProject}`}</p>
           </div>
 
           <div className="charts-grid">
@@ -259,8 +329,8 @@ const ProjectIncomeExpense = () => {
               <div className="chart-content">
                 <ResponsiveContainer width="100%" height={320}>
                   <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
-                      {pieData.map((entry, idx) => (
+                    <Pie data={filteredPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
+                      {filteredPieData.map((entry, idx) => (
                         <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} stroke="#fff" strokeWidth={2} />
                       ))}
                     </Pie>
@@ -281,7 +351,7 @@ const ProjectIncomeExpense = () => {
               </div>
               <div className="chart-content">
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={projectAgg} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <BarChart data={filteredProjectAgg} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                     <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
                     <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value/1000).toFixed(0)}K`} />
@@ -304,7 +374,7 @@ const ProjectIncomeExpense = () => {
               </div>
               <div className="chart-content">
                 <ResponsiveContainer width="100%" height={280}>
-                  <AreaChart data={providerAgg} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <AreaChart data={filteredProviderAgg} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <defs>
                       <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
@@ -324,7 +394,7 @@ const ProjectIncomeExpense = () => {
         </div>
       )}
 
-      {entries.length > 0 && (
+      {filteredEntries.length > 0 && (
         <div className="table-container">
           <h2>Entries</h2>
           <table className="investments-table">
@@ -341,7 +411,7 @@ const ProjectIncomeExpense = () => {
               </tr>
             </thead>
             <tbody>
-              {entries.map((e) => (
+              {filteredEntries.map((e) => (
                 <tr key={e._id}>
                   <td>
                     <span className="investment-type-badge" style={{ 
@@ -370,6 +440,15 @@ const ProjectIncomeExpense = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {filteredEntries.length === 0 && entries.length > 0 && (
+        <div className="empty-state">
+          <p>No entries found for the selected project: "{selectedProject}"</p>
+          <button onClick={() => setSelectedProject('all')} className="btn-secondary">
+            Show All Projects
+          </button>
         </div>
       )}
 

@@ -15,6 +15,7 @@ const defaultEntry = {
   otpMethod: 'SMS',
   securityQuestion: '',
   securityAnswer: '',
+  additional: '',
   notes: '',
 };
 
@@ -277,6 +278,16 @@ const OnlineAccessDetails = () => {
                     type="text"
                     value={formData.securityAnswer}
                     onChange={(e) => setFormData({ ...formData, securityAnswer: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Additional</label>
+                  <input
+                    type="text"
+                    value={formData.additional}
+                    onChange={(e) => setFormData({ ...formData, additional: e.target.value })}
+                    placeholder="Any additional details"
                   />
                 </div>
 

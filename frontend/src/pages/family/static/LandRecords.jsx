@@ -15,6 +15,12 @@ const defaultEntry = {
     state: '',
     pincode: ''
   },
+  cropName: '',
+  khataNumber: '',
+  projectAffected: '',
+  online7_12: '',
+  form8A: '',
+  map: '',
   ownershipType: 'Individual',
   owners: [{
     name: '',
@@ -36,9 +42,12 @@ const defaultEntry = {
   documents: {
     titleDeed: '',
     saleDeed: '',
+    originalSaleDeed: '',
     mutationCertificate: '',
     landRecords: '',
-    taxReceipts: ''
+    taxReceipts: '',
+    loanMortgage: '',
+    electricMeter: ''
   },
   legalStatus: 'Clear',
   disputes: '',
@@ -46,17 +55,150 @@ const defaultEntry = {
   notes: ''
 };
 
+const defaultPlotEntry = {
+  propertyType: 'Residential Plot',
+  surveyNumber: '',
+  area: '',
+  areaUnit: 'Sq Yards',
+  location: {
+    village: '',
+    tehsil: '',
+    district: '',
+    state: '',
+    pincode: ''
+  },
+  cropName: '',
+  khataNumber: '',
+  projectAffected: '',
+  online7_12: '',
+  form8A: '',
+  map: '',
+  ownershipType: 'Individual',
+  owners: [{
+    name: '',
+    sharePercentage: '',
+    relation: ''
+  }],
+  purchaseDate: '',
+  purchasePrice: '',
+  currentMarketValue: '',
+  landUse: 'Residential',
+  irrigationSource: '',
+  soilType: '',
+  boundaries: {
+    north: '',
+    south: '',
+    east: '',
+    west: ''
+  },
+  documents: {
+    titleDeed: '',
+    saleDeed: '',
+    originalSaleDeed: '',
+    mutationCertificate: '',
+    landRecords: '',
+    taxReceipts: '',
+    loanMortgage: '',
+    electricMeter: ''
+  },
+  legalStatus: 'Clear',
+  disputes: '',
+  developmentStatus: 'Undeveloped',
+  notes: ''
+};
+
+const defaultFlatEntry = {
+  propertyType: 'Apartment/Flat',
+  surveyNumber: '',
+  area: '',
+  areaUnit: 'Sq Feet',
+  floorNumber: '',
+  totalFloors: '',
+  wing: '',
+  societyName: '',
+  location: {
+    village: '',
+    tehsil: '',
+    district: '',
+    state: '',
+    pincode: ''
+  },
+  cropName: '',
+  khataNumber: '',
+  projectAffected: '',
+  online7_12: '',
+  form8A: '',
+  map: '',
+  ownershipType: 'Individual',
+  owners: [{
+    name: '',
+    sharePercentage: '',
+    relation: ''
+  }],
+  purchaseDate: '',
+  purchasePrice: '',
+  currentMarketValue: '',
+  landUse: 'Residential',
+  irrigationSource: '',
+  soilType: '',
+  boundaries: {
+    north: '',
+    south: '',
+    east: '',
+    west: ''
+  },
+  documents: {
+    titleDeed: '',
+    saleDeed: '',
+    mutationCertificate: '',
+    landRecords: '',
+    taxReceipts: ''
+  },
+  legalStatus: 'Clear',
+  disputes: '',
+  developmentStatus: 'Constructed',
+  notes: ''
+};
+
 const LandRecords = () => {
   const [entries, setEntries] = useState([]);
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(false); // false, 'land', 'plot', 'flat'
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(defaultEntry);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingId, setEditingId] = useState(null);
 
+  const getFormTitle = () => {
+    if (editingId) return 'Edit Property Record';
+    switch(editMode) {
+      case 'land': return 'Add Land Record';
+      case 'plot': return 'Add Plot Record';
+      case 'flat': return 'Add Flat Record';
+      default: return 'Add Property Record';
+    }
+  };
+
   useEffect(() => {
     fetchEntries();
   }, []);
+
+  useEffect(() => {
+    if (editMode) {
+      switch(editMode) {
+        case 'land':
+          setFormData(defaultEntry);
+          break;
+        case 'plot':
+          setFormData(defaultPlotEntry);
+          break;
+        case 'flat':
+          setFormData(defaultFlatEntry);
+          break;
+        default:
+          setFormData(defaultEntry);
+      }
+    }
+  }, [editMode]);
 
   const fetchEntries = async () => {
     try {
@@ -94,7 +236,8 @@ const LandRecords = () => {
     setFormData({ ...item });
     setEditingIndex(index);
     setEditingId(item._id);
-    setEditMode(true);
+    setEditMode(item.propertyType?.toLowerCase().includes('flat') ? 'flat' : 
+             item.propertyType?.toLowerCase().includes('plot') ? 'plot' : 'land');
   };
 
   const handleDelete = async (index) => {
@@ -181,17 +324,33 @@ const LandRecords = () => {
                 </div>
                 <h3>No Land Records</h3>
                 <p>Start adding your land and property records</p>
-                <button className="btn-primary" onClick={() => setEditMode(true)}>
-                  <FiPlus /> Add First Land Record
-                </button>
+                <div className="empty-actions">
+                  <button className="btn-primary" onClick={() => setEditMode('land')}>
+                    <FiPlus /> Add Land Record
+                  </button>
+                  <button className="btn-primary" onClick={() => setEditMode('plot')}>
+                    <FiPlus /> Add Plot
+                  </button>
+                  <button className="btn-primary" onClick={() => setEditMode('flat')}>
+                    <FiPlus /> Add Flat
+                  </button>
+                </div>
               </div>
             ) : (
               <>
                 <div className="list-header">
                   <h3>Land Records ({entries.length})</h3>
-                  <button className="btn-primary" onClick={() => setEditMode(true)}>
-                    <FiPlus /> Add Land Record
-                  </button>
+                  <div className="header-buttons">
+                    <button className="btn-primary" onClick={() => setEditMode('land')}>
+                      <FiPlus /> Add Land Record
+                    </button>
+                    <button className="btn-primary" onClick={() => setEditMode('plot')}>
+                      <FiPlus /> Add Plot
+                    </button>
+                    <button className="btn-primary" onClick={() => setEditMode('flat')}>
+                      <FiPlus /> Add Flat
+                    </button>
+                  </div>
                 </div>
                 <div className="table-container">
                   <table className="companies-table">
@@ -263,7 +422,7 @@ const LandRecords = () => {
           // Form View
           <div className="static-form">
             <div className="form-header">
-              <h3>{editingId ? 'Edit Land Record' : 'Add Land Record'}</h3>
+              <h3>{getFormTitle()}</h3>
               <button className="btn-secondary" onClick={() => { setEditMode(false); resetForm(); }}>
                 <FiPlus /> Cancel
               </button>
@@ -281,19 +440,19 @@ const LandRecords = () => {
                       required
                     >
                       <option value="Agricultural">Agricultural</option>
-                      <option value="Residential">Residential</option>
+                      <option value="Residential Plot">Residential Plot</option>
+                      <option value="Apartment/Flat">Apartment/Flat</option>
                       <option value="Commercial">Commercial</option>
                       <option value="Industrial">Industrial</option>
-                      <option value="Mixed Use">Mixed Use</option>
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>Survey Number</label>
+                    <label>{editMode === 'flat' ? 'Flat Number' : 'Survey Number'}</label>
                     <input
                       type="text"
                       value={formData.surveyNumber}
                       onChange={(e) => handleInputChange('surveyNumber', e.target.value)}
-                      placeholder="e.g., 123/456"
+                      placeholder={editMode === 'flat' ? 'e.g., A-101' : 'e.g., 123/456'}
                       required
                     />
                   </div>
@@ -314,13 +473,68 @@ const LandRecords = () => {
                       onChange={(e) => handleInputChange('areaUnit', e.target.value)}
                       required
                     >
-                      <option value="Acres">Acres</option>
-                      <option value="Hectares">Hectares</option>
-                      <option value="Sq. Feet">Sq. Feet</option>
-                      <option value="Sq. Meters">Sq. Meters</option>
-                      <option value="Bigha">Bigha</option>
+                      {editMode === 'land' && (
+                        <>
+                          <option value="Acres">Acres</option>
+                          <option value="Hectares">Hectares</option>
+                          <option value="Bigha">Bigha</option>
+                        </>
+                      )}
+                      {editMode === 'plot' && (
+                        <>
+                          <option value="Sq Yards">Sq Yards</option>
+                          <option value="Sq. Feet">Sq. Feet</option>
+                          <option value="Sq. Meters">Sq. Meters</option>
+                        </>
+                      )}
+                      {editMode === 'flat' && (
+                        <>
+                          <option value="Sq Feet">Sq Feet</option>
+                          <option value="Sq. Meters">Sq. Meters</option>
+                        </>
+                      )}
                     </select>
                   </div>
+                  {editMode === 'flat' && (
+                    <>
+                      <div className="form-group">
+                        <label>Floor Number</label>
+                        <input
+                          type="number"
+                          value={formData.floorNumber || ''}
+                          onChange={(e) => handleInputChange('floorNumber', e.target.value)}
+                          placeholder="e.g., 3"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Total Floors</label>
+                        <input
+                          type="number"
+                          value={formData.totalFloors || ''}
+                          onChange={(e) => handleInputChange('totalFloors', e.target.value)}
+                          placeholder="e.g., 10"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Wing/Block</label>
+                        <input
+                          type="text"
+                          value={formData.wing || ''}
+                          onChange={(e) => handleInputChange('wing', e.target.value)}
+                          placeholder="e.g., A"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Society Name</label>
+                        <input
+                          type="text"
+                          value={formData.societyName || ''}
+                          onChange={(e) => handleInputChange('societyName', e.target.value)}
+                          placeholder="e.g., XYZ Society"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -474,12 +688,41 @@ const LandRecords = () => {
                       </div>
                     </div>
                   ))}
+
                 </div>
               </div>
 
+              {editMode === 'land' && (
               <div className="form-section">
                 <h4>Land Details</h4>
                 <div className="form-grid">
+                  <div className="form-group">
+                    <label>Crop Name</label>
+                    <input
+                      type="text"
+                      value={formData.cropName}
+                      onChange={(e) => handleInputChange('cropName', e.target.value)}
+                      placeholder="e.g., Wheat, Rice, etc."
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Khata Number</label>
+                    <input
+                      type="text"
+                      value={formData.khataNumber}
+                      onChange={(e) => handleInputChange('khataNumber', e.target.value)}
+                      placeholder="e.g., 123/456"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Project Affected</label>
+                    <input
+                      type="text"
+                      value={formData.projectAffected}
+                      onChange={(e) => handleInputChange('projectAffected', e.target.value)}
+                      placeholder="e.g., Irrigation Dept, Highway Project"
+                    />
+                  </div>
                   <div className="form-group">
                     <label>Land Use</label>
                     <select
@@ -516,12 +759,52 @@ const LandRecords = () => {
                     >
                       <option value="Black Soil">Black Soil</option>
                       <option value="Red Soil">Red Soil</option>
-                      <option value="Alluvial">Alluvial</option>
-                      <option value="Clay">Clay</option>
-                      <option value="Sandy">Sandy</option>
-                      <option value="Loamy">Loamy</option>
+                      <option value="Clay Soil">Clay Soil</option>
+                      <option value="Sandy Soil">Sandy Soil</option>
+                      <option value="Loamy Soil">Loamy Soil</option>
+                      <option value="Alluvial Soil">Alluvial Soil</option>
                     </select>
                   </div>
+                </div>
+              </div>
+            )}
+
+            <div className="form-section">
+              <h4>Land Records & Maps</h4>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Online 7/12</label>
+                  <input
+                    type="text"
+                    value={formData.online7_12}
+                    onChange={(e) => handleInputChange('online7_12', e.target.value)}
+                    placeholder="7/12 extract details or URL"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>8-A Form</label>
+                  <input
+                    type="text"
+                    value={formData.form8A}
+                    onChange={(e) => handleInputChange('form8A', e.target.value)}
+                    placeholder="8-A form details"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Map</label>
+                  <input
+                    type="text"
+                    value={formData.map}
+                    onChange={(e) => handleInputChange('map', e.target.value)}
+                    placeholder="Map reference or URL"
+                  />
+                </div>
+              </div>
+            </div>
+
+              <div className="form-section">
+                <h4>Development Status</h4>
+                <div className="form-grid">
                   <div className="form-group">
                     <label>Development Status</label>
                     <select
@@ -592,6 +875,78 @@ const LandRecords = () => {
                       <option value="Disputed">Disputed</option>
                       <option value="Mortgaged">Mortgaged</option>
                     </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Title Deed</label>
+                    <input
+                      type="text"
+                      value={formData.documents.titleDeed}
+                      onChange={(e) => handleInputChange('documents', { ...formData.documents, titleDeed: e.target.value })}
+                      placeholder="Title deed details"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Sale Deed</label>
+                    <input
+                      type="text"
+                      value={formData.documents.saleDeed}
+                      onChange={(e) => handleInputChange('documents', { ...formData.documents, saleDeed: e.target.value })}
+                      placeholder="Sale deed details"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Original Sale Deed</label>
+                    <input
+                      type="text"
+                      value={formData.documents.originalSaleDeed}
+                      onChange={(e) => handleInputChange('documents', { ...formData.documents, originalSaleDeed: e.target.value })}
+                      placeholder="Original sale deed details"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Mutation Certificate</label>
+                    <input
+                      type="text"
+                      value={formData.documents.mutationCertificate}
+                      onChange={(e) => handleInputChange('documents', { ...formData.documents, mutationCertificate: e.target.value })}
+                      placeholder="Mutation certificate details"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Land Records</label>
+                    <input
+                      type="text"
+                      value={formData.documents.landRecords}
+                      onChange={(e) => handleInputChange('documents', { ...formData.documents, landRecords: e.target.value })}
+                      placeholder="Land record details"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Tax Receipts</label>
+                    <input
+                      type="text"
+                      value={formData.documents.taxReceipts}
+                      onChange={(e) => handleInputChange('documents', { ...formData.documents, taxReceipts: e.target.value })}
+                      placeholder="Tax receipt details"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Loan / Mortgage</label>
+                    <input
+                      type="text"
+                      value={formData.documents.loanMortgage}
+                      onChange={(e) => handleInputChange('documents', { ...formData.documents, loanMortgage: e.target.value })}
+                      placeholder="Loan or mortgage details"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Electric Meter</label>
+                    <input
+                      type="text"
+                      value={formData.documents.electricMeter}
+                      onChange={(e) => handleInputChange('documents', { ...formData.documents, electricMeter: e.target.value })}
+                      placeholder="Electric meter details"
+                    />
                   </div>
                   <div className="form-group full-width">
                     <label>Legal Disputes (if any)</label>

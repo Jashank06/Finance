@@ -14,6 +14,24 @@ const defaultEntry = {
   vendorName: '',
   serialNumber: '',
   warrantyExpiry: '',
+  companyName: '',
+  modelName: '',
+  totalValue: '',
+  vendorContactNumber: '',
+  vendorContactEmail: '',
+  address: '',
+  serviceCenterNumber: '',
+  customerCareNumber: '',
+  customerCareEmail: '',
+  // Service Provider fields
+  serviceProviderName: '',
+  serviceName: '',
+  servicePersonName: '',
+  serviceMobileNumber: '',
+  serviceCompanyName: '',
+  serviceAddress: '',
+  serviceEmailId: '',
+  serviceWebsite: '',
   notes: '',
 };
 
@@ -173,22 +191,107 @@ const InventoryRecord = () => {
                   <label>Vendor Name</label>
                   <input type="text" value={formData.vendorName} onChange={(e) => setFormData({ ...formData, vendorName: e.target.value })} />
                 </div>
+
                 <div className="form-group">
-                  <label>Warranty Period</label>
-                  <input type="text" value={formData.warrantyPeriod} onChange={(e) => setFormData({ ...formData, warrantyPeriod: e.target.value })} />
+                  <label>Name of Company</label>
+                  <input type="text" value={formData.companyName} onChange={(e) => setFormData({ ...formData, companyName: e.target.value })} placeholder="e.g., Samsung, LG, Apple" />
                 </div>
+
+                <div className="form-group">
+                  <label>Model Name</label>
+                  <input type="text" value={formData.modelName} onChange={(e) => setFormData({ ...formData, modelName: e.target.value })} placeholder="e.g., Galaxy S23, iPhone 14" />
+                </div>
+
+                <div className="form-group">
+                  <label>Total Value</label>
+                  <input type="number" value={formData.totalValue} onChange={(e) => setFormData({ ...formData, totalValue: e.target.value })} placeholder="Total current value" />
+                </div>
+
+                <div className="form-group">
+                  <label>Vendor Contact Number</label>
+                  <input type="tel" value={formData.vendorContactNumber} onChange={(e) => setFormData({ ...formData, vendorContactNumber: e.target.value })} placeholder="Vendor phone number" />
+                </div>
+
+                <div className="form-group">
+                  <label>Vendor Contact Email</label>
+                  <input type="email" value={formData.vendorContactEmail} onChange={(e) => setFormData({ ...formData, vendorContactEmail: e.target.value })} placeholder="Vendor email address" />
+                </div>
+
+                <div className="form-group">
+                  <label>Address</label>
+                  <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Vendor or service address" />
+                </div>
+
+                <div className="form-group">
+                  <label>Service Center Number</label>
+                  <input type="tel" value={formData.serviceCenterNumber} onChange={(e) => setFormData({ ...formData, serviceCenterNumber: e.target.value })} placeholder="Authorized service center" />
+                </div>
+
+                <div className="form-group">
+                  <label>Customer Care Number</label>
+                  <input type="tel" value={formData.customerCareNumber} onChange={(e) => setFormData({ ...formData, customerCareNumber: e.target.value })} placeholder="Company customer care" />
+                </div>
+
+                <div className="form-group">
+                  <label>Customer Care Email Id</label>
+                  <input type="email" value={formData.customerCareEmail} onChange={(e) => setFormData({ ...formData, customerCareEmail: e.target.value })} placeholder="Customer support email" />
+                </div>
+
                 <div className="form-group">
                   <label>Serial Number</label>
                   <input type="text" value={formData.serialNumber} onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })} />
                 </div>
+
                 <div className="form-group">
                   <label>Warranty Expiry</label>
                   <input type="date" value={formData.warrantyExpiry} onChange={(e) => setFormData({ ...formData, warrantyExpiry: e.target.value })} />
                 </div>
-                <div className="form-group full-width">
-                  <label>Notes</label>
-                  <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} />
+              </div>
+
+              {/* Service Provider Section */}
+              <div className="form-section" style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
+                <h4 style={{ marginBottom: '15px', color: '#475569' }}>Service Provider Information</h4>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Name of Service</label>
+                    <input type="text" value={formData.serviceName} onChange={(e) => setFormData({ ...formData, serviceName: e.target.value })} placeholder="e.g., Installation, Repair, Maintenance" />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Name of Person</label>
+                    <input type="text" value={formData.servicePersonName} onChange={(e) => setFormData({ ...formData, servicePersonName: e.target.value })} placeholder="Service provider contact person" />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Mobile Number</label>
+                    <input type="tel" value={formData.serviceMobileNumber} onChange={(e) => setFormData({ ...formData, serviceMobileNumber: e.target.value })} placeholder="Service provider mobile" />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Company Name</label>
+                    <input type="text" value={formData.serviceCompanyName} onChange={(e) => setFormData({ ...formData, serviceCompanyName: e.target.value })} placeholder="Service provider company" />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Address</label>
+                    <input type="text" value={formData.serviceAddress} onChange={(e) => setFormData({ ...formData, serviceAddress: e.target.value })} placeholder="Service provider address" />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Email Id</label>
+                    <input type="email" value={formData.serviceEmailId} onChange={(e) => setFormData({ ...formData, serviceEmailId: e.target.value })} placeholder="Service provider email" />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Website</label>
+                    <input type="url" value={formData.serviceWebsite} onChange={(e) => setFormData({ ...formData, serviceWebsite: e.target.value })} placeholder="Service provider website" />
+                  </div>
                 </div>
+              </div>
+
+              <div className="form-group full-width">
+                <label>Notes</label>
+                <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} />
               </div>
 
               <div className="header-actions">

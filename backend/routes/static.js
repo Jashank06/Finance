@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { BasicDetailsController, CompanyRecordsController, MobileEmailDetailsController, PersonalRecordsController, DigitalAssetsController, CustomerSupportController, FamilyProfileController, LandRecordsController, MembershipListController } = require('../controllers/staticController');
+const { BasicDetailsController, CompanyRecordsController, MobileEmailDetailsController, PersonalRecordsController, OnlineAccessDetailsController, InventoryRecordController, ContactManagementController, DigitalAssetsController, CustomerSupportController, FamilyProfileController, LandRecordsController, MembershipListController } = require('../controllers/staticController');
 const auth = require('../middleware/auth');
 
 // Middleware to protect all routes
@@ -33,6 +33,27 @@ router.get('/personal-records/:id', PersonalRecordsController.getOne);
 router.post('/personal-records', PersonalRecordsController.create);
 router.put('/personal-records/:id', PersonalRecordsController.update);
 router.delete('/personal-records/:id', PersonalRecordsController.delete);
+
+// Online Access Details routes
+router.get('/online-access-details', OnlineAccessDetailsController.getAll);
+router.get('/online-access-details/:id', OnlineAccessDetailsController.getOne);
+router.post('/online-access-details', OnlineAccessDetailsController.create);
+router.put('/online-access-details/:id', OnlineAccessDetailsController.update);
+router.delete('/online-access-details/:id', OnlineAccessDetailsController.delete);
+
+// Inventory Record routes
+router.get('/inventory-record', InventoryRecordController.getAll);
+router.get('/inventory-record/:id', InventoryRecordController.getOne);
+router.post('/inventory-record', InventoryRecordController.create);
+router.put('/inventory-record/:id', InventoryRecordController.update);
+router.delete('/inventory-record/:id', InventoryRecordController.delete);
+
+// Contact Management routes
+router.get('/contact-management', ContactManagementController.getAll);
+router.get('/contact-management/:id', ContactManagementController.getOne);
+router.post('/contact-management', ContactManagementController.create);
+router.put('/contact-management/:id', ContactManagementController.update);
+router.delete('/contact-management/:id', ContactManagementController.delete);
 
 // Digital Assets routes
 router.get('/digital-assets', DigitalAssetsController.getAll);

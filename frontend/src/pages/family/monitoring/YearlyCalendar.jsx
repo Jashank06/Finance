@@ -11,7 +11,7 @@ const YearlyCalendar = () => {
   const [categoryMix, setCategoryMix] = useState([]);
   const [calendar, setCalendar] = useState([]);
   const [summary, setSummary] = useState({ year: new Date().getFullYear(), totalEvents: 0, totalBillsAmount: 0, busiestMonth: '' });
-  const [filters, setFilters] = useState({ year: new Date().getFullYear(), categories: ['daily-bill-checklist', 'daily-telephone-conversation'] });
+  const [filters, setFilters] = useState({ year: new Date().getFullYear(), categories: ['daily-bill-checklist', 'daily-telephone-conversation', 'daily-loan-ledger'] });
   const [showBillForm, setShowBillForm] = useState(false);
   const [showCallForm, setShowCallForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -125,6 +125,9 @@ const YearlyCalendar = () => {
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <input type="checkbox" checked={filters.categories.includes('daily-telephone-conversation')} onChange={() => toggleCategory('daily-telephone-conversation')} /> Calls
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input type="checkbox" checked={filters.categories.includes('daily-loan-ledger')} onChange={() => toggleCategory('daily-loan-ledger')} /> Loans
               </label>
             </div>
           </div>
@@ -314,6 +317,77 @@ const YearlyCalendar = () => {
         </div>
       )}
 
+      
+
+      <div className="investments-table-card">
+        <div className="table-header">
+          <h2>Calendar Grid</h2>
+        </div>
+        <div className="table-container" style={{ overflowX: 'auto', paddingBottom: 8 }}>
+          <table className="investments-table" style={{ width: 'max-content' }}>
+            <thead>
+              <tr>
+                <th style={{ minWidth: 140 }}>Month</th>
+                {Array.from({ length: 31 }, (_, i) => (
+                  <th key={`dhead-${i+1}`} style={{ minWidth: 60 }}>{i + 1}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {calendar.map((m, idx) => (
+                <tr key={idx}>
+                  <td style={{ fontWeight: 600 }}>{m.name}</td>
+                  {Array.from({ length: 31 }, (_, i) => {
+                    const dayKey = String(i + 1).padStart(2, '0');
+                    const items = m.days[dayKey] || [];
+                    return (
+                      <td key={`cell-${idx}-${i}`} style={{ verticalAlign: 'top', padding: 6, background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
+                        {items.length === 0 ? '' : items.slice(0, 3).map((ev, j) => (
+                          <div key={`ev-${j}`} style={{
+                            display: 'inline-block',
+                            marginRight: 6,
+                            marginBottom: 4,
+                            padding: '2px 6px',
+                            borderRadius: 8,
+                            fontSize: 11,
+                            background: (
+                              ev.label === 'birthday' ? 'rgba(239, 68, 68, 0.15)' :
+                              ev.label === 'anniversary' ? 'rgba(139, 92, 246, 0.15)' :
+                              ev.label === 'policy-renewal' ? 'rgba(245, 158, 11, 0.15)' :
+                              ev.label === 'emi' ? 'rgba(16, 185, 129, 0.15)' :
+                              ev.category.includes('bill') ? 'rgba(245, 158, 11, 0.15)' : 'rgba(99, 102, 241, 0.15)'
+                            ),
+                            color: (
+                              ev.label === 'birthday' ? '#DC2626' :
+                              ev.label === 'anniversary' ? '#7C3AED' :
+                              ev.label === 'policy-renewal' ? '#B45309' :
+                              ev.label === 'emi' ? '#0F766E' :
+                              ev.category.includes('bill') ? '#B45309' : '#3730A3'
+                            ),
+                            border: '1px dashed #e5e7eb'
+                          }}>
+                            {(
+                              ev.label === 'birthday' ? 'Birthday' :
+                              ev.label === 'anniversary' ? 'Anniversary' :
+                              ev.label === 'policy-renewal' ? 'Policy Renewal' :
+                              ev.label === 'emi' ? 'EMI' :
+                              (ev.category.includes('bill') ? 'Bill' : 'Call')
+                            )}: {ev.title}
+                          </div>
+                        ))}
+                        {items.length > 3 ? (
+                          <div style={{ fontSize: 11, color: '#64748b' }}>+{items.length - 3} more</div>
+                        ) : ''}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div className="charts-section">
         <div className="charts-header">
           <h2>Monthly Overview</h2>
@@ -383,47 +457,6 @@ const YearlyCalendar = () => {
               </ResponsiveContainer>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="investments-table-card">
-        <div className="table-header">
-          <h2>Calendar Grid</h2>
-        </div>
-        <div className="table-container">
-          <table className="investments-table">
-            <thead>
-              <tr>
-                <th>Month</th>
-                <th>Days</th>
-                <th>Count</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {calendar.map((m, idx) => (
-                <tr key={idx}>
-                  <td>{m.name}</td>
-                  <td>
-                    {Object.keys(m.days).length === 0 ? '-' : (
-                      Object.keys(m.days).sort((a,b) => Number(a) - Number(b)).map((day) => (
-                        <div key={day} style={{ marginBottom: 6 }}>
-                          <strong style={{ marginRight: 8 }}>{day}</strong>
-                          {m.days[day].map((ev, i) => (
-                            <span key={i} style={{ marginRight: 10, color: '#64748b' }}>
-                              [{ev.category.includes('bill') ? 'Bill' : 'Call'}] {ev.title} {ev.subtitle ? `- ${ev.subtitle}` : ''}
-                            </span>
-                          ))}
-                        </div>
-                      ))
-                    )}
-                  </td>
-                  <td>{m.count}</td>
-                  <td>₹{Math.round(m.amount).toLocaleString('en-IN')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

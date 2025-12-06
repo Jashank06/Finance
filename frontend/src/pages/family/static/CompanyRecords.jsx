@@ -160,7 +160,18 @@ const CompanyRecords = () => {
   const addDirector = () => {
     setFormData(prev => ({
       ...prev,
-      directors: [...prev.directors, { name: '', din: '', appointmentDate: '' }]
+      directors: [...prev.directors, { 
+        name: '', 
+        din: '', 
+        appointmentDate: '',
+        mcaMobileNumber: '',
+        mcaEmailId: '',
+        gstMobileNumber: '',
+        gstEmailId: '',
+        bankMobileNumber: '',
+        bankEmailId: '',
+        additional: ''
+      }]
     }));
   };
 
@@ -216,16 +227,17 @@ const CompanyRecords = () => {
       let response;
       if (editingCompany) {
         // Update existing company
-        response = await staticAPI.updateCompanyRecord(editingCompany.id, formData);
+        const companyId = editingCompany._id || editingCompany.id;
+        response = await staticAPI.updateCompanyRecord(companyId, formData);
         setCompanies(prev => prev.map(company => 
-          company.id === editingCompany.id 
-            ? { ...formData, id: editingCompany.id }
+          (company._id || company.id) === companyId 
+            ? { ...formData, _id: companyId }
             : company
         ));
       } else {
         // Add new company
         response = await staticAPI.createCompanyRecord(formData);
-        const newCompany = { ...formData, id: response.data?.id || Date.now().toString() };
+        const newCompany = { ...formData, _id: response.data?._id || response.data?.id };
         setCompanies(prev => [...prev, newCompany]);
       }
       
@@ -252,7 +264,7 @@ const CompanyRecords = () => {
   const handleDelete = async (companyId) => {
     try {
       await staticAPI.deleteCompanyRecord(companyId);
-      setCompanies(prev => prev.filter(company => company.id !== companyId));
+      setCompanies(prev => prev.filter(company => (company._id || company.id) !== companyId));
     } catch (error) {
       console.error('Error deleting company:', error);
       alert('Failed to delete company record. Please try again.');
@@ -391,7 +403,7 @@ const CompanyRecords = () => {
                   </thead>
                   <tbody>
                     {companies.map(company => (
-                      <tr key={company.id}>
+                      <tr key={company._id || company.id}>
                         <td className="company-name">{company.companyName}</td>
                         <td>{company.companyType}</td>
                         <td>{company.industry}</td>
@@ -402,7 +414,7 @@ const CompanyRecords = () => {
                           <button className="btn-edit" onClick={() => handleEdit(company)}>
                             <FiEdit2 />
                           </button>
-                          <button className="btn-remove" onClick={() => handleDelete(company.id)}>
+                          <button className="btn-remove" onClick={() => handleDelete(company._id || company.id)}>
                             <FiX />
                           </button>
                         </td>
@@ -685,6 +697,62 @@ const CompanyRecords = () => {
                           type="date"
                           value={director.appointmentDate}
                           onChange={(e) => updateDirector(index, 'appointmentDate', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>MCA Mobile Number</label>
+                        <input
+                          type="tel"
+                          value={director.mcaMobileNumber}
+                          onChange={(e) => updateDirector(index, 'mcaMobileNumber', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>MCA Email Id</label>
+                        <input
+                          type="email"
+                          value={director.mcaEmailId}
+                          onChange={(e) => updateDirector(index, 'mcaEmailId', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>GST Mobile Number</label>
+                        <input
+                          type="tel"
+                          value={director.gstMobileNumber}
+                          onChange={(e) => updateDirector(index, 'gstMobileNumber', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>GST Email Id</label>
+                        <input
+                          type="email"
+                          value={director.gstEmailId}
+                          onChange={(e) => updateDirector(index, 'gstEmailId', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Bank Mobile Number</label>
+                        <input
+                          type="tel"
+                          value={director.bankMobileNumber}
+                          onChange={(e) => updateDirector(index, 'bankMobileNumber', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Bank Email Id</label>
+                        <input
+                          type="email"
+                          value={director.bankEmailId}
+                          onChange={(e) => updateDirector(index, 'bankEmailId', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Additional</label>
+                        <input
+                          type="text"
+                          value={director.additional}
+                          onChange={(e) => updateDirector(index, 'additional', e.target.value)}
                         />
                       </div>
                       <div className="form-group">

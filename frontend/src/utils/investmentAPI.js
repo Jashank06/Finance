@@ -8,6 +8,8 @@ export const investmentAPI = {
   
   getOne: (id) => api.get(`/investments/${id}`),
   
+  getById: (id) => api.get(`/investments/${id}`),
+  
   create: (data) => api.post('/investments', data),
   
   update: (id, data) => api.put(`/investments/${id}`, data),
@@ -15,6 +17,12 @@ export const investmentAPI = {
   delete: (id) => api.delete(`/investments/${id}`),
   
   getStats: () => api.get('/investments/stats/summary'),
+  
+  // Loan-specific methods
+  getLoans: () => api.get('/investments/loans/list'),
+  
+  updatePaymentStatus: (loanId, paymentNumber, data) => 
+    api.patch(`/investments/${loanId}/payment/${paymentNumber}`, data),
   getBillDatesAnalytics: (params = {}) => {
     const year = params.year ? `year=${params.year}` : '';
     const horizon = params.horizonDays ? `horizonDays=${params.horizonDays}` : '';

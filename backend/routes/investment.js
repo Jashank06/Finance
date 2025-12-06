@@ -1,6 +1,10 @@
 const express = require('express');
 const Investment = require('../models/Investment');
 const authMiddleware = require('../middleware/auth');
+const { BasicDetails } = require('../controllers/staticController');
+const CalendarEvent = require('../models/monitoring/CalendarEvent');
+const Reminder = require('../models/monitoring/Reminder');
+const Notification = require('../models/monitoring/Notification');
 
 const router = express.Router();
 
@@ -500,6 +504,41 @@ router.get('/appointments/weekly', authMiddleware, async (req, res) => {
       ]
     }).sort({ startDate: 1 });
 
+    const billInvestments = await Investment.find({
+      userId: req.userId,
+      category: 'daily-bill-checklist',
+      $or: [
+        { maturityDate: { $gte: weekStart, $lte: weekEnd } },
+        { startDate: { $gte: weekStart, $lte: weekEnd } },
+      ]
+    }).sort({ maturityDate: 1 });
+
+    const loanInvestments = await Investment.find({
+      userId: req.userId,
+      category: 'daily-loan-ledger',
+      $or: [
+        { maturityDate: { $gte: weekStart, $lte: weekEnd } },
+        { startDate: { $gte: weekStart, $lte: weekEnd } },
+      ]
+    }).sort({ maturityDate: 1 });
+
+    const calendarEvents = await CalendarEvent.find({
+      userId: req.userId,
+      date: { $gte: weekStart, $lte: weekEnd },
+      status: { $ne: 'cancelled' }
+    }).sort({ date: 1, time: 1 });
+
+    const reminders = await Reminder.find({
+      userId: req.userId,
+      dateTime: { $gte: weekStart, $lte: weekEnd },
+      status: { $ne: 'completed' }
+    }).sort({ dateTime: 1 });
+
+    const notifications = await Notification.find({
+      userId: req.userId,
+      scheduledTime: { $gte: weekStart, $lte: weekEnd }
+    }).sort({ scheduledTime: 1 });
+
     const normalize = (inv) => {
       let notes = {};
       try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { notes = {}; }
@@ -521,6 +560,39 @@ router.get('/appointments/weekly', authMiddleware, async (req, res) => {
     const counts = Array.from({ length: 7 }, (_, i) => ({ name: weekdays[i], count: 0 }));
     const statusMap = new Map();
     const upcoming = [];
+    const scheduleDays = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      const label = `${d.getMonth()+1}/${d.getDate()}`;
+      const name = d.toLocaleString('en-US', { weekday: 'long' }).toUpperCase();
+      return { date: d, label, name };
+    });
+    const startHour = parseInt(req.query.startHour || '8', 10);
+    const endHour = parseInt(req.query.endHour || '20', 10);
+    const stepMin = parseInt(req.query.stepMin || '30', 10);
+    const slots = [];
+    for (let h = startHour; h <= endHour; h++) {
+      for (let m = 0; m < 60; m += stepMin) {
+        const hh = String(h).padStart(2, '0');
+        const mm = String(m).padStart(2, '0');
+        const time = `${hh}:${mm}`;
+        slots.push({ time, cells: Array.from({ length: 7 }, () => []) });
+      }
+    }
+    const slotIndexFor = (date) => {
+      const h = date.getHours();
+      const m = date.getMinutes();
+      const total = (h - startHour) * 60 + m;
+      if (total < 0) return -1;
+      const idx = Math.floor(total / stepMin);
+      return idx >= 0 && idx < slots.length ? idx : -1;
+    };
+    const slotIndexForHM = (h, m) => {
+      const total = (h - startHour) * 60 + m;
+      if (total < 0) return 0;
+      const idx = Math.floor(total / stepMin);
+      return idx >= 0 && idx < slots.length ? idx : (slots.length - 1);
+    };
     for (const e of entries) {
       const d = e.dateTime || e.followUpDate;
       if (d) {
@@ -533,15 +605,80 @@ router.get('/appointments/weekly', authMiddleware, async (req, res) => {
           status: e.status,
           priority: e.priority,
         });
+
+        // Fill schedule grid
+        if (d >= weekStart && d <= weekEnd) {
+          const sIdx = slotIndexFor(d);
+          if (sIdx >= 0) {
+            slots[sIdx].cells[index].push({
+              title: e.contactName || e.phoneNumber,
+              status: e.status || 'open',
+              priority: e.priority || 'medium',
+              type: e.callType || 'Outgoing',
+            });
+          }
+        }
       }
       const sKey = e.status || 'open';
       const prev = statusMap.get(sKey) || { name: sKey, value: 0 };
       prev.value += 1;
       statusMap.set(sKey, prev);
     }
+
+    for (const inv of billInvestments) {
+      let notes = {};
+      try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { notes = {}; }
+      const d = inv.maturityDate ? new Date(inv.maturityDate) : (notes.dueDate ? new Date(notes.dueDate) : null);
+      if (!d) continue;
+      const index = (d.getDay() + 6) % 7;
+      counts[index].count += 1;
+      const sIdx = 0;
+      slots[sIdx].cells[index].push({ title: notes.billType || inv.name || 'Bill', type: 'Bill' });
+    }
+
+    for (const inv of loanInvestments) {
+      let notes = {};
+      try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { notes = {}; }
+      const d = inv.maturityDate ? new Date(inv.maturityDate) : (notes.dueDate ? new Date(notes.dueDate) : null);
+      if (!d) continue;
+      const index = (d.getDay() + 6) % 7;
+      counts[index].count += 1;
+      const sIdx = 0;
+      slots[sIdx].cells[index].push({ title: inv.name || 'Loan', type: 'Loan' });
+    }
+
+    for (const ev of calendarEvents) {
+      const d = new Date(ev.date);
+      const index = (d.getDay() + 6) % 7;
+      counts[index].count += 1;
+      let sIdx = 0;
+      if (ev.time && /\d{1,2}:\d{2}/.test(ev.time)) {
+        const parts = ev.time.match(/(\d{1,2}):(\d{2})/);
+        const h = parseInt(parts[1], 10);
+        const m = parseInt(parts[2], 10);
+        sIdx = slotIndexForHM(h, m);
+      }
+      slots[sIdx].cells[index].push({ title: ev.title, type: 'Event' });
+    }
+
+    for (const r of reminders) {
+      const d = new Date(r.dateTime);
+      const index = (d.getDay() + 6) % 7;
+      counts[index].count += 1;
+      const sIdx = slotIndexFor(d);
+      slots[(sIdx >= 0 ? sIdx : 0)].cells[index].push({ title: r.title, type: 'Reminder' });
+    }
+
+    for (const n of notifications) {
+      const d = new Date(n.scheduledTime);
+      const index = (d.getDay() + 6) % 7;
+      counts[index].count += 1;
+      const sIdx = slotIndexFor(d);
+      slots[(sIdx >= 0 ? sIdx : 0)].cells[index].push({ title: n.title, type: 'Notification' });
+    }
     upcoming.sort((a, b) => (a.date > b.date ? 1 : -1));
 
-    const total = entries.length;
+    const total = entries.length + billInvestments.length + loanInvestments.length + calendarEvents.length + reminders.length + notifications.length;
     const summary = {
       total,
       open: (statusMap.get('open')?.value || 0),
@@ -550,7 +687,19 @@ router.get('/appointments/weekly', authMiddleware, async (req, res) => {
       weekEnd: weekEnd,
     };
 
-    res.json({ summary, weekdayCounts: counts, statusDistribution: Array.from(statusMap.values()), upcoming });
+    res.json({ 
+      summary, 
+      weekdayCounts: counts, 
+      statusDistribution: Array.from(statusMap.values()), 
+      upcoming,
+      schedule: {
+        weekStart,
+        weekEnd,
+        days: scheduleDays.map(d => ({ date: d.date, label: d.label, name: d.name })),
+        slots,
+        stepMin,
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching weekly appointments', error: error.message });
   }
@@ -562,9 +711,10 @@ router.get('/calendar/yearly', authMiddleware, async (req, res) => {
     const yearParam = parseInt(req.query.year, 10);
     const currentYear = !isNaN(yearParam) ? yearParam : (new Date()).getFullYear();
     const categoriesParam = (req.query.categories || '').split(',').filter(Boolean);
-    const categories = categoriesParam.length ? categoriesParam : ['daily-bill-checklist', 'daily-telephone-conversation'];
+    const categories = categoriesParam.length ? categoriesParam : ['daily-bill-checklist', 'daily-telephone-conversation', 'daily-loan-ledger'];
 
     const investments = await Investment.find({ userId: req.userId, category: { $in: categories } }).sort({ startDate: 1 });
+    const basicDetails = await BasicDetails.find({ userId: req.userId });
 
     const normalize = (inv) => {
       let notes = {};
@@ -594,6 +744,19 @@ router.get('/calendar/yearly', authMiddleware, async (req, res) => {
           dateTime,
           followUpDate,
         };
+      } else if (inv.category === 'daily-loan-ledger') {
+        const interestType = notes.interestType || 'simple';
+        const frequency = notes.frequency || inv.frequency || 'monthly';
+        const start = base.startDate;
+        const end = base.maturityDate || (notes.dueDate ? new Date(notes.dueDate) : null);
+        return {
+          ...base,
+          interestType,
+          frequency,
+          start,
+          end,
+          partyName: notes.partyName || base.provider,
+        };
       }
       return base;
     };
@@ -616,6 +779,36 @@ router.get('/calendar/yearly', authMiddleware, async (req, res) => {
         eventDate = e.dueDate;
       } else if (e.category === 'daily-telephone-conversation') {
         eventDate = e.dateTime || e.followUpDate;
+      } else if (e.category === 'daily-loan-ledger') {
+        if (e.frequency === 'monthly' && e.interestType === 'emi' && e.start) {
+          const start = new Date(e.start);
+          const end = e.end ? new Date(e.end) : new Date(start);
+          if (!e.end) end.setMonth(end.getMonth() + 12);
+          const schedule = [];
+          const cur = new Date(start);
+          while (cur <= end) {
+            schedule.push(new Date(cur));
+            cur.setMonth(cur.getMonth() + 1);
+          }
+          for (const d of schedule) {
+            if (d.getFullYear() !== currentYear) continue;
+            const m = months[d.getMonth()];
+            const dayKey = String(d.getDate()).padStart(2, '0');
+            if (!m.days[dayKey]) m.days[dayKey] = [];
+            m.days[dayKey].push({
+              category: e.category,
+              title: e.partyName || e.name,
+              subtitle: 'EMI',
+              amount: e.amount || 0,
+              label: 'emi',
+            });
+            m.count += 1;
+            const cmPrev = categoryMix.get(e.category) || { name: e.category, value: 0 };
+            cmPrev.value += 1;
+            categoryMix.set(e.category, cmPrev);
+          }
+          continue;
+        }
       } else {
         eventDate = e.startDate || e.maturityDate;
       }
@@ -630,12 +823,41 @@ router.get('/calendar/yearly', authMiddleware, async (req, res) => {
         title: e.category === 'daily-bill-checklist' ? (e.billType || e.name) : (e.contactName || e.name),
         subtitle: e.category === 'daily-bill-checklist' ? (e.provider || '') : (e.callType || ''),
         amount: e.amount || 0,
+        label: e.category === 'daily-bill-checklist' && ((e.billType || '').toLowerCase().includes('insurance') || (e.name || '').toLowerCase().includes('insurance')) ? 'policy-renewal' : (e.category === 'daily-telephone-conversation' ? 'call' : 'bill'),
       });
       m.count += 1;
       if (e.category === 'daily-bill-checklist') m.amount += Number(e.amount) || 0;
       const cmPrev = categoryMix.get(e.category) || { name: e.category, value: 0 };
       cmPrev.value += 1;
       categoryMix.set(e.category, cmPrev);
+    }
+
+    for (const bd of basicDetails) {
+      const name = [bd.firstName, bd.lastName].filter(Boolean).join(' ') || 'Member';
+      if (bd.dateOfBirth) {
+        const dob = new Date(bd.dateOfBirth);
+        const d = new Date(currentYear, dob.getMonth(), dob.getDate());
+        const m = months[d.getMonth()];
+        const dayKey = String(d.getDate()).padStart(2, '0');
+        if (!m.days[dayKey]) m.days[dayKey] = [];
+        m.days[dayKey].push({ category: 'static', title: name, subtitle: 'Birthday', amount: 0, label: 'birthday' });
+        m.count += 1;
+        const cmPrev = categoryMix.get('static') || { name: 'static', value: 0 };
+        cmPrev.value += 1;
+        categoryMix.set('static', cmPrev);
+      }
+      if (bd.anniversaryDate) {
+        const ann = new Date(bd.anniversaryDate);
+        const d = new Date(currentYear, ann.getMonth(), ann.getDate());
+        const m = months[d.getMonth()];
+        const dayKey = String(d.getDate()).padStart(2, '0');
+        if (!m.days[dayKey]) m.days[dayKey] = [];
+        m.days[dayKey].push({ category: 'static', title: name, subtitle: 'Anniversary', amount: 0, label: 'anniversary' });
+        m.count += 1;
+        const cmPrev = categoryMix.get('static') || { name: 'static', value: 0 };
+        cmPrev.value += 1;
+        categoryMix.set('static', cmPrev);
+      }
     }
 
     const eventsPerMonth = months.map(m => ({ name: m.name, count: m.count }));
@@ -651,6 +873,100 @@ router.get('/calendar/yearly', authMiddleware, async (req, res) => {
     res.json({ summary, eventsPerMonth, billAmountPerMonth, categoryMix: Array.from(categoryMix.values()), calendar });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching yearly calendar', error: error.message });
+  }
+});
+
+// Loan Amortization Routes
+
+// Mark payment as paid/unpaid
+router.patch('/:id/payment/:paymentNumber', authMiddleware, async (req, res) => {
+  try {
+    const { isPaid, paidDate, paidAmount, extraPayment } = req.body;
+    
+    const investment = await Investment.findOne({
+      _id: req.params.id,
+      userId: req.userId,
+      category: 'loan-amortization'
+    });
+    
+    if (!investment) {
+      return res.status(404).json({ message: 'Loan not found' });
+    }
+    
+    const paymentIndex = investment.paymentSchedule.findIndex(
+      p => p.paymentNumber === parseInt(req.params.paymentNumber)
+    );
+    
+    if (paymentIndex === -1) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+    
+    // Update payment status
+    investment.paymentSchedule[paymentIndex].isPaid = isPaid;
+    if (isPaid) {
+      investment.paymentSchedule[paymentIndex].paidDate = paidDate || new Date();
+      investment.paymentSchedule[paymentIndex].paidAmount = paidAmount || investment.paymentSchedule[paymentIndex].payment;
+      if (extraPayment !== undefined) {
+        investment.paymentSchedule[paymentIndex].extraPayment = extraPayment;
+      }
+    } else {
+      investment.paymentSchedule[paymentIndex].paidDate = null;
+      investment.paymentSchedule[paymentIndex].paidAmount = null;
+    }
+    
+    investment.updatedAt = Date.now();
+    await investment.save();
+    
+    res.json({
+      message: 'Payment status updated successfully',
+      payment: investment.paymentSchedule[paymentIndex]
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating payment status', error: error.message });
+  }
+});
+
+// Get all loans
+router.get('/loans/list', authMiddleware, async (req, res) => {
+  try {
+    const loans = await Investment.find({
+      userId: req.userId,
+      category: 'loan-amortization'
+    }).sort({ createdAt: -1 });
+    
+    // Calculate summary for each loan
+    const loansWithSummary = loans.map(loan => {
+      const totalPayments = loan.paymentSchedule?.length || 0;
+      const paidPayments = loan.paymentSchedule?.filter(p => p.isPaid).length || 0;
+      const remainingPayments = totalPayments - paidPayments;
+      
+      const totalAmount = loan.amount || 0;
+      const paidAmount = loan.paymentSchedule?.filter(p => p.isPaid)
+        .reduce((sum, p) => sum + (p.paidAmount || 0), 0) || 0;
+      const remainingAmount = loan.paymentSchedule?.filter(p => !p.isPaid)
+        .reduce((sum, p) => sum + p.endingBalance, 0) || 0;
+      
+      return {
+        _id: loan._id,
+        name: loan.name,
+        type: loan.type,
+        amount: totalAmount,
+        interestRate: loan.interestRate,
+        startDate: loan.startDate,
+        maturityDate: loan.maturityDate,
+        totalPayments,
+        paidPayments,
+        remainingPayments,
+        paidAmount,
+        remainingAmount,
+        monthlyPayment: loan.paymentSchedule?.[0]?.payment || 0,
+        createdAt: loan.createdAt
+      };
+    });
+    
+    res.json({ loans: loansWithSummary });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching loans', error: error.message });
   }
 });
 

@@ -120,6 +120,15 @@ const bankSchema = new mongoose.Schema({
   nomineeContact: String,
   // Common fields
   description: String,
+  // New transaction classification fields
+  transactionType: {
+    type: String,
+    enum: ['expense', 'transfer', 'loan-give', 'loan-take', 'on-behalf-in', 'on-behalf-out'],
+  },
+  expenseType: {
+    type: String,
+    enum: ['important-necessary', 'less-important', 'avoidable-loss', 'unnecessary', 'basic-necessity'],
+  },
   notes: String,
   documents: [String],
   isActive: {

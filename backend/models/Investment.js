@@ -29,6 +29,8 @@ const investmentSchema = new mongoose.Schema({
       , 'static-contact-management'
       , 'daily-loan-ledger'
       , 'daily-bill-checklist'
+      , 'daily-bill-checklist-new'
+      , 'bill-checklist-categories'
       , 'daily-telephone-conversation'
     ],
   },
@@ -72,6 +74,21 @@ const investmentSchema = new mongoose.Schema({
   // Calculated fields
   returns: Number,
   returnsPercentage: Number,
+  
+  // Loan amortization specific fields
+  paymentSchedule: [{
+    paymentNumber: Number,
+    paymentDate: Date,
+    beginningBalance: Number,
+    payment: Number,
+    principal: Number,
+    interest: Number,
+    extraPayment: { type: Number, default: 0 },
+    endingBalance: Number,
+    isPaid: { type: Boolean, default: false },
+    paidDate: Date,
+    paidAmount: Number
+  }],
   
   // Generic fields
   notes: String,

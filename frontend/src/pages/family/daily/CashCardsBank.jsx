@@ -21,7 +21,9 @@ const CashCardsBank = () => {
     category: 'other',
     description: '',
     date: new Date().toISOString().split('T')[0],
-    currency: 'INR'
+    currency: 'INR',
+    transactionType: '',
+    expenseType: ''
   });
   const [showBankTransactionForm, setShowBankTransactionForm] = useState(false);
   const [editingBankTransaction, setEditingBankTransaction] = useState(null);
@@ -34,19 +36,20 @@ const CashCardsBank = () => {
 
   // Form states
   const [cashForm, setCashForm] = useState({
-    type: 'physical-cash',
-    name: '',
-    currency: 'INR',
+    type: 'cash',
     amount: '',
-    date: new Date().toISOString().split('T')[0],
+    currency: 'INR',
+    description: '',
+    date: new Date().toISOString().slice(0, 10),
     location: '',
+    transactionType: '',
+    expenseType: '',
     walletProvider: '',
     walletNumber: '',
     walletType: 'prepaid',
     cryptoType: '',
     exchange: '',
     walletAddress: '',
-    description: '',
     notes: ''
   });
 
@@ -69,6 +72,8 @@ const CashCardsBank = () => {
     currency: 'INR',
     isInternational: false,
     contactless: false,
+    transactionType: '',
+    expenseType: '',
     description: '',
     notes: ''
   });
@@ -102,6 +107,8 @@ const CashCardsBank = () => {
     nomineeRelationship: '',
     nomineeAge: '',
     nomineeContact: '',
+    transactionType: '',
+    expenseType: '',
     description: '',
     notes: ''
   });
@@ -115,7 +122,9 @@ const CashCardsBank = () => {
     category: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
-    currency: 'INR'
+    currency: 'INR',
+    transactionType: '',
+    expenseType: ''
   });
 
   useEffect(() => {
@@ -158,6 +167,8 @@ const CashCardsBank = () => {
       cryptoType: '',
       exchange: '',
       walletAddress: '',
+      transactionType: '',
+      expenseType: '',
       description: '',
       notes: ''
     });
@@ -183,6 +194,8 @@ const CashCardsBank = () => {
       currency: 'INR',
       isInternational: false,
       contactless: false,
+      transactionType: '',
+      expenseType: '',
       description: '',
       notes: ''
     });
@@ -218,6 +231,8 @@ const CashCardsBank = () => {
       nomineeRelationship: '',
       nomineeAge: '',
       nomineeContact: '',
+      transactionType: '',
+      expenseType: '',
       description: '',
       notes: ''
     });
@@ -232,7 +247,9 @@ const CashCardsBank = () => {
       category: '',
       description: '',
       date: new Date().toISOString().split('T')[0],
-      currency: 'INR'
+      currency: 'INR',
+      transactionType: '',
+      expenseType: ''
     });
   };
 
@@ -245,7 +262,9 @@ const CashCardsBank = () => {
       category: 'other',
       description: '',
       date: new Date().toISOString().split('T')[0],
-      currency: 'INR'
+      currency: 'INR',
+      transactionType: '',
+      expenseType: ''
     });
   };
 
@@ -451,7 +470,9 @@ const CashCardsBank = () => {
       category: transaction.category,
       description: transaction.description,
       date: new Date(transaction.date).toISOString().split('T')[0],
-      currency: transaction.currency
+      currency: transaction.currency,
+      transactionType: transaction.transactionType || '',
+      expenseType: transaction.expenseType || ''
     });
     setEditingBankTransaction(transaction);
     setShowBankTransactionForm(true);
@@ -662,6 +683,37 @@ const CashCardsBank = () => {
                       </>
                     )}
                     
+                    <div className="form-group">
+                      <label>Type of Transaction:</label>
+                      <select 
+                        value={cashForm.transactionType} 
+                        onChange={(e) => setCashForm({...cashForm, transactionType: e.target.value})}
+                      >
+                        <option value="">Select type...</option>
+                        <option value="expense">Expense</option>
+                        <option value="transfer">Transfer</option>
+                        <option value="loan-give">Loan Give</option>
+                        <option value="loan-take">Loan Take</option>
+                        <option value="on-behalf-in">On-behalf - Amount In</option>
+                        <option value="on-behalf-out">On-behalf - Amount Out</option>
+                      </select>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Expense Type:</label>
+                      <select 
+                        value={cashForm.expenseType} 
+                        onChange={(e) => setCashForm({...cashForm, expenseType: e.target.value})}
+                      >
+                        <option value="">Select type...</option>
+                        <option value="important-necessary">Important & Necessary</option>
+                        <option value="less-important">Less Important</option>
+                        <option value="avoidable-loss">Avoidable & Loss</option>
+                        <option value="unnecessary">Un-necessary</option>
+                        <option value="basic-necessity">Basic Necessity</option>
+                      </select>
+                    </div>
+                    
                     <div className="form-group full-width">
                       <label>Description:</label>
                       <textarea 
@@ -700,6 +752,8 @@ const CashCardsBank = () => {
                   <th>Amount</th>
                   <th>Date</th>
                   <th>Location/Provider</th>
+                  <th>Type of Transaction</th>
+                  <th>Expense Type</th>
                   <th>Description</th>
                   <th>Actions</th>
                 </tr>
@@ -718,6 +772,12 @@ const CashCardsBank = () => {
                     <td>{record.date ? new Date(record.date).toLocaleDateString() : new Date(record.createdAt).toLocaleDateString()}</td>
                     <td>
                       {record.location || record.walletProvider || record.cryptoType || '-'}
+                    </td>
+                    <td>
+                      {record.transactionType ? record.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                    </td>
+                    <td>
+                      {record.expenseType ? record.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
                     </td>
                     <td>{record.description || '-'}</td>
                     <td>
@@ -763,52 +823,61 @@ const CashCardsBank = () => {
           </div>
 
           {/* Card Details Section */}
-          <div className="cards-section">
-            <h3>Your Cards</h3>
-            <div className="cards-grid">
-              {cardRecords.map(card => (
-                <div key={card._id} className="card-item">
-                  <div className="card-header">
-                    <span className="card-name">{card.name}</span>
-                    <span className={`card-type ${card.type.replace('-', '-')}`}>
-                      {card.type.replace('-', ' ')}
-                    </span>
-                  </div>
-                  <div className="card-details">
-                    <div className="card-number">
-                      ****-****-****-{card.cardNumber.slice(-4)}
-                    </div>
-                    <div className="card-info">
-                      <span>{card.issuer}</span>
-                      <span>{card.cardholderName}</span>
-                      <span>Expires: {card.expiryDate}</span>
-                    </div>
-                    {card.creditLimit && (
-                      <div className="card-limit">
-                        <span>Limit: {card.currency} {card.creditLimit}</span>
-                        {card.availableCredit && (
-                          <span>Available: {card.currency} {card.availableCredit}</span>
-                        )}
+          <div className="records-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Issuer</th>
+                  <th>Card Number</th>
+                  <th>Cardholder</th>
+                  <th>Expiry</th>
+                  <th>Limit/Balance</th>
+                  <th>Type of Transaction</th>
+                  <th>Expense Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cardRecords.map(card => (
+                  <tr key={card._id}>
+                    <td>{card.name}</td>
+                    <td>
+                      <span className="record-type-badge cash">
+                        {card.type.replace('-', ' ')}
+                      </span>
+                    </td>
+                    <td>{card.issuer}</td>
+                    <td>****-****-****-{card.cardNumber.slice(-4)}</td>
+                    <td>{card.cardholderName}</td>
+                    <td>{card.expiryDate}</td>
+                    <td>
+                      {card.creditLimit ? (
+                        <>
+                          Limit: {card.currency} {card.creditLimit}
+                          {card.availableCredit && (
+                            <><br />Available: {card.currency} {card.availableCredit}</>
+                          )}
+                        </>
+                      ) : '-'}
+                    </td>
+                    <td>
+                      {card.transactionType ? card.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                    </td>
+                    <td>
+                      {card.expenseType ? card.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                    </td>
+                    <td>
+                      <div className="table-actions">
+                        <button onClick={() => handleEdit(card, 'card')} className="edit-btn">Edit</button>
+                        <button onClick={() => handleDelete(card._id, 'cards')} className="delete-btn">Delete</button>
                       </div>
-                    )}
-                  </div>
-                  <div className="card-actions">
-                    <button onClick={() => {
-                      console.log('Card Edit button clicked for:', card);
-                      handleEdit(card, 'card');
-                    }} className="edit-btn">
-                      Edit Card
-                    </button>
-                    <button onClick={() => {
-                      console.log('Card Delete button clicked for:', card._id);
-                      handleDelete(card._id, 'cards');
-                    }} className="delete-btn">
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             {cardRecords.length === 0 && (
               <div className="empty-state">
                 <p>No cards added yet. Add your first card to get started!</p>
@@ -1177,6 +1246,35 @@ const CashCardsBank = () => {
                         onChange={(e) => setTransactionForm({...transactionForm, date: e.target.value})}
                         required
                       />
+                    </div>
+                    <div className="form-group">
+                      <label>Type of Transaction:</label>
+                      <select 
+                        value={transactionForm.transactionType} 
+                        onChange={(e) => setTransactionForm({...transactionForm, transactionType: e.target.value})}
+                      >
+                        <option value="">Select type...</option>
+                        <option value="expense">Expense</option>
+                        <option value="transfer">Transfer</option>
+                        <option value="loan-give">Loan Give</option>
+                        <option value="loan-take">Loan Take</option>
+                        <option value="on-behalf-in">On-behalf - Amount In</option>
+                        <option value="on-behalf-out">On-behalf - Amount Out</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Expense Type:</label>
+                      <select 
+                        value={transactionForm.expenseType} 
+                        onChange={(e) => setTransactionForm({...transactionForm, expenseType: e.target.value})}
+                      >
+                        <option value="">Select type...</option>
+                        <option value="important-necessary">Important & Necessary</option>
+                        <option value="less-important">Less Important</option>
+                        <option value="avoidable-loss">Avoidable & Loss</option>
+                        <option value="unnecessary">Un-necessary</option>
+                        <option value="basic-necessity">Basic Necessity</option>
+                      </select>
                     </div>
                     <div className="form-group">
                       <label>Description (Optional):</label>
@@ -1605,6 +1703,35 @@ const CashCardsBank = () => {
                       />
                     </div>
                     <div className="form-group">
+                      <label>Type of Transaction:</label>
+                      <select 
+                        value={bankTransactionForm.transactionType} 
+                        onChange={(e) => setBankTransactionForm({...bankTransactionForm, transactionType: e.target.value})}
+                      >
+                        <option value="">Select type...</option>
+                        <option value="expense">Expense</option>
+                        <option value="transfer">Transfer</option>
+                        <option value="loan-give">Loan Give</option>
+                        <option value="loan-take">Loan Take</option>
+                        <option value="on-behalf-in">On-behalf - Amount In</option>
+                        <option value="on-behalf-out">On-behalf - Amount Out</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Expense Type:</label>
+                      <select 
+                        value={bankTransactionForm.expenseType} 
+                        onChange={(e) => setBankTransactionForm({...bankTransactionForm, expenseType: e.target.value})}
+                      >
+                        <option value="">Select type...</option>
+                        <option value="important-necessary">Important & Necessary</option>
+                        <option value="less-important">Less Important</option>
+                        <option value="avoidable-loss">Avoidable & Loss</option>
+                        <option value="unnecessary">Un-necessary</option>
+                        <option value="basic-necessity">Basic Necessity</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
                       <label>Description (Optional):</label>
                       <textarea 
                         value={bankTransactionForm.description}
@@ -1653,6 +1780,8 @@ const CashCardsBank = () => {
                     <th>Type</th>
                     <th>Merchant/Payee</th>
                     <th>Amount</th>
+                    <th>Type of Transaction</th>
+                    <th>Expense Type</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -1670,6 +1799,12 @@ const CashCardsBank = () => {
                         </td>
                         <td>{transaction.merchant}</td>
                         <td className="amount">{transaction.currency} {transaction.amount}</td>
+                        <td>
+                          {transaction.transactionType ? transaction.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                        </td>
+                        <td>
+                          {transaction.expenseType ? transaction.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                        </td>
                         <td>
                           <button 
                             className="edit-btn" 
@@ -1698,53 +1833,54 @@ const CashCardsBank = () => {
           </div>
 
           {/* Bank Accounts Section */}
-          <div className="bank-section">
-            <h3>Your Bank Accounts</h3>
-            <div className="bank-cards-grid">
-              {bankRecords.map(account => (
-                <div key={account._id} className={`bank-card-item ${account.type.replace('-', '-')}`}>
-                  <div className="bg-pattern"></div>
-                  <div className="bank-card-header">
-                    <span className="bank-card-name">{account.name}</span>
-                    <span className={`bank-card-type ${account.type.replace('-', '-')}`}>
-                      {account.type.replace('-', ' ')}
-                    </span>
-                  </div>
-                  <div className="bank-card-details">
-                    <div className="bank-logo-placeholder">
-                      {account.bankName ? account.bankName.substring(0, 2).toUpperCase() : 'BK'}
-                    </div>
-                    <div className="bank-name-main">{account.bankName}</div>
-                  </div>
-                  <div className="bank-card-balance">
-                    <span className="balance-amount">{account.currency} {parseFloat(account.balance).toLocaleString()}</span>
-                    <span className="balance-label">Available Balance</span>
-                  </div>
-                  <div className="bank-card-info">
-                    <div className="bank-info-left">
-                      <span className="account-holder">{account.accountHolderName}</span>
-                      <span className="branch-name">{account.branchName}</span>
-                    </div>
-                    <div className="bank-info-right">
-                      <span className="account-number">****-****-{account.accountNumber ? account.accountNumber.slice(-4) : '****'}</span>
-                    </div>
-                  </div>
-                  {account.interestRate && (
-                    <div className="bank-card-interest">
-                      {account.interestRate}% Rate
-                    </div>
-                  )}
-                  <div className="bank-card-actions">
-                    <button onClick={() => handleEdit(account, 'bank')} className="edit-btn">
-                      Edit Account
-                    </button>
-                    <button onClick={() => handleDelete(account._id, 'bank')} className="delete-btn">
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="records-table" style={{marginTop: '30px'}}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Bank Name</th>
+                  <th>Account Number</th>
+                  <th>Account Holder</th>
+                  <th>Branch</th>
+                  <th>Balance</th>
+                  <th>Interest Rate</th>
+                  <th>Type of Transaction</th>
+                  <th>Expense Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bankRecords.map(account => (
+                  <tr key={account._id}>
+                    <td>{account.name}</td>
+                    <td>
+                      <span className="record-type-badge cash">
+                        {account.type.replace('-', ' ')}
+                      </span>
+                    </td>
+                    <td>{account.bankName}</td>
+                    <td>****-****-{account.accountNumber ? account.accountNumber.slice(-4) : '****'}</td>
+                    <td>{account.accountHolderName}</td>
+                    <td>{account.branchName || '-'}</td>
+                    <td className="amount">{account.currency} {parseFloat(account.balance).toLocaleString()}</td>
+                    <td>{account.interestRate ? `${account.interestRate}%` : '-'}</td>
+                    <td>
+                      {account.transactionType ? account.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                    </td>
+                    <td>
+                      {account.expenseType ? account.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                    </td>
+                    <td>
+                      <div className="table-actions">
+                        <button onClick={() => handleEdit(account, 'bank')} className="edit-btn">Edit</button>
+                        <button onClick={() => handleDelete(account._id, 'bank')} className="delete-btn">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             {bankRecords.length === 0 && (
               <div className="empty-state">
                 <p>No bank accounts added yet. Add your first bank account to get started!</p>

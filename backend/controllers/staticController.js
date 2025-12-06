@@ -107,7 +107,14 @@ const CompanyRecordsSchema = new mongoose.Schema({
   directors: [{
     name: String,
     din: String,
-    appointmentDate: String
+    appointmentDate: String,
+    mcaMobileNumber: String,
+    mcaEmailId: String,
+    gstMobileNumber: String,
+    gstEmailId: String,
+    bankMobileNumber: String,
+    bankEmailId: String,
+    additional: String
   }],
   shareholders: [{
     name: String,
@@ -159,8 +166,22 @@ const MobileEmailDetailsSchema = new mongoose.Schema({
   mobile: String,
   carrier: String,
   simType: String,
+  planName: String,
+  planAmount: String,
+  address: String,
+  alternateNumber: String,
+  customerCareNo: String,
+  customerCareEmail: String,
+  billingCycle: String,
+  accountNo: String,
   email: String,
   provider: String,
+  googleAccountEmail: String,
+  recoveryEmail: String,
+  recoveryNumber: String,
+  alternateEmails: String,
+  passkeysAndSecurityKey: String,
+  password: String,
   purpose: String,
   notes: String
 }, { timestamps: true });
@@ -175,6 +196,32 @@ const PersonalRecordsSchema = new mongoose.Schema({
   placeOfIssue: String,
   issuingAuthority: String,
   fileUrl: String,
+  onlineAccessUrl: String,
+  onlineUsername: String,
+  onlinePassword: String,
+  mobileNumber: String,
+  emailId: String,
+  url: String,
+  userId: String,
+  password: String,
+  additional: String,
+  notes: String
+}, { timestamps: true });
+
+const OnlineAccessDetailsSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  category: String,
+  serviceName: String,
+  url: String,
+  userId: String,
+  password: String,
+  recoveryEmail: String,
+  recoveryPhone: String,
+  twoFA: Boolean,
+  otpMethod: String,
+  securityQuestion: String,
+  securityAnswer: String,
+  additional: String,
   notes: String
 }, { timestamps: true });
 
@@ -348,6 +395,61 @@ const DigitalAssetsSchema = new mongoose.Schema({
   priority: { type: String, default: 'medium' }
 }, { timestamps: true });
 
+const InventoryRecordSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  itemName: String,
+  category: String,
+  location: String,
+  quantity: Number,
+  unit: String,
+  purchaseDate: String,
+  purchasePrice: Number,
+  vendorName: String,
+  serialNumber: String,
+  warrantyExpiry: String,
+  companyName: String,
+  modelName: String,
+  totalValue: Number,
+  vendorContactNumber: String,
+  vendorContactEmail: String,
+  address: String,
+  serviceCenterNumber: String,
+  customerCareNumber: String,
+  customerCareEmail: String,
+  // Service Provider fields
+  serviceProviderName: String,
+  serviceName: String,
+  servicePersonName: String,
+  serviceMobileNumber: String,
+  serviceCompanyName: String,
+  serviceAddress: String,
+  serviceEmailId: String,
+  serviceWebsite: String,
+  notes: String
+}, { timestamps: true });
+
+const ContactManagementSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  nameOfPerson: String,
+  reference: String,
+  serviceProviderOrProductSeller: String,
+  profession: String,
+  industry: String,
+  category: String,
+  primaryProducts: String,
+  nameOfCompany: String,
+  mobileNumber1: String,
+  mobileNumber2: String,
+  emailId: String,
+  website: String,
+  address: String,
+  city: String,
+  state: String,
+  pinCode: String,
+  serviceAreaLocation: String,
+  notes: String
+}, { timestamps: true });
+
 const CustomerSupportSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   type: String,
@@ -388,6 +490,10 @@ const LandRecordsSchema = new mongoose.Schema({
   surveyNumber: String,
   area: String,
   areaUnit: String,
+  floorNumber: String,
+  totalFloors: String,
+  wing: String,
+  societyName: String,
   location: {
     village: String,
     tehsil: String,
@@ -459,6 +565,9 @@ const BasicDetails = mongoose.model('BasicDetails', BasicDetailsSchema);
 const CompanyRecords = mongoose.model('CompanyRecords', CompanyRecordsSchema);
 const MobileEmailDetails = mongoose.model('MobileEmailDetails', MobileEmailDetailsSchema);
 const PersonalRecords = mongoose.model('PersonalRecords', PersonalRecordsSchema);
+const OnlineAccessDetails = mongoose.model('OnlineAccessDetails', OnlineAccessDetailsSchema);
+const InventoryRecord = mongoose.model('InventoryRecord', InventoryRecordSchema);
+const ContactManagement = mongoose.model('ContactManagement', ContactManagementSchema);
 const DigitalAssets = mongoose.model('DigitalAssets', DigitalAssetsSchema);
 const CustomerSupport = mongoose.model('CustomerSupport', CustomerSupportSchema);
 const FamilyProfile = mongoose.model('FamilyProfile', FamilyProfileSchema);
@@ -646,6 +755,9 @@ module.exports = {
   CompanyRecordsController: createStaticController(CompanyRecords),
   MobileEmailDetailsController: createStaticController(MobileEmailDetails),
   PersonalRecordsController: createStaticController(PersonalRecords),
+  OnlineAccessDetailsController: createStaticController(OnlineAccessDetails),
+  InventoryRecordController: createStaticController(InventoryRecord),
+  ContactManagementController: createStaticController(ContactManagement),
   DigitalAssetsController: DigitalAssetsController,
   CustomerSupportController: createStaticController(CustomerSupport),
   FamilyProfileController: createStaticController(FamilyProfile),
@@ -657,6 +769,9 @@ module.exports = {
   CompanyRecords,
   MobileEmailDetails,
   PersonalRecords,
+  OnlineAccessDetails,
+  InventoryRecord,
+  ContactManagement,
   DigitalAssets,
   CustomerSupport,
   FamilyProfile,

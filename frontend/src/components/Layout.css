@@ -1,14 +1,18 @@
 .layout {
   display: flex;
   min-height: 100vh;
+  overflow: visible;
 }
 
 .main-content {
   flex: 1;
   margin-left: 280px;
-  padding: 40px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  height: auto;
   min-height: 100vh;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 768px) {

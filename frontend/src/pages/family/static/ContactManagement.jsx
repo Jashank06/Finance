@@ -4,19 +4,23 @@ import './Static.css';
 import { investmentAPI } from '../../../utils/investmentAPI';
 
 const defaultEntry = {
-  name: '',
-  relation: '',
-  company: '',
-  phone: '',
-  email: '',
-  altPhone: '',
-  altEmail: '',
-  addressLine1: '',
-  addressLine2: '',
+  nameOfPerson: '',
+  reference: '',
+  serviceProviderOrProductSeller: '',
+  profession: '',
+  industry: '',
+  category: '',
+  primaryProducts: '',
+  nameOfCompany: '',
+  mobileNumber1: '',
+  mobileNumber2: '',
+  emailId: '',
+  website: '',
+  address: '',
   city: '',
   state: '',
-  pincode: '',
-  tags: '',
+  pinCode: '',
+  serviceAreaLocation: '',
   notes: '',
 };
 
@@ -143,28 +147,72 @@ const ContactManagement = () => {
             <form onSubmit={handleSubmit}>
               <div className="form-grid">
                 <div className="form-group">
-                  <label>Name</label>
-                  <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                  <label>Name of Person</label>
+                  <input type="text" value={formData.nameOfPerson} onChange={(e) => setFormData({ ...formData, nameOfPerson: e.target.value })} />
                 </div>
                 <div className="form-group">
-                  <label>Relation</label>
-                  <input type="text" value={formData.relation} onChange={(e) => setFormData({ ...formData, relation: e.target.value })} placeholder="e.g., Self, Father, Vendor" />
+                  <label>Reference</label>
+                  <input type="text" value={formData.reference} onChange={(e) => setFormData({ ...formData, reference: e.target.value })} placeholder="How you know this person" />
                 </div>
                 <div className="form-group">
-                  <label>Mobile</label>
-                  <input type="tel" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} />
+                  <label>Service Provider / Product Seller</label>
+                  <input type="text" value={formData.serviceProviderOrProductSeller} onChange={(e) => setFormData({ ...formData, serviceProviderOrProductSeller: e.target.value })} placeholder="Service or product type" />
                 </div>
                 <div className="form-group">
-                  <label>Email</label>
-                  <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                  <label>Profession</label>
+                  <input type="text" value={formData.profession} onChange={(e) => setFormData({ ...formData, profession: e.target.value })} placeholder="e.g., Engineer, Doctor, Consultant" />
+                </div>
+                <div className="form-group">
+                  <label>Industry</label>
+                  <input type="text" value={formData.industry} onChange={(e) => setFormData({ ...formData, industry: e.target.value })} placeholder="e.g., IT, Healthcare, Education" />
+                </div>
+                <div className="form-group">
+                  <label>Category</label>
+                  <input type="text" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} placeholder="e.g., Vendor, Client, Partner" />
+                </div>
+                <div className="form-group">
+                  <label>Primary Products</label>
+                  <input type="text" value={formData.primaryProducts} onChange={(e) => setFormData({ ...formData, primaryProducts: e.target.value })} placeholder="Main products or services" />
+                </div>
+                <div className="form-group">
+                  <label>Name of Company</label>
+                  <input type="text" value={formData.nameOfCompany} onChange={(e) => setFormData({ ...formData, nameOfCompany: e.target.value })} placeholder="Company or business name" />
+                </div>
+                <div className="form-group">
+                  <label>Mobile Number</label>
+                  <input type="tel" value={formData.mobileNumber1} onChange={(e) => setFormData({ ...formData, mobileNumber1: e.target.value })} placeholder="Primary mobile" />
+                </div>
+                <div className="form-group">
+                  <label>Mobile Number</label>
+                  <input type="tel" value={formData.mobileNumber2} onChange={(e) => setFormData({ ...formData, mobileNumber2: e.target.value })} placeholder="Secondary mobile" />
+                </div>
+                <div className="form-group">
+                  <label>Email Id</label>
+                  <input type="email" value={formData.emailId} onChange={(e) => setFormData({ ...formData, emailId: e.target.value })} placeholder="Email address" />
+                </div>
+                <div className="form-group">
+                  <label>Website</label>
+                  <input type="url" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} placeholder="Website URL" />
                 </div>
                 <div className="form-group">
                   <label>Address</label>
-                  <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+                  <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Street address" />
                 </div>
                 <div className="form-group">
-                  <label>Notes</label>
-                  <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} />
+                  <label>City</label>
+                  <input type="text" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} placeholder="City name" />
+                </div>
+                <div className="form-group">
+                  <label>State</label>
+                  <input type="text" value={formData.state} onChange={(e) => setFormData({ ...formData, state: e.target.value })} placeholder="State name" />
+                </div>
+                <div className="form-group">
+                  <label>Pin Code</label>
+                  <input type="text" value={formData.pinCode} onChange={(e) => setFormData({ ...formData, pinCode: e.target.value })} placeholder="Postal code" />
+                </div>
+                <div className="form-group">
+                  <label>Service Area Location</label>
+                  <input type="text" value={formData.serviceAreaLocation} onChange={(e) => setFormData({ ...formData, serviceAreaLocation: e.target.value })} placeholder="Areas served" />
                 </div>
               </div>
 
@@ -193,26 +241,26 @@ const ContactManagement = () => {
               <table className="investments-table">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>Relation</th>
+                    <th>Name of Person</th>
+                    <th>Profession</th>
                     <th>Company</th>
-                    <th>Phone</th>
-                    <th>Email</th>
+                    <th>Mobile Number</th>
+                    <th>Email Id</th>
                     <th>City</th>
-                    <th>Tags</th>
+                    <th>Category</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {entries.map((e, idx) => (
                     <tr key={idx}>
-                      <td>{e.name}</td>
-                      <td>{e.relation}</td>
-                      <td>{e.company}</td>
-                      <td>{e.phone}</td>
-                      <td>{e.email}</td>
+                      <td>{e.nameOfPerson}</td>
+                      <td>{e.profession}</td>
+                      <td>{e.nameOfCompany}</td>
+                      <td>{e.mobileNumber1}</td>
+                      <td>{e.emailId}</td>
                       <td>{e.city}</td>
-                      <td>{e.tags}</td>
+                      <td>{e.category}</td>
                       <td>
                         <div className="investment-actions">
                           <button onClick={() => handleEdit(idx)} className="btn-icon"><FiEdit2 /></button>
