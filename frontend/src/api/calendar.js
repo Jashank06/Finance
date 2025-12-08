@@ -15,6 +15,19 @@ const calendarAPI = {
     return response.data;
   },
 
+  // Get events for entire year
+  getYearEvents: async (year, filters = {}) => {
+    const startDate = `${year}-01-01`;
+    const endDate = `${year}-12-31`;
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+      ...filters
+    });
+    const response = await api.get(`/calendar?${params}`);
+    return response.data;
+  },
+
   // Get upcoming events
   getUpcoming: async (days = 30, calendar = 'all') => {
     const params = `?days=${days}${calendar !== 'all' ? `&calendar=${calendar}` : ''}`;

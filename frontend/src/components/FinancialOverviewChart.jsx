@@ -330,21 +330,13 @@ const FinancialOverviewChart = ({ cashRecords, cardRecords, bankRecords, cardTra
   return (
     <div className="financial-overview-chart">
       {/* Month Selector */}
-      <div className="month-selector" style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+      <div className="month-selector">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
           <div style={{ flex: 1 }}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', fontWeight: '600' }}>Select Month:</h3>
+            <h3>Select Month:</h3>
             <select 
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px',
-                backgroundColor: '#fff'
-              }}
             >
               <option value="current">Current Month ({new Date().toLocaleString('default', { month: 'long', year: 'numeric' })})</option>
               {allMonthsInYear.map(month => (
@@ -358,17 +350,6 @@ const FinancialOverviewChart = ({ cashRecords, cardRecords, bankRecords, cardTra
             <button 
               className={`month-btn ${selectedMonth === 'all' ? 'active' : ''}`}
               onClick={() => setSelectedMonth('all')}
-              style={{
-                padding: '8px 16px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                backgroundColor: selectedMonth === 'all' ? '#007bff' : '#fff',
-                color: selectedMonth === 'all' ? '#fff' : '#333',
-                cursor: 'pointer',
-                fontSize: '14px',
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap'
-              }}
             >
               All Time
             </button>
@@ -391,11 +372,11 @@ const FinancialOverviewChart = ({ cashRecords, cardRecords, bankRecords, cardTra
             <h3>Bank Transactions</h3>
             <p>{chartData.reduce((sum, item) => sum + item.bank, 0).toLocaleString()}</p>
           </div>
-          <div className="summary-card bank-balance" style={{ backgroundColor: '#fff5f5', borderLeft: '4px solid #ff6b6b' }}>
+          <div className="summary-card bank-balance">
             <h3>Net Bank Balance</h3>
             <p>{chartData.reduce((sum, item) => sum + item.bankBalance, 0).toLocaleString()}</p>
           </div>
-          <div className="summary-card net-total" style={{ backgroundColor: '#f0f8ff', borderLeft: '4px solid #007bff' }}>
+          <div className="summary-card net-total">
             <h3>Net Total Spending</h3>
             <p>{totalValue.toLocaleString()}</p>
           </div>

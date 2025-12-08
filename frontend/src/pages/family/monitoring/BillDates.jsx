@@ -14,6 +14,7 @@ const BillDates = () => {
   const [annualTotal, setAnnualTotal] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [lastBillData, setLastBillData] = useState({});
   const [inputs, setInputs] = useState({
     billType: 'Electricity',
     provider: '',
@@ -62,6 +63,9 @@ const BillDates = () => {
     societyName: '',
     wing: '',
     flatNumber: '',
+    // Additional fields for all bill types
+    additional1: '',
+    additional2: '',
   });
 
   const CATEGORY_KEY = 'daily-bill-checklist';
@@ -290,124 +294,6 @@ const BillDates = () => {
         </div>
       </div>
 
-      <div className="charts-section">
-        <div className="charts-header">
-          <h2>Provisions & Cycle Mix</h2>
-          <p>Month-wise totals and cycle distribution</p>
-        </div>
-        <div className="charts-grid">
-          <div className="chart-card premium">
-            <div className="chart-header">
-              <div className="chart-title">
-                <FiBarChart2 className="chart-icon" />
-                <h3>Monthly Provisions</h3>
-              </div>
-              <div className="chart-subtitle">Budgeted amounts per month</div>
-            </div>
-            <div className="chart-content">
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={(monthlyProvisions.length ? monthlyProvisions : monthlyProvisionsLocal)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}K`} />
-                  <Tooltip formatter={(v) => [`₹${Math.round(v).toLocaleString('en-IN')}`, 'Total']} />
-                  <Legend />
-                  <Bar dataKey="total" fill="#2563EB" name="Total" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="chart-card premium">
-            <div className="chart-header">
-              <div className="chart-title">
-                <FiPieChart className="chart-icon" />
-                <h3>Cycle Mix</h3>
-              </div>
-              <div className="chart-subtitle">Monthly vs Quarterly vs Yearly</div>
-            </div>
-            <div className="chart-content">
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie data={(cycleMix.length ? cycleMix : cycleMixLocal)} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
-                    {(cycleMix.length ? cycleMix : cycleMixLocal).map((entry, idx) => (
-                      <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} stroke="#fff" strokeWidth={2} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value, name) => [value, name]} />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="investments-table-card">
-        <div className="table-header">
-          <h2>Yearly Schedule</h2>
-        </div>
-        <div className="table-container">
-          <table className="investments-table">
-            <thead>
-              <tr>
-                <th>Month</th>
-                <th>Items</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(yearlySchedule.length ? yearlySchedule : yearlyScheduleLocal).map((m, idx) => (
-                <tr key={idx}>
-                  <td>{m.name}</td>
-                  <td>
-                    {m.items.length === 0 ? '-' : m.items.map((it, i) => (
-                      <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                        <span style={{ minWidth: 28 }}>{String(it.day).padStart(2, '0')}</span>
-                        <span style={{ flex: 1 }}>{it.provider} ({it.billType})</span>
-                        <span style={{ minWidth: 80, textAlign: 'right' }}>₹{Math.round(it.amount).toLocaleString('en-IN')}</span>
-                        <span style={{ minWidth: 80, textAlign: 'right', color: '#64748b' }}>{it.cycle}</span>
-                      </div>
-                    ))}
-                  </td>
-                  <td>₹{Math.round(m.total).toLocaleString('en-IN')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="investments-table-card">
-        <div className="table-header">
-          <h2>Upcoming (Next 60 days)</h2>
-        </div>
-        <div className="table-container">
-          <table className="investments-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Provider</th>
-                <th>Type</th>
-                <th>Cycle</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(upcoming.length ? upcoming : upcomingLocal).map((u, idx) => (
-                <tr key={idx}>
-                  <td>{u.date}</td>
-                  <td>{u.provider}</td>
-                  <td>{u.billType}</td>
-                  <td>{u.cycle}</td>
-                  <td>₹{Math.round(u.amount).toLocaleString('en-IN')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       {showForm && (
         <div className="investment-form-card">
           <h2>Add Bill</h2>
@@ -416,8 +302,13 @@ const BillDates = () => {
             try {
               setSaving(true);
               await investmentAPI.create(toPayload(inputs));
+              // Save current bill data for this bill type
+              setLastBillData(prev => ({
+                ...prev,
+                [inputs.billType]: { ...inputs }
+              }));
               await fetchEntries();
-              setInputs({ billType: 'Electricity', provider: '', accountNumber: '', cycle: 'monthly', amount: 1000, dueDate: '', autoDebit: false, paymentMethod: 'UPI', status: 'pending', reminderDays: 3, notes: '', startDate: new Date().toISOString().slice(0,10) });
+              setInputs({ billType: 'Electricity', provider: '', accountNumber: '', cycle: 'monthly', amount: 1000, dueDate: '', autoDebit: false, paymentMethod: 'UPI', status: 'pending', reminderDays: 3, notes: '', startDate: new Date().toISOString().slice(0,10), additional1: '', additional2: '' });
               setShowForm(false);
             } catch (error) {
               alert(error.response?.data?.message || 'Error saving bill');
@@ -428,7 +319,63 @@ const BillDates = () => {
             <div className="form-row">
               <div className="form-field">
                 <label>Bill Type *</label>
-                <select value={inputs.billType} onChange={(e) => setInputs({ ...inputs, billType: e.target.value })} required>
+                <select value={inputs.billType} onChange={(e) => {
+    const newBillType = e.target.value;
+    // Load last saved data for this bill type if available
+    const savedData = lastBillData[newBillType];
+    if (savedData) {
+      setInputs({ 
+        ...savedData, 
+        billType: newBillType,
+        dueDate: '', // Clear due date for new bill
+        paidAmount: '', // Clear paid amount for new bill
+        paymentDate: '' // Clear payment date for new bill
+      });
+    } else {
+      // Reset to defaults for new bill type
+      setInputs({ 
+        billType: newBillType, 
+        provider: '', 
+        accountNumber: '',
+        cycle: 'monthly', 
+        amount: 1000, 
+        dueDate: '', 
+        autoDebit: false, 
+        paymentMethod: 'UPI', 
+        status: 'pending', 
+        reminderDays: 3, 
+        notes: '', 
+        startDate: new Date().toISOString().slice(0,10),
+        billingUnit: '',
+        nameOnBill: '',
+        paidAmount: '',
+        paymentDate: '',
+        description: '',
+        meterNumber: '',
+        connectionType: 'Domestic',
+        consumerNumber: '',
+        gasAgency: '',
+        planType: 'Broadband',
+        dataLimit: '',
+        simNumber: '',
+        networkProvider: '',
+        cardNumber: '',
+        bankName: '',
+        propertyAddress: '',
+        ownerName: '',
+        policyNumber: '',
+        insuranceCompany: '',
+        studentName: '',
+        schoolName: '',
+        grade: '',
+        societyName: '',
+        wing: '',
+        flatNumber: '',
+        additional1: '',
+        additional2: ''
+      });
+    }
+  }} required>
                   <option>Electricity</option>
                   <option>Water</option>
                   <option>Gas</option>
@@ -637,12 +584,141 @@ const BillDates = () => {
               </div>
             )}
 
+            <div className="form-row">
+              <div className="form-field">
+                <label>Additional 1</label>
+                <input type="text" value={inputs.additional1} onChange={(e) => setInputs({ ...inputs, additional1: e.target.value })} placeholder="Enter additional info" />
+              </div>
+              <div className="form-field">
+                <label>Additional 2</label>
+                <input type="text" value={inputs.additional2} onChange={(e) => setInputs({ ...inputs, additional2: e.target.value })} placeholder="Enter additional info" />
+              </div>
+            </div>
+
             <div className="form-actions">
               <button className="btn-success" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
             </div>
           </form>
         </div>
       )}
+
+      <div className="charts-section">
+        <div className="charts-header">
+          <h2>Provisions & Cycle Mix</h2>
+          <p>Month-wise totals and cycle distribution</p>
+        </div>
+        <div className="charts-grid">
+          <div className="chart-card premium">
+            <div className="chart-header">
+              <div className="chart-title">
+                <FiBarChart2 className="chart-icon" />
+                <h3>Monthly Provisions</h3>
+              </div>
+              <div className="chart-subtitle">Budgeted amounts per month</div>
+            </div>
+            <div className="chart-content">
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={(monthlyProvisions.length ? monthlyProvisions : monthlyProvisionsLocal)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
+                  <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}K`} />
+                  <Tooltip formatter={(v) => [`₹${Math.round(v).toLocaleString('en-IN')}`, 'Total']} />
+                  <Legend />
+                  <Bar dataKey="total" fill="#2563EB" name="Total" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="chart-card premium">
+            <div className="chart-header">
+              <div className="chart-title">
+                <FiPieChart className="chart-icon" />
+                <h3>Cycle Mix</h3>
+              </div>
+              <div className="chart-subtitle">Monthly vs Quarterly vs Yearly</div>
+            </div>
+            <div className="chart-content">
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie data={(cycleMix.length ? cycleMix : cycleMixLocal)} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
+                    {(cycleMix.length ? cycleMix : cycleMixLocal).map((entry, idx) => (
+                      <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} stroke="#fff" strokeWidth={2} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value, name) => [value, name]} />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="investments-table-card">
+        <div className="table-header">
+          <h2>Yearly Schedule</h2>
+        </div>
+        <div className="table-container">
+          <table className="investments-table">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Items</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(yearlySchedule.length ? yearlySchedule : yearlyScheduleLocal).map((m, idx) => (
+                <tr key={idx}>
+                  <td>{m.name}</td>
+                  <td>
+                    {m.items.length === 0 ? '-' : m.items.map((it, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ minWidth: 28 }}>{String(it.day).padStart(2, '0')}</span>
+                        <span style={{ flex: 1 }}>{it.provider} ({it.billType})</span>
+                        <span style={{ minWidth: 80, textAlign: 'right' }}>₹{Math.round(it.amount).toLocaleString('en-IN')}</span>
+                        <span style={{ minWidth: 80, textAlign: 'right', color: '#64748b' }}>{it.cycle}</span>
+                      </div>
+                    ))}
+                  </td>
+                  <td>₹{Math.round(m.total).toLocaleString('en-IN')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="investments-table-card">
+        <div className="table-header">
+          <h2>Upcoming (Next 60 days)</h2>
+        </div>
+        <div className="table-container">
+          <table className="investments-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Provider</th>
+                <th>Type</th>
+                <th>Cycle</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(upcoming.length ? upcoming : upcomingLocal).map((u, idx) => (
+                <tr key={idx}>
+                  <td>{u.date}</td>
+                  <td>{u.provider}</td>
+                  <td>{u.billType}</td>
+                  <td>{u.cycle}</td>
+                  <td>₹{Math.round(u.amount).toLocaleString('en-IN')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };

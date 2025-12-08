@@ -946,6 +946,10 @@ router.get('/loans/list', authMiddleware, async (req, res) => {
       const remainingAmount = loan.paymentSchedule?.filter(p => !p.isPaid)
         .reduce((sum, p) => sum + p.endingBalance, 0) || 0;
       
+      // Get current EMI: first unpaid payment's EMI, or first payment if all paid
+      const firstUnpaid = loan.paymentSchedule?.find(p => !p.isPaid);
+      const currentEmi = firstUnpaid?.payment || loan.paymentSchedule?.[0]?.payment || 0;
+      
       return {
         _id: loan._id,
         name: loan.name,
@@ -959,7 +963,7 @@ router.get('/loans/list', authMiddleware, async (req, res) => {
         remainingPayments,
         paidAmount,
         remainingAmount,
-        monthlyPayment: loan.paymentSchedule?.[0]?.payment || 0,
+        monthlyPayment: currentEmi,
         createdAt: loan.createdAt
       };
     });

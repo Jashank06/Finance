@@ -23,6 +23,7 @@ const BillChecklistNew = () => {
   const [newBillForm, setNewBillForm] = useState({
     billName: '',
     dueDate: '',
+    discountedPaymentDate: '',
     onlinePaymentUrl: '',
     username: '',
     password: '',
@@ -211,6 +212,7 @@ const BillChecklistNew = () => {
           category: notes.category || 'Other',
           billName: notes.billName || inv.name,
           dueDate: notes.dueDate || '',
+          discountedPaymentDate: notes.discountedPaymentDate || '',
           onlinePaymentUrl: notes.onlinePaymentUrl || '',
           username: notes.username || '',
           password: notes.password || '',
@@ -301,6 +303,7 @@ const BillChecklistNew = () => {
     setNewBillForm({
       billName: '',
       dueDate: '',
+      discountedPaymentDate: '',
       onlinePaymentUrl: '',
       username: '',
       password: '',
@@ -456,7 +459,11 @@ const BillChecklistNew = () => {
                             className="inline-edit"
                           />
                         ) : (
-<span>{bill.billName} {bill.dueDate && `- ${String(bill.dueDate).padStart(2,'0')}`}</span>
+<span>
+                          {bill.billName}
+                          {bill.dueDate && ` - Due: ${String(bill.dueDate).padStart(2,'0')}`}
+                          {bill.discountedPaymentDate && ` | Discount: ${bill.discountedPaymentDate}`}
+                        </span>
                         )}
 <div className="bill-meta">
                           {editingBill === bill._id ? (
@@ -485,9 +492,21 @@ const BillChecklistNew = () => {
                                 className="inline-edit"
                                 placeholder="Due day (e.g., 07)"
                               />
+                              <input
+                                type="date"
+                                value={bill.discountedPaymentDate}
+                                onChange={(e)=>{
+                                  const updated = bills.map(b => b._id===bill._id ? {...b, discountedPaymentDate: e.target.value} : b);
+                                  setBills(updated);
+                                }}
+                                className="inline-edit"
+                                placeholder="Discount date"
+                              />
                             </div>
                           ) : (
-                            <div className="inline-meta readonly">{bill.category} {bill.dueDate && `(Due ${String(bill.dueDate).padStart(2,'0')})`}</div>
+                            <div className="inline-meta readonly">
+                              {bill.category}
+                            </div>
                           )}
                           <div className="bill-actions">
                           {editingBill === bill._id ? (
@@ -1017,6 +1036,15 @@ const BillChecklistNew = () => {
                     value={newBillForm.dueDate}
                     onChange={(e) => setNewBillForm({ ...newBillForm, dueDate: e.target.value })}
                     placeholder="e.g., 07, 15, 28"
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Discounted Payment Date</label>
+                  <input
+                    type="date"
+                    value={newBillForm.discountedPaymentDate}
+                    onChange={(e) => setNewBillForm({ ...newBillForm, discountedPaymentDate: e.target.value })}
+                    placeholder="Date when discount is available"
                   />
                 </div>
                 <div className="form-field">

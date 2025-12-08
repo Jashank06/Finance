@@ -1,464 +1,542 @@
-import { useEffect, useState } from 'react';
-import { FiBarChart2, FiPieChart, FiCalendar, FiDollarSign, FiPlus } from 'react-icons/fi';
-import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
-import { investmentAPI } from '../../../utils/investmentAPI';
-import '../../investments/Investment.css';
+import React, { useEffect, useState } from 'react';
+import { FiPlus, FiChevronLeft, FiChevronRight, FiCalendar, FiTrash2, FiEdit2, FiSettings } from 'react-icons/fi';
+import calendarAPI from '../../../api/calendar';
+import categoriesAPI from '../../../api/categories';
+import EventModal from '../../../components/EventModal';
+import ManageCategories from '../../../components/ManageCategories';
+import './YearlyCalendar.css';
+
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const YearlyCalendar = () => {
+  const [view, setView] = useState('month');
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [events, setEvents] = useState([]);
+  const [filteredEvents, setFilteredEvents] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [eventsPerMonth, setEventsPerMonth] = useState([]);
-  const [billAmountPerMonth, setBillAmountPerMonth] = useState([]);
-  const [categoryMix, setCategoryMix] = useState([]);
-  const [calendar, setCalendar] = useState([]);
-  const [summary, setSummary] = useState({ year: new Date().getFullYear(), totalEvents: 0, totalBillsAmount: 0, busiestMonth: '' });
-  const [filters, setFilters] = useState({ year: new Date().getFullYear(), categories: ['daily-bill-checklist', 'daily-telephone-conversation', 'daily-loan-ledger'] });
-  const [showBillForm, setShowBillForm] = useState(false);
-  const [showCallForm, setShowCallForm] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [billInputs, setBillInputs] = useState({ billType: 'Electricity', provider: '', accountNumber: '', cycle: 'monthly', amount: 1000, dueDate: '', notes: '', startDate: new Date().toISOString().slice(0,10) });
-  const [callInputs, setCallInputs] = useState({ contactName: '', phoneNumber: '', callType: 'Outgoing', dateTime: new Date().toISOString().slice(0,16), status: 'open', priority: 'medium', followUpDate: '', notes: '' });
+  const [categories, setCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
 
-  const fetchData = async () => {
+  // Fetch categories
+  const fetchCategories = async () => {
+    try {
+      const response = await categoriesAPI.getAll();
+      const cats = response.categories || [];
+      setCategories(cats);
+      // Select all categories by default
+      setSelectedCategories(cats.map(c => c.value));
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      setCategories([]);
+    }
+  };
+
+  // Fetch events
+  const fetchEvents = async () => {
     try {
       setLoading(true);
-      const res = await investmentAPI.getYearlyCalendar(filters);
-      const data = res.data || {};
-      setEventsPerMonth(data.eventsPerMonth || []);
-      setBillAmountPerMonth(data.billAmountPerMonth || []);
-      setCategoryMix(data.categoryMix || []);
-      setCalendar(data.calendar || []);
-      setSummary(data.summary || { year: filters.year });
-    } catch (e) {
-      console.error('Error fetching yearly calendar:', e);
+      let response;
+      
+      if (view === 'year') {
+        const year = currentDate.getFullYear();
+        response = await calendarAPI.getYearEvents(year);
+      } else {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1;
+        response = await calendarAPI.getMonthEvents(year, month);
+      }
+      
+      setEvents(response.events || []);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setEvents([]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, [filters.year, filters.categories.join(',')]);
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
-  const COLORS = ['#2563EB', '#10B981', '#EF4444', '#8B5CF6', '#F59E0B'];
+  useEffect(() => {
+    const filtered = events.filter(event => 
+      selectedCategories.includes(event.category || 'other')
+    );
+    setFilteredEvents(filtered);
+  }, [events, selectedCategories]);
 
-  const toggleCategory = (cat) => {
-    const set = new Set(filters.categories);
-    if (set.has(cat)) set.delete(cat); else set.add(cat);
-    setFilters({ ...filters, categories: Array.from(set) });
+  useEffect(() => {
+    if (categories.length > 0) {
+      fetchEvents();
+    }
+  }, [view, currentDate.getFullYear(), currentDate.getMonth(), categories.length]);
+
+  // Navigation
+  const goToPrevious = () => {
+    const newDate = new Date(currentDate);
+    if (view === 'year') {
+      newDate.setFullYear(newDate.getFullYear() - 1);
+    } else if (view === 'month') {
+      newDate.setMonth(newDate.getMonth() - 1);
+    } else if (view === 'week') {
+      newDate.setDate(newDate.getDate() - 7);
+    } else {
+      newDate.setDate(newDate.getDate() - 1);
+    }
+    setCurrentDate(newDate);
   };
 
-  const billPayload = (data) => ({
-    category: 'daily-bill-checklist',
-    type: 'Bill',
-    name: `${data.billType} - ${data.provider || data.accountNumber || ''}`.trim(),
-    provider: data.provider || data.billType,
-    accountNumber: data.accountNumber || '',
-    amount: Number(data.amount) || 0,
-    startDate: data.startDate || new Date().toISOString().slice(0, 10),
-    maturityDate: data.dueDate || undefined,
-    frequency: data.cycle || 'monthly',
-    notes: JSON.stringify({ ...data }),
-  });
+  const goToNext = () => {
+    const newDate = new Date(currentDate);
+    if (view === 'year') {
+      newDate.setFullYear(newDate.getFullYear() + 1);
+    } else if (view === 'month') {
+      newDate.setMonth(newDate.getMonth() + 1);
+    } else if (view === 'week') {
+      newDate.setDate(newDate.getDate() + 7);
+    } else {
+      newDate.setDate(newDate.getDate() + 1);
+    }
+    setCurrentDate(newDate);
+  };
 
-  const callPayload = (data) => ({
-    category: 'daily-telephone-conversation',
-    type: 'Call',
-    name: `${data.callType} - ${data.contactName || 'Unknown'}`,
-    provider: data.phoneNumber || data.contactName || 'Contact',
-    amount: 0,
-    startDate: (data.dateTime ? new Date(data.dateTime) : new Date()).toISOString().slice(0, 10),
-    maturityDate: data.followUpDate || undefined,
-    frequency: 'one-time',
-    notes: JSON.stringify({ ...data }),
-  });
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
 
-  const saveBill = async (e) => {
-    e.preventDefault();
+  const toggleCategory = (category) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(category)) {
+        return prev.filter(c => c !== category);
+      } else {
+        return [...prev, category];
+      }
+    });
+  };
+
+  // Event handlers
+  const handleAddEvent = (date) => {
+    setSelectedDate(date);
+    setSelectedEvent(null);
+    setModalOpen(true);
+  };
+
+  const handleEditEvent = (event, e) => {
+    e?.stopPropagation();
+    setSelectedEvent(event);
+    setSelectedDate(null);
+    setModalOpen(true);
+  };
+
+  const handleDeleteEvent = async (eventId, e) => {
+    e?.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this event?')) {
+      return;
+    }
+    
     try {
-      setSaving(true);
-      await investmentAPI.create(billPayload(billInputs));
-      await fetchData();
-      setShowBillForm(false);
-      setBillInputs({ billType: 'Electricity', provider: '', accountNumber: '', cycle: 'monthly', amount: 1000, dueDate: '', notes: '', startDate: new Date().toISOString().slice(0,10) });
+      await calendarAPI.delete(eventId);
+      await fetchEvents();
     } catch (error) {
-      alert(error.response?.data?.message || 'Error saving bill');
-    } finally {
-      setSaving(false);
+      console.error('Error deleting event:', error);
+      alert('Failed to delete event');
     }
   };
 
-  const saveCall = async (e) => {
-    e.preventDefault();
+  const handleSaveEvent = async (eventData, eventId) => {
     try {
-      setSaving(true);
-      await investmentAPI.create(callPayload(callInputs));
-      await fetchData();
-      setShowCallForm(false);
-      setCallInputs({ contactName: '', phoneNumber: '', callType: 'Outgoing', dateTime: new Date().toISOString().slice(0,16), status: 'open', priority: 'medium', followUpDate: '', notes: '' });
+      if (eventId) {
+        await calendarAPI.update(eventId, eventData);
+      } else {
+        await calendarAPI.create(eventData);
+      }
+      await fetchEvents();
     } catch (error) {
-      alert(error.response?.data?.message || 'Error saving call');
-    } finally {
-      setSaving(false);
+      console.error('Error saving event:', error);
+      throw error;
     }
   };
 
-  if (loading && eventsPerMonth.length === 0) {
+  // Helper functions
+  const getMonthDays = (year, month) => {
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    const days = [];
+    
+    // Previous month days
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+      days.push({
+        date: prevMonthLastDay - i,
+        isCurrentMonth: false,
+        fullDate: new Date(year, month - 1, prevMonthLastDay - i)
+      });
+    }
+    
+    // Current month days
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push({
+        date: i,
+        isCurrentMonth: true,
+        fullDate: new Date(year, month, i)
+      });
+    }
+    
+    // Next month days to complete the grid
+    const remainingDays = 42 - days.length;
+    for (let i = 1; i <= remainingDays; i++) {
+      days.push({
+        date: i,
+        isCurrentMonth: false,
+        fullDate: new Date(year, month + 1, i)
+      });
+    }
+    
+    return days;
+  };
+
+  const getEventsForDate = (date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return filteredEvents.filter(event => {
+      const eventDate = new Date(event.date).toISOString().split('T')[0];
+      return eventDate === dateStr;
+    });
+  };
+
+  const isToday = (date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
+
+  const getCurrentPeriodText = () => {
+    if (view === 'year') {
+      return currentDate.getFullYear().toString();
+    } else if (view === 'month') {
+      return `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    } else if (view === 'week') {
+      return `Week of ${MONTHS[currentDate.getMonth()]} ${currentDate.getDate()}, ${currentDate.getFullYear()}`;
+    } else {
+      return `${MONTHS[currentDate.getMonth()]} ${currentDate.getDate()}, ${currentDate.getFullYear()}`;
+    }
+  };
+
+  // Render functions
+  const renderYearView = () => {
+    const year = currentDate.getFullYear();
+    const getDaysInMonth = (month) => new Date(year, month + 1, 0).getDate();
+    
     return (
-      <div className="investment-container">
-        <div className="loading">Loading...</div>
+      <div className="year-table-view">
+        <div className="year-table-container">
+          <table className="year-calendar-table">
+            <thead>
+              <tr>
+                <th className="month-header">MONTH</th>
+                <th className="category-header">CATEGORIES</th>
+                <th colSpan="31" className="calendar-title">CALENDAR</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MONTHS.map((monthName, monthIndex) => {
+                const daysInMonth = getDaysInMonth(monthIndex);
+                const monthEvents = events.filter(event => {
+                  const eventDate = new Date(event.date);
+                  return eventDate.getFullYear() === year && 
+                         eventDate.getMonth() === monthIndex &&
+                         selectedCategories.includes(event.category || 'other');
+                });
+                
+                // Group events by date and category
+                const eventsByDateAndCategory = {};
+                monthEvents.forEach(event => {
+                  const day = new Date(event.date).getDate();
+                  const category = event.category || 'other';
+                  const key = `${day}-${category}`;
+                  if (!eventsByDateAndCategory[key]) {
+                    eventsByDateAndCategory[key] = [];
+                  }
+                  eventsByDateAndCategory[key].push(event);
+                });
+                
+                return (
+                  <React.Fragment key={monthIndex}>
+                    {/* Month header row with days */}
+                    <tr className="month-row">
+                      <td className="month-name" rowSpan="5">{monthName.toUpperCase()}</td>
+                      <td className="day-header-label">Days →</td>
+                      {Array.from({ length: 31 }, (_, i) => {
+                        const day = i + 1;
+                        return (
+                          <td key={day} className={`day-header ${day > daysInMonth ? 'empty-day' : ''}`}>
+                            {day <= daysInMonth ? day : ''}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    
+                    {/* Category rows */}
+                    {categories.map((category) => (
+                      <tr key={`${monthIndex}-${category.value}`} className="category-row">
+                        <td className="category-label">
+                          <span className="category-dot" style={{ backgroundColor: category.color }}></span>
+                          {category.label}
+                        </td>
+                        {Array.from({ length: 31 }, (_, i) => {
+                          const day = i + 1;
+                          const key = `${day}-${category.value}`;
+                          const dayEvents = eventsByDateAndCategory[key] || [];
+                          
+                          return day <= daysInMonth && dayEvents.length > 0 ? (
+                            <td 
+                              key={day}
+                              className="event-cell has-event"
+                              style={{ backgroundColor: `${category.color}15`, borderLeft: `3px solid ${category.color}` }}
+                              onClick={() => handleEditEvent(dayEvents[0])}
+                              title={dayEvents.map(e => e.title).join(', ')}
+                            >
+                              {dayEvents.length > 1 ? `${dayEvents.length}` : '●'}
+                            </td>
+                          ) : (
+                            <td key={day} className={`event-cell ${day > daysInMonth ? 'empty-day' : ''}`}></td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMonthView = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const days = getMonthDays(year, month);
+    
+    return (
+      <div className="month-view">
+        <div className="calendar-grid">
+          {DAYS.map(day => (
+            <div key={day} className="calendar-day-header">{day}</div>
+          ))}
+          {days.map((day, idx) => {
+            const dayEvents = getEventsForDate(day.fullDate);
+            
+            return (
+              <div
+                key={idx}
+                className={`calendar-day-cell ${!day.isCurrentMonth ? 'other-month' : ''} ${isToday(day.fullDate) ? 'today' : ''}`}
+                onClick={() => handleAddEvent(day.fullDate.toISOString().split('T')[0])}
+              >
+                <div className="day-number">{day.date}</div>
+                <div className="event-list">
+                  {dayEvents.slice(0, 3).map(event => (
+                    <div
+                      key={event._id}
+                      className={`event-item ${event.category || 'other'}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditEvent(event, e);
+                      }}
+                    >
+                      {event.title}
+                    </div>
+                  ))}
+                  {dayEvents.length > 3 && (
+                    <div className="event-more">
+                      +{dayEvents.length - 3} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDayView = () => {
+    const dayEvents = getEventsForDate(currentDate);
+    
+    return (
+      <div className="day-view">
+        {dayEvents.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              <FiCalendar />
+            </div>
+            <div className="empty-state-text">No events for this day</div>
+            <div className="empty-state-subtext">Click the + button to add an event</div>
+          </div>
+        ) : (
+          <div className="day-events-list">
+            {dayEvents.map(event => {
+              const category = CATEGORIES.find(c => c.value === event.category);
+              
+              return (
+                <div
+                  key={event._id}
+                  className="day-event-item"
+                  style={{ borderLeftColor: category?.color || '#3B82F6' }}
+                  onClick={() => handleEditEvent(event)}
+                >
+                  <div className="event-time">
+                    {event.time || 'All day'} • {category?.label || 'Other'}
+                  </div>
+                  <div className="event-title">{event.title}</div>
+                  {event.description && (
+                    <div className="event-description">{event.description}</div>
+                  )}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                    <button
+                      className="btn-primary"
+                      style={{ padding: '6px 12px', fontSize: '12px' }}
+                      onClick={(e) => handleEditEvent(event, e)}
+                    >
+                      <FiEdit2 /> Edit
+                    </button>
+                    <button
+                      className="btn-primary"
+                      style={{ padding: '6px 12px', fontSize: '12px', background: '#EF4444' }}
+                      onClick={(e) => handleDeleteEvent(event._id, e)}
+                    >
+                      <FiTrash2 /> Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  if (loading && events.length === 0) {
+    return (
+      <div className="yearly-calendar-container">
+        <div className="loading">Loading calendar...</div>
       </div>
     );
   }
 
   return (
-    <div className="investment-container">
-      <div className="investment-header">
-        <h1>Yearly Calendar</h1>
-        <div className="header-actions" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <div className="form-field" style={{ margin: 0 }}>
-            <label>Year</label>
-            <input type="number" value={filters.year} onChange={(e) => setFilters({ ...filters, year: Number(e.target.value) })} style={{ width: 100 }} />
-          </div>
-          <div className="form-field" style={{ margin: 0 }}>
-            <label>Categories</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input type="checkbox" checked={filters.categories.includes('daily-bill-checklist')} onChange={() => toggleCategory('daily-bill-checklist')} /> Bills
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input type="checkbox" checked={filters.categories.includes('daily-telephone-conversation')} onChange={() => toggleCategory('daily-telephone-conversation')} /> Calls
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input type="checkbox" checked={filters.categories.includes('daily-loan-ledger')} onChange={() => toggleCategory('daily-loan-ledger')} /> Loans
-              </label>
-            </div>
-          </div>
-          <button 
-            className="btn-primary" 
-            onClick={() => setShowBillForm(!showBillForm)}
-            style={{ 
-              background: 'linear-gradient(135deg, #9333EA 0%, #C084FC 100%)',
-              color: 'white',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: '12px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <FiPlus style={{ color: 'white' }} /> {showBillForm ? 'Cancel Bill' : 'Add Bill'}
-          </button>
-          <button 
-            className="btn-primary" 
-            onClick={() => setShowCallForm(!showCallForm)}
-            style={{ 
-              background: 'linear-gradient(135deg, #9333EA 0%, #C084FC 100%)',
-              color: 'white',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: '12px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <FiPlus style={{ color: 'white' }} /> {showCallForm ? 'Cancel Call' : 'Add Call'}
+    <div className="yearly-calendar-container">
+      {/* Header */}
+      <div className="calendar-header">
+        <h1>📅 Calendar</h1>
+        <div className="header-actions">
+          <button className="btn-primary" onClick={() => handleAddEvent(new Date().toISOString().split('T')[0])}>
+            <FiPlus /> Add Event
           </button>
         </div>
       </div>
 
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}>
-            <FiCalendar />
-          </div>
-          <div className="stat-content">
-            <p className="stat-label">Total Events</p>
-            <h3 className="stat-value">{summary.totalEvents}</h3>
-          </div>
+      {/* Toolbar */}
+      <div className="calendar-toolbar">
+        <div className="view-selector">
+          <button 
+            className={`view-btn ${view === 'year' ? 'active' : ''}`}
+            onClick={() => setView('year')}
+          >
+            Year
+          </button>
+          <button 
+            className={`view-btn ${view === 'month' ? 'active' : ''}`}
+            onClick={() => setView('month')}
+          >
+            Month
+          </button>
+          <button 
+            className={`view-btn ${view === 'day' ? 'active' : ''}`}
+            onClick={() => setView('day')}
+          >
+            Day
+          </button>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}>
-            <FiDollarSign />
-          </div>
-          <div className="stat-content">
-            <p className="stat-label">Bills Amount</p>
-            <h3 className="stat-value">₹{Math.round(summary.totalBillsAmount).toLocaleString('en-IN')}</h3>
-          </div>
+
+        <div className="calendar-navigation">
+          <button className="nav-btn" onClick={goToPrevious}>
+            <FiChevronLeft />
+          </button>
+          <button className="today-btn" onClick={goToToday}>
+            Today
+          </button>
+          <div className="current-period">{getCurrentPeriodText()}</div>
+          <button className="nav-btn" onClick={goToNext}>
+            <FiChevronRight />
+          </button>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)' }}>
-            <FiCalendar />
-          </div>
-          <div className="stat-content">
-            <p className="stat-label">Busiest Month</p>
-            <h3 className="stat-value">{summary.busiestMonth || '-'}</h3>
-          </div>
+
+        <div className="category-filters">
+          {categories.map(cat => (
+            <button
+              key={cat.value}
+              className={`category-filter ${selectedCategories.includes(cat.value) ? 'active' : ''}`}
+              onClick={() => toggleCategory(cat.value)}
+            >
+              <span className="category-dot" style={{ backgroundColor: cat.color }}></span>
+              {cat.label}
+            </button>
+          ))}
+          <button
+            className="category-filter manage-btn"
+            onClick={() => setManageCategoriesOpen(true)}
+            title="Manage Categories"
+          >
+            <FiSettings /> Manage
+          </button>
         </div>
       </div>
 
-      {showBillForm && (
-        <div className="investment-form-card">
-          <h2>Add Bill</h2>
-          <form className="investment-form" onSubmit={saveBill}>
-            <div className="form-row">
-              <div className="form-field">
-                <label>Bill Type *</label>
-                <select value={billInputs.billType} onChange={(e) => setBillInputs({ ...billInputs, billType: e.target.value })} required>
-                  <option>Electricity</option>
-                  <option>Water</option>
-                  <option>Gas</option>
-                  <option>Internet</option>
-                  <option>Mobile</option>
-                  <option>Credit Card</option>
-                  <option>Rent</option>
-                  <option>Insurance</option>
-                  <option>School Fees</option>
-                  <option>Maintenance</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div className="form-field">
-                <label>Provider *</label>
-                <input type="text" value={billInputs.provider} onChange={(e) => setBillInputs({ ...billInputs, provider: e.target.value })} required />
-              </div>
-              <div className="form-field">
-                <label>Account Number</label>
-                <input type="text" value={billInputs.accountNumber} onChange={(e) => setBillInputs({ ...billInputs, accountNumber: e.target.value })} />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-field">
-                <label>Cycle *</label>
-                <select value={billInputs.cycle} onChange={(e) => setBillInputs({ ...billInputs, cycle: e.target.value })} required>
-                  <option>monthly</option>
-                  <option>quarterly</option>
-                  <option>yearly</option>
-                  <option>one-time</option>
-                </select>
-              </div>
-              <div className="form-field">
-                <label>Amount (₹) *</label>
-                <input type="number" value={billInputs.amount} onChange={(e) => setBillInputs({ ...billInputs, amount: Number(e.target.value) })} required />
-              </div>
-              <div className="form-field">
-                <label>Due Date *</label>
-                <input type="date" value={billInputs.dueDate} onChange={(e) => setBillInputs({ ...billInputs, dueDate: e.target.value })} required />
-              </div>
-            </div>
-            <div className="form-actions">
-              <button className="btn-success" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Bill'}</button>
-            </div>
-          </form>
-        </div>
-      )}
+      {/* Calendar Views */}
+      {view === 'year' && renderYearView()}
+      {view === 'month' && renderMonthView()}
+      {view === 'day' && renderDayView()}
 
-      {showCallForm && (
-        <div className="investment-form-card">
-          <h2>Add Call</h2>
-          <form className="investment-form" onSubmit={saveCall}>
-            <div className="form-row">
-              <div className="form-field">
-                <label>Contact Name *</label>
-                <input type="text" value={callInputs.contactName} onChange={(e) => setCallInputs({ ...callInputs, contactName: e.target.value })} required />
-              </div>
-              <div className="form-field">
-                <label>Phone Number *</label>
-                <input type="tel" value={callInputs.phoneNumber} onChange={(e) => setCallInputs({ ...callInputs, phoneNumber: e.target.value })} required />
-              </div>
-              <div className="form-field">
-                <label>Call Type *</label>
-                <select value={callInputs.callType} onChange={(e) => setCallInputs({ ...callInputs, callType: e.target.value })} required>
-                  <option>Outgoing</option>
-                  <option>Incoming</option>
-                </select>
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-field">
-                <label>Date & Time *</label>
-                <input type="datetime-local" value={callInputs.dateTime} onChange={(e) => setCallInputs({ ...callInputs, dateTime: e.target.value })} required />
-              </div>
-              <div className="form-field">
-                <label>Follow-up Date</label>
-                <input type="date" value={callInputs.followUpDate} onChange={(e) => setCallInputs({ ...callInputs, followUpDate: e.target.value })} />
-              </div>
-              <div className="form-field">
-                <label>Priority</label>
-                <select value={callInputs.priority} onChange={(e) => setCallInputs({ ...callInputs, priority: e.target.value })}>
-                  <option>low</option>
-                  <option>medium</option>
-                  <option>high</option>
-                </select>
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-field">
-                <label>Status</label>
-                <select value={callInputs.status} onChange={(e) => setCallInputs({ ...callInputs, status: e.target.value })}>
-                  <option>open</option>
-                  <option>closed</option>
-                </select>
-              </div>
-              <div className="form-field">
-                <label>Notes</label>
-                <input type="text" value={callInputs.notes} onChange={(e) => setCallInputs({ ...callInputs, notes: e.target.value })} />
-              </div>
-            </div>
-            <div className="form-actions">
-              <button className="btn-success" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Call'}</button>
-            </div>
-          </form>
-        </div>
-      )}
+      {/* Event Modal */}
+      <EventModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedEvent(null);
+          setSelectedDate(null);
+        }}
+        onSave={handleSaveEvent}
+        event={selectedEvent}
+        selectedDate={selectedDate}
+        categories={categories}
+      />
 
-      
-
-      <div className="investments-table-card">
-        <div className="table-header">
-          <h2>Calendar Grid</h2>
-        </div>
-        <div className="table-container" style={{ overflowX: 'auto', paddingBottom: 8 }}>
-          <table className="investments-table" style={{ width: 'max-content' }}>
-            <thead>
-              <tr>
-                <th style={{ minWidth: 140 }}>Month</th>
-                {Array.from({ length: 31 }, (_, i) => (
-                  <th key={`dhead-${i+1}`} style={{ minWidth: 60 }}>{i + 1}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {calendar.map((m, idx) => (
-                <tr key={idx}>
-                  <td style={{ fontWeight: 600 }}>{m.name}</td>
-                  {Array.from({ length: 31 }, (_, i) => {
-                    const dayKey = String(i + 1).padStart(2, '0');
-                    const items = m.days[dayKey] || [];
-                    return (
-                      <td key={`cell-${idx}-${i}`} style={{ verticalAlign: 'top', padding: 6, background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
-                        {items.length === 0 ? '' : items.slice(0, 3).map((ev, j) => (
-                          <div key={`ev-${j}`} style={{
-                            display: 'inline-block',
-                            marginRight: 6,
-                            marginBottom: 4,
-                            padding: '2px 6px',
-                            borderRadius: 8,
-                            fontSize: 11,
-                            background: (
-                              ev.label === 'birthday' ? 'rgba(239, 68, 68, 0.15)' :
-                              ev.label === 'anniversary' ? 'rgba(139, 92, 246, 0.15)' :
-                              ev.label === 'policy-renewal' ? 'rgba(245, 158, 11, 0.15)' :
-                              ev.label === 'emi' ? 'rgba(16, 185, 129, 0.15)' :
-                              ev.category.includes('bill') ? 'rgba(245, 158, 11, 0.15)' : 'rgba(99, 102, 241, 0.15)'
-                            ),
-                            color: (
-                              ev.label === 'birthday' ? '#DC2626' :
-                              ev.label === 'anniversary' ? '#7C3AED' :
-                              ev.label === 'policy-renewal' ? '#B45309' :
-                              ev.label === 'emi' ? '#0F766E' :
-                              ev.category.includes('bill') ? '#B45309' : '#3730A3'
-                            ),
-                            border: '1px dashed #e5e7eb'
-                          }}>
-                            {(
-                              ev.label === 'birthday' ? 'Birthday' :
-                              ev.label === 'anniversary' ? 'Anniversary' :
-                              ev.label === 'policy-renewal' ? 'Policy Renewal' :
-                              ev.label === 'emi' ? 'EMI' :
-                              (ev.category.includes('bill') ? 'Bill' : 'Call')
-                            )}: {ev.title}
-                          </div>
-                        ))}
-                        {items.length > 3 ? (
-                          <div style={{ fontSize: 11, color: '#64748b' }}>+{items.length - 3} more</div>
-                        ) : ''}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="charts-section">
-        <div className="charts-header">
-          <h2>Monthly Overview</h2>
-          <p>Event counts and bill amounts</p>
-        </div>
-        <div className="charts-grid">
-          <div className="chart-card premium">
-            <div className="chart-header">
-              <div className="chart-title">
-                <FiBarChart2 className="chart-icon" />
-                <h3>Events per Month</h3>
-              </div>
-            </div>
-            <div className="chart-content">
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={eventsPerMonth} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="count" fill="#2563EB" name="Count" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="chart-card premium">
-            <div className="chart-header">
-              <div className="chart-title">
-                <FiBarChart2 className="chart-icon" />
-                <h3>Bills Amount</h3>
-              </div>
-            </div>
-            <div className="chart-content">
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={billAmountPerMonth} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}K`} />
-                  <Tooltip formatter={(v) => [`₹${Math.round(v).toLocaleString('en-IN')}`, 'Amount']} />
-                  <Legend />
-                  <Bar dataKey="amount" fill="#10B981" name="Amount" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="chart-card premium">
-            <div className="chart-header">
-              <div className="chart-title">
-                <FiPieChart className="chart-icon" />
-                <h3>Category Mix</h3>
-              </div>
-            </div>
-            <div className="chart-content">
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie data={categoryMix} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
-                    {categoryMix.map((entry, idx) => (
-                      <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} stroke="#fff" strokeWidth={2} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value, name) => [value, name]} />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Manage Categories Modal */}
+      <ManageCategories
+        isOpen={manageCategoriesOpen}
+        onClose={() => setManageCategoriesOpen(false)}
+        onUpdate={() => {
+          fetchCategories();
+          fetchEvents();
+        }}
+      />
     </div>
   );
 };

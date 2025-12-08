@@ -20,6 +20,15 @@ const calendarEventSchema = new mongoose.Schema({
     enum: ['family', 'personal', 'work', 'holidays'],
     default: 'family'
   },
+  category: {
+    type: String,
+    enum: ['birthday', 'anniversary', 'policy-renewal', 'loan-emi', 'other'],
+    default: 'other'
+  },
+  eventColor: {
+    type: String,
+    default: '#3B82F6'
+  },
   date: {
     type: Date,
     required: true

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiBell, FiClock, FiCalendar, FiRepeat, FiPlus, FiEdit2, FiTrash2, FiCheck, FiX, FiAlertCircle, FiMail, FiMessageSquare, FiPhone } from 'react-icons/fi';
+import { FiBell, FiClock, FiCalendar, FiRepeat, FiPlus, FiTrash2, FiCheck, FiX, FiAlertCircle } from 'react-icons/fi';
 import './RemindersNotifications.css';
 
 const RemindersNotifications = () => {
@@ -31,7 +31,6 @@ const RemindersNotifications = () => {
   });
 
   useEffect(() => {
-    // Load sample data
     setReminders([
       {
         id: 1,
@@ -147,10 +146,10 @@ const RemindersNotifications = () => {
 
   const getTypeIcon = (type) => {
     switch(type) {
-      case 'success': return <FiCheck className="icon-success" />;
-      case 'warning': return <FiAlertCircle className="icon-warning" />;
-      case 'error': return <FiX className="icon-error" />;
-      default: return <FiBell className="icon-info" />;
+      case 'success': return <FiCheck className="type-icon success" />;
+      case 'warning': return <FiAlertCircle className="type-icon warning" />;
+      case 'error': return <FiX className="type-icon error" />;
+      default: return <FiBell className="type-icon info" />;
     }
   };
 
@@ -159,263 +158,239 @@ const RemindersNotifications = () => {
     return reminder.category === filter;
   });
 
-  const upcomingReminders = reminders
-    .filter(r => r.status === 'active')
-    .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime))
-    .slice(0, 5);
-
   return (
-    <div className="reminders-notifications">
+    <div className="reminders-page">
+      {/* Header Section */}
       <div className="page-header">
-        <div className="header-content">
-          <div className="header-text">
-            <h1><FiBell /> Reminders & Notifications</h1>
+        <div className="header-left">
+          <div className="header-icon">
+            <FiBell />
+          </div>
+          <div>
+            <h1>Reminders & Notifications</h1>
             <p>Manage your reminders and notifications efficiently</p>
           </div>
-          <div className="header-actions">
-            <button className="btn-primary" onClick={() => setShowReminderModal(true)}>
-              <FiPlus /> Add Reminder
-            </button>
-            <button className="btn-secondary" onClick={() => setShowNotificationModal(true)}>
-              <FiPlus /> Send Notification
-            </button>
-          </div>
+        </div>
+        <div className="header-actions">
+          <button className="btn btn-primary" onClick={() => setShowReminderModal(true)}>
+            <FiPlus /> Add Reminder
+          </button>
+          <button className="btn btn-outline" onClick={() => setShowNotificationModal(true)}>
+            <FiPlus /> Send Notification
+          </button>
         </div>
       </div>
 
-      <div className="content-layout">
-        {/* Main Content */}
-        <div className="main-content">
-          {/* Tabs */}
-          <div className="tabs">
-            <button 
-              className={`tab ${activeTab === 'reminders' ? 'active' : ''}`}
-              onClick={() => setActiveTab('reminders')}
-            >
-              <FiClock /> Reminders ({reminders.length})
-            </button>
-            <button 
-              className={`tab ${activeTab === 'notifications' ? 'active' : ''}`}
-              onClick={() => setActiveTab('notifications')}
-            >
-              <FiBell /> Notifications ({notifications.length})
-            </button>
-          </div>
-
-          {/* Filter Bar */}
-          <div className="filter-bar">
-            <div className="filter-group">
-              <label>Filter:</label>
-              <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-                <option value="all">All Categories</option>
-                <option value="personal">Personal</option>
-                <option value="bills">Bills</option>
-                <option value="health">Health</option>
-                <option value="work">Work</option>
-                <option value="family">Family</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Reminders Tab */}
-          {activeTab === 'reminders' && (
-            <div className="table-container">
-              {filteredReminders.length === 0 ? (
-                <div className="empty-state">
-                  <FiClock className="empty-icon" />
-                  <h3>No reminders found</h3>
-                  <p>Create your first reminder to get started</p>
-                </div>
-              ) : (
-                <table className="reminders-table">
-                  <thead>
-                    <tr>
-                      <th>Title</th>
-                      <th>Description</th>
-                      <th>Date</th>
-                      <th>Time</th>
-                      <th>Priority</th>
-                      <th>Category</th>
-                      <th>Type</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredReminders.map(reminder => (
-                      <tr key={reminder.id} className={`reminder-row ${reminder.status}`}>
-                        <td>
-                          <div className="title-cell">
-                            <h4>{reminder.title}</h4>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="description-cell">
-                            <p>{reminder.description}</p>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="date-cell">
-                            <FiCalendar />
-                            <span>{new Date(reminder.dateTime).toLocaleDateString()}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="time-cell">
-                            <FiClock />
-                            <span>{new Date(reminder.dateTime).toLocaleTimeString()}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <span 
-                            className="priority-badge"
-                            style={{ backgroundColor: getPriorityColor(reminder.priority) }}
-                          >
-                            {reminder.priority}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="category-tag">{reminder.category}</span>
-                        </td>
-                        <td>
-                          <div className="type-cell">
-                            {reminder.type === 'recurring' ? (
-                              <>
-                                <FiRepeat />
-                                <span>{reminder.repeat}</span>
-                              </>
-                            ) : (
-                              <span>One Time</span>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <span className={`status-badge ${reminder.status}`}>
-                            {reminder.status}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="actions-cell">
-                            <button 
-                              className={`status-btn ${reminder.status}`}
-                              onClick={() => toggleReminderStatus(reminder.id)}
-                              title={reminder.status === 'active' ? 'Pause' : 'Activate'}
-                            >
-                              {reminder.status === 'active' ? <FiX /> : <FiCheck />}
-                            </button>
-                            <button 
-                              className="delete-btn" 
-                              onClick={() => deleteReminder(reminder.id)}
-                              title="Delete"
-                            >
-                              <FiTrash2 />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-
-          {/* Notifications Tab */}
-          {activeTab === 'notifications' && (
-            <div className="table-container">
-              {notifications.length === 0 ? (
-                <div className="empty-state">
-                  <FiBell className="empty-icon" />
-                  <h3>No notifications</h3>
-                  <p>Your notifications will appear here</p>
-                </div>
-              ) : (
-                <table className="notifications-table">
-                  <thead>
-                    <tr>
-                      <th>Type</th>
-                      <th>Title</th>
-                      <th>Message</th>
-                      <th>Scheduled Time</th>
-                      <th>Method</th>
-                      <th>Status</th>
-                      <th>Read</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {notifications.map(notification => (
-                      <tr 
-                        key={notification.id} 
-                        className={`notification-row ${!notification.read ? 'unread' : ''}`}
-                        onClick={() => markNotificationAsRead(notification.id)}
-                      >
-                        <td>
-                          <div className="type-cell">
-                            {getTypeIcon(notification.type)}
-                            <span>{notification.type}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="title-cell">
-                            <h4>{notification.title}</h4>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="message-cell">
-                            <p>{notification.message}</p>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="time-cell">
-                            <FiClock />
-                            <span>{new Date(notification.scheduledTime).toLocaleString()}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="method-badge">{notification.method}</span>
-                        </td>
-                        <td>
-                          <span className="status-badge">{notification.status}</span>
-                        </td>
-                        <td>
-                          <span className={`read-badge ${notification.read ? 'read' : 'unread'}`}>
-                            {notification.read ? 'Read' : 'Unread'}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="actions-cell">
-                            <button 
-                              className="delete-btn" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteNotification(notification.id);
-                              }}
-                              title="Delete"
-                            >
-                              <FiTrash2 />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
+      {/* Tabs Section */}
+      <div className="tabs-container">
+        <div className="tabs">
+          <button 
+            className={`tab ${activeTab === 'reminders' ? 'active' : ''}`}
+            onClick={() => setActiveTab('reminders')}
+          >
+            <FiClock /> Reminders ({reminders.length})
+          </button>
+          <button 
+            className={`tab ${activeTab === 'notifications' ? 'active' : ''}`}
+            onClick={() => setActiveTab('notifications')}
+          >
+            <FiBell /> Notifications ({notifications.length})
+          </button>
         </div>
-    </div>   {/* Add Reminder Modal */}
+        
+        {activeTab === 'reminders' && (
+          <div className="filter-section">
+            <label>Filter:</label>
+            <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+              <option value="all">All Categories</option>
+              <option value="personal">Personal</option>
+              <option value="bills">Bills</option>
+              <option value="health">Health</option>
+              <option value="work">Work</option>
+              <option value="family">Family</option>
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Content Section */}
+      <div className="content-section">
+        {activeTab === 'reminders' ? (
+          <div className="table-wrapper">
+            {filteredReminders.length === 0 ? (
+              <div className="empty-state">
+                <FiClock />
+                <h3>No reminders found</h3>
+                <p>Create your first reminder to get started</p>
+              </div>
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Priority</th>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReminders.map(reminder => (
+                    <tr key={reminder.id}>
+                      <td><strong>{reminder.title}</strong></td>
+                      <td className="description">{reminder.description}</td>
+                      <td>
+                        <div className="cell-content">
+                          <FiCalendar />
+                          {new Date(reminder.dateTime).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="cell-content">
+                          <FiClock />
+                          {new Date(reminder.dateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </div>
+                      </td>
+                      <td>
+                        <span 
+                          className="badge priority"
+                          style={{ backgroundColor: getPriorityColor(reminder.priority) }}
+                        >
+                          {reminder.priority}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="badge category">{reminder.category}</span>
+                      </td>
+                      <td>
+                        <div className="cell-content">
+                          {reminder.type === 'recurring' ? (
+                            <>
+                              <FiRepeat />
+                              {reminder.repeat}
+                            </>
+                          ) : (
+                            'One Time'
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`badge status ${reminder.status}`}>
+                          {reminder.status}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="action-buttons">
+                          <button 
+                            className={`icon-btn ${reminder.status}`}
+                            onClick={() => toggleReminderStatus(reminder.id)}
+                            title={reminder.status === 'active' ? 'Pause' : 'Activate'}
+                          >
+                            {reminder.status === 'active' ? <FiX /> : <FiCheck />}
+                          </button>
+                          <button 
+                            className="icon-btn delete"
+                            onClick={() => deleteReminder(reminder.id)}
+                            title="Delete"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        ) : (
+          <div className="table-wrapper">
+            {notifications.length === 0 ? (
+              <div className="empty-state">
+                <FiBell />
+                <h3>No notifications</h3>
+                <p>Your notifications will appear here</p>
+              </div>
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Title</th>
+                    <th>Message</th>
+                    <th>Scheduled Time</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                    <th>Read</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {notifications.map(notification => (
+                    <tr 
+                      key={notification.id}
+                      className={!notification.read ? 'unread' : ''}
+                      onClick={() => markNotificationAsRead(notification.id)}
+                    >
+                      <td>
+                        <div className="cell-content">
+                          {getTypeIcon(notification.type)}
+                          {notification.type}
+                        </div>
+                      </td>
+                      <td><strong>{notification.title}</strong></td>
+                      <td className="description">{notification.message}</td>
+                      <td>
+                        <div className="cell-content">
+                          <FiClock />
+                          {new Date(notification.scheduledTime).toLocaleString()}
+                        </div>
+                      </td>
+                      <td><span className="badge">{notification.method}</span></td>
+                      <td><span className="badge status">{notification.status}</span></td>
+                      <td>
+                        <span className={`badge ${notification.read ? 'read' : 'unread'}`}>
+                          {notification.read ? 'Read' : 'Unread'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="action-buttons">
+                          <button 
+                            className="icon-btn delete"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteNotification(notification.id);
+                            }}
+                            title="Delete"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Add Reminder Modal */}
       {showReminderModal && (
-        <div className="modal-overlay">
-          <div className="modal">
+        <div className="modal-overlay" onClick={() => setShowReminderModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Add New Reminder</h3>
-              <button onClick={() => setShowReminderModal(false)} className="close-btn">×</button>
+              <button className="close-btn" onClick={() => setShowReminderModal(false)}>×</button>
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label>Title</label>
+                <label>Title *</label>
                 <input
                   type="text"
                   value={newReminder.title}
@@ -429,11 +404,12 @@ const RemindersNotifications = () => {
                   value={newReminder.description}
                   onChange={(e) => setNewReminder({ ...newReminder, description: e.target.value })}
                   placeholder="Enter description"
+                  rows="3"
                 />
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Date & Time</label>
+                  <label>Date & Time *</label>
                   <input
                     type="datetime-local"
                     value={newReminder.dateTime}
@@ -493,8 +469,8 @@ const RemindersNotifications = () => {
               )}
             </div>
             <div className="modal-footer">
-              <button onClick={() => setShowReminderModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={handleAddReminder} className="btn-primary">Add Reminder</button>
+              <button className="btn btn-outline" onClick={() => setShowReminderModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleAddReminder}>Add Reminder</button>
             </div>
           </div>
         </div>
@@ -502,15 +478,15 @@ const RemindersNotifications = () => {
 
       {/* Add Notification Modal */}
       {showNotificationModal && (
-        <div className="modal-overlay">
-          <div className="modal">
+        <div className="modal-overlay" onClick={() => setShowNotificationModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Send Notification</h3>
-              <button onClick={() => setShowNotificationModal(false)} className="close-btn">×</button>
+              <button className="close-btn" onClick={() => setShowNotificationModal(false)}>×</button>
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label>Title</label>
+                <label>Title *</label>
                 <input
                   type="text"
                   value={newNotification.title}
@@ -519,11 +495,12 @@ const RemindersNotifications = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Message</label>
+                <label>Message *</label>
                 <textarea
                   value={newNotification.message}
                   onChange={(e) => setNewNotification({ ...newNotification, message: e.target.value })}
                   placeholder="Enter notification message"
+                  rows="4"
                 />
               </div>
               <div className="form-row">
@@ -546,6 +523,8 @@ const RemindersNotifications = () => {
                     onChange={(e) => setNewNotification({ ...newNotification, method: e.target.value })}
                   >
                     <option value="email">Email</option>
+                    <option value="app">App</option>
+                    <option value="sms">SMS</option>
                   </select>
                 </div>
               </div>
@@ -559,8 +538,8 @@ const RemindersNotifications = () => {
               </div>
             </div>
             <div className="modal-footer">
-              <button onClick={() => setShowNotificationModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={handleAddNotification} className="btn-primary">Send Notification</button>
+              <button className="btn btn-outline" onClick={() => setShowNotificationModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleAddNotification}>Send Notification</button>
             </div>
           </div>
         </div>

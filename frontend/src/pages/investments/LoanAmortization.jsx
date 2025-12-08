@@ -10,6 +10,8 @@ const LoanAmortization = () => {
   const [loading, setLoading] = useState(false);
   const [loanName, setLoanName] = useState('');
   const [managedExtraPayments, setManagedExtraPayments] = useState({});
+  const [editingInterestRate, setEditingInterestRate] = useState(false);
+  const [newInterestRate, setNewInterestRate] = useState(0);
   
   const [inputs, setInputs] = useState({
     principal: 10000,
@@ -183,6 +185,8 @@ const LoanAmortization = () => {
       const response = await investmentAPI.getById(loanId);
       setSelectedLoan(response.data.investment);
       setManagedExtraPayments({});
+      setEditingInterestRate(false);
+      setNewInterestRate(response.data.investment.interestRate);
     } catch (error) {
       alert('Error loading loan: ' + (error.response?.data?.message || error.message));
     }
@@ -215,9 +219,6 @@ const LoanAmortization = () => {
     if (!selectedLoan) return;
     
     try {
-      // Update the payment schedule with extra payments
-      const updatedSchedule = recalculateScheduleWithExtras(selectedLoan, managedExtraPayments);
-      
       // Update only the extra payment values in the existing schedule
       const scheduleWithExtras = selectedLoan.paymentSchedule.map(payment => {
         const extraPayment = managedExtraPayments[payment.paymentNumber];
@@ -243,28 +244,46 @@ const LoanAmortization = () => {
     if (!loan || !loan.paymentSchedule || loan.paymentSchedule.length === 0) return [];
     
     const originalSchedule = loan.paymentSchedule;
-    const r = loan.interestRate / 100 / 12;
-    const emi = originalSchedule[0].payment;
-    const newSchedule = [];
     
+    // If no extra payments input, return saved schedule as-is from database
+    if (!extraPayments || Object.keys(extraPayments).length === 0) {
+      return originalSchedule;
+    }
+    
+    // Check if any extra payment is different from saved value
+    const hasChanges = Object.keys(extraPayments).some(paymentNum => {
+      const idx = parseInt(paymentNum) - 1;
+      const savedExtra = originalSchedule[idx]?.extraPayment || 0;
+      return extraPayments[paymentNum] !== savedExtra;
+    });
+    
+    // If no changes detected, return saved schedule
+    if (!hasChanges) {
+      return originalSchedule;
+    }
+    
+    // Only recalculate if extra payments are being modified
+    const r = loan.interestRate / 100 / 12;
+    const newSchedule = [];
     let balance = loan.amount;
-    let totalInterest = 0;
     
     for (let i = 0; i < originalSchedule.length; i++) {
       const paymentNumber = i + 1;
       const originalPayment = originalSchedule[i];
       
-      if (balance <= 0) break;
+      if (balance <= 0.01) break;
       
       const interest = balance * r;
-      const extraPayment = extraPayments[paymentNumber] || originalPayment.extraPayment || 0;
-      let principalPaid = emi - interest + extraPayment;
+      const emi = originalPayment.payment; // Use saved EMI
+      const extraPayment = extraPayments[paymentNumber] !== undefined 
+        ? extraPayments[paymentNumber] 
+        : (originalPayment.extraPayment || 0);
       
+      let principalPaid = emi - interest + extraPayment;
       if (principalPaid > balance) principalPaid = balance;
       
       const beginningBalance = balance;
       balance = balance - principalPaid;
-      totalInterest += interest;
       
       newSchedule.push({
         paymentNumber,
@@ -282,6 +301,141 @@ const LoanAmortization = () => {
     }
     
     return newSchedule;
+  };
+  
+  const updateInterestRate = async () => {
+    if (!selectedLoan) return;
+    
+    if (newInterestRate === selectedLoan.interestRate) {
+      alert('Interest rate is the same as the current rate');
+      setEditingInterestRate(false);
+      return;
+    }
+    
+    if (newInterestRate <= 0 || newInterestRate > 100) {
+      alert('Please enter a valid interest rate between 0 and 100');
+      return;
+    }
+    
+    if (!confirm(`Are you sure you want to change the interest rate from ${selectedLoan.interestRate}% to ${newInterestRate}%? This will recalculate the EMI and all future unpaid payments.`)) {
+      return;
+    }
+    
+    try {
+      // Find the first unpaid payment
+      const schedule = selectedLoan.paymentSchedule || [];
+      
+      // Find the transition point: last paid payment or current month
+      let transitionIndex = -1;
+      for (let i = 0; i < schedule.length; i++) {
+        if (!schedule[i].isPaid) {
+          transitionIndex = i;
+          break;
+        }
+      }
+      
+      // If all payments are paid, no need to recalculate
+      if (transitionIndex === -1) {
+        alert('All payments are already completed. No future payments to recalculate.');
+        setEditingInterestRate(false);
+        return;
+      }
+      
+      // Keep paid payments as-is, recalculate unpaid payments
+      const newSchedule = [...schedule];
+      const newRate = newInterestRate / 100 / 12;
+      
+      // Get the balance from the last paid payment or beginning
+      let balance = transitionIndex > 0 
+        ? schedule[transitionIndex - 1].endingBalance 
+        : selectedLoan.amount;
+      
+      // Calculate remaining tenure (number of unpaid payments)
+      const remainingPayments = schedule.length - transitionIndex;
+      
+      // Calculate new EMI based on new interest rate, remaining balance, and remaining tenure
+      const newEmi = newRate === 0 
+        ? balance / remainingPayments 
+        : balance * newRate * Math.pow(1 + newRate, remainingPayments) / (Math.pow(1 + newRate, remainingPayments) - 1);
+      
+      // Recalculate future payments with new interest rate and new EMI
+      for (let i = transitionIndex; i < schedule.length; i++) {
+        if (balance <= 0.01) {
+          // Loan is paid off, remove remaining payments
+          newSchedule.splice(i);
+          break;
+        }
+        
+        const interest = balance * newRate;
+        const extraPayment = schedule[i].extraPayment || 0;
+        let principalPaid = newEmi - interest + extraPayment;
+        
+        if (principalPaid > balance) principalPaid = balance;
+        
+        newSchedule[i] = {
+          ...schedule[i],
+          beginningBalance: balance,
+          payment: newEmi,
+          interest: interest,
+          principal: principalPaid - extraPayment,
+          endingBalance: balance - principalPaid
+        };
+        
+        balance = balance - principalPaid;
+      }
+      
+      // If balance still remains, extend the schedule with new EMI
+      if (balance > 0.01) {
+        const lastPayment = newSchedule[newSchedule.length - 1];
+        const lastDate = new Date(lastPayment.paymentDate);
+        let paymentNumber = lastPayment.paymentNumber + 1;
+        
+        while (balance > 0.01) {
+          lastDate.setMonth(lastDate.getMonth() + 1);
+          const interest = balance * newRate;
+          let principalPaid = newEmi - interest;
+          
+          if (principalPaid > balance) principalPaid = balance;
+          
+          newSchedule.push({
+            paymentNumber: paymentNumber,
+            paymentDate: new Date(lastDate),
+            beginningBalance: balance,
+            payment: newEmi,
+            extraPayment: 0,
+            principal: principalPaid,
+            interest: interest,
+            endingBalance: balance - principalPaid,
+            isPaid: false,
+            paidDate: null,
+            paidAmount: null
+          });
+          
+          balance = balance - principalPaid;
+          paymentNumber++;
+          
+          // Safety check to prevent infinite loop
+          if (paymentNumber > schedule.length + 500) break;
+        }
+      }
+      
+      // Calculate old and new EMI for comparison
+      const oldEmi = schedule[0].payment;
+      const firstUnpaidPayment = newSchedule.find(p => !p.isPaid);
+      const calculatedNewEmi = firstUnpaidPayment ? firstUnpaidPayment.payment : oldEmi;
+      
+      // Update the loan with new interest rate and schedule
+      await investmentAPI.update(selectedLoan._id, {
+        interestRate: newInterestRate,
+        paymentSchedule: newSchedule
+      });
+      
+      alert(`Interest rate updated successfully!\n\nOld EMI: ₹${oldEmi.toFixed(2)}\nNew EMI: ₹${calculatedNewEmi.toFixed(2)}\nDifference: ₹${(calculatedNewEmi - oldEmi).toFixed(2)}`);
+      setEditingInterestRate(false);
+      await loadLoan(selectedLoan._id);
+    } catch (error) {
+      alert('Error updating interest rate: ' + (error.response?.data?.message || error.message));
+    }
   };
 
   return (
@@ -569,11 +723,83 @@ const LoanAmortization = () => {
                       </div>
                       <div className="summary-card">
                         <span>Interest Rate</span>
-                        <strong>{selectedLoan.interestRate}%</strong>
+                        {editingInterestRate ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              value={newInterestRate}
+                              onChange={(e) => setNewInterestRate(parseFloat(e.target.value) || 0)}
+                              style={{ 
+                                width: '80px', 
+                                padding: '4px 8px',
+                                border: '1px solid #ddd',
+                                borderRadius: '4px',
+                                fontSize: '14px'
+                              }}
+                            />
+                            <span>%</span>
+                            <button 
+                              onClick={updateInterestRate}
+                              style={{
+                                padding: '4px 12px',
+                                fontSize: '12px',
+                                background: '#4CAF50',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Save
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setEditingInterestRate(false);
+                                setNewInterestRate(selectedLoan.interestRate);
+                              }}
+                              style={{
+                                padding: '4px 12px',
+                                fontSize: '12px',
+                                background: '#f44336',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <strong>{selectedLoan.interestRate}%</strong>
+                            <button 
+                              onClick={() => setEditingInterestRate(true)}
+                              style={{
+                                padding: '4px 8px',
+                                fontSize: '11px',
+                                background: '#2196F3',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div className="summary-card">
                         <span>Monthly EMI</span>
-                        <strong>₹{(selectedLoan.paymentSchedule?.[0]?.payment || 0).toFixed(2)}</strong>
+                        <strong>₹{(() => {
+                          // Show current EMI: first unpaid payment's EMI, or first payment if all paid
+                          const firstUnpaid = selectedLoan.paymentSchedule?.find(p => !p.isPaid);
+                          return (firstUnpaid?.payment || selectedLoan.paymentSchedule?.[0]?.payment || 0).toFixed(2);
+                        })()}</strong>
                       </div>
                       <div className="summary-card">
                         <span>Payments Done</span>

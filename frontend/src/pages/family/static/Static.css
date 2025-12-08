@@ -1208,3 +1208,56 @@
     display: none;
   }
 }
+
+/* Completion Percentage Styles */
+.completion-percentage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.completion-bar {
+  width: 60px;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.completion-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.completion-bar.complete .completion-fill {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.completion-bar.partial .completion-fill {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.completion-bar.low .completion-fill {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.completion-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a5568;
+  min-width: 35px;
+}
+
+.completion-bar.complete + .completion-text {
+  color: #059669;
+}
+
+.completion-bar.partial + .completion-text {
+  color: #d97706;
+}
+
+.completion-bar.low + .completion-text {
+  color: #dc2626;
+}
