@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FiPlus, FiChevronLeft, FiChevronRight, FiCalendar, FiTrash2, FiEdit2, FiSettings } from 'react-icons/fi';
 import calendarAPI from '../../../api/calendar';
 import categoriesAPI from '../../../api/categories';
@@ -26,6 +26,12 @@ const YearlyCalendar = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
 
+  // Single vs Multi year mode when view === 'year'
+  const [yearMode, setYearMode] = useState('single'); // 'single' | 'multi'
+  const YEARS_SPAN = 16;
+  const [multiYearStart, setMultiYearStart] = useState(new Date().getFullYear());
+  const multiYearYears = useMemo(() => Array.from({ length: YEARS_SPAN }, (_, i) => multiYearStart + i), [multiYearStart]);
+
   // Fetch categories
   const fetchCategories = async () => {
     try {
@@ -44,18 +50,28 @@ const YearlyCalendar = () => {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      let response;
-      
+      let fetchedEvents = [];
+
       if (view === 'year') {
-        const year = currentDate.getFullYear();
-        response = await calendarAPI.getYearEvents(year);
+        if (yearMode === 'multi') {
+          // Fetch multiple years in parallel
+          const results = await Promise.all(
+            multiYearYears.map(y => calendarAPI.getYearEvents(y).catch(() => ({ events: [] })))
+          );
+          fetchedEvents = results.flatMap(r => r.events || []);
+        } else {
+          const year = currentDate.getFullYear();
+          const response = await calendarAPI.getYearEvents(year);
+          fetchedEvents = response.events || [];
+        }
       } else {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth() + 1;
-        response = await calendarAPI.getMonthEvents(year, month);
+        const response = await calendarAPI.getMonthEvents(year, month);
+        fetchedEvents = response.events || [];
       }
-      
-      setEvents(response.events || []);
+
+      setEvents(fetchedEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
       setEvents([]);
@@ -75,14 +91,19 @@ const YearlyCalendar = () => {
     setFilteredEvents(filtered);
   }, [events, selectedCategories]);
 
-  useEffect(() => {
+useEffect(() => {
     if (categories.length > 0) {
       fetchEvents();
     }
-  }, [view, currentDate.getFullYear(), currentDate.getMonth(), categories.length]);
+  }, [view, yearMode, multiYearStart, currentDate.getFullYear(), currentDate.getMonth(), categories.length]);
 
   // Navigation
   const goToPrevious = () => {
+    if (view === 'year' && yearMode === 'multi') {
+      setMultiYearStart(prev => prev - YEARS_SPAN);
+      return;
+    }
+
     const newDate = new Date(currentDate);
     if (view === 'year') {
       newDate.setFullYear(newDate.getFullYear() - 1);
@@ -97,6 +118,11 @@ const YearlyCalendar = () => {
   };
 
   const goToNext = () => {
+    if (view === 'year' && yearMode === 'multi') {
+      setMultiYearStart(prev => prev + YEARS_SPAN);
+      return;
+    }
+
     const newDate = new Date(currentDate);
     if (view === 'year') {
       newDate.setFullYear(newDate.getFullYear() + 1);
@@ -225,6 +251,10 @@ const YearlyCalendar = () => {
 
   const getCurrentPeriodText = () => {
     if (view === 'year') {
+      if (yearMode === 'multi') {
+        const end = multiYearStart + YEARS_SPAN - 1;
+        return `${multiYearStart} – ${end}`;
+      }
       return currentDate.getFullYear().toString();
     } else if (view === 'month') {
       return `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
@@ -277,7 +307,7 @@ const YearlyCalendar = () => {
                   <React.Fragment key={monthIndex}>
                     {/* Month header row with days */}
                     <tr className="month-row">
-                      <td className="month-name" rowSpan="5">{monthName.toUpperCase()}</td>
+                      <td className="month-name" rowSpan={categories.length + 1}>{monthName.toUpperCase()}</td>
                       <td className="day-header-label">Days →</td>
                       {Array.from({ length: 31 }, (_, i) => {
                         const day = i + 1;
@@ -320,6 +350,74 @@ const YearlyCalendar = () => {
                   </React.Fragment>
                 );
               })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMultiYearView = () => {
+    // Pivoted view: Months x Categories rows vs Years columns
+    return (
+      <div className="multi-year-table-view">
+        <div className="year-table-container">
+          <table className="multi-year-calendar-table">
+            <thead>
+              <tr>
+                <th className="month-header">MONTHS</th>
+                <th className="category-header">CATEGORIES</th>
+                {multiYearYears.map(y => (
+                  <th key={y} className="year-col-header">{y}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {MONTHS.map((monthName, monthIndex) => (
+                <React.Fragment key={monthIndex}>
+                  {categories.map((category, catIdx) => (
+                    <tr key={`${monthIndex}-${category.value}`} className="category-row">
+                      {/* Month name only for the first category row, spanning all category rows */}
+                      {catIdx === 0 && (
+                        <td className="month-name" rowSpan={categories.length}>
+                          {monthName.toUpperCase()}
+                        </td>
+                      )}
+                      <td className="category-label">
+                        <span className="category-dot" style={{ backgroundColor: category.color }}></span>
+                        {category.label}
+                      </td>
+                      {multiYearYears.map((year) => {
+                        const cellEvents = events.filter(ev => {
+                          const d = new Date(ev.date);
+                          return d.getFullYear() === year && d.getMonth() === monthIndex && (ev.category || 'other') === (category.value || 'other') && selectedCategories.includes(category.value);
+                        });
+
+                        const has = cellEvents.length > 0;
+                        const title = has ? cellEvents.map(e => `${new Date(e.date).getDate()}: ${e.title}`).join(', ') : '';
+
+                        return (
+                          <td
+                            key={`${year}-${monthIndex}-${category.value}`}
+                            className={`event-cell ${has ? 'has-event' : ''}`}
+                            style={has ? { backgroundColor: `${category.color}15`, borderLeft: `3px solid ${category.color}` } : {}}
+                            title={title}
+                            onClick={() => {
+                              // Jump to the Month view for that year-month
+                              if (!has) return;
+                              const dt = new Date(year, monthIndex, 1);
+                              setView('month');
+                              setCurrentDate(dt);
+                            }}
+                          >
+                            {has ? (cellEvents.length > 1 ? `${cellEvents.length}` : '●') : ''}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </React.Fragment>
+              ))}
             </tbody>
           </table>
         </div>
@@ -446,6 +544,24 @@ const YearlyCalendar = () => {
       <div className="calendar-header">
         <h1>📅 Calendar</h1>
         <div className="header-actions">
+          {view === 'year' && (
+            <div className="year-mode-toggle">
+              <button
+                className={`view-btn ${yearMode === 'single' ? 'active' : ''}`}
+                onClick={() => setYearMode('single')}
+                title="Single year view"
+              >
+                Single year
+              </button>
+              <button
+                className={`view-btn ${yearMode === 'multi' ? 'active' : ''}`}
+                onClick={() => setYearMode('multi')}
+                title="Multi year view"
+              >
+                Multi year
+              </button>
+            </div>
+          )}
           <button className="btn-primary" onClick={() => handleAddEvent(new Date().toISOString().split('T')[0])}>
             <FiPlus /> Add Event
           </button>
@@ -510,7 +626,7 @@ const YearlyCalendar = () => {
       </div>
 
       {/* Calendar Views */}
-      {view === 'year' && renderYearView()}
+      {view === 'year' && (yearMode === 'multi' ? renderMultiYearView() : renderYearView())}
       {view === 'month' && renderMonthView()}
       {view === 'day' && renderDayView()}
 

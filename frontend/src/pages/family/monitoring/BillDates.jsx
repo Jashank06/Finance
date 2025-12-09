@@ -13,6 +13,8 @@ const BillDates = () => {
   const [upcoming, setUpcoming] = useState([]);
   const [annualTotal, setAnnualTotal] = useState(0);
   const [showForm, setShowForm] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [saving, setSaving] = useState(false);
   const [lastBillData, setLastBillData] = useState({});
   const [inputs, setInputs] = useState({
@@ -116,7 +118,6 @@ const BillDates = () => {
   useEffect(() => { fetchEntries(); }, []);
 
   const now = new Date();
-  const currentYear = now.getFullYear();
 
   const toPayload = (data) => ({
     category: CATEGORY_KEY,
@@ -134,8 +135,8 @@ const BillDates = () => {
   const monthlyProvisionsLocal = useMemo(() => {
     const months = Array.from({ length: 12 }, (_, i) => ({
       idx: i,
-      key: `${currentYear}-${i+1}`,
-      name: new Date(currentYear, i, 1).toLocaleString('en-US', { month: 'short' }),
+      key: `${selectedYear}-${i+1}`,
+      name: new Date(selectedYear, i, 1).toLocaleString('en-US', { month: 'short' }),
       total: 0,
     }));
 
@@ -148,8 +149,8 @@ const BillDates = () => {
       if (!amt) continue;
       const due = e.dueDate ? new Date(e.dueDate) : null;
       const start = e.startDate ? new Date(e.startDate) : null;
-      const startMonth = start && start.getFullYear() === currentYear ? start.getMonth() : 0;
-      const baseMonth = due && due.getFullYear() === currentYear ? due.getMonth() : startMonth;
+      const startMonth = start && start.getFullYear() === selectedYear ? start.getMonth() : 0;
+      const baseMonth = due && due.getFullYear() === selectedYear ? due.getMonth() : startMonth;
       if (e.cycle === 'monthly') {
         for (let m = Math.max(0, startMonth); m < 12; m++) addToMonth(m, amt);
       } else if (e.cycle === 'quarterly') {
@@ -163,7 +164,7 @@ const BillDates = () => {
     }
 
     return months.map(m => ({ name: m.name, total: m.total }));
-  }, [entries, currentYear]);
+  }, [entries, selectedYear]);
 
   const annualTotalLocal = useMemo(() => monthlyProvisionsLocal.reduce((s, m) => s + m.total, 0), [monthlyProvisionsLocal]);
 
@@ -181,14 +182,14 @@ const BillDates = () => {
   const yearlyScheduleLocal = useMemo(() => {
     const byMonth = Array.from({ length: 12 }, (_, i) => ({
       monthIdx: i,
-      name: new Date(currentYear, i, 1).toLocaleString('en-US', { month: 'long' }),
+      name: new Date(selectedYear, i, 1).toLocaleString('en-US', { month: 'long' }),
       items: [],
       total: 0,
     }));
     for (const e of entries) {
       if (!e.dueDate) continue;
       const d = new Date(e.dueDate);
-      if (d.getFullYear() !== currentYear) continue;
+      if (d.getFullYear() !== selectedYear) continue;
       const bucket = byMonth[d.getMonth()];
       bucket.items.push({
         day: d.getDate(),
@@ -203,7 +204,7 @@ const BillDates = () => {
       m.items.sort((a, b) => a.day - b.day);
     }
     return byMonth;
-  }, [entries, currentYear]);
+  }, [entries, selectedYear]);
 
   const upcomingLocal = useMemo(() => {
     const horizon = 60; // days
@@ -656,37 +657,150 @@ const BillDates = () => {
       </div>
 
       <div className="investments-table-card">
-        <div className="table-header">
-          <h2>Yearly Schedule</h2>
-        </div>
-        <div className="table-container">
-          <table className="investments-table">
-            <thead>
-              <tr>
-                <th>Month</th>
-                <th>Items</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(yearlySchedule.length ? yearlySchedule : yearlyScheduleLocal).map((m, idx) => (
-                <tr key={idx}>
-                  <td>{m.name}</td>
-                  <td>
-                    {m.items.length === 0 ? '-' : m.items.map((it, i) => (
-                      <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                        <span style={{ minWidth: 28 }}>{String(it.day).padStart(2, '0')}</span>
-                        <span style={{ flex: 1 }}>{it.provider} ({it.billType})</span>
-                        <span style={{ minWidth: 80, textAlign: 'right' }}>₹{Math.round(it.amount).toLocaleString('en-IN')}</span>
-                        <span style={{ minWidth: 80, textAlign: 'right', color: '#64748b' }}>{it.cycle}</span>
-                      </div>
-                    ))}
-                  </td>
-                  <td>₹{Math.round(m.total).toLocaleString('en-IN')}</td>
-                </tr>
+        <div className="table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2>Monthly Schedule</h2>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                background: 'white'
+              }}
+            >
+              {[
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+              ].map((month, idx) => (
+                <option key={idx} value={idx}>{month}</option>
               ))}
-            </tbody>
-          </table>
+            </select>
+            <select 
+              value={selectedYear} 
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                background: 'white'
+              }}
+            >
+              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div style={{ padding: '20px' }}>
+          {/* Calendar Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '0', border: '2px solid #2563EB' }}>
+            {/* Dates 1-10 */}
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(day => (
+              <div key={`header-${day}`} style={{ 
+                border: '1px solid #2563EB', 
+                padding: '8px', 
+                fontWeight: 'bold', 
+                textAlign: 'center',
+                background: '#f8fafc'
+              }}>
+                {day}
+              </div>
+            ))}
+            {/* Bills for dates 1-10 */}
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(day => {
+              const monthData = (yearlySchedule.length ? yearlySchedule : yearlyScheduleLocal)[selectedMonth];
+              const bills = monthData ? monthData.items.filter(it => it.day === day) : [];
+              return (
+                <div key={`content-${day}`} style={{ 
+                  border: '1px solid #2563EB', 
+                  padding: '8px',
+                  minHeight: '100px',
+                  fontSize: '12px',
+                  background: day === 27 || day === 28 ? '#dbeafe' : '#fff'
+                }}>
+                  {bills.map((bill, idx) => (
+                    <div key={idx} style={{ marginBottom: '4px', lineHeight: '1.4' }}>
+                      {bill.provider}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+            
+            {/* Dates 11-20 */}
+            {[11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(day => (
+              <div key={`header-${day}`} style={{ 
+                border: '1px solid #2563EB', 
+                padding: '8px', 
+                fontWeight: 'bold', 
+                textAlign: 'center',
+                background: '#f8fafc'
+              }}>
+                {day}
+              </div>
+            ))}
+            {/* Bills for dates 11-20 */}
+            {[11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(day => {
+              const monthData = (yearlySchedule.length ? yearlySchedule : yearlyScheduleLocal)[selectedMonth];
+              const bills = monthData ? monthData.items.filter(it => it.day === day) : [];
+              return (
+                <div key={`content-${day}`} style={{ 
+                  border: '1px solid #2563EB', 
+                  padding: '8px',
+                  minHeight: '100px',
+                  fontSize: '12px',
+                  background: day === 27 || day === 28 ? '#dbeafe' : '#fff'
+                }}>
+                  {bills.map((bill, idx) => (
+                    <div key={idx} style={{ marginBottom: '4px', lineHeight: '1.4' }}>
+                      {bill.provider}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+            
+            {/* Dates 21-30 */}
+            {[21, 22, 23, 24, 25, 26, 27, 28, 29, 30].map(day => (
+              <div key={`header-${day}`} style={{ 
+                border: '1px solid #2563EB', 
+                padding: '8px', 
+                fontWeight: 'bold', 
+                textAlign: 'center',
+                background: '#f8fafc'
+              }}>
+                {day}
+              </div>
+            ))}
+            {/* Bills for dates 21-30 */}
+            {[21, 22, 23, 24, 25, 26, 27, 28, 29, 30].map(day => {
+              const monthData = (yearlySchedule.length ? yearlySchedule : yearlyScheduleLocal)[selectedMonth];
+              const bills = monthData ? monthData.items.filter(it => it.day === day) : [];
+              return (
+                <div key={`content-${day}`} style={{ 
+                  border: '1px solid #2563EB', 
+                  padding: '8px',
+                  minHeight: '100px',
+                  fontSize: '12px',
+                  background: day === 27 || day === 28 ? '#dbeafe' : '#fff'
+                }}>
+                  {bills.map((bill, idx) => (
+                    <div key={idx} style={{ marginBottom: '4px', lineHeight: '1.4' }}>
+                      {bill.provider}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 

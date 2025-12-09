@@ -55,6 +55,12 @@
   margin: 0;
 }
 
+.year-mode-toggle {
+  display: flex;
+  gap: 8px;
+  margin-right: 8px;
+}
+
 .header-actions {
   display: flex;
   gap: 12px;
@@ -494,6 +500,62 @@
   height: 4px;
   background: #9333EA;
   border-radius: 50%;
+}
+
+/* Multi-Year Table View */
+.multi-year-table-view {
+  background: white;
+  border-radius: 16px;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.multi-year-calendar-table {
+  width: max-content;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 100%;
+}
+
+.multi-year-calendar-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: linear-gradient(135deg, #C084FC 0%, #9333EA 100%);
+}
+
+.multi-year-calendar-table thead th {
+  color: white;
+  font-weight: 700;
+  padding: 20px 16px;
+  text-align: left;
+  font-size: 18px;
+}
+
+ .multi-year-calendar-table .year-col-header {
+  text-align: center;
+  min-width: 96px;
+}
+
+/* Sticky left headers for multi-year view */
+.multi-year-calendar-table .month-header {
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  min-width: 150px;
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+}
+
+.multi-year-calendar-table .category-header {
+  position: sticky;
+  left: 150px; /* must match .month-name min-width */
+  z-index: 11;
+  min-width: 180px;
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
 }
 
 /* Month View */

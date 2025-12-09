@@ -505,6 +505,7 @@ const InventoryRecordSchema = new mongoose.Schema({
   unit: String,
   purchaseDate: String,
   purchasePrice: Number,
+  invoiceNumber: String,
   vendorName: String,
   serialNumber: String,
   warrantyExpiry: String,

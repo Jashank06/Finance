@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FiCalendar, FiClock, FiPlus, FiX, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiBell, FiMapPin, FiUsers, FiRepeat } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiPlus, FiX, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiBell, FiMapPin, FiUsers, FiRepeat, FiSettings } from 'react-icons/fi';
 import calendarAPI from '../../../api/calendar';
+import calendarTypesAPI from '../../../api/calendarTypes';
 import './MultipleCalendars.css';
 
 const MultipleCalendars = () => {
@@ -8,13 +9,14 @@ const MultipleCalendars = () => {
   const [viewMode, setViewMode] = useState('month');
   const [selectedCalendar, setSelectedCalendar] = useState('all');
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showCalendarTypeModal, setShowCalendarTypeModal] = useState(false);
   const [events, setEvents] = useState([]);
-  const [calendars, setCalendars] = useState([
-    { id: 'family', name: 'Family', color: '#3B82F6', visible: true },
-    { id: 'personal', name: 'Personal', color: '#10B981', visible: true },
-    { id: 'work', name: 'Work', color: '#F59E0B', visible: true },
-    { id: 'holidays', name: 'Holidays', color: '#EF4444', visible: true }
-  ]);
+  const [calendars, setCalendars] = useState([]);
+  const [editingCalendarType, setEditingCalendarType] = useState(null);
+  const [calendarTypeForm, setCalendarTypeForm] = useState({
+    name: '',
+    color: '#3B82F6'
+  });
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
@@ -116,10 +118,83 @@ const MultipleCalendars = () => {
     });
   };
 
+  // Load calendar types from backend
+  const loadCalendarTypes = async () => {
+    try {
+      const response = await calendarTypesAPI.getAll();
+      setCalendars(response.calendarTypes || []);
+    } catch (error) {
+      console.error('Error loading calendar types:', error);
+    }
+  };
+
+  // Save calendar type
+  const saveCalendarType = async () => {
+    try {
+      if (!calendarTypeForm.name || !calendarTypeForm.color) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      if (editingCalendarType) {
+        // Update existing
+        await calendarTypesAPI.update(editingCalendarType._id, calendarTypeForm);
+      } else {
+        // Create new
+        await calendarTypesAPI.create(calendarTypeForm);
+      }
+
+      await loadCalendarTypes();
+      resetCalendarTypeForm();
+      setShowCalendarTypeModal(false);
+    } catch (error) {
+      console.error('Error saving calendar type:', error);
+      alert(error.response?.data?.error || 'Failed to save calendar type');
+    }
+  };
+
+  // Delete calendar type
+  const deleteCalendarType = async (id) => {
+    if (window.confirm('Are you sure you want to delete this calendar type?')) {
+      try {
+        await calendarTypesAPI.delete(id);
+        await loadCalendarTypes();
+      } catch (error) {
+        console.error('Error deleting calendar type:', error);
+        alert(error.response?.data?.error || 'Failed to delete calendar type');
+      }
+    }
+  };
+
+  // Edit calendar type
+  const handleEditCalendarType = (calendarType) => {
+    setEditingCalendarType(calendarType);
+    setCalendarTypeForm({
+      name: calendarType.name,
+      color: calendarType.color
+    });
+    setShowCalendarTypeModal(true);
+  };
+
+  const resetCalendarTypeForm = () => {
+    setCalendarTypeForm({
+      name: '',
+      color: '#3B82F6'
+    });
+    setEditingCalendarType(null);
+  };
+
+  // Load calendar types and events when component mounts
+  useEffect(() => {
+    loadCalendarTypes();
+  }, []);
+
   // Load events when component mounts or date/calendar changes
   useEffect(() => {
-    loadEvents();
-  }, [currentDate, selectedCalendar]);
+    if (calendars.length > 0) {
+      loadEvents();
+    }
+  }, [currentDate, selectedCalendar, calendars]);
 
   const getDaysInMonth = (date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -250,6 +325,16 @@ const MultipleCalendars = () => {
         </div>
 
         <div className="calendar-filters">
+          <div className="calendar-legend-header">
+            <h3>Calendar Types</h3>
+            <button 
+              className="manage-calendars-btn"
+              onClick={() => setShowCalendarTypeModal(true)}
+              title="Manage Calendar Types"
+            >
+              <FiSettings /> Manage
+            </button>
+          </div>
           <div className="calendar-legend">
             {calendars.map(calendar => (
               <div 
@@ -476,6 +561,112 @@ const MultipleCalendars = () => {
               <button onClick={handleAddEvent} className="btn-primary">
                 <FiPlus /> Add Event
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Calendar Type Management Modal */}
+      {showCalendarTypeModal && (
+        <div className="modal-overlay" onClick={() => {
+          setShowCalendarTypeModal(false);
+          resetCalendarTypeForm();
+        }}>
+          <div className="modal-content calendar-type-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingCalendarType ? 'Edit' : 'Add'} Calendar Type</h2>
+              <button 
+                className="close-btn"
+                onClick={() => {
+                  setShowCalendarTypeModal(false);
+                  resetCalendarTypeForm();
+                }}
+              >
+                <FiX />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Projects, Health, Hobbies"
+                  value={calendarTypeForm.name}
+                  onChange={(e) => setCalendarTypeForm({...calendarTypeForm, name: e.target.value})}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Color</label>
+                <div className="color-picker-container">
+                  <input
+                    type="color"
+                    value={calendarTypeForm.color}
+                    onChange={(e) => setCalendarTypeForm({...calendarTypeForm, color: e.target.value})}
+                    className="color-input"
+                  />
+                  <input
+                    type="text"
+                    value={calendarTypeForm.color}
+                    onChange={(e) => setCalendarTypeForm({...calendarTypeForm, color: e.target.value})}
+                    className="color-text-input"
+                    placeholder="#3B82F6"
+                  />
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button 
+                  onClick={() => {
+                    setShowCalendarTypeModal(false);
+                    resetCalendarTypeForm();
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button onClick={saveCalendarType} className="btn-primary">
+                  <FiPlus /> {editingCalendarType ? 'Update' : 'Add'}
+                </button>
+              </div>
+
+              {/* Existing Calendar Types List */}
+              <div className="existing-calendar-types">
+                <h3>Existing Calendar Types</h3>
+                <div className="calendar-types-list">
+                  {calendars.map(calendar => (
+                    <div key={calendar._id} className="calendar-type-item">
+                      <div className="calendar-type-info">
+                        <div 
+                          className="calendar-color-box"
+                          style={{ backgroundColor: calendar.color }}
+                        />
+                        <span className="calendar-type-name">{calendar.name}</span>
+                        {calendar.isDefault && <span className="default-badge">Default</span>}
+                      </div>
+                      <div className="calendar-type-actions">
+                        <button 
+                          onClick={() => handleEditCalendarType(calendar)}
+                          className="btn-icon-small"
+                          title="Edit"
+                        >
+                          <FiEdit2 />
+                        </button>
+                        {!calendar.isDefault && (
+                          <button 
+                            onClick={() => deleteCalendarType(calendar._id)}
+                            className="btn-icon-small danger"
+                            title="Delete"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -12,6 +12,8 @@ const LoanAmortization = () => {
   const [managedExtraPayments, setManagedExtraPayments] = useState({});
   const [editingInterestRate, setEditingInterestRate] = useState(false);
   const [newInterestRate, setNewInterestRate] = useState(0);
+  const [showLoanTypeDialog, setShowLoanTypeDialog] = useState(false);
+  const [loanType, setLoanType] = useState('');
   
   const [inputs, setInputs] = useState({
     principal: 10000,
@@ -110,8 +112,19 @@ const LoanAmortization = () => {
       return;
     }
     
+    // Show loan type selection dialog
+    setShowLoanTypeDialog(true);
+  };
+  
+  const confirmSaveLoan = async () => {
+    if (!loanType) {
+      alert('Please select whether this loan is lent or borrowed');
+      return;
+    }
+    
     try {
       setSaving(true);
+      setShowLoanTypeDialog(false);
       
       // Prepare payment schedule with dates as Date objects
       const paymentSchedule = schedule.rows.map(row => ({
@@ -131,7 +144,7 @@ const LoanAmortization = () => {
       
       const payload = {
         category: 'loan-amortization',
-        type: 'Loan',
+        type: loanType === 'lent' ? 'Lent' : 'Borrowed',
         name: loanName,
         amount: inputs.principal,
         interestRate: inputs.annualRate,
@@ -146,6 +159,7 @@ const LoanAmortization = () => {
       console.log('Save Response:', response);
       alert('Loan saved successfully!');
       setLoanName('');
+      setLoanType('');
       // Refetch loans after saving
       await fetchSavedLoans();
       setView('manage');
@@ -637,7 +651,7 @@ const LoanAmortization = () => {
                     <thead>
                       <tr>
                         <th>LOAN NAME</th>
-                        <th>TYPE</th>
+                        <th>LOAN TYPE</th>
                         <th>LOAN AMOUNT</th>
                         <th>INTEREST RATE</th>
                         <th>MONTHLY EMI</th>
@@ -652,7 +666,11 @@ const LoanAmortization = () => {
                         return (
                           <tr key={loan._id}>
                             <td className="loan-name-cell">{loan.name}</td>
-                            <td>{loan.type}</td>
+                            <td>
+                              <span className={`loan-type-badge ${loan.type?.toLowerCase()}`}>
+                                {loan.type}
+                              </span>
+                            </td>
                             <td>₹{loan.amount.toLocaleString('en-IN')}</td>
                             <td>{loan.interestRate}%</td>
                             <td>₹{loan.monthlyPayment.toFixed(2)}</td>
@@ -895,6 +913,48 @@ const LoanAmortization = () => {
               })()}
             </div>
           )}
+        </div>
+      )}
+      
+      {/* Loan Type Dialog */}
+      {showLoanTypeDialog && (
+        <div className="dialog-overlay">
+          <div className="dialog-box">
+            <h3>Select Loan Type</h3>
+            <p>Is this loan lent to someone or borrowed from someone?</p>
+            <div className="dialog-options">
+              <button 
+                className={`option-btn ${loanType === 'lent' ? 'selected' : ''}`}
+                onClick={() => setLoanType('lent')}
+              >
+                Lent (I gave money to someone)
+              </button>
+              <button 
+                className={`option-btn ${loanType === 'borrowed' ? 'selected' : ''}`}
+                onClick={() => setLoanType('borrowed')}
+              >
+                Borrowed (I took money from someone)
+              </button>
+            </div>
+            <div className="dialog-actions">
+              <button 
+                className="cancel-btn"
+                onClick={() => {
+                  setShowLoanTypeDialog(false);
+                  setLoanType('');
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="confirm-btn"
+                onClick={confirmSaveLoan}
+                disabled={!loanType}
+              >
+                Save Loan
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

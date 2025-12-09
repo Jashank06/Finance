@@ -20,7 +20,7 @@ router.get('/', auth, async (req, res) => {
 // POST a new bank transaction
 router.post('/', auth, async (req, res) => {
   try {
-    const { accountId, type, amount, merchant, category, description, date, currency } = req.body;
+    const { accountId, type, amount, merchant, category, description, date, currency, transactionType, expenseType } = req.body;
     
     // Validate that the account belongs to the user
     const account = await Bank.findOne({ _id: accountId, userId: req.user.id });
@@ -37,6 +37,8 @@ router.post('/', auth, async (req, res) => {
       description,
       date,
       currency,
+      transactionType,
+      expenseType,
       user: req.user.id
     });
 
@@ -56,7 +58,7 @@ router.post('/', auth, async (req, res) => {
 // PUT update a bank transaction
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { accountId, type, amount, merchant, category, description, date, currency } = req.body;
+    const { accountId, type, amount, merchant, category, description, date, currency, transactionType, expenseType } = req.body;
     
     // Find the transaction and verify ownership
     const transaction = await BankTransaction.findOne({ _id: req.params.id, user: req.user.id });
@@ -75,7 +77,7 @@ router.put('/:id', auth, async (req, res) => {
     // Update the transaction
     const updatedTransaction = await BankTransaction.findByIdAndUpdate(
       req.params.id,
-      { accountId, type, amount, merchant, category, description, date, currency },
+      { accountId, type, amount, merchant, category, description, date, currency, transactionType, expenseType },
       { new: true }
     ).populate({ path: 'accountId', select: 'name bankName type' });
 

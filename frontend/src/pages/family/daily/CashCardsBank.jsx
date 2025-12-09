@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import axios from 'axios';
 import api from '../../../utils/api';
 import FinancialOverviewChart from '../../../components/FinancialOverviewChart';
 import './CashCardsBank.css';
+
+const ModalPortal = ({ children }) => {
+  if (typeof document === 'undefined') return null;
+  return ReactDOM.createPortal(children, document.body);
+};
 
 const CashCardsBank = () => {
   const [activeTab, setActiveTab] = useState('cash');
@@ -35,6 +41,28 @@ const CashCardsBank = () => {
   const [showChart, setShowChart] = useState(true);
   const [selectedBankFilter, setSelectedBankFilter] = useState('all');
   const [selectedCardFilter, setSelectedCardFilter] = useState('all');
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedBank, setSelectedBank] = useState(null);
+  
+  // Card list filters
+  const [cardNameFilter, setCardNameFilter] = useState('');
+  const [cardholderNameFilter, setCardholderNameFilter] = useState('');
+  
+  // Bank list filters
+  const [accountNameFilter, setAccountNameFilter] = useState('');
+  const [accountHolderFilter, setAccountHolderFilter] = useState('');
+  
+  // Card transaction filters
+  const [cardTransactionCategoryFilter, setCardTransactionCategoryFilter] = useState('all');
+  const [cardTransactionExpenseTypeFilter, setCardTransactionExpenseTypeFilter] = useState('all');
+  const [cardTransactionStartDate, setCardTransactionStartDate] = useState('');
+  const [cardTransactionEndDate, setCardTransactionEndDate] = useState('');
+  
+  // Bank transaction filters
+  const [bankTransactionCategoryFilter, setBankTransactionCategoryFilter] = useState('all');
+  const [bankTransactionExpenseTypeFilter, setBankTransactionExpenseTypeFilter] = useState('all');
+  const [bankTransactionStartDate, setBankTransactionStartDate] = useState('');
+  const [bankTransactionEndDate, setBankTransactionEndDate] = useState('');
 
   // Form states
   const [cashForm, setCashForm] = useState({
@@ -422,7 +450,9 @@ const CashCardsBank = () => {
         category: item.category,
         description: item.description,
         date: new Date(item.date).toISOString().split('T')[0],
-        currency: item.currency
+        currency: item.currency,
+        transactionType: item.transactionType || '',
+        expenseType: item.expenseType || ''
       });
       setEditingTransaction(item);
       setShowTransactionForm(true);
@@ -590,12 +620,18 @@ const CashCardsBank = () => {
           </div>
 
           {showCashForm && (
-            <div className="modal">
-              <div className="modal-content">
-                <h3>{editingItem ? 'Edit' : 'Add'} Cash Record</h3>
-                <form onSubmit={handleCashSubmit} autoComplete="off">
-                  <div className="form-grid">
-                    <div className="form-group">
+            <ModalPortal>
+              <div className="ccb-modal">
+                <div className="ccb-modal-content">
+                  <h3>{editingItem ? 'Edit' : 'Add'} Cash Record</h3>
+                  <form onSubmit={handleCashSubmit} autoComplete="off">
+                    <div className="form-grid" style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                      gap: '20px',
+                      marginBottom: '20px'
+                    }}>
+                      <div className="form-group">
                       <label>Type:</label>
                       <select 
                         value={cashForm.type} 
@@ -779,8 +815,9 @@ const CashCardsBank = () => {
                     <button type="submit">{editingItem ? 'Update' : 'Save'}</button>
                   </div>
                 </form>
+                </div>
               </div>
-            </div>
+            </ModalPortal>
           )}
 
           <div className="records-table">
@@ -864,11 +901,12 @@ const CashCardsBank = () => {
           </div>
 
           {showCardForm && (
-            <div className="modal">
-              <div className="modal-content">
-                <h3>{editingItem ? 'Edit' : 'Add'} Card</h3>
-                <form onSubmit={handleCardSubmit} autoComplete="off">
-                  <div className="form-grid">
+            <ModalPortal>
+              <div className="ccb-modal">
+                <div className="ccb-modal-content">
+                  <h3>{editingItem ? 'Edit' : 'Add'} Card</h3>
+                  <form onSubmit={handleCardSubmit} autoComplete="off">
+                    <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
                     <div className="form-group">
                       <label>Type:</label>
                       <select 
@@ -1071,17 +1109,19 @@ const CashCardsBank = () => {
                     <button type="submit">{editingItem ? 'Update' : 'Save'}</button>
                   </div>
                 </form>
+                </div>
               </div>
-            </div>
+            </ModalPortal>
           )}
 
           {/* Transaction Form Modal */}
           {showTransactionForm && (
-            <div className="modal">
-              <div className="modal-content">
-                <h3>{editingTransaction ? 'Edit' : 'Add'} Card Transaction</h3>
-                <form onSubmit={handleTransactionSubmit} autoComplete="off">
-                  <div className="form-grid">
+            <ModalPortal>
+              <div className="ccb-modal">
+                <div className="ccb-modal-content">
+                  <h3>{editingTransaction ? 'Edit' : 'Add'} Card Transaction</h3>
+                  <form onSubmit={handleTransactionSubmit} autoComplete="off">
+                    <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
                     <div className="form-group">
                       <label>Select Card:</label>
                       <select 
@@ -1217,129 +1257,304 @@ const CashCardsBank = () => {
                     <button type="submit">{editingTransaction ? 'Update' : 'Add'} Transaction</button>
                   </div>
                 </form>
+                </div>
               </div>
-            </div>
+            </ModalPortal>
           )}
 
-          {/* Card Details Section */}
-          <div className="cards-grid">
-            {cardRecords.map(card => (
-              <div key={card._id} className={`card-item ${card.type.replace('-', '-')}`}>
-                <div className="card-header">
-                  <div className="card-name">{card.name}</div>
-                  <div className="card-type">{card.type.replace('-', ' ').toUpperCase()}</div>
-                </div>
-                <div className="card-number">****-****-****-{card.cardNumber.slice(-4)}</div>
-                <div className="card-info">
-                  <div className="card-issuer">{card.issuer}</div>
-                  <div className="card-holder">{card.cardholderName}</div>
-                  <div className="card-expiry">Valid Thru {card.expiryDate}</div>
-                </div>
-                {card.creditLimit && (
-                  <div className="card-limit">
-                    <div className="limit-label">Credit Limit</div>
-                    <div className="limit-amount">{card.currency} {card.creditLimit}</div>
-                    {card.availableCredit && (
-                      <div className="available-credit">Available: {card.currency} {card.availableCredit}</div>
-                    )}
-                  </div>
-                )}
-                <div className="card-actions">
-                  <button onClick={() => handleEdit(card, 'card')} className="edit-btn">Edit</button>
-                  <button onClick={() => handleDelete(card._id, 'cards')} className="delete-btn">Delete</button>
-                </div>
+          {/* Cards Table */}
+          {!selectedCard ? (
+            <>
+              <div className="filter-dropdown" style={{ marginBottom: '20px' }}>
+                <label>Card Name:</label>
+                <input 
+                  type="text"
+                  placeholder="Search by card name..."
+                  value={cardNameFilter}
+                  onChange={(e) => setCardNameFilter(e.target.value)}
+                  style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px', minWidth: '200px' }}
+                />
+                
+                <label>Cardholder Name:</label>
+                <input 
+                  type="text"
+                  placeholder="Search by cardholder..."
+                  value={cardholderNameFilter}
+                  onChange={(e) => setCardholderNameFilter(e.target.value)}
+                  style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px', minWidth: '200px' }}
+                />
               </div>
-            ))}
-            {cardRecords.length === 0 && (
-              <div className="empty-state">
-                <p>No cards added yet. Add your first card to get started!</p>
-              </div>
-            )}
-          </div>
-
-          {/* Transactions Section */}
-          <div className="transactions-section">
-            <div className="section-header">
-              <h3>Recent Transactions</h3>
-              <div className="filter-dropdown">
-                <label>Filter by Card:</label>
-                <select 
-                  value={selectedCardFilter} 
-                  onChange={(e) => setSelectedCardFilter(e.target.value)}
-                >
-                  <option value="all">All Cards</option>
-                  {cardRecords.map(card => (
-                    <option key={card._id} value={card._id}>
-                      {card.name} - {card.issuer}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="transactions-table">
-              <table>
+              
+              <div className="records-table">
+                <table>
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Card</th>
+                    <th>Cardholder Name</th>
+                    <th>Card Name</th>
                     <th>Type</th>
-                    <th>Merchant</th>
-                    <th>Amount</th>
+                    <th>Issuer</th>
+                    <th>Card Number</th>
+                    <th>Expiry</th>
+                    <th>Credit Limit</th>
+                    <th>Currency</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {cardTransactions
-                    .filter(transaction => {
-                      if (selectedCardFilter === 'all') return true;
-                      
-                      // Handle both string and object cardId
-                      const transactionCardId = typeof transaction.cardId === 'object' 
-                        ? transaction.cardId._id || transaction.cardId
-                        : transaction.cardId;
-                      
-                      return transactionCardId === selectedCardFilter;
+                  {cardRecords
+                    .filter(card => {
+                      // Filter by card name
+                      if (cardNameFilter && !card.name.toLowerCase().includes(cardNameFilter.toLowerCase())) return false;
+                      // Filter by cardholder name
+                      if (cardholderNameFilter && !card.cardholderName.toLowerCase().includes(cardholderNameFilter.toLowerCase())) return false;
+                      return true;
                     })
-                    .map(transaction => {
-                    const card = transaction.cardId; // cardId should be populated from backend
-                    console.log('Transaction:', transaction, 'Card:', card); // Debug log
-                    return (
-                      <tr key={transaction._id}>
-                        <td>{new Date(transaction.date).toLocaleDateString()}</td>
-                        <td>{card ? card.name : 'Unknown Card'}</td>
-                        <td>
-                          <span className={`transaction-type ${transaction.type}`}>
-                            {transaction.type}
-                          </span>
-                        </td>
-                        <td>{transaction.merchant}</td>
-                        <td className="amount">{transaction.currency} {transaction.amount}</td>
-                        <td>
-                          <button 
-                            className="edit-btn" 
-                            onClick={() => handleTransactionEdit(transaction)}
-                          >
-                            Edit
-                          </button>
-                          <button 
-                            className="delete-btn" 
-                            onClick={() => handleTransactionDelete(transaction._id)}
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                    .map(card => (
+                    <tr key={card._id}>
+                      <td>{card.cardholderName}</td>
+                      <td>
+                        <span 
+                          onClick={() => setSelectedCard(card)}
+                          style={{ 
+                            color: '#007bff', 
+                            cursor: 'pointer', 
+                            fontWeight: '600',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          {card.name}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`record-type-badge ${card.type.split('-').join(' ')}`}>
+                          {card.type.replace('-', ' ')}
+                        </span>
+                      </td>
+                      <td>{card.issuer}</td>
+                      <td>****-****-****-{card.cardNumber.slice(-4)}</td>
+                      <td>{card.expiryDate}</td>
+                      <td>
+                        {card.creditLimit ? `${card.currency} ${card.creditLimit}` : '-'}
+                      </td>
+                      <td>{card.currency}</td>
+                      <td>
+                        <div className="table-actions">
+                          <button onClick={() => handleEdit(card, 'card')} className="edit-btn">Edit</button>
+                          <button onClick={() => handleDelete(card._id, 'cards')} className="delete-btn">Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
-              {cardTransactions.length === 0 && (
+              {cardRecords.filter(card => {
+                // Filter by card name
+                if (cardNameFilter && !card.name.toLowerCase().includes(cardNameFilter.toLowerCase())) return false;
+                // Filter by cardholder name
+                if (cardholderNameFilter && !card.cardholderName.toLowerCase().includes(cardholderNameFilter.toLowerCase())) return false;
+                return true;
+              }).length === 0 && (
                 <div className="empty-state">
-                  <p>No transactions yet. Add your first transaction!</p>
+                  <p>{cardNameFilter || cardholderNameFilter ? 'No cards found matching the filters.' : 'No cards added yet. Add your first card to get started!'}</p>
                 </div>
               )}
             </div>
-          </div>
+            </>
+          ) : (
+            <div>
+              <button 
+                onClick={() => setSelectedCard(null)}
+                className="add-btn"
+                style={{ marginBottom: '20px' }}
+              >
+                ← Back to All Cards
+              </button>
+              <div className="selected-card-info" style={{
+                background: 'linear-gradient(135deg, #1a1a2e, #16213e)',
+                borderRadius: '12px',
+                padding: '20px',
+                color: 'white',
+                marginBottom: '20px'
+              }}>
+                <h3 style={{ marginTop: 0 }}>Card: {selectedCard.name}</h3>
+                <p style={{ margin: '5px 0' }}>Type: {selectedCard.type.replace('-', ' ').toUpperCase()}</p>
+                <p style={{ margin: '5px 0' }}>Issuer: {selectedCard.issuer}</p>
+                <p style={{ margin: '5px 0' }}>Card Number: ****-****-****-{selectedCard.cardNumber.slice(-4)}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Transactions Section */}
+          {selectedCard && (
+            <div className="transactions-section">
+              <div className="section-header">
+                <h3>Transactions for {selectedCard.name}</h3>
+                <div className="filter-dropdown">
+                  <label>Category:</label>
+                  <select 
+                    value={cardTransactionCategoryFilter} 
+                    onChange={(e) => setCardTransactionCategoryFilter(e.target.value)}
+                  >
+                    <option value="all">All Categories</option>
+                    <option value="food">Food & Dining</option>
+                    <option value="shopping">Shopping</option>
+                    <option value="transport">Transportation</option>
+                    <option value="entertainment">Entertainment</option>
+                    <option value="utilities">Utilities</option>
+                    <option value="healthcare">Healthcare</option>
+                    <option value="education">Education</option>
+                    <option value="other">Other</option>
+                  </select>
+                  
+                  <label>Expense Type:</label>
+                  <select 
+                    value={cardTransactionExpenseTypeFilter} 
+                    onChange={(e) => setCardTransactionExpenseTypeFilter(e.target.value)}
+                  >
+                    <option value="all">All Expense Types</option>
+                    <option value="important-necessary">Important & Necessary</option>
+                    <option value="less-important">Less Important</option>
+                    <option value="avoidable-loss">Avoidable & Loss</option>
+                    <option value="unnecessary">Un-necessary</option>
+                    <option value="basic-necessity">Basic Necessity</option>
+                  </select>
+                  
+                  <label>From Date:</label>
+                  <input 
+                    type="date" 
+                    value={cardTransactionStartDate}
+                    onChange={(e) => setCardTransactionStartDate(e.target.value)}
+                    style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
+                  />
+                  
+                  <label>To Date:</label>
+                  <input 
+                    type="date" 
+                    value={cardTransactionEndDate}
+                    onChange={(e) => setCardTransactionEndDate(e.target.value)}
+                    style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
+                  />
+                </div>
+              </div>
+              <div className="transactions-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Merchant</th>
+                      <th>Amount</th>
+                      <th>Type of Transaction</th>
+                      <th>Expense Type</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cardTransactions
+                      .filter(transaction => {
+                        const transactionCardId = typeof transaction.cardId === 'object' 
+                          ? transaction.cardId._id || transaction.cardId
+                          : transaction.cardId;
+                        
+                        // Filter by card
+                        if (transactionCardId !== selectedCard._id) return false;
+                        
+                        // Filter by category
+                        if (cardTransactionCategoryFilter !== 'all' && transaction.category !== cardTransactionCategoryFilter) return false;
+                        
+                        // Filter by expense type
+                        if (cardTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== cardTransactionExpenseTypeFilter) return false;
+                        
+                        // Filter by date range
+                        const transactionDate = new Date(transaction.date);
+                        if (cardTransactionStartDate) {
+                          const startDate = new Date(cardTransactionStartDate);
+                          if (transactionDate < startDate) return false;
+                        }
+                        if (cardTransactionEndDate) {
+                          const endDate = new Date(cardTransactionEndDate);
+                          endDate.setHours(23, 59, 59, 999); // Include the entire end date
+                          if (transactionDate > endDate) return false;
+                        }
+                        
+                        return true;
+                      })
+                      .map(transaction => {
+                      const card = transaction.cardId;
+                      return (
+                        <tr key={transaction._id}>
+                          <td>{new Date(transaction.date).toLocaleDateString()}</td>
+                          <td>
+                            <span className={`transaction-type ${transaction.type}`}>
+                              {transaction.type}
+                            </span>
+                          </td>
+                          <td>{transaction.merchant}</td>
+                          <td className="amount">{transaction.currency} {transaction.amount}</td>
+                          <td>
+                            {transaction.transactionType ? transaction.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                          </td>
+                          <td>
+                            {transaction.expenseType ? transaction.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                          </td>
+                          <td>
+                            <button 
+                              className="edit-btn" 
+                              onClick={() => handleTransactionEdit(transaction)}
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              className="delete-btn" 
+                              onClick={() => handleTransactionDelete(transaction._id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {cardTransactions.filter(transaction => {
+                  const transactionCardId = typeof transaction.cardId === 'object' 
+                    ? transaction.cardId._id || transaction.cardId
+                    : transaction.cardId;
+                  
+                  // Filter by card
+                  if (transactionCardId !== selectedCard._id) return false;
+                  
+                  // Filter by category
+                  if (cardTransactionCategoryFilter !== 'all' && transaction.category !== cardTransactionCategoryFilter) return false;
+                  
+                  // Filter by expense type
+                  if (cardTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== cardTransactionExpenseTypeFilter) return false;
+                  
+                  // Filter by date range
+                  const transactionDate = new Date(transaction.date);
+                  if (cardTransactionStartDate) {
+                    const startDate = new Date(cardTransactionStartDate);
+                    if (transactionDate < startDate) return false;
+                  }
+                  if (cardTransactionEndDate) {
+                    const endDate = new Date(cardTransactionEndDate);
+                    endDate.setHours(23, 59, 59, 999);
+                    if (transactionDate > endDate) return false;
+                  }
+                  
+                  return true;
+                }).length === 0 && (
+                  <div className="empty-state">
+                    <p>
+                      {cardTransactionCategoryFilter === 'all' && cardTransactionExpenseTypeFilter === 'all' && !cardTransactionStartDate && !cardTransactionEndDate
+                        ? 'No transactions yet for this card. Add your first transaction!'
+                        : 'No transactions found matching the selected filters.'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
         </div>
       )}
@@ -1373,11 +1588,12 @@ const CashCardsBank = () => {
           </div>
 
           {showBankForm && (
-            <div className="modal">
-              <div className="modal-content">
-                <h3>{editingItem ? 'Edit' : 'Add'} Bank Account</h3>
-                <form onSubmit={handleBankSubmit} autoComplete="off">
-                  <div className="form-grid">
+            <ModalPortal>
+              <div className="ccb-modal">
+                <div className="ccb-modal-content">
+                  <h3>{editingItem ? 'Edit' : 'Add'} Bank Account</h3>
+                  <form onSubmit={handleBankSubmit} autoComplete="off">
+                    <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
                     <div className="form-group">
                       <label>Account Type:</label>
                       <select 
@@ -1656,16 +1872,18 @@ const CashCardsBank = () => {
                     <button type="submit">{editingItem ? 'Update' : 'Save'}</button>
                   </div>
                 </form>
+                </div>
               </div>
-            </div>
+            </ModalPortal>
           )}
 
           {showBankTransactionForm && (
-            <div className="modal">
-              <div className="modal-content">
-                <h3>{editingBankTransaction ? 'Edit' : 'Add'} Bank Transaction</h3>
-                <form onSubmit={handleBankTransactionSubmit} autoComplete="off">
-                  <div className="form-grid">
+            <ModalPortal>
+              <div className="ccb-modal">
+                <div className="ccb-modal-content">
+                  <h3>{editingBankTransaction ? 'Edit' : 'Add'} Bank Transaction</h3>
+                  <form onSubmit={handleBankTransactionSubmit} autoComplete="off">
+                    <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
                     <div className="form-group">
                       <label>Select Account:</label>
                       <select 
@@ -1805,145 +2023,305 @@ const CashCardsBank = () => {
                     <button type="submit">{editingBankTransaction ? 'Update' : 'Add'} Transaction</button>
                   </div>
                 </form>
+                </div>
+              </div>
+            </ModalPortal>
+          )}
+
+          {/* Bank Transactions Section */}
+          {selectedBank && (
+            <div className="transactions-section">
+              <div className="section-header">
+                <h3>Transactions for {selectedBank.name}</h3>
+                <div className="filter-dropdown">
+                  <label>Category:</label>
+                  <select 
+                    value={bankTransactionCategoryFilter} 
+                    onChange={(e) => setBankTransactionCategoryFilter(e.target.value)}
+                  >
+                    <option value="all">All Categories</option>
+                    <option value="food">Food & Dining</option>
+                    <option value="shopping">Shopping</option>
+                    <option value="transport">Transportation</option>
+                    <option value="entertainment">Entertainment</option>
+                    <option value="utilities">Utilities</option>
+                    <option value="healthcare">Healthcare</option>
+                    <option value="education">Education</option>
+                    <option value="salary">Salary</option>
+                    <option value="rent">Rent</option>
+                    <option value="other">Other</option>
+                  </select>
+                  
+                  <label>Expense Type:</label>
+                  <select 
+                    value={bankTransactionExpenseTypeFilter} 
+                    onChange={(e) => setBankTransactionExpenseTypeFilter(e.target.value)}
+                  >
+                    <option value="all">All Expense Types</option>
+                    <option value="important-necessary">Important & Necessary</option>
+                    <option value="less-important">Less Important</option>
+                    <option value="avoidable-loss">Avoidable & Loss</option>
+                    <option value="unnecessary">Un-necessary</option>
+                    <option value="basic-necessity">Basic Necessity</option>
+                  </select>
+                  
+                  <label>From Date:</label>
+                  <input 
+                    type="date" 
+                    value={bankTransactionStartDate}
+                    onChange={(e) => setBankTransactionStartDate(e.target.value)}
+                    style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
+                  />
+                  
+                  <label>To Date:</label>
+                  <input 
+                    type="date" 
+                    value={bankTransactionEndDate}
+                    onChange={(e) => setBankTransactionEndDate(e.target.value)}
+                    style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
+                  />
+                </div>
+              </div>
+              <div className="transactions-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Merchant/Payee</th>
+                      <th>Amount</th>
+                      <th>Type of Transaction</th>
+                      <th>Expense Type</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bankTransactions
+                      .filter(transaction => {
+                        const transactionAccountId = typeof transaction.accountId === 'object' 
+                          ? transaction.accountId._id || transaction.accountId
+                          : transaction.accountId;
+                        
+                        // Filter by bank account
+                        if (transactionAccountId !== selectedBank._id) return false;
+                        
+                        // Filter by category
+                        if (bankTransactionCategoryFilter !== 'all' && transaction.category !== bankTransactionCategoryFilter) return false;
+                        
+                        // Filter by expense type
+                        if (bankTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== bankTransactionExpenseTypeFilter) return false;
+                        
+                        // Filter by date range
+                        const transactionDate = new Date(transaction.date);
+                        if (bankTransactionStartDate) {
+                          const startDate = new Date(bankTransactionStartDate);
+                          if (transactionDate < startDate) return false;
+                        }
+                        if (bankTransactionEndDate) {
+                          const endDate = new Date(bankTransactionEndDate);
+                          endDate.setHours(23, 59, 59, 999); // Include the entire end date
+                          if (transactionDate > endDate) return false;
+                        }
+                        
+                        return true;
+                      })
+                      .map(transaction => {
+                      const account = transaction.accountId;
+                      return (
+                        <tr key={transaction._id}>
+                          <td>{new Date(transaction.date).toLocaleDateString()}</td>
+                          <td>
+                            <span className={`transaction-type ${transaction.type}`}>
+                              {transaction.type}
+                            </span>
+                          </td>
+                          <td>{transaction.merchant}</td>
+                          <td className="amount">{transaction.currency} {transaction.amount}</td>
+                          <td>
+                            {transaction.transactionType ? transaction.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                          </td>
+                          <td>
+                            {transaction.expenseType ? transaction.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                          </td>
+                          <td>
+                            <button 
+                              className="edit-btn" 
+                              onClick={() => handleBankTransactionEdit(transaction)}
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              className="delete-btn" 
+                              onClick={() => handleBankTransactionDelete(transaction._id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {bankTransactions.filter(transaction => {
+                  const transactionAccountId = typeof transaction.accountId === 'object' 
+                    ? transaction.accountId._id || transaction.accountId
+                    : transaction.accountId;
+                  
+                  // Filter by bank account
+                  if (transactionAccountId !== selectedBank._id) return false;
+                  
+                  // Filter by category
+                  if (bankTransactionCategoryFilter !== 'all' && transaction.category !== bankTransactionCategoryFilter) return false;
+                  
+                  // Filter by expense type
+                  if (bankTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== bankTransactionExpenseTypeFilter) return false;
+                  
+                  // Filter by date range
+                  const transactionDate = new Date(transaction.date);
+                  if (bankTransactionStartDate) {
+                    const startDate = new Date(bankTransactionStartDate);
+                    if (transactionDate < startDate) return false;
+                  }
+                  if (bankTransactionEndDate) {
+                    const endDate = new Date(bankTransactionEndDate);
+                    endDate.setHours(23, 59, 59, 999);
+                    if (transactionDate > endDate) return false;
+                  }
+                  
+                  return true;
+                }).length === 0 && (
+                  <div className="empty-state">
+                    <p>
+                      {bankTransactionCategoryFilter === 'all' && bankTransactionExpenseTypeFilter === 'all' && !bankTransactionStartDate && !bankTransactionEndDate
+                        ? 'No transactions yet for this bank account. Add your first transaction!'
+                        : 'No transactions found matching the selected filters.'}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* Bank Transactions Section */}
-          <div className="transactions-section">
-            <div className="section-header">
-              <h3>Recent Bank Transactions</h3>
-              <div className="filter-dropdown">
-                <label>Filter by Bank:</label>
-                <select 
-                  value={selectedBankFilter} 
-                  onChange={(e) => setSelectedBankFilter(e.target.value)}
-                >
-                  <option value="all">All Banks</option>
-                  {bankRecords.map(account => (
-                    <option key={account._id} value={account._id}>
-                      {account.name} - {account.bankName}
-                    </option>
-                  ))}
-                </select>
+          {/* Bank Accounts Table */}
+          {!selectedBank ? (
+            <>
+              <div className="filter-dropdown" style={{ marginBottom: '20px' }}>
+                <label>Account Name:</label>
+                <input 
+                  type="text"
+                  placeholder="Search by account name..."
+                  value={accountNameFilter}
+                  onChange={(e) => setAccountNameFilter(e.target.value)}
+                  style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px', minWidth: '200px' }}
+                />
+                
+                <label>Account Holder:</label>
+                <input 
+                  type="text"
+                  placeholder="Search by account holder..."
+                  value={accountHolderFilter}
+                  onChange={(e) => setAccountHolderFilter(e.target.value)}
+                  style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px', minWidth: '200px' }}
+                />
               </div>
-            </div>
-            <div className="transactions-table">
-              <table>
+              
+              <div className="records-table">
+                <table>
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Account</th>
+                    <th>Account Holder</th>
+                    <th>Account Name</th>
                     <th>Type</th>
-                    <th>Merchant/Payee</th>
-                    <th>Amount</th>
-                    <th>Type of Transaction</th>
-                    <th>Expense Type</th>
+                    <th>Bank Name</th>
+                    <th>Account Number</th>
+                    <th>Balance</th>
+                    <th>IFSC Code</th>
+                    <th>Branch</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {bankTransactions
-                    .filter(transaction => {
-                      if (selectedBankFilter === 'all') return true;
-                      
-                      // Handle both string and object accountId
-                      const transactionAccountId = typeof transaction.accountId === 'object' 
-                        ? transaction.accountId._id || transaction.accountId
-                        : transaction.accountId;
-                      
-                      return transactionAccountId === selectedBankFilter;
+                  {bankRecords
+                    .filter(account => {
+                      // Filter by account name
+                      if (accountNameFilter && !account.name.toLowerCase().includes(accountNameFilter.toLowerCase())) return false;
+                      // Filter by account holder name
+                      if (accountHolderFilter && !account.accountHolderName.toLowerCase().includes(accountHolderFilter.toLowerCase())) return false;
+                      return true;
                     })
-                    .map(transaction => {
-                    const account = transaction.accountId; // accountId should be populated from backend
-                    return (
-                      <tr key={transaction._id}>
-                        <td>{new Date(transaction.date).toLocaleDateString()}</td>
-                        <td>{account ? `${account.name} - ${account.bankName}` : 'Unknown Account'}</td>
-                        <td>
-                          <span className={`transaction-type ${transaction.type}`}>
-                            {transaction.type}
-                          </span>
-                        </td>
-                        <td>{transaction.merchant}</td>
-                        <td className="amount">{transaction.currency} {transaction.amount}</td>
-                        <td>
-                          {transaction.transactionType ? transaction.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
-                        </td>
-                        <td>
-                          {transaction.expenseType ? transaction.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
-                        </td>
-                        <td>
-                          <button 
-                            className="edit-btn" 
-                            onClick={() => handleBankTransactionEdit(transaction)}
-                          >
-                            Edit
-                          </button>
-                          <button 
-                            className="delete-btn" 
-                            onClick={() => handleBankTransactionDelete(transaction._id)}
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                    .map(account => (
+                    <tr key={account._id}>
+                      <td>{account.accountHolderName}</td>
+                      <td>
+                        <span 
+                          onClick={() => setSelectedBank(account)}
+                          style={{ 
+                            color: '#007bff', 
+                            cursor: 'pointer', 
+                            fontWeight: '600',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          {account.name}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`record-type-badge ${account.type.split('-').join(' ')}`}>
+                          {account.type.replace('-', ' ')}
+                        </span>
+                      </td>
+                      <td>{account.bankName}</td>
+                      <td>****-****-{account.accountNumber ? account.accountNumber.slice(-4) : '****'}</td>
+                      <td className="amount">{account.currency} {calculateAccountBalance(account).toLocaleString()}</td>
+                      <td>{account.ifscCode}</td>
+                      <td>{account.branchName || '-'}</td>
+                      <td>
+                        <div className="table-actions">
+                          <button onClick={() => handleEdit(account, 'bank')} className="edit-btn">Edit</button>
+                          <button onClick={() => handleDelete(account._id, 'bank')} className="delete-btn">Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
-              {bankTransactions.length === 0 && (
+              {bankRecords.filter(account => {
+                // Filter by account name
+                if (accountNameFilter && !account.name.toLowerCase().includes(accountNameFilter.toLowerCase())) return false;
+                // Filter by account holder name
+                if (accountHolderFilter && !account.accountHolderName.toLowerCase().includes(accountHolderFilter.toLowerCase())) return false;
+                return true;
+              }).length === 0 && (
                 <div className="empty-state">
-                  <p>No bank transactions yet. Add your first transaction!</p>
+                  <p>{accountNameFilter || accountHolderFilter ? 'No bank accounts found matching the filters.' : 'No bank accounts added yet. Add your first bank account to get started!'}</p>
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Bank Accounts Section */}
-          <div className="bank-cards-grid">
-            {bankRecords.map(account => (
-              <div key={account._id} className={`bank-card-item ${account.type.replace(' ', '-').replace('-', '-')}`}>
-                <div className="bank-card-header">
-                  <div className="bank-card-name">{account.name}</div>
-                  <div className="bank-card-type">{account.type.replace('-', ' ').toUpperCase()}</div>
-                </div>
-                <div className="bank-card-details">
-                  <div className="bank-info-left">
-                    <div className="bank-logo-placeholder">
-                      <div className="bank-name-main">{account.bankName}</div>
-                    </div>
-                    <div className="bank-card-info">
-                      <div className="account-number">****-****-{account.accountNumber ? account.accountNumber.slice(-4) : '****'}</div>
-                      <div className="account-holder">{account.accountHolderName}</div>
-                      {account.branchName && <div className="branch-name">{account.branchName}</div>}
-                    </div>
-                  </div>
-                  <div className="bank-info-right">
-                    <div className="bank-card-balance">
-                      <div className="balance-label">Balance</div>
-                      <div className="balance-amount">{account.currency} {calculateAccountBalance(account).toLocaleString()}</div>
-                    </div>
-                    {account.interestRate && (
-                      <div className="bank-card-interest">
-                        <div className="interest-label">Interest Rate</div>
-                        <div className="interest-rate">{account.interestRate}%</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="bank-card-actions">
-                  <button onClick={() => handleEdit(account, 'bank')} className="edit-btn">Edit</button>
-                  <button onClick={() => handleDelete(account._id, 'bank')} className="delete-btn">Delete</button>
-                </div>
+            </>
+          ) : (
+            <div>
+              <button 
+                onClick={() => setSelectedBank(null)}
+                className="add-btn"
+                style={{ marginBottom: '20px' }}
+              >
+                ← Back to All Banks
+              </button>
+              <div className="selected-card-info" style={{
+                background: 'linear-gradient(135deg, #1e3c72, #2a5298)',
+                borderRadius: '12px',
+                padding: '20px',
+                color: 'white',
+                marginBottom: '20px'
+              }}>
+                <h3 style={{ marginTop: 0 }}>Bank Account: {selectedBank.name}</h3>
+                <p style={{ margin: '5px 0' }}>Type: {selectedBank.type.replace('-', ' ').toUpperCase()}</p>
+                <p style={{ margin: '5px 0' }}>Bank: {selectedBank.bankName}</p>
+                <p style={{ margin: '5px 0' }}>Account Number: ****-****-{selectedBank.accountNumber ? selectedBank.accountNumber.slice(-4) : '****'}</p>
+                <p style={{ margin: '5px 0' }}>Balance: {selectedBank.currency} {calculateAccountBalance(selectedBank).toLocaleString()}</p>
               </div>
-            ))}
-            {bankRecords.length === 0 && (
-              <div className="empty-state">
-                <p>No bank accounts added yet. Add your first bank account to get started!</p>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
       

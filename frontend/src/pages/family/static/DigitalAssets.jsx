@@ -487,15 +487,12 @@ const DigitalAssets = () => {
                 <table className="websites-table">
                   <thead>
                     <tr>
-                      <th>Project Name</th>
-                      <th>Type</th>
                       <th>Domain Name</th>
                       <th>Domain Provider</th>
-                      <th>Server Hosting</th>
                       <th>Domain Renewal</th>
+                      <th>Server Hosting</th>
+                      <th>Service Provider</th>
                       <th>Hosting Renewal Dates</th>
-                      <th>Status</th>
-                      <th>Priority</th>
                       <th>Completion %</th>
                       <th>Actions</th>
                     </tr>
@@ -505,23 +502,12 @@ const DigitalAssets = () => {
                       const completionPercentage = calculateCompletionPercentage(website);
                       return (
                         <tr key={website._id}>
-                          <td className="website-name">{website.projectName}</td>
-                          <td>{website.projectType}</td>
                           <td>{website.domain?.domainName || 'N/A'}</td>
                           <td>{website.domain?.registrar || 'N/A'}</td>
-                          <td>{website.hosting?.serverHosting || 'N/A'}</td>
                           <td>{website.domain?.renewalDate ? new Date(website.domain.renewalDate).toLocaleDateString() : 'N/A'}</td>
+                          <td>{website.hosting?.serverHosting || 'N/A'}</td>
+                          <td>{website.hosting?.serviceProvider || 'N/A'}</td>
                           <td>{website.hosting?.renewalDate ? new Date(website.hosting.renewalDate).toLocaleDateString() : 'N/A'}</td>
-                          <td>
-                            <span className={`status-badge status-${website.status}`}>
-                              {website.status}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`priority-badge priority-${website.priority}`}>
-                              {website.priority}
-                            </span>
-                          </td>
                           <td>
                             <div className="completion-percentage">
                               <div className={`completion-bar ${completionPercentage === 100 ? 'complete' : completionPercentage >= 50 ? 'partial' : 'low'}`}>

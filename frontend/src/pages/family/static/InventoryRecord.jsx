@@ -11,6 +11,7 @@ const defaultEntry = {
   unit: 'pcs',
   purchaseDate: '',
   purchasePrice: '',
+  invoiceNumber: '',
   vendorName: '',
   serialNumber: '',
   warrantyExpiry: '',
@@ -82,6 +83,14 @@ const InventoryRecord = () => {
       }
     })();
   }, []);
+
+  // Auto-calculate total when quantity or purchase price changes
+  useEffect(() => {
+    const quantity = parseFloat(formData.quantity) || 0;
+    const purchasePrice = parseFloat(formData.purchasePrice) || 0;
+    const total = quantity * purchasePrice;
+    setFormData(prev => ({ ...prev, totalValue: total.toString() }));
+  }, [formData.quantity, formData.purchasePrice]);
 
   const resetForm = () => {
     setFormData(defaultEntry);
@@ -188,6 +197,10 @@ const InventoryRecord = () => {
                   <input type="number" value={formData.purchasePrice} onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })} />
                 </div>
                 <div className="form-group">
+                  <label>Invoice Number</label>
+                  <input type="text" value={formData.invoiceNumber} onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })} placeholder="Invoice or bill number" />
+                </div>
+                <div className="form-group">
                   <label>Vendor Name</label>
                   <input type="text" value={formData.vendorName} onChange={(e) => setFormData({ ...formData, vendorName: e.target.value })} />
                 </div>
@@ -203,8 +216,8 @@ const InventoryRecord = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Total Value</label>
-                  <input type="number" value={formData.totalValue} onChange={(e) => setFormData({ ...formData, totalValue: e.target.value })} placeholder="Total current value" />
+                  <label>Total Value (Auto-calculated)</label>
+                  <input type="number" value={formData.totalValue} readOnly placeholder="Total current value" style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }} />
                 </div>
 
                 <div className="form-group">
