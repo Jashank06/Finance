@@ -171,6 +171,76 @@ const BasicDetailsSchema = new mongoose.Schema({
     address: String,
     planNo: String,
     customerNumber: String
+  }],
+  cards: [{
+    bankName: String,
+    cardHolderName: String,
+    cardNumber: String,
+    expiryDate: String,
+    atmPin: String,
+    cvv: String,
+    url: String,
+    userId: String,
+    password: String,
+    customerCareNumber: String,
+    customerCareEmail: String,
+    cardType: String
+  }],
+  paymentGateways: [{
+    company: String,
+    companyName: String,
+    bankName: String,
+    accountNumber: String,
+    url: String,
+    userId: String,
+    password: String
+  }],
+  mutualFundsPortfolio: [{
+    srNo: String,
+    fundHouse: String,
+    investorName: String,
+    fundName: String,
+    goalPurpose: String,
+    folioNumber: String,
+    dateOfPurchase: String,
+    purchaseNAV: String,
+    numberOfUnits: String,
+    purchaseValue: String,
+    currentNAV: String,
+    currentValuation: String,
+    difference: String,
+    percentDifference: String
+  }],
+  sharesPortfolio: [{
+    srNo: String,
+    dematCompany: String,
+    investorName: String,
+    scriptName: String,
+    goalPurpose: String,
+    dateOfPurchase: String,
+    purchaseNAV: String,
+    numberOfUnits: String,
+    purchaseValue: String,
+    currentNAV: String,
+    currentValuation: String,
+    difference: String,
+    percentDifference: String
+  }],
+  insurancePortfolio: [{
+    srNo: String,
+    insuranceCompany: String,
+    insurerName: String,
+    policyType: String,
+    goalPurpose: String,
+    policyName: String,
+    policyNumber: String,
+    policyStartDate: String,
+    premiumMode: String,
+    premiumAmount: String,
+    lastPremiumPayingDate: String,
+    maturityDate: String,
+    sumAssured: String,
+    nominee: String
   }]
 }, { timestamps: true });
 
@@ -573,8 +643,96 @@ const CustomerSupportSchema = new mongoose.Schema({
 
 const FamilyProfileSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  familyName: String,
+  // Personal Information
+  firstName: String,
+  lastName: String,
+  dateOfBirth: String,
+  gender: String,
+  bloodGroup: String,
+  maritalStatus: String,
+  anniversaryDate: String,
+  // Contact Information
+  primaryMobile: String,
+  secondaryMobile: String,
+  primaryEmail: String,
+  secondaryEmail: String,
+  whatsappNumber: String,
+  // Address Information
+  currentAddress: {
+    street: String,
+    area: String,
+    city: String,
+    state: String,
+    pincode: String,
+    country: String
+  },
+  permanentAddress: {
+    street: String,
+    area: String,
+    city: String,
+    state: String,
+    pincode: String,
+    country: String
+  },
+  sameAsCurrent: { type: Boolean, default: true },
+  // Family Information
   familyHead: String,
+  totalFamilyMembers: String,
+  dependents: String,
+  familyMembers: [{
+    name: String,
+    relation: String,
+    dateOfBirth: String,
+    age: String,
+    gender: String,
+    bloodGroup: String,
+    maritalStatus: String,
+    anniversaryDate: String,
+    mobile: String,
+    email: String,
+    occupation: String,
+    companyName: String,
+    workPhone: String,
+    education: String,
+    specialization: String,
+    hobbies: String,
+    aadhaarNumber: String,
+    panNumber: String,
+    passportNumber: String,
+    drivingLicense: String
+  }],
+  // Professional Information
+  occupation: String,
+  companyName: String,
+  designation: String,
+  workEmail: String,
+  workPhone: String,
+  officeAddress: {
+    street: String,
+    area: String,
+    city: String,
+    state: String,
+    pincode: String
+  },
+  // Additional Information
+  nationality: { type: String, default: 'Indian' },
+  religion: String,
+  caste: String,
+  motherTongue: String,
+  languagesKnown: [String],
+  aadhaarNumber: String,
+  panNumber: String,
+  passportNumber: String,
+  voterId: String,
+  // Emergency Contact
+  emergencyContact: {
+    name: String,
+    relation: String,
+    mobile: String,
+    address: String
+  },
+  // Legacy fields for backward compatibility
+  familyName: String,
   totalMembers: String,
   members: [{
     name: String,
@@ -600,20 +758,11 @@ const FamilyProfileSchema = new mongoose.Schema({
     passportNumber: String,
     drivingLicense: String
   }],
-  currentAddress: {
-    street: String,
-    area: String,
-    city: String,
-    state: String,
-    pincode: String,
-    country: String
-  },
-  emergencyContact: {
-    name: String,
-    relation: String,
-    mobile: String,
-    address: String
-  },
+  primaryPhone: String,
+  emergencyName: String,
+  emergencyPhone: String,
+  city: String,
+  state: String,
   notes: String
 }, { timestamps: true });
 

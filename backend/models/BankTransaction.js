@@ -21,8 +21,13 @@ const bankTransactionSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['food', 'shopping', 'transport', 'entertainment', 'utilities', 'healthcare', 'education', 'salary', 'rent', 'other'],
+    enum: ['traveling', 'school-fees', 'grocery-household', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'salary', 'rent', 'other'],
     default: 'other'
+  },
+  modeOfTransaction: {
+    type: String,
+    enum: ['neft', 'rtgs', 'imps', 'upi', 'cheque', 'dd', 'atm', 'debit-card', 'online-transfer', 'cash', 'other'],
+    default: 'neft'
   },
   description: {
     type: String
@@ -30,7 +35,10 @@ const bankTransactionSchema = new mongoose.Schema({
   // New transaction classification fields
   transactionType: {
     type: String,
-    enum: ['expense', 'transfer', 'loan-give', 'loan-take', 'on-behalf-in', 'on-behalf-out'],
+    enum: ['expense', 'transfer', 'loan-give', 'loan-take', 'udhar-give', 'udhar-receive', 'on-behalf-in', 'on-behalf-out'],
+  },
+  narration: {
+    type: String
   },
   expenseType: {
     type: String,

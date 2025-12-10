@@ -18,7 +18,12 @@ const calendarTypesRoutes = require('./routes/calendarTypes');
 const categoriesRoutes = require('./routes/categories');
 const remindersRoutes = require('./routes/reminders');
 const notificationsRoutes = require('./routes/notifications');
+const projectRoutes = require('./routes/projects');
 const testRoutes = require('./routes/test');
+const investmentValuationRoutes = require('./routes/investmentValuation');
+const investmentProfileRoutes = require('./routes/investmentProfile');
+const cashMembersRoutes = require('./routes/cashMembers');
+const cashTransactionsRoutes = require('./routes/cashTransactions');
 
 const app = express();
 
@@ -47,7 +52,12 @@ app.use('/api/calendar-types', calendarTypesRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/reminders', remindersRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/projects', projectRoutes);
 app.use('/api/test', testRoutes);
+app.use('/api/investment-valuation', investmentValuationRoutes);
+app.use('/api/investment-profile', investmentProfileRoutes);
+app.use('/api/cash-members', cashMembersRoutes);
+app.use('/api/cash-transactions', cashTransactionsRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

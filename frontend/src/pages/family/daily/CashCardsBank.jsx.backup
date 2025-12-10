@@ -4,7 +4,6 @@ import axios from 'axios';
 import api from '../../../utils/api';
 import FinancialOverviewChart from '../../../components/FinancialOverviewChart';
 import CashMemberManagement from '../../../components/CashMemberManagement';
-import TransactionTable from '../../../components/TransactionTable';
 import './CashCardsBank.css';
 
 const ModalPortal = ({ children }) => {
@@ -606,7 +605,272 @@ const CashCardsBank = () => {
 
       {/* Cash Section */}
       {activeTab === 'cash' && (
-        <CashMemberManagement />
+        <div className="tab-content">
+          <div className="section-header">
+            <h2>Cash Records</h2>
+            <button 
+              className="add-btn"
+              onClick={() => {
+                resetCashForm();
+                setEditingItem(null);
+                setShowCashForm(true);
+              }}
+            >
+              Add Cash Record
+            </button>
+          </div>
+
+          {showCashForm && (
+            <ModalPortal>
+              <div className="ccb-modal">
+                <div className="ccb-modal-content">
+                  <h3>{editingItem ? 'Edit' : 'Add'} Cash Record</h3>
+                  <form onSubmit={handleCashSubmit} autoComplete="off">
+                    <div className="form-grid" style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                      gap: '20px',
+                      marginBottom: '20px'
+                    }}>
+                      <div className="form-group">
+                      <label>Type:</label>
+                      <select 
+                        value={cashForm.type} 
+                        onChange={(e) => setCashForm({...cashForm, type: e.target.value})}
+                      >
+                        <option value="physical-cash">Physical Cash</option>
+                        <option value="digital-wallet">Digital Wallet</option>
+                        <option value="cryptocurrency">Cryptocurrency</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Name:</label>
+                      <input 
+                        type="text" 
+                        value={cashForm.name}
+                        onChange={(e) => setCashForm({...cashForm, name: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Currency:</label>
+                      <select 
+                        value={cashForm.currency} 
+                        onChange={(e) => setCashForm({...cashForm, currency: e.target.value})}
+                      >
+                        <option value="INR">INR</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                        <option value="JPY">JPY</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Amount:</label>
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        value={cashForm.amount}
+                        onChange={(e) => setCashForm({...cashForm, amount: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Date:</label>
+                      <input 
+                        type="date" 
+                        value={cashForm.date}
+                        onChange={(e) => setCashForm({...cashForm, date: e.target.value})}
+                        required
+                      />
+                    </div>
+                    
+                    {cashForm.type === 'physical-cash' && (
+                      <div className="form-group">
+                        <label>Location:</label>
+                        <input 
+                          type="text" 
+                          value={cashForm.location}
+                          onChange={(e) => setCashForm({...cashForm, location: e.target.value})}
+                          required
+                        />
+                      </div>
+                    )}
+                    
+                    {cashForm.type === 'digital-wallet' && (
+                      <>
+                        <div className="form-group">
+                          <label>Wallet Provider:</label>
+                          <input 
+                            type="text" 
+                            value={cashForm.walletProvider}
+                            onChange={(e) => setCashForm({...cashForm, walletProvider: e.target.value})}
+                            required
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Wallet Number:</label>
+                          <input 
+                            type="text" 
+                            value={cashForm.walletNumber}
+                            onChange={(e) => setCashForm({...cashForm, walletNumber: e.target.value})}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Wallet Type:</label>
+                          <select 
+                            value={cashForm.walletType} 
+                            onChange={(e) => setCashForm({...cashForm, walletType: e.target.value})}
+                          >
+                            <option value="prepaid">Prepaid</option>
+                            <option value="postpaid">Postpaid</option>
+                            <option value="gift-card">Gift Card</option>
+                          </select>
+                        </div>
+                      </>
+                    )}
+                    
+                    {cashForm.type === 'cryptocurrency' && (
+                      <>
+                        <div className="form-group">
+                          <label>Crypto Type:</label>
+                          <input 
+                            type="text" 
+                            value={cashForm.cryptoType}
+                            onChange={(e) => setCashForm({...cashForm, cryptoType: e.target.value})}
+                            required
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Exchange:</label>
+                          <input 
+                            type="text" 
+                            value={cashForm.exchange}
+                            onChange={(e) => setCashForm({...cashForm, exchange: e.target.value})}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Wallet Address:</label>
+                          <input 
+                            type="text" 
+                            value={cashForm.walletAddress}
+                            onChange={(e) => setCashForm({...cashForm, walletAddress: e.target.value})}
+                          />
+                        </div>
+                      </>
+                    )}
+                    
+                    <div className="form-group">
+                      <label>Type of Transaction:</label>
+                      <select 
+                        value={cashForm.transactionType} 
+                        onChange={(e) => setCashForm({...cashForm, transactionType: e.target.value})}
+                      >
+                        <option value="">Select type...</option>
+                        <option value="expense">Expense</option>
+                        <option value="transfer">Transfer</option>
+                        <option value="loan-give">Loan Give</option>
+                        <option value="loan-take">Loan Take</option>
+                        <option value="on-behalf-in">On-behalf - Amount In</option>
+                        <option value="on-behalf-out">On-behalf - Amount Out</option>
+                      </select>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Expense Type:</label>
+                      <select 
+                        value={cashForm.expenseType} 
+                        onChange={(e) => setCashForm({...cashForm, expenseType: e.target.value})}
+                      >
+                        <option value="">Select type...</option>
+                        <option value="important-necessary">Important & Necessary</option>
+                        <option value="less-important">Less Important</option>
+                        <option value="avoidable-loss">Avoidable & Loss</option>
+                        <option value="unnecessary">Un-necessary</option>
+                        <option value="basic-necessity">Basic Necessity</option>
+                      </select>
+                    </div>
+                    
+                    <div className="form-group full-width">
+                      <label>Description:</label>
+                      <textarea 
+                        value={cashForm.description}
+                        onChange={(e) => setCashForm({...cashForm, description: e.target.value})}
+                        rows={2}
+                      />
+                    </div>
+                    
+                    <div className="form-group full-width">
+                      <label>Notes:</label>
+                      <textarea 
+                        value={cashForm.notes}
+                        onChange={(e) => setCashForm({...cashForm, notes: e.target.value})}
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-actions">
+                    <button type="button" onClick={() => setShowCashForm(false)}>Cancel</button>
+                    <button type="submit">{editingItem ? 'Update' : 'Save'}</button>
+                  </div>
+                </form>
+                </div>
+              </div>
+            </ModalPortal>
+          )}
+
+          <div className="records-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Currency</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Location/Provider</th>
+                  <th>Type of Transaction</th>
+                  <th>Expense Type</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cashRecords.map(record => (
+                  <tr key={record._id}>
+                    <td>{record.name}</td>
+                    <td>
+                      <span className="record-type-badge cash">
+                        {record.type.replace('-', ' ')}
+                      </span>
+                    </td>
+                    <td>{record.currency}</td>
+                    <td className="amount">{record.amount}</td>
+                    <td>{record.date ? new Date(record.date).toLocaleDateString() : new Date(record.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      {record.location || record.walletProvider || record.cryptoType || '-'}
+                    </td>
+                    <td>
+                      {record.transactionType ? record.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                    </td>
+                    <td>
+                      {record.expenseType ? record.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                    </td>
+                    <td>{record.description || '-'}</td>
+                    <td>
+                      <div className="table-actions">
+                        <button onClick={() => handleEdit(record, 'cash')} className="edit-btn">Edit</button>
+                        <button onClick={() => handleDelete(record._id, 'cash')} className="delete-btn">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* Cards Section */}
@@ -1173,28 +1437,123 @@ const CashCardsBank = () => {
                   />
                 </div>
               </div>
-              <TransactionTable
-                transactions={cardTransactions.filter(transaction => {
-                  const transactionCardId = typeof transaction.cardId === 'object'
+              <div className="transactions-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Merchant</th>
+                      <th>Amount</th>
+                      <th>Type of Transaction</th>
+                      <th>Expense Type</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cardTransactions
+                      .filter(transaction => {
+                        const transactionCardId = typeof transaction.cardId === 'object' 
+                          ? transaction.cardId._id || transaction.cardId
+                          : transaction.cardId;
+                        
+                        // Filter by card
+                        if (transactionCardId !== selectedCard._id) return false;
+                        
+                        // Filter by category
+                        if (cardTransactionCategoryFilter !== 'all' && transaction.category !== cardTransactionCategoryFilter) return false;
+                        
+                        // Filter by expense type
+                        if (cardTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== cardTransactionExpenseTypeFilter) return false;
+                        
+                        // Filter by date range
+                        const transactionDate = new Date(transaction.date);
+                        if (cardTransactionStartDate) {
+                          const startDate = new Date(cardTransactionStartDate);
+                          if (transactionDate < startDate) return false;
+                        }
+                        if (cardTransactionEndDate) {
+                          const endDate = new Date(cardTransactionEndDate);
+                          endDate.setHours(23, 59, 59, 999); // Include the entire end date
+                          if (transactionDate > endDate) return false;
+                        }
+                        
+                        return true;
+                      })
+                      .map(transaction => {
+                      const card = transaction.cardId;
+                      return (
+                        <tr key={transaction._id}>
+                          <td>{new Date(transaction.date).toLocaleDateString()}</td>
+                          <td>
+                            <span className={`transaction-type ${transaction.type}`}>
+                              {transaction.type}
+                            </span>
+                          </td>
+                          <td>{transaction.merchant}</td>
+                          <td className="amount">{transaction.currency} {transaction.amount}</td>
+                          <td>
+                            {transaction.transactionType ? transaction.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                          </td>
+                          <td>
+                            {transaction.expenseType ? transaction.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                          </td>
+                          <td>
+                            <button 
+                              className="edit-btn" 
+                              onClick={() => handleTransactionEdit(transaction)}
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              className="delete-btn" 
+                              onClick={() => handleTransactionDelete(transaction._id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {cardTransactions.filter(transaction => {
+                  const transactionCardId = typeof transaction.cardId === 'object' 
                     ? transaction.cardId._id || transaction.cardId
                     : transaction.cardId;
+                  
+                  // Filter by card
                   if (transactionCardId !== selectedCard._id) return false;
+                  
+                  // Filter by category
                   if (cardTransactionCategoryFilter !== 'all' && transaction.category !== cardTransactionCategoryFilter) return false;
+                  
+                  // Filter by expense type
                   if (cardTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== cardTransactionExpenseTypeFilter) return false;
+                  
+                  // Filter by date range
                   const transactionDate = new Date(transaction.date);
-                  if (cardTransactionStartDate && transactionDate < new Date(cardTransactionStartDate)) return false;
+                  if (cardTransactionStartDate) {
+                    const startDate = new Date(cardTransactionStartDate);
+                    if (transactionDate < startDate) return false;
+                  }
                   if (cardTransactionEndDate) {
                     const endDate = new Date(cardTransactionEndDate);
                     endDate.setHours(23, 59, 59, 999);
                     if (transactionDate > endDate) return false;
                   }
+                  
                   return true;
-                })}
-                currency={selectedCard.currency || 'INR'}
-                initialBalance={selectedCard.creditLimit || 0}
-                onEdit={handleTransactionEdit}
-                onDelete={handleTransactionDelete}
-              />
+                }).length === 0 && (
+                  <div className="empty-state">
+                    <p>
+                      {cardTransactionCategoryFilter === 'all' && cardTransactionExpenseTypeFilter === 'all' && !cardTransactionStartDate && !cardTransactionEndDate
+                        ? 'No transactions yet for this card. Add your first transaction!'
+                        : 'No transactions found matching the selected filters.'}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -1724,28 +2083,123 @@ const CashCardsBank = () => {
                   />
                 </div>
               </div>
-              <TransactionTable
-                transactions={bankTransactions.filter(transaction => {
-                  const transactionAccountId = typeof transaction.accountId === 'object'
+              <div className="transactions-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Merchant/Payee</th>
+                      <th>Amount</th>
+                      <th>Type of Transaction</th>
+                      <th>Expense Type</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bankTransactions
+                      .filter(transaction => {
+                        const transactionAccountId = typeof transaction.accountId === 'object' 
+                          ? transaction.accountId._id || transaction.accountId
+                          : transaction.accountId;
+                        
+                        // Filter by bank account
+                        if (transactionAccountId !== selectedBank._id) return false;
+                        
+                        // Filter by category
+                        if (bankTransactionCategoryFilter !== 'all' && transaction.category !== bankTransactionCategoryFilter) return false;
+                        
+                        // Filter by expense type
+                        if (bankTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== bankTransactionExpenseTypeFilter) return false;
+                        
+                        // Filter by date range
+                        const transactionDate = new Date(transaction.date);
+                        if (bankTransactionStartDate) {
+                          const startDate = new Date(bankTransactionStartDate);
+                          if (transactionDate < startDate) return false;
+                        }
+                        if (bankTransactionEndDate) {
+                          const endDate = new Date(bankTransactionEndDate);
+                          endDate.setHours(23, 59, 59, 999); // Include the entire end date
+                          if (transactionDate > endDate) return false;
+                        }
+                        
+                        return true;
+                      })
+                      .map(transaction => {
+                      const account = transaction.accountId;
+                      return (
+                        <tr key={transaction._id}>
+                          <td>{new Date(transaction.date).toLocaleDateString()}</td>
+                          <td>
+                            <span className={`transaction-type ${transaction.type}`}>
+                              {transaction.type}
+                            </span>
+                          </td>
+                          <td>{transaction.merchant}</td>
+                          <td className="amount">{transaction.currency} {transaction.amount}</td>
+                          <td>
+                            {transaction.transactionType ? transaction.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                          </td>
+                          <td>
+                            {transaction.expenseType ? transaction.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                          </td>
+                          <td>
+                            <button 
+                              className="edit-btn" 
+                              onClick={() => handleBankTransactionEdit(transaction)}
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              className="delete-btn" 
+                              onClick={() => handleBankTransactionDelete(transaction._id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {bankTransactions.filter(transaction => {
+                  const transactionAccountId = typeof transaction.accountId === 'object' 
                     ? transaction.accountId._id || transaction.accountId
                     : transaction.accountId;
+                  
+                  // Filter by bank account
                   if (transactionAccountId !== selectedBank._id) return false;
+                  
+                  // Filter by category
                   if (bankTransactionCategoryFilter !== 'all' && transaction.category !== bankTransactionCategoryFilter) return false;
+                  
+                  // Filter by expense type
                   if (bankTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== bankTransactionExpenseTypeFilter) return false;
+                  
+                  // Filter by date range
                   const transactionDate = new Date(transaction.date);
-                  if (bankTransactionStartDate && transactionDate < new Date(bankTransactionStartDate)) return false;
+                  if (bankTransactionStartDate) {
+                    const startDate = new Date(bankTransactionStartDate);
+                    if (transactionDate < startDate) return false;
+                  }
                   if (bankTransactionEndDate) {
                     const endDate = new Date(bankTransactionEndDate);
                     endDate.setHours(23, 59, 59, 999);
                     if (transactionDate > endDate) return false;
                   }
+                  
                   return true;
-                })}
-                currency={selectedBank.currency || 'INR'}
-                initialBalance={parseFloat(selectedBank.balance) || 0}
-                onEdit={handleBankTransactionEdit}
-                onDelete={handleBankTransactionDelete}
-              />
+                }).length === 0 && (
+                  <div className="empty-state">
+                    <p>
+                      {bankTransactionCategoryFilter === 'all' && bankTransactionExpenseTypeFilter === 'all' && !bankTransactionStartDate && !bankTransactionEndDate
+                        ? 'No transactions yet for this bank account. Add your first transaction!'
+                        : 'No transactions found matching the selected filters.'}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

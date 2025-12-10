@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiBarChart2, FiPieChart, FiDollarSign, FiTrendingUp, FiActivity, FiFolder } from 'react-icons/fi';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { investmentAPI } from '../../utils/investmentAPI';
+import projectAPI from '../../utils/projectAPI';
+import ProjectModal from '../../components/ProjectModal';
 import './Investment.css';
 
 const ProjectIncomeExpense = () => {
@@ -10,12 +12,15 @@ const ProjectIncomeExpense = () => {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedProject, setSelectedProject] = useState('all');
+  const [projects, setProjects] = useState([]);
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
   const formRef = useRef(null);
   const [formData, setFormData] = useState({
     category: 'project-wise',
     type: 'Income', // Income or Expense
     name: '', // Project name
-    provider: '', // Developer
+    source: '', // Source of income/expense
     amount: '',
     startDate: '',
     frequency: 'one-time',
@@ -26,6 +31,7 @@ const ProjectIncomeExpense = () => {
 
   useEffect(() => {
     fetchEntries();
+    fetchProjects();
   }, []);
 
   useEffect(() => {
@@ -83,6 +89,16 @@ const ProjectIncomeExpense = () => {
     }
   };
 
+  const fetchProjects = async () => {
+    try {
+      const response = await projectAPI.getProjects();
+      setProjects(response.projects || []);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      setProjects([]);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -90,7 +106,7 @@ const ProjectIncomeExpense = () => {
         category: 'project-wise',
         type: formData.type,
         name: formData.name,
-        provider: formData.provider,
+        source: formData.source,
         amount: parseFloat(formData.amount) || 0,
         startDate: formData.startDate,
         frequency: formData.frequency,
@@ -114,7 +130,7 @@ const ProjectIncomeExpense = () => {
       category: entry.category,
       type: entry.type,
       name: entry.name,
-      provider: entry.provider || '',
+      source: entry.source || entry.provider || '',
       amount: entry.amount || '',
       startDate: entry.startDate?.split('T')[0] || '',
       frequency: entry.frequency || 'one-time',
@@ -141,7 +157,7 @@ const ProjectIncomeExpense = () => {
       category: 'project-wise',
       type: 'Income',
       name: '',
-      provider: '',
+      source: '',
       amount: '',
       startDate: '',
       frequency: 'one-time',
@@ -149,6 +165,44 @@ const ProjectIncomeExpense = () => {
     });
     setEditingId(null);
     setShowForm(false);
+  };
+
+  // Project handling functions
+  const handleAddProject = () => {
+    setEditingProject(null);
+    setShowProjectModal(true);
+  };
+
+  const handleEditProject = (project) => {
+    setEditingProject(project);
+    setShowProjectModal(true);
+  };
+
+  const handleSaveProject = async (projectData, projectId) => {
+    try {
+      if (projectId) {
+        await projectAPI.updateProject(projectId, projectData);
+      } else {
+        await projectAPI.createProject(projectData);
+      }
+      await fetchProjects();
+      setShowProjectModal(false);
+      setEditingProject(null);
+    } catch (error) {
+      console.error('Error saving project:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteProject = async (projectId) => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      try {
+        await projectAPI.deleteProject(projectId);
+        await fetchProjects();
+      } catch (error) {
+        console.error('Error deleting project:', error);
+      }
+    }
   };
 
   const totals = useMemo(() => {
@@ -173,9 +227,12 @@ const ProjectIncomeExpense = () => {
   }, [entries]);
 
   const uniqueProjects = useMemo(() => {
-    const projects = [...new Set(entries.map(e => e.name).filter(Boolean))];
-    return projects.sort();
-  }, [entries]);
+    // Combine both database projects and entry projects
+    const entryProjects = [...new Set(entries.map(e => e.name).filter(Boolean))];
+    const dbProjectNames = projects.map(p => p.name);
+    const allProjects = [...new Set([...dbProjectNames, ...entryProjects])];
+    return allProjects.sort();
+  }, [entries, projects]);
 
   const filteredEntries = useMemo(() => {
     if (selectedProject === 'all') return entries;
@@ -206,7 +263,7 @@ const ProjectIncomeExpense = () => {
   const filteredProviderAgg = useMemo(() => {
     const map = new Map();
     for (const e of filteredEntries) {
-      const key = e.provider || 'Unknown';
+      const key = e.source || e.provider || 'Unknown';
       const prev = map.get(key) || { name: key, value: 0 };
       prev.value += e.amount || 0;
       map.set(key, prev);
@@ -222,7 +279,7 @@ const ProjectIncomeExpense = () => {
   const providerAgg = useMemo(() => {
     const map = new Map();
     for (const e of entries) {
-      const key = e.provider || 'Unknown';
+      const key = e.source || e.provider || 'Unknown';
       const prev = map.get(key) || { name: key, value: 0 };
       prev.value += e.amount || 0;
       map.set(key, prev);
@@ -267,6 +324,64 @@ const ProjectIncomeExpense = () => {
           </button>
         </div>
       </div>
+
+      {/* Project Management Section */}
+      {projects.length > 0 && (
+        <div className="project-management-section">
+          <div className="section-header">
+            <h2>Manage Projects</h2>
+            <button className="btn-secondary" onClick={handleAddProject}>
+              <FiPlus /> Add New Project
+            </button>
+          </div>
+          <div className="projects-grid">
+            {projects.map(project => (
+              <div key={project._id} className="project-card">
+                <div className="project-info">
+                  <div className="project-header-info">
+                    <div className="project-color" style={{ backgroundColor: project.color }}></div>
+                    <h3>{project.name}</h3>
+                    <span className={`project-status ${project.status}`}>{project.status}</span>
+                  </div>
+                  {project.description && (
+                    <p className="project-description">{project.description}</p>
+                  )}
+                  <div className="project-details">
+                    {project.budget > 0 && (
+                      <span className="project-budget">
+                        Budget: {project.currency} {project.budget.toLocaleString('en-IN')}
+                      </span>
+                    )}
+                    {project.tags.length > 0 && (
+                      <div className="project-tags">
+                        {project.tags.map((tag, idx) => (
+                          <span key={idx} className="project-tag">{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="project-actions">
+                  <button 
+                    className="btn-icon btn-edit" 
+                    onClick={() => handleEditProject(project)}
+                    title="Edit Project"
+                  >
+                    <FiEdit2 />
+                  </button>
+                  <button 
+                    className="btn-icon btn-danger" 
+                    onClick={() => handleDeleteProject(project._id)}
+                    title="Delete Project"
+                  >
+                    <FiTrash2 />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="stats-grid">
         <div className="stat-card">
@@ -368,9 +483,9 @@ const ProjectIncomeExpense = () => {
               <div className="chart-header">
             <div className="chart-title">
                   <FiActivity className="chart-icon" />
-                  <h3>Developer Distribution</h3>
+                  <h3>Source Distribution</h3>
                 </div>
-                <div className="chart-subtitle">Totals by developer</div>
+                <div className="chart-subtitle">Totals by source</div>
               </div>
               <div className="chart-content">
                 <ResponsiveContainer width="100%" height={280}>
@@ -402,7 +517,7 @@ const ProjectIncomeExpense = () => {
               <tr>
                 <th>Type</th>
                 <th>Project</th>
-                <th>Developer</th>
+                <th>Source</th>
                 <th>Amount</th>
                 <th>Frequency</th>
                 <th>Date</th>
@@ -421,7 +536,7 @@ const ProjectIncomeExpense = () => {
                     </span>
                   </td>
                   <td>{e.name}</td>
-                  <td>{e.provider || '—'}</td>
+                  <td>{e.source || e.provider || '—'}</td>
                   <td>₹{(e.amount || 0).toLocaleString('en-IN')}</td>
                   <td>{e.frequency || 'one-time'}</td>
                   <td>{new Date(e.startDate).toLocaleDateString('en-IN')}</td>
@@ -477,24 +592,49 @@ const ProjectIncomeExpense = () => {
 
               <div className="form-field">
                 <label>Project Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Project Alpha"
-                  required
-                />
+                <div className="project-input-group">
+                  <select
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  >
+                    <option value="">Select Project...</option>
+                    {projects.map(project => (
+                      <option key={project._id} value={project.name}>
+                        {project.name}
+                      </option>
+                    ))}
+                    <option value="custom">+ Add Custom Project</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAddProject}
+                    className="btn-add-project"
+                    title="Add New Project"
+                  >
+                    <FiPlus />
+                  </button>
+                </div>
+                {formData.name === 'custom' && (
+                  <input
+                    type="text"
+                    placeholder="Enter custom project name"
+                    value={formData.customName || ''}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value, customName: e.target.value })}
+                    required
+                  />
+                )}
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-field">
-                <label>Developer</label>
+                <label>Source</label>
                 <input
                   type="text"
-                  value={formData.provider}
-                  onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-                  placeholder="e.g., Dev A"
+                  value={formData.source}
+                  onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                  placeholder="e.g., Client Payment, Equipment Purchase"
                 />
               </div>
 
@@ -555,6 +695,17 @@ const ProjectIncomeExpense = () => {
           </form>
         </div>
       )}
+
+      {/* Project Modal */}
+      <ProjectModal
+        isOpen={showProjectModal}
+        onClose={() => {
+          setShowProjectModal(false);
+          setEditingProject(null);
+        }}
+        onSave={handleSaveProject}
+        project={editingProject}
+      />
     </div>
   );
 };

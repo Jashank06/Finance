@@ -25,6 +25,13 @@ const TelephoneConversation = () => {
     followUpDate: '',
     tags: '',
     notes: '',
+    // Ticket Information fields
+    ticketNumber: '',
+    ticketPriority: 'Medium',
+    resolutionStatus: 'Pending',
+    avgResponseTime: '',
+    lastContactDate: '',
+    issueDescription: '',
   });
 
   useEffect(() => {
@@ -67,6 +74,13 @@ const TelephoneConversation = () => {
       followUpDate: inv.maturityDate?.slice(0,10) || notes.followUpDate || '',
       tags: notes.tags || '',
       notes: notes.notes || '',
+      // Ticket Information fields
+      ticketNumber: notes.ticketNumber || '',
+      ticketPriority: notes.ticketPriority || 'Medium',
+      resolutionStatus: notes.resolutionStatus || 'Pending',
+      avgResponseTime: notes.avgResponseTime || '',
+      lastContactDate: notes.lastContactDate || '',
+      issueDescription: notes.issueDescription || '',
     };
   };
 
@@ -135,7 +149,7 @@ const TelephoneConversation = () => {
       await fetchEntries();
       setEditingId(null);
       setInputs({
-        contactName: '', phoneNumber: '', callType: 'Outgoing', dateTime: new Date().toISOString().slice(0,16), durationMinutes: 5, topic: '', summary: '', actionItems: [''], status: 'open', priority: 'medium', followUpDate: '', tags: '', notes: ''
+        contactName: '', phoneNumber: '', callType: 'Outgoing', dateTime: new Date().toISOString().slice(0,16), durationMinutes: 5, topic: '', summary: '', actionItems: [''], status: 'open', priority: 'medium', followUpDate: '', tags: '', notes: '', ticketNumber: '', ticketPriority: 'Medium', resolutionStatus: 'Pending', avgResponseTime: '', lastContactDate: '', issueDescription: ''
       });
       setShowForm(false);
     } catch (error) {
@@ -161,6 +175,13 @@ const TelephoneConversation = () => {
       followUpDate: item.followUpDate || '',
       tags: item.tags || '',
       notes: item.notes || '',
+      // Ticket Information fields
+      ticketNumber: item.ticketNumber || '',
+      ticketPriority: item.ticketPriority || 'Medium',
+      resolutionStatus: item.resolutionStatus || 'Pending',
+      avgResponseTime: item.avgResponseTime || '',
+      lastContactDate: item.lastContactDate || '',
+      issueDescription: item.issueDescription || '',
     });
     setEditingId(item._id);
     setShowForm(true);
@@ -446,6 +467,84 @@ const TelephoneConversation = () => {
                   </div>
                 ))}
                 <button type="button" className="btn-primary" onClick={addActionItem}><FiPlus /> Add Item</button>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field full">
+                <label>Summary</label>
+                <textarea value={inputs.summary} onChange={(e) => setInputs({ ...inputs, summary: e.target.value })} placeholder="Call summary..." rows="3" />
+              </div>
+            </div>
+
+            {/* Ticket Information Section */}
+            <div className="form-section">
+              <h4>Ticket Information</h4>
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Ticket Number (if any)</label>
+                  <input
+                    type="text"
+                    value={inputs.ticketNumber}
+                    onChange={(e) => setInputs({ ...inputs, ticketNumber: e.target.value })}
+                    placeholder="e.g., TK-12345"
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Priority</label>
+                  <select
+                    value={inputs.ticketPriority}
+                    onChange={(e) => setInputs({ ...inputs, ticketPriority: e.target.value })}
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label>Resolution Status</label>
+                  <select
+                    value={inputs.resolutionStatus}
+                    onChange={(e) => setInputs({ ...inputs, resolutionStatus: e.target.value })}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Escalated">Escalated</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Average Response Time</label>
+                  <input
+                    type="text"
+                    value={inputs.avgResponseTime}
+                    onChange={(e) => setInputs({ ...inputs, avgResponseTime: e.target.value })}
+                    placeholder="e.g., 24 hours, 2 business days"
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Last Contact Date</label>
+                  <input
+                    type="date"
+                    value={inputs.lastContactDate}
+                    onChange={(e) => setInputs({ ...inputs, lastContactDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-field full">
+                  <label>Issue Description</label>
+                  <textarea
+                    value={inputs.issueDescription}
+                    onChange={(e) => setInputs({ ...inputs, issueDescription: e.target.value })}
+                    placeholder="Describe the issue or reason for contact..."
+                    rows={4}
+                  />
+                </div>
               </div>
             </div>
 

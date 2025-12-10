@@ -1,0 +1,198 @@
+.transaction-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.transaction-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1400px;
+}
+
+.transaction-table thead {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.transaction-table thead th {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.transaction-table tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: background 0.2s ease;
+}
+
+.transaction-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.transaction-table tbody td {
+  padding: 14px 12px;
+  font-size: 13px;
+  color: #1e293b;
+}
+
+/* Column Specific Styles */
+.sr-no {
+  text-align: center;
+  font-weight: 600;
+  color: #64748b;
+  width: 60px;
+}
+
+.date-col {
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  width: 110px;
+}
+
+.mode-col {
+  width: 120px;
+}
+
+.mode-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  color: white;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.description-col {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.debit-amount {
+  color: #dc2626;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  text-align: right;
+  width: 120px;
+}
+
+.credit-amount {
+  color: #16a34a;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  text-align: right;
+  width: 120px;
+}
+
+.balance-amount {
+  color: #1e293b;
+  font-weight: 800;
+  font-family: 'Courier New', monospace;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  padding: 8px 10px;
+  border-radius: 6px;
+  text-align: right;
+  width: 140px;
+}
+
+.balance-amount.negative {
+  color: #dc2626;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+}
+
+.transaction-type-col,
+.category-col,
+.expense-type-col {
+  font-size: 12px;
+  color: #475569;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.narration-col {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
+}
+
+.actions-col {
+  width: 140px;
+}
+
+.table-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.table-actions button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.table-actions .edit-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+}
+
+.table-actions .edit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.table-actions .delete-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.table-actions .delete-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 2px dashed #cbd5e1;
+}
+
+.empty-state p {
+  font-size: 16px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .transaction-table-wrapper {
+    overflow-x: scroll;
+  }
+}

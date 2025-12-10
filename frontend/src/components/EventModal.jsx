@@ -31,6 +31,7 @@ const EventModal = ({ isOpen, onClose, onSave, event, selectedDate, categories =
     location: '',
     reminder: '',
     repeat: '',
+    repeatEndDate: '',
     eventColor: '#3B82F6'
   });
 
@@ -51,6 +52,7 @@ const EventModal = ({ isOpen, onClose, onSave, event, selectedDate, categories =
         location: event.location || '',
         reminder: event.reminder || '',
         repeat: event.repeat || '',
+        repeatEndDate: event.repeatEndDate ? new Date(event.repeatEndDate).toISOString().split('T')[0] : '',
         eventColor: event.eventColor || '#3B82F6'
       });
     } else if (selectedDate) {
@@ -93,6 +95,16 @@ const EventModal = ({ isOpen, onClose, onSave, event, selectedDate, categories =
       newErrors.time = 'Invalid time format (HH:MM)';
     }
 
+    // Validate repeat end date if repeat is selected
+    if (formData.repeat && formData.repeatEndDate) {
+      const eventDate = new Date(formData.date);
+      const endDate = new Date(formData.repeatEndDate);
+      
+      if (endDate <= eventDate) {
+        newErrors.repeatEndDate = 'End date must be after the event date';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -110,7 +122,8 @@ const EventModal = ({ isOpen, onClose, onSave, event, selectedDate, categories =
         ...formData,
         date: new Date(formData.date).toISOString(),
         reminder: formData.reminder || null,
-        repeat: formData.repeat || null
+        repeat: formData.repeat || null,
+        repeatEndDate: formData.repeatEndDate ? new Date(formData.repeatEndDate).toISOString() : null
       };
 
       await onSave(eventData, event?._id);
@@ -134,6 +147,7 @@ const EventModal = ({ isOpen, onClose, onSave, event, selectedDate, categories =
       location: '',
       reminder: '',
       repeat: '',
+      repeatEndDate: '',
       eventColor: '#3B82F6'
     });
     setErrors({});
@@ -269,6 +283,25 @@ const EventModal = ({ isOpen, onClose, onSave, event, selectedDate, categories =
               ))}
             </select>
           </div>
+
+          {/* Repeat End Date - only show when repeat is selected */}
+          {formData.repeat && (
+            <div className="form-group">
+              <label className="form-label">
+                <FiCalendar />
+                End Date
+              </label>
+              <input
+                type="date"
+                className={`form-input ${errors.repeatEndDate ? 'error' : ''}`}
+                value={formData.repeatEndDate}
+                onChange={(e) => handleChange('repeatEndDate', e.target.value)}
+                min={formData.date}
+              />
+              <small className="form-hint">Optional: When to stop repeating this event</small>
+              {errors.repeatEndDate && <span className="error-text">{errors.repeatEndDate}</span>}
+            </div>
+          )}
 
           {/* Reminder */}
           <div className="form-group">

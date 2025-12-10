@@ -82,7 +82,15 @@ const BasicDetails = () => {
     // Bank Information
     banks: [],
     // Mobile Bill Information
-    mobileBills: []
+    mobileBills: [],
+    // Card Details
+    cards: [],
+    // Payment Gateway
+    paymentGateways: [],
+    // Portfolio Details
+    mutualFundsPortfolio: [],
+    sharesPortfolio: [],
+    insurancePortfolio: []
   });
 
   const [newFamilyMember, setNewFamilyMember] = useState({
@@ -199,6 +207,81 @@ const BasicDetails = () => {
     address: '',
     planNo: '',
     customerNumber: ''
+  });
+
+  const [newCard, setNewCard] = useState({
+    bankName: '',
+    cardHolderName: '',
+    cardNumber: '',
+    expiryDate: '',
+    atmPin: '',
+    cvv: '',
+    url: '',
+    userId: '',
+    password: '',
+    customerCareNumber: '',
+    customerCareEmail: '',
+    cardType: ''
+  });
+
+  const [newPaymentGateway, setNewPaymentGateway] = useState({
+    company: '',
+    companyName: '',
+    bankName: '',
+    accountNumber: '',
+    url: '',
+    userId: '',
+    password: ''
+  });
+
+  const [newMutualFundPortfolio, setNewMutualFundPortfolio] = useState({
+    srNo: '',
+    fundHouse: '',
+    investorName: '',
+    fundName: '',
+    goalPurpose: '',
+    folioNumber: '',
+    dateOfPurchase: '',
+    purchaseNAV: '',
+    numberOfUnits: '',
+    purchaseValue: '',
+    currentNAV: '',
+    currentValuation: '',
+    difference: '',
+    percentDifference: ''
+  });
+
+  const [newSharePortfolio, setNewSharePortfolio] = useState({
+    srNo: '',
+    dematCompany: '',
+    investorName: '',
+    scriptName: '',
+    goalPurpose: '',
+    dateOfPurchase: '',
+    purchaseNAV: '',
+    numberOfUnits: '',
+    purchaseValue: '',
+    currentNAV: '',
+    currentValuation: '',
+    difference: '',
+    percentDifference: ''
+  });
+
+  const [newInsurancePortfolio, setNewInsurancePortfolio] = useState({
+    srNo: '',
+    insuranceCompany: '',
+    insurerName: '',
+    policyType: '',
+    goalPurpose: '',
+    policyName: '',
+    policyNumber: '',
+    policyStartDate: '',
+    premiumMode: '',
+    premiumAmount: '',
+    lastPremiumPayingDate: '',
+    maturityDate: '',
+    sumAssured: '',
+    nominee: ''
   });
 
   useEffect(() => {
@@ -594,6 +677,156 @@ const BasicDetails = () => {
     }));
   };
 
+  const addCard = () => {
+    if (newCard.bankName && newCard.cardNumber) {
+      setFormData(prev => ({
+        ...prev,
+        cards: [...prev.cards, { ...newCard }]
+      }));
+      setNewCard({
+        bankName: '',
+        cardHolderName: '',
+        cardNumber: '',
+        expiryDate: '',
+        atmPin: '',
+        cvv: '',
+        url: '',
+        userId: '',
+        password: '',
+        customerCareNumber: '',
+        customerCareEmail: '',
+        cardType: ''
+      });
+    }
+  };
+
+  const removeCard = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      cards: prev.cards.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addPaymentGateway = () => {
+    if (newPaymentGateway.company && newPaymentGateway.companyName) {
+      setFormData(prev => ({
+        ...prev,
+        paymentGateways: [...prev.paymentGateways, { ...newPaymentGateway }]
+      }));
+      setNewPaymentGateway({
+        company: '',
+        companyName: '',
+        bankName: '',
+        accountNumber: '',
+        url: '',
+        userId: '',
+        password: ''
+      });
+    }
+  };
+
+  const removePaymentGateway = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      paymentGateways: prev.paymentGateways.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addMutualFundPortfolio = () => {
+    if (newMutualFundPortfolio.fundHouse && newMutualFundPortfolio.fundName) {
+      setFormData(prev => ({
+        ...prev,
+        mutualFundsPortfolio: [...prev.mutualFundsPortfolio, { ...newMutualFundPortfolio }]
+      }));
+      setNewMutualFundPortfolio({
+        srNo: '',
+        fundHouse: '',
+        investorName: '',
+        fundName: '',
+        goalPurpose: '',
+        folioNumber: '',
+        dateOfPurchase: '',
+        purchaseNAV: '',
+        numberOfUnits: '',
+        purchaseValue: '',
+        currentNAV: '',
+        currentValuation: '',
+        difference: '',
+        percentDifference: ''
+      });
+    }
+  };
+
+  const removeMutualFundPortfolio = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      mutualFundsPortfolio: prev.mutualFundsPortfolio.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addSharePortfolio = () => {
+    if (newSharePortfolio.dematCompany && newSharePortfolio.scriptName) {
+      setFormData(prev => ({
+        ...prev,
+        sharesPortfolio: [...prev.sharesPortfolio, { ...newSharePortfolio }]
+      }));
+      setNewSharePortfolio({
+        srNo: '',
+        dematCompany: '',
+        investorName: '',
+        scriptName: '',
+        goalPurpose: '',
+        dateOfPurchase: '',
+        purchaseNAV: '',
+        numberOfUnits: '',
+        purchaseValue: '',
+        currentNAV: '',
+        currentValuation: '',
+        difference: '',
+        percentDifference: ''
+      });
+    }
+  };
+
+  const removeSharePortfolio = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      sharesPortfolio: prev.sharesPortfolio.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addInsurancePortfolio = () => {
+    if (newInsurancePortfolio.insuranceCompany && newInsurancePortfolio.policyName) {
+      setFormData(prev => ({
+        ...prev,
+        insurancePortfolio: [...prev.insurancePortfolio, { ...newInsurancePortfolio }]
+      }));
+      setNewInsurancePortfolio({
+        srNo: '',
+        insuranceCompany: '',
+        insurerName: '',
+        policyType: '',
+        goalPurpose: '',
+        policyName: '',
+        policyNumber: '',
+        policyStartDate: '',
+        premiumMode: '',
+        premiumAmount: '',
+        lastPremiumPayingDate: '',
+        maturityDate: '',
+        sumAssured: '',
+        nominee: ''
+      });
+    }
+  };
+
+  const removeInsurancePortfolio = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      insurancePortfolio: prev.insurancePortfolio.filter((_, i) => i !== index)
+    }));
+  };
+
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -662,924 +895,8 @@ const BasicDetails = () => {
       </div>
 
       <div className="static-content">
-        {/* Personal Information */}
-        <div className="static-section">
-          <div className="section-header">
-            <FiUser className="section-icon" />
-            <h3>Personal Information</h3>
-          </div>
-          <div className="section-content">
-            <div className="form-grid">
-              <div className="form-group">
-                <label>First Name</label>
-                <input
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Last Name</label>
-                <input
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Date of Birth</label>
-                <input
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Gender</label>
-                <select
-                  value={formData.gender}
-                  onChange={(e) => handleInputChange('gender', e.target.value)}
-                  disabled={!editMode}
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Blood Group</label>
-                <select
-                  value={formData.bloodGroup}
-                  onChange={(e) => handleInputChange('bloodGroup', e.target.value)}
-                  disabled={!editMode}
-                >
-                  <option value="">Select Blood Group</option>
-                  <option value="A+">A+</option>
-                  <option value="A-">A-</option>
-                  <option value="B+">B+</option>
-                  <option value="B-">B-</option>
-                  <option value="O+">O+</option>
-                  <option value="O-">O-</option>
-                  <option value="AB+">AB+</option>
-                  <option value="AB-">AB-</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Marital Status</label>
-                <select
-                  value={formData.maritalStatus}
-                  onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
-                  disabled={!editMode}
-                >
-                  <option value="">Select Status</option>
-                  <option value="Single">Single</option>
-                  <option value="Married">Married</option>
-                  <option value="Divorced">Divorced</option>
-                  <option value="Widowed">Widowed</option>
-                </select>
-              </div>
-              {formData.maritalStatus === 'Married' && (
-                <div className="form-group">
-                  <label>Anniversary Date</label>
-                  <input
-                    type="date"
-                    value={formData.anniversaryDate}
-                    onChange={(e) => handleInputChange('anniversaryDate', e.target.value)}
-                    disabled={!editMode}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Information */}
-        <div className="static-section">
-          <div className="section-header">
-            <FiPhone className="section-icon" />
-            <h3>Contact Information</h3>
-          </div>
-          <div className="section-content">
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Primary Mobile</label>
-                <input
-                  type="tel"
-                  value={formData.primaryMobile}
-                  onChange={(e) => handleInputChange('primaryMobile', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Secondary Mobile</label>
-                <input
-                  type="tel"
-                  value={formData.secondaryMobile}
-                  onChange={(e) => handleInputChange('secondaryMobile', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Primary Email</label>
-                <input
-                  type="email"
-                  value={formData.primaryEmail}
-                  onChange={(e) => handleInputChange('primaryEmail', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Secondary Email</label>
-                <input
-                  type="email"
-                  value={formData.secondaryEmail}
-                  onChange={(e) => handleInputChange('secondaryEmail', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>WhatsApp Number</label>
-                <input
-                  type="tel"
-                  value={formData.whatsappNumber}
-                  onChange={(e) => handleInputChange('whatsappNumber', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Address Information */}
-        <div className="static-section">
-          <div className="section-header">
-            <FiMapPin className="section-icon" />
-            <h3>Address Information</h3>
-          </div>
-          <div className="section-content">
-            <div className="address-section">
-              <h4>Current Address</h4>
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label>Street</label>
-                  <input
-                    type="text"
-                    value={formData.currentAddress.street}
-                    onChange={(e) => handleAddressChange('currentAddress', 'street', e.target.value)}
-                    disabled={!editMode}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Area</label>
-                  <input
-                    type="text"
-                    value={formData.currentAddress.area}
-                    onChange={(e) => handleAddressChange('currentAddress', 'area', e.target.value)}
-                    disabled={!editMode}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>City</label>
-                  <input
-                    type="text"
-                    value={formData.currentAddress.city}
-                    onChange={(e) => handleAddressChange('currentAddress', 'city', e.target.value)}
-                    disabled={!editMode}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>State</label>
-                  <input
-                    type="text"
-                    value={formData.currentAddress.state}
-                    onChange={(e) => handleAddressChange('currentAddress', 'state', e.target.value)}
-                    disabled={!editMode}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Pincode</label>
-                  <input
-                    type="text"
-                    value={formData.currentAddress.pincode}
-                    onChange={(e) => handleAddressChange('currentAddress', 'pincode', e.target.value)}
-                    disabled={!editMode}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Country</label>
-                  <input
-                    type="text"
-                    value={formData.currentAddress.country}
-                    onChange={(e) => handleAddressChange('currentAddress', 'country', e.target.value)}
-                    disabled={!editMode}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="address-section">
-              <div className="address-header">
-                <h4>Permanent Address</h4>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.sameAsCurrent}
-                    onChange={(e) => handleSameAsCurrentChange(e.target.checked)}
-                    disabled={!editMode}
-                  />
-                  Same as Current Address
-                </label>
-              </div>
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label>Street</label>
-                  <input
-                    type="text"
-                    value={formData.permanentAddress.street}
-                    onChange={(e) => handleAddressChange('permanentAddress', 'street', e.target.value)}
-                    disabled={!editMode || formData.sameAsCurrent}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Area</label>
-                  <input
-                    type="text"
-                    value={formData.permanentAddress.area}
-                    onChange={(e) => handleAddressChange('permanentAddress', 'area', e.target.value)}
-                    disabled={!editMode || formData.sameAsCurrent}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>City</label>
-                  <input
-                    type="text"
-                    value={formData.permanentAddress.city}
-                    onChange={(e) => handleAddressChange('permanentAddress', 'city', e.target.value)}
-                    disabled={!editMode || formData.sameAsCurrent}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>State</label>
-                  <input
-                    type="text"
-                    value={formData.permanentAddress.state}
-                    onChange={(e) => handleAddressChange('permanentAddress', 'state', e.target.value)}
-                    disabled={!editMode || formData.sameAsCurrent}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Pincode</label>
-                  <input
-                    type="text"
-                    value={formData.permanentAddress.pincode}
-                    onChange={(e) => handleAddressChange('permanentAddress', 'pincode', e.target.value)}
-                    disabled={!editMode || formData.sameAsCurrent}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Country</label>
-                  <input
-                    type="text"
-                    value={formData.permanentAddress.country}
-                    onChange={(e) => handleAddressChange('permanentAddress', 'country', e.target.value)}
-                    disabled={!editMode || formData.sameAsCurrent}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Family Information */}
-        <div className="static-section">
-          <div className="section-header">
-            <FiUsers className="section-icon" />
-            <h3>Family Information</h3>
-          </div>
-          <div className="section-content">
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Family Head</label>
-                <input
-                  type="text"
-                  value={formData.familyHead}
-                  onChange={(e) => handleInputChange('familyHead', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Total Family Members</label>
-                <input
-                  type="number"
-                  value={formData.totalFamilyMembers}
-                  onChange={(e) => handleInputChange('totalFamilyMembers', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Dependents</label>
-                <input
-                  type="number"
-                  value={formData.dependents}
-                  onChange={(e) => handleInputChange('dependents', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-            </div>
-
-            <div className="family-members">
-              <h4>Family Members</h4>
-              {formData.familyMembers.map((member, index) => (
-                <div key={index} className="family-member-card">
-                  <div className="member-info">
-                    <div className="member-header">
-                      <h5>{member.name}</h5>
-                      <span className="relation-badge">{member.relation}</span>
-                    </div>
-                    <div className="member-details">
-                      <div className="form-grid">
-                        <p><strong>Date of Birth:</strong> {member.dateOfBirth}</p>
-                        <p><strong>Age:</strong> {member.age}</p>
-                        <p><strong>Gender:</strong> {member.gender}</p>
-                        <p><strong>Blood Group:</strong> {member.bloodGroup}</p>
-                        <p><strong>Marital Status:</strong> {member.maritalStatus}</p>
-                        {member.anniversaryDate && <p><strong>Anniversary:</strong> {member.anniversaryDate}</p>}
-                        <p><strong>Mobile:</strong> {member.mobile || 'N/A'}</p>
-                        <p><strong>Email:</strong> {member.email || 'N/A'}</p>
-                        <p><strong>Occupation:</strong> {member.occupation || 'N/A'}</p>
-                        <p><strong>Company:</strong> {member.companyName || 'N/A'}</p>
-                        <p><strong>Work Phone:</strong> {member.workPhone || 'N/A'}</p>
-                        <p><strong>Education:</strong> {member.education || 'N/A'}</p>
-                        <p><strong>Specialization:</strong> {member.specialization || 'N/A'}</p>
-                        <p><strong>Hobbies:</strong> {member.hobbies || 'N/A'}</p>
-                        {member.healthIssues && <p><strong>Health Issues:</strong> {member.healthIssues}</p>}
-                        {member.medications && <p><strong>Medications:</strong> {member.medications}</p>}
-                        {member.aadhaarNumber && <p><strong>Aadhaar:</strong> {member.aadhaarNumber}</p>}
-                        {member.panNumber && <p><strong>PAN:</strong> {member.panNumber}</p>}
-                        {member.passportNumber && <p><strong>Passport:</strong> {member.passportNumber}</p>}
-                        {member.drivingLicense && <p><strong>Driving License:</strong> {member.drivingLicense}</p>}
-                      </div>
-                      {member.additionalInfo && (
-                        <div className="form-group full-width">
-                          <p><strong>Additional Information:</strong> {member.additionalInfo}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {editMode && (
-                    <button
-                      className="btn-remove"
-                      onClick={() => removeFamilyMember(index)}
-                    >
-                      <FiX />
-                    </button>
-                  )}
-                </div>
-              ))}
-
-              {editMode && (
-                <div className="add-family-member">
-                  <h5>Add Family Member</h5>
-                  
-                  {/* Personal Information */}
-                  <h6>Personal Information</h6>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Name *</label>
-                      <input
-                        type="text"
-                        value={newFamilyMember.name}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, name: e.target.value})}
-                        placeholder="Full Name"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Relation *</label>
-                      <select
-                        value={newFamilyMember.relation}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, relation: e.target.value})}
-                      >
-                        <option value="">Select Relation</option>
-                        <option value="Father">Father</option>
-                        <option value="Mother">Mother</option>
-                        <option value="Spouse">Spouse</option>
-                        <option value="Son">Son</option>
-                        <option value="Daughter">Daughter</option>
-                        <option value="Brother">Brother</option>
-                        <option value="Sister">Sister</option>
-                        <option value="Grandfather">Grandfather</option>
-                        <option value="Grandmother">Grandmother</option>
-                        <option value="Uncle">Uncle</option>
-                        <option value="Aunt">Aunt</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Date of Birth</label>
-                      <input
-                        type="date"
-                        value={newFamilyMember.dateOfBirth}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, dateOfBirth: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Age</label>
-                      <input
-                        type="number"
-                        value={newFamilyMember.age}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, age: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Gender</label>
-                      <select
-                        value={newFamilyMember.gender}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, gender: e.target.value})}
-                      >
-                        <option value="">Select Gender</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Blood Group</label>
-                      <select
-                        value={newFamilyMember.bloodGroup}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, bloodGroup: e.target.value})}
-                      >
-                        <option value="">Select Blood Group</option>
-                        <option value="A+">A+</option>
-                        <option value="A-">A-</option>
-                        <option value="B+">B+</option>
-                        <option value="B-">B-</option>
-                        <option value="O+">O+</option>
-                        <option value="O-">O-</option>
-                        <option value="AB+">AB+</option>
-                        <option value="AB-">AB-</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Marital Status</label>
-                      <select
-                        value={newFamilyMember.maritalStatus}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, maritalStatus: e.target.value})}
-                      >
-                        <option value="">Select Status</option>
-                        <option value="Single">Single</option>
-                        <option value="Married">Married</option>
-                        <option value="Divorced">Divorced</option>
-                        <option value="Widowed">Widowed</option>
-                      </select>
-                    </div>
-                    {newFamilyMember.maritalStatus === 'Married' && (
-                      <div className="form-group">
-                        <label>Anniversary Date</label>
-                        <input
-                          type="date"
-                          value={newFamilyMember.anniversaryDate}
-                          onChange={(e) => setNewFamilyMember({...newFamilyMember, anniversaryDate: e.target.value})}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Contact Information */}
-                  <h6>Contact Information</h6>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Mobile Number</label>
-                      <input
-                        type="tel"
-                        value={newFamilyMember.mobile}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, mobile: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Email</label>
-                      <input
-                        type="email"
-                        value={newFamilyMember.email}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, email: e.target.value})}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Professional Information */}
-                  <h6>Professional Information</h6>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Occupation</label>
-                      <input
-                        type="text"
-                        value={newFamilyMember.occupation}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, occupation: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Company Name</label>
-                      <input
-                        type="text"
-                        value={newFamilyMember.companyName}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, companyName: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Work Phone</label>
-                      <input
-                        type="tel"
-                        value={newFamilyMember.workPhone}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, workPhone: e.target.value})}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Educational Information */}
-                  <h6>Educational Information</h6>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Education</label>
-                      <input
-                        type="text"
-                        value={newFamilyMember.education}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, education: e.target.value})}
-                        placeholder="e.g., B.Tech, MBA"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Specialization</label>
-                      <input
-                        type="text"
-                        value={newFamilyMember.specialization}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, specialization: e.target.value})}
-                        placeholder="e.g., Computer Science, Finance"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Personal Details */}
-                  <h6>Personal Details</h6>
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label>Hobbies</label>
-                      <input
-                        type="text"
-                        value={newFamilyMember.hobbies}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, hobbies: e.target.value})}
-                        placeholder="e.g., Reading, Sports, Music"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Health Information */}
-                  <h6>Health Information</h6>
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label>Health Issues (if any)</label>
-                      <textarea
-                        value={newFamilyMember.healthIssues}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, healthIssues: e.target.value})}
-                        rows={2}
-                      />
-                    </div>
-                    <div className="form-group full-width">
-                      <label>Medications</label>
-                      <textarea
-                        value={newFamilyMember.medications}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, medications: e.target.value})}
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Documents */}
-                  <h6>Documents</h6>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Aadhaar Number</label>
-                      <input
-                        type="text"
-                        value={newFamilyMember.aadhaarNumber}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, aadhaarNumber: e.target.value})}
-                        maxLength={14}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>PAN Number</label>
-                      <input
-                        type="text"
-                        value={newFamilyMember.panNumber}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, panNumber: e.target.value})}
-                        maxLength={10}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Passport Number</label>
-                      <input
-                        type="text"
-                        value={newFamilyMember.passportNumber}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, passportNumber: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Driving License</label>
-                      <input
-                        type="text"
-                        value={newFamilyMember.drivingLicense}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, drivingLicense: e.target.value})}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Additional Information */}
-                  <h6>Additional Information</h6>
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label>Additional Information / Notes</label>
-                      <textarea
-                        value={newFamilyMember.additionalInfo}
-                        onChange={(e) => setNewFamilyMember({...newFamilyMember, additionalInfo: e.target.value})}
-                        rows={3}
-                        placeholder="Add any additional information or notes..."
-                      />
-                    </div>
-                  </div>
-
-                  <button className="btn-primary" onClick={addFamilyMember}>
-                    <FiPlus /> Add Member
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Professional Information */}
-        <div className="static-section">
-          <div className="section-header">
-            <FiBriefcase className="section-icon" />
-            <h3>Professional Information</h3>
-          </div>
-          <div className="section-content">
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Occupation</label>
-                <input
-                  type="text"
-                  value={formData.occupation}
-                  onChange={(e) => handleInputChange('occupation', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Company Name</label>
-                <input
-                  type="text"
-                  value={formData.companyName}
-                  onChange={(e) => handleInputChange('companyName', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Designation</label>
-                <input
-                  type="text"
-                  value={formData.designation}
-                  onChange={(e) => handleInputChange('designation', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Work Email</label>
-                <input
-                  type="email"
-                  value={formData.workEmail}
-                  onChange={(e) => handleInputChange('workEmail', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Work Phone</label>
-                <input
-                  type="tel"
-                  value={formData.workPhone}
-                  onChange={(e) => handleInputChange('workPhone', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-            </div>
-
-            <div className="office-address">
-              <h4>Office Address</h4>
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label>Street</label>
-                  <input
-                    type="text"
-                    value={formData.officeAddress.street}
-                    onChange={(e) => handleAddressChange('officeAddress', 'street', e.target.value)}
-                    disabled={!editMode}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Area</label>
-                  <input
-                    type="text"
-                    value={formData.officeAddress.area}
-                    onChange={(e) => handleAddressChange('officeAddress', 'area', e.target.value)}
-                    disabled={!editMode}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>City</label>
-                  <input
-                    type="text"
-                    value={formData.officeAddress.city}
-                    onChange={(e) => handleAddressChange('officeAddress', 'city', e.target.value)}
-                    disabled={!editMode}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>State</label>
-                  <input
-                    type="text"
-                    value={formData.officeAddress.state}
-                    onChange={(e) => handleAddressChange('officeAddress', 'state', e.target.value)}
-                    disabled={!editMode}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Pincode</label>
-                  <input
-                    type="text"
-                    value={formData.officeAddress.pincode}
-                    onChange={(e) => handleAddressChange('officeAddress', 'pincode', e.target.value)}
-                    disabled={!editMode}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Additional Information */}
-        <div className="static-section">
-          <div className="section-header">
-            <FiGlobe className="section-icon" />
-            <h3>Additional Information</h3>
-          </div>
-          <div className="section-content">
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Nationality</label>
-                <input
-                  type="text"
-                  value={formData.nationality}
-                  onChange={(e) => handleInputChange('nationality', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Religion</label>
-                <input
-                  type="text"
-                  value={formData.religion}
-                  onChange={(e) => handleInputChange('religion', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Caste</label>
-                <input
-                  type="text"
-                  value={formData.caste}
-                  onChange={(e) => handleInputChange('caste', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Mother Tongue</label>
-                <input
-                  type="text"
-                  value={formData.motherTongue}
-                  onChange={(e) => handleInputChange('motherTongue', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-            </div>
-
-            <div className="languages-section">
-              <h4>Languages Known</h4>
-              <div className="languages-grid">
-                {['Hindi', 'English', 'Marathi', 'Gujarati', 'Tamil', 'Telugu', 'Bengali', 'Punjabi', 'Urdu', 'Other'].map(language => (
-                  <label key={language} className="language-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={formData.languagesKnown.includes(language)}
-                      onChange={() => handleLanguageToggle(language)}
-                      disabled={!editMode}
-                    />
-                    <span>{language}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Aadhaar Number</label>
-                <input
-                  type="text"
-                  value={formData.aadhaarNumber}
-                  onChange={(e) => handleInputChange('aadhaarNumber', e.target.value)}
-                  disabled={!editMode}
-                  maxLength={14}
-                />
-              </div>
-              <div className="form-group">
-                <label>PAN Number</label>
-                <input
-                  type="text"
-                  value={formData.panNumber}
-                  onChange={(e) => handleInputChange('panNumber', e.target.value)}
-                  disabled={!editMode}
-                  maxLength={10}
-                />
-              </div>
-              <div className="form-group">
-                <label>Passport Number</label>
-                <input
-                  type="text"
-                  value={formData.passportNumber}
-                  onChange={(e) => handleInputChange('passportNumber', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Voter ID</label>
-                <input
-                  type="text"
-                  value={formData.voterId}
-                  onChange={(e) => handleInputChange('voterId', e.target.value)}
-                  disabled={!editMode}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Emergency Contact */}
-        <div className="static-section">
-          <div className="section-header">
-            <FiPhone className="section-icon" />
-            <h3>Emergency Contact</h3>
-          </div>
-          <div className="section-content">
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Contact Name</label>
-                <input
-                  type="text"
-                  value={formData.emergencyContact.name}
-                  onChange={(e) => handleInputChange('emergencyContact', {...formData.emergencyContact, name: e.target.value})}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Relation</label>
-                <input
-                  type="text"
-                  value={formData.emergencyContact.relation}
-                  onChange={(e) => handleInputChange('emergencyContact', {...formData.emergencyContact, relation: e.target.value})}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group">
-                <label>Mobile Number</label>
-                <input
-                  type="tel"
-                  value={formData.emergencyContact.mobile}
-                  onChange={(e) => handleInputChange('emergencyContact', {...formData.emergencyContact, mobile: e.target.value})}
-                  disabled={!editMode}
-                />
-              </div>
-              <div className="form-group full-width">
-                <label>Address</label>
-                <textarea
-                  value={formData.emergencyContact.address}
-                  onChange={(e) => handleInputChange('emergencyContact', {...formData.emergencyContact, address: e.target.value})}
-                  disabled={!editMode}
-                  rows={3}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
+        {/* Sections Removed: Personal Information, Contact Information, Address Information, Family Information, Professional Information, Additional Information, Emergency Contact */}
+        
         {/* Mutual Funds Information */}
         <div className="static-section">
           <div className="section-header">
@@ -2523,6 +1840,796 @@ const BasicDetails = () => {
                   </div>
                   <button className="btn-primary" onClick={addMobileBill}>
                     <FiPlus /> Add Mobile Bill
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Card Details */}
+        <div className="static-section">
+          <div className="section-header">
+            <FiBriefcase className="section-icon" />
+            <h3>Card Details</h3>
+          </div>
+          <div className="section-content">
+            <div className="mutual-funds-list">
+              {formData.cards && formData.cards.length > 0 ? (
+                formData.cards.map((card, index) => (
+                  <div key={index} className="family-member-card">
+                    <div className="member-info">
+                      <div className="member-header">
+                        <h5>{card.cardNumber}</h5>
+                        <span className="relation-badge">{card.cardType}</span>
+                      </div>
+                      <div className="member-details">
+                        <div className="form-grid">
+                          <p><strong>Bank Name:</strong> {card.bankName}</p>
+                          <p><strong>Card Holder:</strong> {card.cardHolderName}</p>
+                          <p><strong>Expiry Date:</strong> {card.expiryDate}</p>
+                          <p><strong>ATM Pin:</strong> {card.atmPin}</p>
+                          <p><strong>CVV:</strong> {card.cvv}</p>
+                          <p><strong>URL:</strong> {card.url}</p>
+                          <p><strong>User ID:</strong> {card.userId}</p>
+                          <p><strong>Password:</strong> {card.password}</p>
+                          <p><strong>Customer Care:</strong> {card.customerCareNumber}</p>
+                          <p><strong>Customer Care Email:</strong> {card.customerCareEmail}</p>
+                        </div>
+                      </div>
+                    </div>
+                    {editMode && (
+                      <button className="btn-remove" onClick={() => removeCard(index)}>
+                        <FiX />
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="no-data">No cards added yet.</p>
+              )}
+
+              {editMode && (
+                <div className="add-family-member">
+                  <h5>Add Card</h5>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Card Type *</label>
+                      <select
+                        value={newCard.cardType}
+                        onChange={(e) => setNewCard({...newCard, cardType: e.target.value})}
+                      >
+                        <option value="">Select Type</option>
+                        <option value="Debit">Debit</option>
+                        <option value="Credit">Credit</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Name of Bank *</label>
+                      <input
+                        type="text"
+                        value={newCard.bankName}
+                        onChange={(e) => setNewCard({...newCard, bankName: e.target.value})}
+                        placeholder="e.g., HDFC Bank, SBI"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Name of Card Holder</label>
+                      <input
+                        type="text"
+                        value={newCard.cardHolderName}
+                        onChange={(e) => setNewCard({...newCard, cardHolderName: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Card Number *</label>
+                      <input
+                        type="text"
+                        value={newCard.cardNumber}
+                        onChange={(e) => setNewCard({...newCard, cardNumber: e.target.value})}
+                        maxLength={19}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Expiry Date</label>
+                      <input
+                        type="month"
+                        value={newCard.expiryDate}
+                        onChange={(e) => setNewCard({...newCard, expiryDate: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>ATM Pin</label>
+                      <input
+                        type="password"
+                        value={newCard.atmPin}
+                        onChange={(e) => setNewCard({...newCard, atmPin: e.target.value})}
+                        maxLength={6}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>CVV</label>
+                      <input
+                        type="password"
+                        value={newCard.cvv}
+                        onChange={(e) => setNewCard({...newCard, cvv: e.target.value})}
+                        maxLength={3}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>URL</label>
+                      <input
+                        type="url"
+                        value={newCard.url}
+                        onChange={(e) => setNewCard({...newCard, url: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>User Id</label>
+                      <input
+                        type="text"
+                        value={newCard.userId}
+                        onChange={(e) => setNewCard({...newCard, userId: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Password</label>
+                      <input
+                        type="password"
+                        value={newCard.password}
+                        onChange={(e) => setNewCard({...newCard, password: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Customer Care Number</label>
+                      <input
+                        type="tel"
+                        value={newCard.customerCareNumber}
+                        onChange={(e) => setNewCard({...newCard, customerCareNumber: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Customer Care Email Id</label>
+                      <input
+                        type="email"
+                        value={newCard.customerCareEmail}
+                        onChange={(e) => setNewCard({...newCard, customerCareEmail: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <button className="btn-primary" onClick={addCard}>
+                    <FiPlus /> Add Card
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Gateway */}
+        <div className="static-section">
+          <div className="section-header">
+            <FiTrendingUp className="section-icon" />
+            <h3>Payment Gateway</h3>
+          </div>
+          <div className="section-content">
+            <div className="mutual-funds-list">
+              {formData.paymentGateways && formData.paymentGateways.length > 0 ? (
+                formData.paymentGateways.map((gateway, index) => (
+                  <div key={index} className="family-member-card">
+                    <div className="member-info">
+                      <div className="member-header">
+                        <h5>{gateway.companyName}</h5>
+                        <span className="relation-badge">{gateway.company}</span>
+                      </div>
+                      <div className="member-details">
+                        <div className="form-grid">
+                          <p><strong>Bank Name:</strong> {gateway.bankName}</p>
+                          <p><strong>Account Number:</strong> {gateway.accountNumber}</p>
+                          <p><strong>URL:</strong> {gateway.url}</p>
+                          <p><strong>User ID:</strong> {gateway.userId}</p>
+                          <p><strong>Password:</strong> {gateway.password}</p>
+                        </div>
+                      </div>
+                    </div>
+                    {editMode && (
+                      <button className="btn-remove" onClick={() => removePaymentGateway(index)}>
+                        <FiX />
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="no-data">No payment gateways added yet.</p>
+              )}
+
+              {editMode && (
+                <div className="add-family-member">
+                  <h5>Add Payment Gateway</h5>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Company *</label>
+                      <input
+                        type="text"
+                        value={newPaymentGateway.company}
+                        onChange={(e) => setNewPaymentGateway({...newPaymentGateway, company: e.target.value})}
+                        placeholder="e.g., Razorpay, PayU"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Name of Company *</label>
+                      <input
+                        type="text"
+                        value={newPaymentGateway.companyName}
+                        onChange={(e) => setNewPaymentGateway({...newPaymentGateway, companyName: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Name of Bank</label>
+                      <input
+                        type="text"
+                        value={newPaymentGateway.bankName}
+                        onChange={(e) => setNewPaymentGateway({...newPaymentGateway, bankName: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Account Number</label>
+                      <input
+                        type="text"
+                        value={newPaymentGateway.accountNumber}
+                        onChange={(e) => setNewPaymentGateway({...newPaymentGateway, accountNumber: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>URL</label>
+                      <input
+                        type="url"
+                        value={newPaymentGateway.url}
+                        onChange={(e) => setNewPaymentGateway({...newPaymentGateway, url: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>User Id</label>
+                      <input
+                        type="text"
+                        value={newPaymentGateway.userId}
+                        onChange={(e) => setNewPaymentGateway({...newPaymentGateway, userId: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Password</label>
+                      <input
+                        type="password"
+                        value={newPaymentGateway.password}
+                        onChange={(e) => setNewPaymentGateway({...newPaymentGateway, password: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <button className="btn-primary" onClick={addPaymentGateway}>
+                    <FiPlus /> Add Payment Gateway
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Portfolio Details - Mutual Funds */}
+        <div className="static-section">
+          <div className="section-header">
+            <FiTrendingUp className="section-icon" />
+            <h3>Portfolio Details - Mutual Funds</h3>
+          </div>
+          <div className="section-content">
+            <div className="mutual-funds-list">
+              {formData.mutualFundsPortfolio && formData.mutualFundsPortfolio.length > 0 ? (
+                formData.mutualFundsPortfolio.map((fund, index) => (
+                  <div key={index} className="family-member-card">
+                    <div className="member-info">
+                      <div className="member-header">
+                        <h5>{fund.fundName}</h5>
+                        <span className="relation-badge">{fund.fundHouse}</span>
+                      </div>
+                      <div className="member-details">
+                        <div className="form-grid">
+                          <p><strong>Sr. No.:</strong> {fund.srNo}</p>
+                          <p><strong>Investor Name:</strong> {fund.investorName}</p>
+                          <p><strong>Goal/Purpose:</strong> {fund.goalPurpose}</p>
+                          <p><strong>Folio Number:</strong> {fund.folioNumber}</p>
+                          <p><strong>Date of Purchase:</strong> {fund.dateOfPurchase}</p>
+                          <p><strong>Purchase NAV:</strong> {fund.purchaseNAV}</p>
+                          <p><strong>Number of Units:</strong> {fund.numberOfUnits}</p>
+                          <p><strong>Purchase Value:</strong> {fund.purchaseValue}</p>
+                          <p><strong>Current NAV:</strong> {fund.currentNAV}</p>
+                          <p><strong>Current Valuation:</strong> {fund.currentValuation}</p>
+                          <p><strong>Difference:</strong> {fund.difference}</p>
+                          <p><strong>% Difference:</strong> {fund.percentDifference}</p>
+                        </div>
+                      </div>
+                    </div>
+                    {editMode && (
+                      <button className="btn-remove" onClick={() => removeMutualFundPortfolio(index)}>
+                        <FiX />
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="no-data">No mutual fund portfolio added yet.</p>
+              )}
+
+              {editMode && (
+                <div className="add-family-member">
+                  <h5>Add Mutual Fund Portfolio</h5>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Sr. No.</label>
+                      <input
+                        type="text"
+                        value={newMutualFundPortfolio.srNo}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, srNo: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Fund House *</label>
+                      <input
+                        type="text"
+                        value={newMutualFundPortfolio.fundHouse}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, fundHouse: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Name of Investor</label>
+                      <input
+                        type="text"
+                        value={newMutualFundPortfolio.investorName}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, investorName: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Name of Fund *</label>
+                      <input
+                        type="text"
+                        value={newMutualFundPortfolio.fundName}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, fundName: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Goal / Purpose</label>
+                      <input
+                        type="text"
+                        value={newMutualFundPortfolio.goalPurpose}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, goalPurpose: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Folio Number</label>
+                      <input
+                        type="text"
+                        value={newMutualFundPortfolio.folioNumber}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, folioNumber: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Date of Purchase</label>
+                      <input
+                        type="date"
+                        value={newMutualFundPortfolio.dateOfPurchase}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, dateOfPurchase: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Purchase NAV</label>
+                      <input
+                        type="number"
+                        value={newMutualFundPortfolio.purchaseNAV}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, purchaseNAV: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Number of Units</label>
+                      <input
+                        type="number"
+                        value={newMutualFundPortfolio.numberOfUnits}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, numberOfUnits: e.target.value})}
+                        step="0.001"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Purchase Value</label>
+                      <input
+                        type="number"
+                        value={newMutualFundPortfolio.purchaseValue}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, purchaseValue: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Current NAV</label>
+                      <input
+                        type="number"
+                        value={newMutualFundPortfolio.currentNAV}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, currentNAV: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Current Valuation</label>
+                      <input
+                        type="number"
+                        value={newMutualFundPortfolio.currentValuation}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, currentValuation: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Difference</label>
+                      <input
+                        type="number"
+                        value={newMutualFundPortfolio.difference}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, difference: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>% Difference</label>
+                      <input
+                        type="number"
+                        value={newMutualFundPortfolio.percentDifference}
+                        onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, percentDifference: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                  </div>
+                  <button className="btn-primary" onClick={addMutualFundPortfolio}>
+                    <FiPlus /> Add Mutual Fund Portfolio
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Portfolio Details - Shares */}
+        <div className="static-section">
+          <div className="section-header">
+            <FiTrendingUp className="section-icon" />
+            <h3>Portfolio Details - Shares</h3>
+          </div>
+          <div className="section-content">
+            <div className="mutual-funds-list">
+              {formData.sharesPortfolio && formData.sharesPortfolio.length > 0 ? (
+                formData.sharesPortfolio.map((share, index) => (
+                  <div key={index} className="family-member-card">
+                    <div className="member-info">
+                      <div className="member-header">
+                        <h5>{share.scriptName}</h5>
+                        <span className="relation-badge">{share.dematCompany}</span>
+                      </div>
+                      <div className="member-details">
+                        <div className="form-grid">
+                          <p><strong>Sr. No.:</strong> {share.srNo}</p>
+                          <p><strong>Investor Name:</strong> {share.investorName}</p>
+                          <p><strong>Goal/Purpose:</strong> {share.goalPurpose}</p>
+                          <p><strong>Date of Purchase:</strong> {share.dateOfPurchase}</p>
+                          <p><strong>Purchase NAV:</strong> {share.purchaseNAV}</p>
+                          <p><strong>Number of Units:</strong> {share.numberOfUnits}</p>
+                          <p><strong>Purchase Value:</strong> {share.purchaseValue}</p>
+                          <p><strong>Current NAV:</strong> {share.currentNAV}</p>
+                          <p><strong>Current Valuation:</strong> {share.currentValuation}</p>
+                          <p><strong>Difference:</strong> {share.difference}</p>
+                          <p><strong>% Difference:</strong> {share.percentDifference}</p>
+                        </div>
+                      </div>
+                    </div>
+                    {editMode && (
+                      <button className="btn-remove" onClick={() => removeSharePortfolio(index)}>
+                        <FiX />
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="no-data">No share portfolio added yet.</p>
+              )}
+
+              {editMode && (
+                <div className="add-family-member">
+                  <h5>Add Share Portfolio</h5>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Sr. No.</label>
+                      <input
+                        type="text"
+                        value={newSharePortfolio.srNo}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, srNo: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Demat Company *</label>
+                      <input
+                        type="text"
+                        value={newSharePortfolio.dematCompany}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, dematCompany: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Name of Investor</label>
+                      <input
+                        type="text"
+                        value={newSharePortfolio.investorName}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, investorName: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Name of Script *</label>
+                      <input
+                        type="text"
+                        value={newSharePortfolio.scriptName}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, scriptName: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Goal / Purpose</label>
+                      <input
+                        type="text"
+                        value={newSharePortfolio.goalPurpose}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, goalPurpose: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Date of Purchase</label>
+                      <input
+                        type="date"
+                        value={newSharePortfolio.dateOfPurchase}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, dateOfPurchase: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Purchase NAV</label>
+                      <input
+                        type="number"
+                        value={newSharePortfolio.purchaseNAV}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, purchaseNAV: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Number of Units</label>
+                      <input
+                        type="number"
+                        value={newSharePortfolio.numberOfUnits}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, numberOfUnits: e.target.value})}
+                        step="1"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Purchase Value</label>
+                      <input
+                        type="number"
+                        value={newSharePortfolio.purchaseValue}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, purchaseValue: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Current NAV</label>
+                      <input
+                        type="number"
+                        value={newSharePortfolio.currentNAV}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, currentNAV: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Current Valuation</label>
+                      <input
+                        type="number"
+                        value={newSharePortfolio.currentValuation}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, currentValuation: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Difference</label>
+                      <input
+                        type="number"
+                        value={newSharePortfolio.difference}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, difference: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>% Difference</label>
+                      <input
+                        type="number"
+                        value={newSharePortfolio.percentDifference}
+                        onChange={(e) => setNewSharePortfolio({...newSharePortfolio, percentDifference: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                  </div>
+                  <button className="btn-primary" onClick={addSharePortfolio}>
+                    <FiPlus /> Add Share Portfolio
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Portfolio Details - Insurance */}
+        <div className="static-section">
+          <div className="section-header">
+            <FiHome className="section-icon" />
+            <h3>Portfolio Details - Insurance</h3>
+          </div>
+          <div className="section-content">
+            <div className="mutual-funds-list">
+              {formData.insurancePortfolio && formData.insurancePortfolio.length > 0 ? (
+                formData.insurancePortfolio.map((policy, index) => (
+                  <div key={index} className="family-member-card">
+                    <div className="member-info">
+                      <div className="member-header">
+                        <h5>{policy.policyName}</h5>
+                        <span className="relation-badge">{policy.insuranceCompany}</span>
+                      </div>
+                      <div className="member-details">
+                        <div className="form-grid">
+                          <p><strong>Sr. No.:</strong> {policy.srNo}</p>
+                          <p><strong>Insurer Name:</strong> {policy.insurerName}</p>
+                          <p><strong>Type of Policy:</strong> {policy.policyType}</p>
+                          <p><strong>Goal/Purpose:</strong> {policy.goalPurpose}</p>
+                          <p><strong>Policy Number:</strong> {policy.policyNumber}</p>
+                          <p><strong>Policy Start Date:</strong> {policy.policyStartDate}</p>
+                          <p><strong>Premium Mode:</strong> {policy.premiumMode}</p>
+                          <p><strong>Premium Amount:</strong> {policy.premiumAmount}</p>
+                          <p><strong>Last Premium Paying Date:</strong> {policy.lastPremiumPayingDate}</p>
+                          <p><strong>Maturity Date:</strong> {policy.maturityDate}</p>
+                          <p><strong>Sum Assured:</strong> {policy.sumAssured}</p>
+                          <p><strong>Nominee:</strong> {policy.nominee}</p>
+                        </div>
+                      </div>
+                    </div>
+                    {editMode && (
+                      <button className="btn-remove" onClick={() => removeInsurancePortfolio(index)}>
+                        <FiX />
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="no-data">No insurance portfolio added yet.</p>
+              )}
+
+              {editMode && (
+                <div className="add-family-member">
+                  <h5>Add Insurance Portfolio</h5>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Sr. No.</label>
+                      <input
+                        type="text"
+                        value={newInsurancePortfolio.srNo}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, srNo: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Insurance Company *</label>
+                      <input
+                        type="text"
+                        value={newInsurancePortfolio.insuranceCompany}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, insuranceCompany: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Name of Insurer</label>
+                      <input
+                        type="text"
+                        value={newInsurancePortfolio.insurerName}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, insurerName: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Type of Policy</label>
+                      <input
+                        type="text"
+                        value={newInsurancePortfolio.policyType}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, policyType: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Goal / Purpose</label>
+                      <input
+                        type="text"
+                        value={newInsurancePortfolio.goalPurpose}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, goalPurpose: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Name of Policy *</label>
+                      <input
+                        type="text"
+                        value={newInsurancePortfolio.policyName}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, policyName: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Policy Number</label>
+                      <input
+                        type="text"
+                        value={newInsurancePortfolio.policyNumber}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, policyNumber: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Date of Policy Start</label>
+                      <input
+                        type="date"
+                        value={newInsurancePortfolio.policyStartDate}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, policyStartDate: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Mode of Premium</label>
+                      <select
+                        value={newInsurancePortfolio.premiumMode}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, premiumMode: e.target.value})}
+                      >
+                        <option value="">Select Mode</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Half-Yearly">Half-Yearly</option>
+                        <option value="Yearly">Yearly</option>
+                        <option value="Single Premium">Single Premium</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Premium Amount</label>
+                      <input
+                        type="number"
+                        value={newInsurancePortfolio.premiumAmount}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, premiumAmount: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Last Premium Paying Date</label>
+                      <input
+                        type="date"
+                        value={newInsurancePortfolio.lastPremiumPayingDate}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, lastPremiumPayingDate: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Date of Maturity</label>
+                      <input
+                        type="date"
+                        value={newInsurancePortfolio.maturityDate}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, maturityDate: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Sum Assured</label>
+                      <input
+                        type="number"
+                        value={newInsurancePortfolio.sumAssured}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, sumAssured: e.target.value})}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Nominee</label>
+                      <input
+                        type="text"
+                        value={newInsurancePortfolio.nominee}
+                        onChange={(e) => setNewInsurancePortfolio({...newInsurancePortfolio, nominee: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <button className="btn-primary" onClick={addInsurancePortfolio}>
+                    <FiPlus /> Add Insurance Portfolio
                   </button>
                 </div>
               )}

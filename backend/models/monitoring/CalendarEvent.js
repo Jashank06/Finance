@@ -54,6 +54,10 @@ const calendarEventSchema = new mongoose.Schema({
     enum: ['daily', 'weekly', 'monthly', 'yearly'],
     default: null
   },
+  repeatEndDate: {
+    type: Date,
+    default: null
+  },
   status: {
     type: String,
     enum: ['active', 'cancelled', 'completed'],

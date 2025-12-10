@@ -1,193 +1,248 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiBarChart2, FiPieChart, FiDollarSign, FiTrendingUp, FiActivity, FiUsers } from 'react-icons/fi';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { FiPlus, FiEdit2, FiTrash2, FiDollarSign, FiTrendingUp, FiActivity, FiUsers, FiArrowUpRight, FiArrowDownLeft, FiCreditCard } from 'react-icons/fi';
 import { investmentAPI } from '../../../utils/investmentAPI';
 import '../../investments/Investment.css';
 
 const LoanLedger = () => {
   const [showForm, setShowForm] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showOnBehalfForm, setShowOnBehalfForm] = useState(false);
   const formRef = useRef(null);
-  const [entries, setEntries] = useState([]);
+  const [loanEntries, setLoanEntries] = useState([]);
+  const [paymentEntries, setPaymentEntries] = useState([]);
+  const [onBehalfEntries, setOnBehalfEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [inputs, setInputs] = useState({
-    partyName: '',
-    relation: '',
-    type: 'Lent',
-    principal: 100000,
-    interestRate: 12,
-    interestType: 'simple',
-    frequency: 'monthly',
-    startDate: new Date().toISOString().slice(0, 10),
-    dueDate: '',
-    collateral: '',
-    status: 'active',
-    notes: '',
+  const [selectedLoanId, setSelectedLoanId] = useState('');
+  
+  // Loan Form State
+  const [loanInputs, setLoanInputs] = useState({
+    date: new Date().toISOString().slice(0, 10),
+    nameOfPerson: '',
+    forPurpose: '',
+    amount: '',
+    finalDateOfReturn: '',
+    paymentDetails: '',
+    comments: ''
+  });
+
+  // Payment Form State
+  const [paymentInputs, setPaymentInputs] = useState({
+    dateOfReturn: new Date().toISOString().slice(0, 10),
+    amountReturned: '',
+    paymentDetails: '',
+    comments: ''
+  });
+
+  // On Behalf Form State
+  const [onBehalfInputs, setOnBehalfInputs] = useState({
+    date: new Date().toISOString().slice(0, 10),
+    paidOnBehalfOf: '',
+    amountPaid: '',
+    forPurpose: '',
+    paymentDetails: '',
+    receivedAmount: '',
+    dateOfReceipt: new Date().toISOString().slice(0, 10),
+    receiptPaymentDetails: '',
+    comments: ''
   });
 
   useEffect(() => {
-    if (showForm && formRef.current) {
+    if ((showForm || showPaymentForm || showOnBehalfForm) && formRef.current) {
       setTimeout(() => {
         formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     }
-  }, [showForm]);
+  }, [showForm, showPaymentForm, showOnBehalfForm]);
 
-  const CATEGORY_KEY = 'daily-loan-ledger';
+  // Demo data for development
+  useEffect(() => {
+    setLoanEntries([
+      {
+        _id: 'loan1',
+        date: '2024-01-15',
+        nameOfPerson: 'Rahul Kumar',
+        forPurpose: 'Business Investment',
+        amount: 100000,
+        finalDateOfReturn: '2024-06-15',
+        paymentDetails: 'Bank Transfer',
+        comments: 'Emergency business loan',
+        totalPaid: 30000,
+        balanceAmount: 70000,
+        payments: [
+          { date: '2024-02-15', amount: 20000, paymentDetails: 'Cash', comments: 'First installment' },
+          { date: '2024-03-15', amount: 10000, paymentDetails: 'UPI', comments: 'Second installment' }
+        ]
+      },
+      {
+        _id: 'loan2',
+        date: '2024-02-10',
+        nameOfPerson: 'Priya Singh',
+        forPurpose: 'Medical Emergency',
+        amount: 50000,
+        finalDateOfReturn: '2024-08-10',
+        paymentDetails: 'UPI',
+        comments: 'Medical treatment loan',
+        totalPaid: 15000,
+        balanceAmount: 35000,
+        payments: [
+          { date: '2024-03-10', amount: 15000, paymentDetails: 'Bank Transfer', comments: 'Partial payment' }
+        ]
+      }
+    ]);
+    
+    setOnBehalfEntries([
+      {
+        _id: 'behalf1',
+        date: '2024-01-20',
+        paidOnBehalfOf: 'Amit Sharma',
+        amountPaid: 25000,
+        forPurpose: 'Rent Payment',
+        paymentDetails: 'Bank Transfer',
+        receivedAmount: 25000,
+        dateOfReceipt: '2024-01-25',
+        receiptPaymentDetails: 'Cash',
+        comments: 'Emergency rent payment for friend'
+      }
+    ]);
+  }, []);
 
-  const toPayload = (data) => ({
-    category: CATEGORY_KEY,
-    type: data.type,
-    name: `${data.type} - ${data.partyName || 'Party'}`,
-    provider: data.partyName || 'Party',
-    amount: Number(data.principal) || 0,
-    interestRate: Number(data.interestRate) || 0,
-    startDate: data.startDate || new Date().toISOString().slice(0, 10),
-    maturityDate: data.dueDate || undefined,
-    frequency: data.frequency || 'monthly',
-    notes: JSON.stringify({ ...data }),
-  });
-
-  const fromInvestment = (inv) => {
-    let notes = {};
-    try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { notes = {}; }
-    return { _id: inv._id, ...notes, principal: inv.amount, interestRate: inv.interestRate, startDate: inv.startDate?.slice(0,10) || notes.startDate, dueDate: inv.maturityDate?.slice(0,10) || notes.dueDate };
-  };
-
-  const fetchEntries = async () => {
-    try {
-      setLoading(true);
-      const res = await investmentAPI.getAll(CATEGORY_KEY);
-      const list = (res.data.investments || []).map(fromInvestment);
-      setEntries(list);
-    } catch (e) {
-      console.error('Error fetching loan ledger:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchEntries(); }, []);
-
-  const calcDurationYears = (start, end) => {
-    if (!start || !end) return 0;
-    const s = new Date(start);
-    const e = new Date(end);
-    return Math.max(0, (e - s) / (1000 * 60 * 60 * 24 * 365));
-  };
-
+  // Calculate totals
   const totals = useMemo(() => {
-    let lent = 0, borrowed = 0;
-    for (const e of entries) {
-      if (e.type === 'Lent') lent += Number(e.principal) || 0; else borrowed += Number(e.principal) || 0;
-    }
-    return { lent, borrowed, net: lent - borrowed, count: entries.length };
-  }, [entries]);
+    const totalLent = loanEntries.reduce((sum, loan) => sum + Number(loan.amount || 0), 0);
+    const totalPaid = loanEntries.reduce((sum, loan) => sum + Number(loan.totalPaid || 0), 0);
+    const totalBalance = totalLent - totalPaid;
+    const totalOnBehalf = onBehalfEntries.reduce((sum, entry) => sum + Number(entry.amountPaid || 0), 0);
+    const totalReceived = onBehalfEntries.reduce((sum, entry) => sum + Number(entry.receivedAmount || 0), 0);
+    
+    return {
+      totalLent,
+      totalPaid,
+      totalBalance,
+      totalOnBehalf,
+      totalReceived,
+      count: loanEntries.length
+    };
+  }, [loanEntries, onBehalfEntries]);
 
-  const partyAgg = useMemo(() => {
-    const map = new Map();
-    for (const e of entries) {
-      const key = e.partyName || 'Unknown';
-      const prev = map.get(key) || { name: key, lent: 0, borrowed: 0 };
-      if (e.type === 'Lent') prev.lent += Number(e.principal) || 0; else prev.borrowed += Number(e.principal) || 0;
-      map.set(key, prev);
-    }
-    return Array.from(map.values());
-  }, [entries]);
-
-  const COLORS = ['#2563EB', '#10B981', '#EF4444', '#8B5CF6'];
-
-  const handleSubmit = async (e) => {
+  // Loan form handlers
+  const handleLoanSubmit = async (e) => {
     e.preventDefault();
     try {
       setSaving(true);
-      if (editingId) {
-        await investmentAPI.update(editingId, toPayload(inputs));
-      } else {
-        await investmentAPI.create(toPayload(inputs));
-      }
-      await fetchEntries();
-      setEditingId(null);
-      setInputs({
-        partyName: '', relation: '', type: 'Lent', principal: 100000, interestRate: 12, interestType: 'simple', frequency: 'monthly', startDate: new Date().toISOString().slice(0,10), dueDate: '', collateral: '', status: 'active', notes: ''
+      const newLoan = {
+        ...loanInputs,
+        _id: Date.now().toString(),
+        amount: Number(loanInputs.amount),
+        totalPaid: 0,
+        balanceAmount: Number(loanInputs.amount),
+        payments: []
+      };
+      setLoanEntries(prev => [...prev, newLoan]);
+      setLoanInputs({
+        date: new Date().toISOString().slice(0, 10),
+        nameOfPerson: '',
+        forPurpose: '',
+        amount: '',
+        finalDateOfReturn: '',
+        paymentDetails: '',
+        comments: ''
       });
       setShowForm(false);
     } catch (error) {
-      alert(error.response?.data?.message || 'Error saving record');
+      alert('Error saving loan record');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleEdit = (index) => {
-    const item = entries[index];
-    setInputs({
-      partyName: item.partyName || '',
-      relation: item.relation || '',
-      type: item.type || 'Lent',
-      principal: item.principal || 0,
-      interestRate: item.interestRate || 0,
-      interestType: item.interestType || 'simple',
-      frequency: item.frequency || 'monthly',
-      startDate: item.startDate || new Date().toISOString().slice(0,10),
-      dueDate: item.dueDate || '',
-      collateral: item.collateral || '',
-      status: item.status || 'active',
-      notes: item.notes || '',
-    });
-    setEditingId(item._id);
-    setShowForm(true);
+  // Payment form handlers
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSaving(true);
+      const paymentAmount = Number(paymentInputs.amountReturned);
+      
+      setLoanEntries(prev => prev.map(loan => {
+        if (loan._id === selectedLoanId) {
+          const newTotalPaid = (loan.totalPaid || 0) + paymentAmount;
+          const newBalance = loan.amount - newTotalPaid;
+          return {
+            ...loan,
+            totalPaid: newTotalPaid,
+            balanceAmount: newBalance,
+            payments: [...(loan.payments || []), {
+              date: paymentInputs.dateOfReturn,
+              amount: paymentAmount,
+              paymentDetails: paymentInputs.paymentDetails,
+              comments: paymentInputs.comments
+            }]
+          };
+        }
+        return loan;
+      }));
+      
+      setPaymentInputs({
+        dateOfReturn: new Date().toISOString().slice(0, 10),
+        amountReturned: '',
+        paymentDetails: '',
+        comments: ''
+      });
+      setSelectedLoanId('');
+      setShowPaymentForm(false);
+    } catch (error) {
+      alert('Error saving payment record');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = async (index) => {
-    const item = entries[index];
+  // On behalf form handlers
+  const handleOnBehalfSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSaving(true);
+      const newOnBehalfEntry = {
+        ...onBehalfInputs,
+        _id: Date.now().toString(),
+        amountPaid: Number(onBehalfInputs.amountPaid),
+        receivedAmount: Number(onBehalfInputs.receivedAmount || 0)
+      };
+      setOnBehalfEntries(prev => [...prev, newOnBehalfEntry]);
+      setOnBehalfInputs({
+        date: new Date().toISOString().slice(0, 10),
+        paidOnBehalfOf: '',
+        amountPaid: '',
+        forPurpose: '',
+        paymentDetails: '',
+        receivedAmount: '',
+        dateOfReceipt: new Date().toISOString().slice(0, 10),
+        receiptPaymentDetails: '',
+        comments: ''
+      });
+      setShowOnBehalfForm(false);
+    } catch (error) {
+      alert('Error saving on behalf record');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (type, id) => {
     if (window.confirm('Delete this record?')) {
       try {
-        await investmentAPI.delete(item._id);
-        await fetchEntries();
+        if (type === 'loan') {
+          setLoanEntries(prev => prev.filter(loan => loan._id !== id));
+        } else if (type === 'onBehalf') {
+          setOnBehalfEntries(prev => prev.filter(entry => entry._id !== id));
+        }
       } catch (error) {
-        alert(error.response?.data?.message || 'Error deleting record');
+        alert('Error deleting record');
       }
     }
   };
 
-  const schedulePoints = useMemo(() => {
-    const s = inputs.startDate;
-    const d = inputs.dueDate;
-    const years = calcDurationYears(s, d);
-    const months = Math.max(1, Math.round(years * 12));
-    const r = inputs.interestRate / 100 / 12;
-    const p = Number(inputs.principal) || 0;
-    const arr = [];
-    if (inputs.interestType === 'emi') {
-      const emi = r === 0 ? p / months : p * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
-      let balance = p;
-      for (let m = 1; m <= months; m++) {
-        const interest = balance * r;
-        const principalPaid = Math.min(balance, emi - interest);
-        balance = Math.max(0, balance - principalPaid);
-        if (m % 1 === 0) arr.push({ name: `M${m}`, balance });
-      }
-    } else {
-      for (let m = 1; m <= months; m++) {
-        arr.push({ name: `M${m}`, balance: p });
-      }
-    }
-    return arr.filter((_, i) => i % Math.ceil(months / 12) === 0);
-  }, [inputs]);
-
-  const pieData = useMemo(() => {
-    const years = calcDurationYears(inputs.startDate, inputs.dueDate) || 1;
-    const p = Number(inputs.principal) || 0;
-    const interestSimple = p * (inputs.interestRate / 100) * years;
-    return [
-      { name: 'Principal', value: p },
-      { name: 'Interest', value: inputs.interestType === 'emi' ? Math.max(0, p > 0 ? (schedulePoints.length > 0 ? (schedulePoints[0].balance - schedulePoints[schedulePoints.length - 1].balance) : 0) : 0) : interestSimple },
-    ];
-  }, [inputs, schedulePoints]);
-
-  const barData = useMemo(() => partyAgg.map(p => ({ name: p.name, lent: p.lent, borrowed: p.borrowed })), [partyAgg]);
 
   return (
     <div className="investment-container">
@@ -195,7 +250,13 @@ const LoanLedger = () => {
         <h1>Loan Ledger</h1>
         <div className="header-actions">
           <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
-            <FiPlus /> {showForm ? 'Cancel' : 'Add Entry'}
+            <FiPlus /> {showForm ? 'Cancel' : 'Add Loan'}
+          </button>
+          <button className="btn-success" onClick={() => setShowPaymentForm(!showPaymentForm)}>
+            <FiArrowDownLeft /> {showPaymentForm ? 'Cancel' : 'Add Payment'}
+          </button>
+          <button className="btn-secondary" onClick={() => setShowOnBehalfForm(!showOnBehalfForm)}>
+            <FiCreditCard /> {showOnBehalfForm ? 'Cancel' : 'On Behalf'}
           </button>
         </div>
       </div>
@@ -207,16 +268,7 @@ const LoanLedger = () => {
           </div>
           <div className="stat-content">
             <p className="stat-label">Total Lent</p>
-            <h3 className="stat-value">₹{Math.round(totals.lent).toLocaleString('en-IN')}</h3>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' }}>
-            <FiActivity />
-          </div>
-          <div className="stat-content">
-            <p className="stat-label">Total Borrowed</p>
-            <h3 className="stat-value">₹{Math.round(totals.borrowed).toLocaleString('en-IN')}</h3>
+            <h3 className="stat-value">₹{Math.round(totals.totalLent).toLocaleString('en-IN')}</h3>
           </div>
         </div>
         <div className="stat-card">
@@ -224,8 +276,17 @@ const LoanLedger = () => {
             <FiTrendingUp />
           </div>
           <div className="stat-content">
-            <p className="stat-label">Net</p>
-            <h3 className="stat-value" style={{ color: totals.net >= 0 ? '#10B981' : '#EF4444' }}>₹{Math.round(totals.net).toLocaleString('en-IN')}</h3>
+            <p className="stat-label">Total Paid</p>
+            <h3 className="stat-value">₹{Math.round(totals.totalPaid).toLocaleString('en-IN')}</h3>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' }}>
+            <FiActivity />
+          </div>
+          <div className="stat-content">
+            <p className="stat-label">Balance</p>
+            <h3 className="stat-value">₹{Math.round(totals.totalBalance).toLocaleString('en-IN')}</h3>
           </div>
         </div>
         <div className="stat-card">
@@ -233,125 +294,60 @@ const LoanLedger = () => {
             <FiUsers />
           </div>
           <div className="stat-content">
-            <p className="stat-label">Active Records</p>
+            <p className="stat-label">Active Loans</p>
             <h3 className="stat-value">{totals.count}</h3>
           </div>
         </div>
       </div>
 
-      <div className="charts-section">
-        <div className="charts-header">
-          <h2>Ledger Analytics</h2>
-          <p>Party-wise totals and balance projection</p>
-        </div>
-        <div className="charts-grid">
-          <div className="chart-card premium">
-            <div className="chart-header">
-              <div className="chart-title">
-                <FiBarChart2 className="chart-icon" />
-                <h3>Balance Projection</h3>
-              </div>
-              <div className="chart-subtitle">Based on current inputs</div>
-            </div>
-            <div className="chart-content">
-              <ResponsiveContainer width="100%" height={320}>
-                <AreaChart data={schedulePoints} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="ledgerArea" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2563EB" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#2563EB" stopOpacity={0.2}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(v) => `₹${(v/100000).toFixed(0)}L`} />
-                  <Tooltip formatter={(v) => [`₹${Math.round(v).toLocaleString('en-IN')}`, 'Balance']} />
-                  <Area type="monotone" dataKey="balance" stroke="#2563EB" strokeWidth={3} fill="url(#ledgerArea)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="chart-card premium">
-            <div className="chart-header">
-              <div className="chart-title">
-                <FiPieChart className="chart-icon" />
-                <h3>Principal vs Interest</h3>
-              </div>
-              <div className="chart-subtitle">For current inputs</div>
-            </div>
-            <div className="chart-content">
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
-                    {pieData.map((entry, idx) => (
-                      <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} stroke="#fff" strokeWidth={2} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`₹${Math.round(value).toLocaleString('en-IN')}`, 'Value']} />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="chart-card premium">
-            <div className="chart-header">
-              <div className="chart-title">
-                <FiBarChart2 className="chart-icon" />
-                <h3>Party Distribution</h3>
-              </div>
-              <div className="chart-subtitle">Lent vs Borrowed</div>
-            </div>
-            <div className="chart-content">
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(v) => `₹${(v/100000).toFixed(0)}L`} />
-                  <Tooltip formatter={(v) => [`₹${Math.round(v).toLocaleString('en-IN')}`, '']} />
-                  <Legend />
-                  <Bar dataKey="lent" fill="#10B981" name="Lent" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="borrowed" fill="#EF4444" name="Borrowed" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      {/* Loan Records Table */}
       <div className="investments-table-card">
         <div className="table-header">
-          <h2>Records</h2>
+          <h2>Loan Records</h2>
         </div>
         <div className="table-container">
           <table className="investments-table">
             <thead>
               <tr>
-                <th>Party</th>
-                <th>Type</th>
-                <th>Principal</th>
-                <th>Rate</th>
-                <th>Start</th>
-                <th>Due</th>
-                <th>Status</th>
+                <th>Date</th>
+                <th>Person</th>
+                <th>Purpose</th>
+                <th>Amount</th>
+                <th>Due Date</th>
+                <th>Total Paid</th>
+                <th>Balance</th>
+                <th>Payment Details</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {entries.map((e, idx) => (
-                <tr key={e._id || idx}>
-                  <td>{e.partyName}</td>
-                  <td>{e.type}</td>
-                  <td>₹{Math.round(e.principal).toLocaleString('en-IN')}</td>
-                  <td>{e.interestRate}%</td>
-                  <td>{e.startDate}</td>
-                  <td>{e.dueDate || '-'}</td>
-                  <td>{e.status}</td>
+              {loanEntries.map((loan) => (
+                <tr key={loan._id}>
+                  <td>{loan.date}</td>
+                  <td>{loan.nameOfPerson}</td>
+                  <td>{loan.forPurpose}</td>
+                  <td>₹{Math.round(loan.amount).toLocaleString('en-IN')}</td>
+                  <td>{loan.finalDateOfReturn}</td>
+                  <td>₹{Math.round(loan.totalPaid || 0).toLocaleString('en-IN')}</td>
+                  <td style={{ color: loan.balanceAmount > 0 ? '#EF4444' : '#10B981' }}>
+                    ₹{Math.round(loan.balanceAmount).toLocaleString('en-IN')}
+                  </td>
+                  <td>{loan.paymentDetails}</td>
                   <td>
                     <div className="investment-actions">
-                      <button onClick={() => handleEdit(idx)} className="btn-icon"><FiEdit2 /></button>
-                      <button onClick={() => handleDelete(idx)} className="btn-icon btn-danger"><FiTrash2 /></button>
+                      <button 
+                        onClick={() => {
+                          setSelectedLoanId(loan._id);
+                          setShowPaymentForm(true);
+                        }} 
+                        className="btn-icon"
+                        title="Add Payment"
+                      >
+                        <FiArrowDownLeft />
+                      </button>
+                      <button onClick={() => handleDelete('loan', loan._id)} className="btn-icon btn-danger">
+                        <FiTrash2 />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -361,87 +357,228 @@ const LoanLedger = () => {
         </div>
       </div>
 
+      {/* On Behalf Records Table */}
+      {onBehalfEntries.length > 0 && (
+        <div className="investments-table-card">
+          <div className="table-header">
+            <h2>On Behalf Records</h2>
+          </div>
+          <div className="table-container">
+            <table className="investments-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Paid For</th>
+                  <th>Amount Paid</th>
+                  <th>Purpose</th>
+                  <th>Received</th>
+                  <th>Receipt Date</th>
+                  <th>Comments</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {onBehalfEntries.map((entry) => (
+                  <tr key={entry._id}>
+                    <td>{entry.date}</td>
+                    <td>{entry.paidOnBehalfOf}</td>
+                    <td>₹{Math.round(entry.amountPaid).toLocaleString('en-IN')}</td>
+                    <td>{entry.forPurpose}</td>
+                    <td>₹{Math.round(entry.receivedAmount || 0).toLocaleString('en-IN')}</td>
+                    <td>{entry.dateOfReceipt}</td>
+                    <td>{entry.comments}</td>
+                    <td>
+                      <div className="investment-actions">
+                        <button onClick={() => handleDelete('onBehalf', entry._id)} className="btn-icon btn-danger">
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Loan Form */}
       {showForm && (
         <div ref={formRef} className="investment-form-card">
-          <h2>Add / Edit Entry</h2>
-          <form className="investment-form" onSubmit={handleSubmit}>
+          <h2>Add Loan Entry</h2>
+          <form className="investment-form" onSubmit={handleLoanSubmit}>
             <div className="form-row">
               <div className="form-field">
-                <label>Party Name *</label>
-                <input type="text" value={inputs.partyName} onChange={(e) => setInputs({ ...inputs, partyName: e.target.value })} required />
+                <label>Date *</label>
+                <input type="date" value={loanInputs.date} onChange={(e) => setLoanInputs({ ...loanInputs, date: e.target.value })} required />
               </div>
               <div className="form-field">
-                <label>Relation</label>
-                <input type="text" value={inputs.relation} onChange={(e) => setInputs({ ...inputs, relation: e.target.value })} />
+                <label>Name of Person *</label>
+                <input type="text" value={loanInputs.nameOfPerson} onChange={(e) => setLoanInputs({ ...loanInputs, nameOfPerson: e.target.value })} required />
               </div>
               <div className="form-field">
-                <label>Type *</label>
-                <select value={inputs.type} onChange={(e) => setInputs({ ...inputs, type: e.target.value })} required>
-                  <option>Lent</option>
-                  <option>Borrowed</option>
+                <label>For Purpose *</label>
+                <input type="text" value={loanInputs.forPurpose} onChange={(e) => setLoanInputs({ ...loanInputs, forPurpose: e.target.value })} required />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label>Amount (₹) *</label>
+                <input type="number" value={loanInputs.amount} onChange={(e) => setLoanInputs({ ...loanInputs, amount: e.target.value })} required />
+              </div>
+              <div className="form-field">
+                <label>Final Date of Return</label>
+                <input type="date" value={loanInputs.finalDateOfReturn} onChange={(e) => setLoanInputs({ ...loanInputs, finalDateOfReturn: e.target.value })} />
+              </div>
+              <div className="form-field">
+                <label>Payment Details</label>
+                <select value={loanInputs.paymentDetails} onChange={(e) => setLoanInputs({ ...loanInputs, paymentDetails: e.target.value })}>
+                  <option value="">Select Payment Method</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Card">Card</option>
                 </select>
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-field">
-                <label>Principal (₹) *</label>
-                <input type="number" value={inputs.principal} onChange={(e) => setInputs({ ...inputs, principal: Number(e.target.value) })} required />
-              </div>
-              <div className="form-field">
-                <label>Interest Rate (%) *</label>
-                <input type="number" step="0.01" value={inputs.interestRate} onChange={(e) => setInputs({ ...inputs, interestRate: Number(e.target.value) })} required />
-              </div>
-              <div className="form-field">
-                <label>Interest Type *</label>
-                <select value={inputs.interestType} onChange={(e) => setInputs({ ...inputs, interestType: e.target.value })} required>
-                  <option>simple</option>
-                  <option>emi</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-field">
-                <label>Start Date *</label>
-                <input type="date" value={inputs.startDate} onChange={(e) => setInputs({ ...inputs, startDate: e.target.value })} required />
-              </div>
-              <div className="form-field">
-                <label>Due Date</label>
-                <input type="date" value={inputs.dueDate} onChange={(e) => setInputs({ ...inputs, dueDate: e.target.value })} />
-              </div>
-              <div className="form-field">
-                <label>Frequency</label>
-                <select value={inputs.frequency} onChange={(e) => setInputs({ ...inputs, frequency: e.target.value })}>
-                  <option>monthly</option>
-                  <option>quarterly</option>
-                  <option>yearly</option>
-                  <option>one-time</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-field">
-                <label>Collateral</label>
-                <input type="text" value={inputs.collateral} onChange={(e) => setInputs({ ...inputs, collateral: e.target.value })} />
-              </div>
-              <div className="form-field">
-                <label>Status</label>
-                <select value={inputs.status} onChange={(e) => setInputs({ ...inputs, status: e.target.value })}>
-                  <option>active</option>
-                  <option>closed</option>
-                  <option>overdue</option>
-                </select>
-              </div>
-              <div className="form-field">
-                <label>Notes</label>
-                <input type="text" value={inputs.notes} onChange={(e) => setInputs({ ...inputs, notes: e.target.value })} />
+                <label>Comments</label>
+                <textarea value={loanInputs.comments} onChange={(e) => setLoanInputs({ ...loanInputs, comments: e.target.value })} rows="3" />
               </div>
             </div>
 
             <div className="form-actions">
-              <button className="btn-success" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+              <button className="btn-success" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Add Loan'}</button>
+              <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Payment Form */}
+      {showPaymentForm && (
+        <div ref={formRef} className="investment-form-card">
+          <h2>Add Payment Entry</h2>
+          <form className="investment-form" onSubmit={handlePaymentSubmit}>
+            <div className="form-row">
+              <div className="form-field">
+                <label>Select Loan *</label>
+                <select value={selectedLoanId} onChange={(e) => setSelectedLoanId(e.target.value)} required>
+                  <option value="">Select Loan</option>
+                  {loanEntries.map(loan => (
+                    <option key={loan._id} value={loan._id}>
+                      {loan.nameOfPerson} - ₹{Math.round(loan.balanceAmount).toLocaleString('en-IN')} pending
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-field">
+                <label>Date of Return *</label>
+                <input type="date" value={paymentInputs.dateOfReturn} onChange={(e) => setPaymentInputs({ ...paymentInputs, dateOfReturn: e.target.value })} required />
+              </div>
+              <div className="form-field">
+                <label>Amount Returned (₹) *</label>
+                <input type="number" value={paymentInputs.amountReturned} onChange={(e) => setPaymentInputs({ ...paymentInputs, amountReturned: e.target.value })} required />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label>Payment Details</label>
+                <select value={paymentInputs.paymentDetails} onChange={(e) => setPaymentInputs({ ...paymentInputs, paymentDetails: e.target.value })}>
+                  <option value="">Select Payment Method</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Card">Card</option>
+                </select>
+              </div>
+              <div className="form-field">
+                <label>Comments</label>
+                <textarea value={paymentInputs.comments} onChange={(e) => setPaymentInputs({ ...paymentInputs, comments: e.target.value })} rows="3" />
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button className="btn-success" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Add Payment'}</button>
+              <button type="button" className="btn-secondary" onClick={() => setShowPaymentForm(false)}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* On Behalf Form */}
+      {showOnBehalfForm && (
+        <div ref={formRef} className="investment-form-card">
+          <h2>On Behalf Payment Entry</h2>
+          <form className="investment-form" onSubmit={handleOnBehalfSubmit}>
+            <div className="form-row">
+              <div className="form-field">
+                <label>Date *</label>
+                <input type="date" value={onBehalfInputs.date} onChange={(e) => setOnBehalfInputs({ ...onBehalfInputs, date: e.target.value })} required />
+              </div>
+              <div className="form-field">
+                <label>Paid on Behalf of *</label>
+                <input type="text" value={onBehalfInputs.paidOnBehalfOf} onChange={(e) => setOnBehalfInputs({ ...onBehalfInputs, paidOnBehalfOf: e.target.value })} required />
+              </div>
+              <div className="form-field">
+                <label>Amount Paid (₹) *</label>
+                <input type="number" value={onBehalfInputs.amountPaid} onChange={(e) => setOnBehalfInputs({ ...onBehalfInputs, amountPaid: e.target.value })} required />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label>For Purpose *</label>
+                <input type="text" value={onBehalfInputs.forPurpose} onChange={(e) => setOnBehalfInputs({ ...onBehalfInputs, forPurpose: e.target.value })} required />
+              </div>
+              <div className="form-field">
+                <label>Payment Details</label>
+                <select value={onBehalfInputs.paymentDetails} onChange={(e) => setOnBehalfInputs({ ...onBehalfInputs, paymentDetails: e.target.value })}>
+                  <option value="">Select Payment Method</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Card">Card</option>
+                </select>
+              </div>
+              <div className="form-field">
+                <label>Received Amount (₹)</label>
+                <input type="number" value={onBehalfInputs.receivedAmount} onChange={(e) => setOnBehalfInputs({ ...onBehalfInputs, receivedAmount: e.target.value })} />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label>Date of Receipt</label>
+                <input type="date" value={onBehalfInputs.dateOfReceipt} onChange={(e) => setOnBehalfInputs({ ...onBehalfInputs, dateOfReceipt: e.target.value })} />
+              </div>
+              <div className="form-field">
+                <label>Receipt Payment Details</label>
+                <select value={onBehalfInputs.receiptPaymentDetails} onChange={(e) => setOnBehalfInputs({ ...onBehalfInputs, receiptPaymentDetails: e.target.value })}>
+                  <option value="">Select Payment Method</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Card">Card</option>
+                </select>
+              </div>
+              <div className="form-field">
+                <label>Comments</label>
+                <textarea value={onBehalfInputs.comments} onChange={(e) => setOnBehalfInputs({ ...onBehalfInputs, comments: e.target.value })} rows="3" />
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button className="btn-success" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Add On Behalf Entry'}</button>
+              <button type="button" className="btn-secondary" onClick={() => setShowOnBehalfForm(false)}>Cancel</button>
             </div>
           </form>
         </div>

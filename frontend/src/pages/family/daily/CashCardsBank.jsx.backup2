@@ -1173,28 +1173,123 @@ const CashCardsBank = () => {
                   />
                 </div>
               </div>
-              <TransactionTable
-                transactions={cardTransactions.filter(transaction => {
-                  const transactionCardId = typeof transaction.cardId === 'object'
+              <div className="transactions-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Merchant</th>
+                      <th>Amount</th>
+                      <th>Type of Transaction</th>
+                      <th>Expense Type</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cardTransactions
+                      .filter(transaction => {
+                        const transactionCardId = typeof transaction.cardId === 'object' 
+                          ? transaction.cardId._id || transaction.cardId
+                          : transaction.cardId;
+                        
+                        // Filter by card
+                        if (transactionCardId !== selectedCard._id) return false;
+                        
+                        // Filter by category
+                        if (cardTransactionCategoryFilter !== 'all' && transaction.category !== cardTransactionCategoryFilter) return false;
+                        
+                        // Filter by expense type
+                        if (cardTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== cardTransactionExpenseTypeFilter) return false;
+                        
+                        // Filter by date range
+                        const transactionDate = new Date(transaction.date);
+                        if (cardTransactionStartDate) {
+                          const startDate = new Date(cardTransactionStartDate);
+                          if (transactionDate < startDate) return false;
+                        }
+                        if (cardTransactionEndDate) {
+                          const endDate = new Date(cardTransactionEndDate);
+                          endDate.setHours(23, 59, 59, 999); // Include the entire end date
+                          if (transactionDate > endDate) return false;
+                        }
+                        
+                        return true;
+                      })
+                      .map(transaction => {
+                      const card = transaction.cardId;
+                      return (
+                        <tr key={transaction._id}>
+                          <td>{new Date(transaction.date).toLocaleDateString()}</td>
+                          <td>
+                            <span className={`transaction-type ${transaction.type}`}>
+                              {transaction.type}
+                            </span>
+                          </td>
+                          <td>{transaction.merchant}</td>
+                          <td className="amount">{transaction.currency} {transaction.amount}</td>
+                          <td>
+                            {transaction.transactionType ? transaction.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                          </td>
+                          <td>
+                            {transaction.expenseType ? transaction.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                          </td>
+                          <td>
+                            <button 
+                              className="edit-btn" 
+                              onClick={() => handleTransactionEdit(transaction)}
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              className="delete-btn" 
+                              onClick={() => handleTransactionDelete(transaction._id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {cardTransactions.filter(transaction => {
+                  const transactionCardId = typeof transaction.cardId === 'object' 
                     ? transaction.cardId._id || transaction.cardId
                     : transaction.cardId;
+                  
+                  // Filter by card
                   if (transactionCardId !== selectedCard._id) return false;
+                  
+                  // Filter by category
                   if (cardTransactionCategoryFilter !== 'all' && transaction.category !== cardTransactionCategoryFilter) return false;
+                  
+                  // Filter by expense type
                   if (cardTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== cardTransactionExpenseTypeFilter) return false;
+                  
+                  // Filter by date range
                   const transactionDate = new Date(transaction.date);
-                  if (cardTransactionStartDate && transactionDate < new Date(cardTransactionStartDate)) return false;
+                  if (cardTransactionStartDate) {
+                    const startDate = new Date(cardTransactionStartDate);
+                    if (transactionDate < startDate) return false;
+                  }
                   if (cardTransactionEndDate) {
                     const endDate = new Date(cardTransactionEndDate);
                     endDate.setHours(23, 59, 59, 999);
                     if (transactionDate > endDate) return false;
                   }
+                  
                   return true;
-                })}
-                currency={selectedCard.currency || 'INR'}
-                initialBalance={selectedCard.creditLimit || 0}
-                onEdit={handleTransactionEdit}
-                onDelete={handleTransactionDelete}
-              />
+                }).length === 0 && (
+                  <div className="empty-state">
+                    <p>
+                      {cardTransactionCategoryFilter === 'all' && cardTransactionExpenseTypeFilter === 'all' && !cardTransactionStartDate && !cardTransactionEndDate
+                        ? 'No transactions yet for this card. Add your first transaction!'
+                        : 'No transactions found matching the selected filters.'}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -1724,28 +1819,123 @@ const CashCardsBank = () => {
                   />
                 </div>
               </div>
-              <TransactionTable
-                transactions={bankTransactions.filter(transaction => {
-                  const transactionAccountId = typeof transaction.accountId === 'object'
+              <div className="transactions-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Merchant/Payee</th>
+                      <th>Amount</th>
+                      <th>Type of Transaction</th>
+                      <th>Expense Type</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bankTransactions
+                      .filter(transaction => {
+                        const transactionAccountId = typeof transaction.accountId === 'object' 
+                          ? transaction.accountId._id || transaction.accountId
+                          : transaction.accountId;
+                        
+                        // Filter by bank account
+                        if (transactionAccountId !== selectedBank._id) return false;
+                        
+                        // Filter by category
+                        if (bankTransactionCategoryFilter !== 'all' && transaction.category !== bankTransactionCategoryFilter) return false;
+                        
+                        // Filter by expense type
+                        if (bankTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== bankTransactionExpenseTypeFilter) return false;
+                        
+                        // Filter by date range
+                        const transactionDate = new Date(transaction.date);
+                        if (bankTransactionStartDate) {
+                          const startDate = new Date(bankTransactionStartDate);
+                          if (transactionDate < startDate) return false;
+                        }
+                        if (bankTransactionEndDate) {
+                          const endDate = new Date(bankTransactionEndDate);
+                          endDate.setHours(23, 59, 59, 999); // Include the entire end date
+                          if (transactionDate > endDate) return false;
+                        }
+                        
+                        return true;
+                      })
+                      .map(transaction => {
+                      const account = transaction.accountId;
+                      return (
+                        <tr key={transaction._id}>
+                          <td>{new Date(transaction.date).toLocaleDateString()}</td>
+                          <td>
+                            <span className={`transaction-type ${transaction.type}`}>
+                              {transaction.type}
+                            </span>
+                          </td>
+                          <td>{transaction.merchant}</td>
+                          <td className="amount">{transaction.currency} {transaction.amount}</td>
+                          <td>
+                            {transaction.transactionType ? transaction.transactionType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                          </td>
+                          <td>
+                            {transaction.expenseType ? transaction.expenseType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                          </td>
+                          <td>
+                            <button 
+                              className="edit-btn" 
+                              onClick={() => handleBankTransactionEdit(transaction)}
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              className="delete-btn" 
+                              onClick={() => handleBankTransactionDelete(transaction._id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {bankTransactions.filter(transaction => {
+                  const transactionAccountId = typeof transaction.accountId === 'object' 
                     ? transaction.accountId._id || transaction.accountId
                     : transaction.accountId;
+                  
+                  // Filter by bank account
                   if (transactionAccountId !== selectedBank._id) return false;
+                  
+                  // Filter by category
                   if (bankTransactionCategoryFilter !== 'all' && transaction.category !== bankTransactionCategoryFilter) return false;
+                  
+                  // Filter by expense type
                   if (bankTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== bankTransactionExpenseTypeFilter) return false;
+                  
+                  // Filter by date range
                   const transactionDate = new Date(transaction.date);
-                  if (bankTransactionStartDate && transactionDate < new Date(bankTransactionStartDate)) return false;
+                  if (bankTransactionStartDate) {
+                    const startDate = new Date(bankTransactionStartDate);
+                    if (transactionDate < startDate) return false;
+                  }
                   if (bankTransactionEndDate) {
                     const endDate = new Date(bankTransactionEndDate);
                     endDate.setHours(23, 59, 59, 999);
                     if (transactionDate > endDate) return false;
                   }
+                  
                   return true;
-                })}
-                currency={selectedBank.currency || 'INR'}
-                initialBalance={parseFloat(selectedBank.balance) || 0}
-                onEdit={handleBankTransactionEdit}
-                onDelete={handleBankTransactionDelete}
-              />
+                }).length === 0 && (
+                  <div className="empty-state">
+                    <p>
+                      {bankTransactionCategoryFilter === 'all' && bankTransactionExpenseTypeFilter === 'all' && !bankTransactionStartDate && !bankTransactionEndDate
+                        ? 'No transactions yet for this bank account. Add your first transaction!'
+                        : 'No transactions found matching the selected filters.'}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

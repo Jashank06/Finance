@@ -12,12 +12,6 @@ const defaultEntry = {
   email: '',
   website: '',
   supportHours: '',
-  avgResponseTime: '',
-  lastContactDate: '',
-  issueDescription: '',
-  resolutionStatus: 'Pending',
-  ticketNumber: '',
-  priority: 'Medium',
   notes: ''
 };
 
@@ -144,8 +138,6 @@ const CustomerSupport = () => {
                         <th>Contact Person</th>
                         <th>Phone</th>
                         <th>Email</th>
-                        <th>Status</th>
-                        <th>Priority</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -162,16 +154,6 @@ const CustomerSupport = () => {
                           <td>{entry.contactPerson || 'N/A'}</td>
                           <td>{entry.phone || 'N/A'}</td>
                           <td>{entry.email || 'N/A'}</td>
-                          <td>
-                            <span className={`status-badge status-${entry.resolutionStatus?.toLowerCase()}`}>
-                              {entry.resolutionStatus}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`priority-badge priority-${entry.priority?.toLowerCase()}`}>
-                              {entry.priority}
-                            </span>
-                          </td>
                           <td>
                             <div className="table-actions">
                               <button className="btn-edit" onClick={() => handleEdit(index)}>
@@ -297,74 +279,8 @@ const CustomerSupport = () => {
               </div>
 
               <div className="form-section">
-                <h4>Ticket Information</h4>
+                <h4>Additional Notes</h4>
                 <div className="form-grid">
-                  <div className="form-group">
-                    <label>Ticket Number (if any)</label>
-                    <input
-                      type="text"
-                      value={formData.ticketNumber}
-                      onChange={(e) => handleInputChange('ticketNumber', e.target.value)}
-                      placeholder="e.g., TK-12345"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Priority</label>
-                    <select
-                      value={formData.priority}
-                      onChange={(e) => handleInputChange('priority', e.target.value)}
-                    >
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                      <option value="Urgent">Urgent</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Resolution Status</label>
-                    <select
-                      value={formData.resolutionStatus}
-                      onChange={(e) => handleInputChange('resolutionStatus', e.target.value)}
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Resolved">Resolved</option>
-                      <option value="Escalated">Escalated</option>
-                      <option value="Closed">Closed</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Average Response Time</label>
-                    <input
-                      type="text"
-                      value={formData.avgResponseTime}
-                      onChange={(e) => handleInputChange('avgResponseTime', e.target.value)}
-                      placeholder="e.g., 24 hours, 2 business days"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-section">
-                <h4>Issue Details</h4>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Last Contact Date</label>
-                    <input
-                      type="date"
-                      value={formData.lastContactDate}
-                      onChange={(e) => handleInputChange('lastContactDate', e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group full-width">
-                    <label>Issue Description</label>
-                    <textarea
-                      value={formData.issueDescription}
-                      onChange={(e) => handleInputChange('issueDescription', e.target.value)}
-                      placeholder="Describe the issue or reason for contact..."
-                      rows={4}
-                    />
-                  </div>
                   <div className="form-group full-width">
                     <label>Additional Notes</label>
                     <textarea

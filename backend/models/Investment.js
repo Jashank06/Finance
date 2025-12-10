@@ -42,6 +42,10 @@ const investmentSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  source: {
+    type: String,
+    trim: true,
+  },
   // Gold/SGB specific fields
   provider: String, // e.g., MMTC-PAMP, RBI, HDFC Securities
   quantity: Number, // for gold/silver in grams, for bonds in units

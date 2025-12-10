@@ -5,11 +5,12 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import PlaceholderPage from './pages/PlaceholderPage';
+import CompanyProfile from './pages/CompanyProfile';
 import NpsPpfInvestment from './pages/investments/NpsPpfInvestment';
 import GoldSgbInvestment from './pages/investments/GoldSgbInvestment';
 import BankSchemesInvestment from './pages/investments/BankSchemesInvestment';
 import MfInsuranceSharesInvestment from './pages/investments/MfInsuranceSharesInvestment';
-import InvestmentValuationAllocation from './pages/investments/InvestmentValuationAllocation';
+import InvestmentValuationNew from './pages/investments/InvestmentValuationNew';
 import ProjectIncomeExpense from './pages/investments/ProjectIncomeExpense';
 import InvestmentProfile from './pages/investments/InvestmentProfile';
 import LoanAmortization from './pages/investments/LoanAmortization';
@@ -19,7 +20,7 @@ import OnlineAccessDetails from './pages/family/static/OnlineAccessDetails';
 import MobileEmailDetails from './pages/family/static/MobileEmailDetails';
 import CompanyRecords from './pages/family/static/CompanyRecords';
 import PersonalRecords from './pages/family/static/PersonalRecords';
-import FamilyProfile from './pages/family/static/FamilyProfile';
+import FamilyProfile from './pages/FamilyProfile';
 import InventoryRecord from './pages/family/static/InventoryRecord';
 import ContactManagement from './pages/family/static/ContactManagement';
 import DigitalAssets from './pages/family/static/DigitalAssets';
@@ -63,7 +64,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout>
-                  <PlaceholderPage title="Family Profile" />
+                  <FamilyProfile />
                 </Layout>
               </ProtectedRoute>
             }
@@ -74,7 +75,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout>
-                  <PlaceholderPage title="Company Profile" />
+                  <CompanyProfile />
                 </Layout>
               </ProtectedRoute>
             }
@@ -154,7 +155,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout>
-                  <InvestmentValuationAllocation />
+                  <InvestmentValuationNew />
                 </Layout>
               </ProtectedRoute>
             }

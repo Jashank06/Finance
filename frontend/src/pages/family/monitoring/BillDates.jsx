@@ -603,59 +603,6 @@ const BillDates = () => {
         </div>
       )}
 
-      <div className="charts-section">
-        <div className="charts-header">
-          <h2>Provisions & Cycle Mix</h2>
-          <p>Month-wise totals and cycle distribution</p>
-        </div>
-        <div className="charts-grid">
-          <div className="chart-card premium">
-            <div className="chart-header">
-              <div className="chart-title">
-                <FiBarChart2 className="chart-icon" />
-                <h3>Monthly Provisions</h3>
-              </div>
-              <div className="chart-subtitle">Budgeted amounts per month</div>
-            </div>
-            <div className="chart-content">
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={(monthlyProvisions.length ? monthlyProvisions : monthlyProvisionsLocal)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}K`} />
-                  <Tooltip formatter={(v) => [`₹${Math.round(v).toLocaleString('en-IN')}`, 'Total']} />
-                  <Legend />
-                  <Bar dataKey="total" fill="#2563EB" name="Total" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="chart-card premium">
-            <div className="chart-header">
-              <div className="chart-title">
-                <FiPieChart className="chart-icon" />
-                <h3>Cycle Mix</h3>
-              </div>
-              <div className="chart-subtitle">Monthly vs Quarterly vs Yearly</div>
-            </div>
-            <div className="chart-content">
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie data={(cycleMix.length ? cycleMix : cycleMixLocal)} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
-                    {(cycleMix.length ? cycleMix : cycleMixLocal).map((entry, idx) => (
-                      <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} stroke="#fff" strokeWidth={2} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value, name) => [value, name]} />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="investments-table-card">
         <div className="table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2>Monthly Schedule</h2>
@@ -831,6 +778,59 @@ const BillDates = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div className="charts-section">
+        <div className="charts-header">
+          <h2>Provisions & Cycle Mix</h2>
+          <p>Month-wise totals and cycle distribution</p>
+        </div>
+        <div className="charts-grid">
+          <div className="chart-card premium">
+            <div className="chart-header">
+              <div className="chart-title">
+                <FiBarChart2 className="chart-icon" />
+                <h3>Monthly Provisions</h3>
+              </div>
+              <div className="chart-subtitle">Budgeted amounts per month</div>
+            </div>
+            <div className="chart-content">
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={(monthlyProvisions.length ? monthlyProvisions : monthlyProvisionsLocal)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
+                  <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}K`} />
+                  <Tooltip formatter={(v) => [`₹${Math.round(v).toLocaleString('en-IN')}`, 'Total']} />
+                  <Legend />
+                  <Bar dataKey="total" fill="#2563EB" name="Total" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="chart-card premium">
+            <div className="chart-header">
+              <div className="chart-title">
+                <FiPieChart className="chart-icon" />
+                <h3>Cycle Mix</h3>
+              </div>
+              <div className="chart-subtitle">Monthly vs Quarterly vs Yearly</div>
+            </div>
+            <div className="chart-content">
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie data={(cycleMix.length ? cycleMix : cycleMixLocal)} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
+                    {(cycleMix.length ? cycleMix : cycleMixLocal).map((entry, idx) => (
+                      <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} stroke="#fff" strokeWidth={2} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value, name) => [value, name]} />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -31,7 +31,12 @@ const transactionSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['food', 'shopping', 'transport', 'entertainment', 'utilities', 'healthcare', 'education', 'other']
+    enum: ['traveling', 'school-fees', 'grocery-household', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'other']
+  },
+  modeOfTransaction: {
+    type: String,
+    enum: ['credit-card', 'debit-card', 'upi', 'neft', 'rtgs', 'imps', 'cheque', 'dd', 'cash', 'other'],
+    default: 'credit-card'
   },
   description: {
     type: String
@@ -39,7 +44,10 @@ const transactionSchema = new mongoose.Schema({
   // New transaction classification fields
   transactionType: {
     type: String,
-    enum: ['expense', 'transfer', 'loan-give', 'loan-take', 'on-behalf-in', 'on-behalf-out'],
+    enum: ['expense', 'transfer', 'loan-give', 'loan-take', 'udhar-give', 'udhar-receive', 'on-behalf-in', 'on-behalf-out'],
+  },
+  narration: {
+    type: String
   },
   expenseType: {
     type: String,
