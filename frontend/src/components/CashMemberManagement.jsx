@@ -11,6 +11,10 @@ const CashMemberManagement = () => {
   const [editingMember, setEditingMember] = useState(null);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dateFilter, setDateFilter] = useState({
+    startDate: '',
+    endDate: ''
+  });
 
   const [memberForm, setMemberForm] = useState({
     name: '',
@@ -209,6 +213,26 @@ const CashMemberManagement = () => {
     if (member.budget === 0) return 0;
     const spent = calculateSpent(member);
     return ((spent / member.budget) * 100).toFixed(1);
+  };
+
+  // Filter transactions based on date range
+  const filteredTransactions = transactions.filter(transaction => {
+    const transactionDate = new Date(transaction.date);
+    const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null;
+    const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null;
+    
+    if (startDate && transactionDate < startDate) return false;
+    if (endDate && transactionDate > endDate) return false;
+    
+    return true;
+  });
+
+  // Reset date filter
+  const resetDateFilter = () => {
+    setDateFilter({
+      startDate: '',
+      endDate: ''
+    });
   };
 
   if (loading) {
@@ -444,8 +468,66 @@ const CashMemberManagement = () => {
             </button>
           </div>
 
+          {/* Date Filter Section */}
+          <div className="date-filter-section" style={{ 
+            margin: '20px 0', 
+            padding: '15px', 
+            border: '1px solid #e0e0e0', 
+            borderRadius: '8px',
+            backgroundColor: '#f9f9f9' 
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#333' }}>Filter by Date Range</h4>
+            <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label style={{ fontWeight: '500', minWidth: '80px' }}>Start Date:</label>
+                <input
+                  type="date"
+                  value={dateFilter.startDate}
+                  onChange={(e) => setDateFilter({...dateFilter, startDate: e.target.value})}
+                  style={{
+                    padding: '6px 10px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label style={{ fontWeight: '500', minWidth: '70px' }}>End Date:</label>
+                <input
+                  type="date"
+                  value={dateFilter.endDate}
+                  onChange={(e) => setDateFilter({...dateFilter, endDate: e.target.value})}
+                  style={{
+                    padding: '6px 10px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+              <button
+                onClick={resetDateFilter}
+                style={{
+                  padding: '6px 15px',
+                  backgroundColor: '#f44336',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Clear Filter
+              </button>
+              <span style={{ color: '#666', fontSize: '14px' }}>
+                Showing {filteredTransactions.length} of {transactions.length} transactions
+              </span>
+            </div>
+          </div>
+
           <div className="transactions-table">
-            {transactions.length === 0 ? (
+            {filteredTransactions.length === 0 ? (
               <div className="empty-state">
                 <p>No transactions yet. Click "Add Transaction" to record an expense or income.</p>
               </div>
@@ -470,7 +552,7 @@ const CashMemberManagement = () => {
                 <tbody>
                   {(() => {
                     let runningBalance = selectedMember.initialBalance;
-                    return transactions.map((transaction, index) => {
+                    return filteredTransactions.map((transaction, index) => {
                       // Calculate debit/credit
                       const isDebit = transaction.type === 'expense';
                       const debit = isDebit ? transaction.amount : 0;

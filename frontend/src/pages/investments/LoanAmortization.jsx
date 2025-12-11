@@ -805,11 +805,11 @@ const LoanAmortization = () => {
                   <>
                     <div className="loan-summary-grid">
                       <div className="summary-card">
-                        <span>Total Loan Amount</span>
+                        <span>Principal Amount</span>
                         <strong>₹{selectedLoan.amount.toLocaleString('en-IN')}</strong>
                       </div>
                       <div className="summary-card">
-                        <span>Interest Rate</span>
+                        <span>Rate of Interest</span>
                         {editingInterestRate ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -907,51 +907,45 @@ const LoanAmortization = () => {
                         )}
                       </div>
                       <div className="summary-card">
-                        <span>Monthly EMI</span>
-                        <strong>₹{(() => {
-                          // Show current EMI: first unpaid payment's EMI, or first payment if all paid
-                          const firstUnpaid = selectedLoan.paymentSchedule?.find(p => !p.isPaid);
-                          return (firstUnpaid?.payment || selectedLoan.paymentSchedule?.[0]?.payment || 0).toFixed(2);
+                        <span>Tenure in Months</span>
+                        <strong>{(() => {
+                          try {
+                            const notes = JSON.parse(selectedLoan.notes || '{}');
+                            const tenureYears = notes.tenureYears || 0;
+                            return tenureYears * 12;
+                          } catch {
+                            return originalPayments;
+                          }
                         })()}</strong>
                       </div>
                       <div className="summary-card">
-                        <span>Payments Done</span>
-                        <strong>{selectedLoan.paymentSchedule?.filter(p => p.isPaid).length || 0}/{originalPayments}</strong>
+                        <span>Frequency of EMI Payment</span>
+                        <strong>{selectedLoan.frequency?.charAt(0).toUpperCase() + selectedLoan.frequency?.slice(1) || 'Monthly'}</strong>
                       </div>
                       <div className="summary-card">
-                        <span>Principal Paid</span>
+                        <span>EMI Amount</span>
                         <strong>₹{(() => {
-                          const totalPrincipal = selectedLoan.paymentSchedule?.filter(p => p.isPaid).reduce((sum, p) => sum + (p.principal || 0) + (p.extraPayment || 0), 0) || 0;
-                          return totalPrincipal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+                          // Show EMI amount from first payment
+                          return (selectedLoan.paymentSchedule?.[0]?.payment || 0).toFixed(2);
                         })()}</strong>
                       </div>
                       <div className="summary-card">
-                        <span>Interest Paid</span>
+                        <span>Interest Amount</span>
                         <strong>₹{(() => {
-                          const totalInterest = selectedLoan.paymentSchedule?.filter(p => p.isPaid).reduce((sum, p) => sum + (p.interest || 0), 0) || 0;
+                          // Calculate total interest from entire original schedule
+                          const totalInterest = selectedLoan.paymentSchedule?.reduce((sum, p) => sum + (p.interest || 0), 0) || 0;
                           return totalInterest.toLocaleString('en-IN', { maximumFractionDigits: 2 });
-                        })()}</strong>
-                      </div>
-                      <div className="summary-card">
-                        <span>Total EMI Paid</span>
-                        <strong>₹{(() => {
-                          const totalEMI = selectedLoan.paymentSchedule?.filter(p => p.isPaid).reduce((sum, p) => sum + (p.payment || 0) + (p.extraPayment || 0), 0) || 0;
-                          return totalEMI.toLocaleString('en-IN', { maximumFractionDigits: 2 });
                         })()}</strong>
                       </div>
                       {paymentsSaved > 0 && (
                         <>
                           <div className="summary-card highlight">
-                            <span>Payments Saved</span>
+                            <span>No. of EMI Saved</span>
                             <strong>{paymentsSaved} months</strong>
                           </div>
                           <div className="summary-card highlight">
-                            <span>Interest Saved</span>
+                            <span>Interest Amount Saved</span>
                             <strong>₹{interestSaved.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong>
-                          </div>
-                          <div className="summary-card highlight">
-                            <span>EMI Saved</span>
-                            <strong>₹{emiSaved.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong>
                           </div>
                         </>
                       )}

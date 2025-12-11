@@ -393,7 +393,7 @@ const LoanLedger = () => {
   return (
     <div className="investment-container">
       <div className="investment-header">
-        <h1>Loan Ledger</h1>
+        <h1>Udhar Lena/Dena</h1>
         <div className="header-actions">
           <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
             <FiPlus /> {showForm ? 'Cancel' : 'Add Loan'}

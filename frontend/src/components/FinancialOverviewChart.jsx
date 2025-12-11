@@ -44,16 +44,23 @@ const FinancialOverviewChart = ({ cashRecords, cardRecords, bankRecords, cardTra
   // Get available months from transactions
   const getAvailableMonths = () => {
     const months = new Set();
-    const allTransactions = [...cashRecords, ...cardTransactions, ...bankTransactions];
+    const allTransactions = [...(cashRecords || []), ...(cardTransactions || []), ...(bankTransactions || [])];
+    
+    console.log('All transactions for month extraction:', allTransactions.length);
     
     allTransactions.forEach(record => {
       // Use date field for cash records, fallback to createdAt
       const dateField = record.date || record.createdAt;
-      const date = new Date(dateField);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      months.add(monthKey);
+      if (dateField) {
+        const date = new Date(dateField);
+        if (!isNaN(date.getTime())) {
+          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          months.add(monthKey);
+        }
+      }
     });
     
+    console.log('Available months:', Array.from(months));
     return Array.from(months).sort().reverse();
   };
   
@@ -336,20 +343,57 @@ const FinancialOverviewChart = ({ cashRecords, cardRecords, bankRecords, cardTra
             <h3>Select Month:</h3>
             <select 
               value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
+              onChange={(e) => {
+                console.log('Month selected:', e.target.value);
+                setSelectedMonth(e.target.value);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #e0e0e0',
+                borderRadius: '8px',
+                fontSize: '14px',
+                background: 'white',
+                cursor: 'pointer',
+                zIndex: '999',
+                position: 'relative'
+              }}
             >
               <option value="current">Current Month ({new Date().toLocaleString('default', { month: 'long', year: 'numeric' })})</option>
-              {allMonthsInYear.map(month => (
-                <option key={month.key} value={month.key}>
-                  {month.name}
-                </option>
-              ))}
+              {availableMonths.length > 0 ? availableMonths.map(monthKey => {
+                const date = new Date(monthKey + '-01');
+                const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                return (
+                  <option key={monthKey} value={monthKey}>
+                    {monthName}
+                  </option>
+                );
+              }) : (
+                <option value="" disabled>No transaction data available</option>
+              )}
             </select>
           </div>
           <div>
             <button 
               className={`month-btn ${selectedMonth === 'all' ? 'active' : ''}`}
-              onClick={() => setSelectedMonth('all')}
+              onClick={() => {
+                console.log('All Time button clicked');
+                setSelectedMonth('all');
+              }}
+              style={{
+                padding: '12px 24px',
+                border: '2px solid #e0e0e0',
+                borderRadius: '8px',
+                background: selectedMonth === 'all' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white',
+                color: selectedMonth === 'all' ? 'white' : '#333',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                transition: 'all 0.3s ease',
+                whiteSpace: 'nowrap',
+                zIndex: '999',
+                position: 'relative'
+              }}
             >
               All Time
             </button>

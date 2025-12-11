@@ -24,6 +24,8 @@ const investmentValuationRoutes = require('./routes/investmentValuation');
 const investmentProfileRoutes = require('./routes/investmentProfile');
 const cashMembersRoutes = require('./routes/cashMembers');
 const cashTransactionsRoutes = require('./routes/cashTransactions');
+const budgetRoutes = require('./routes/budget');
+const scheduledExpensesRoutes = require('./routes/scheduledExpenses');
 
 const app = express();
 
@@ -58,6 +60,8 @@ app.use('/api/investment-valuation', investmentValuationRoutes);
 app.use('/api/investment-profile', investmentProfileRoutes);
 app.use('/api/cash-members', cashMembersRoutes);
 app.use('/api/cash-transactions', cashTransactionsRoutes);
+app.use('/api/budget', budgetRoutes);
+app.use('/api/scheduled-expenses', scheduledExpensesRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

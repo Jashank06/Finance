@@ -42,6 +42,42 @@ const Sidebar = () => {
             <div className="submenu">
               <div className="nav-subsection">
                 <div 
+                  className={`submenu-item nav-header ${dailyOpen ? 'active' : ''}`}
+                  onClick={() => setDailyOpen(!dailyOpen)}
+                >
+                  Daily
+                </div>
+                {dailyOpen && (
+                  <div className="nested-submenu">
+                    <Link to="/family/daily/cash-cards-bank" className="nested-submenu-item">Cash, Cards & Bank Transactions</Link>
+                    <Link to="/family/daily/loan-udhar" className="nested-submenu-item">Udhar Lena/Dena</Link>
+                    <Link to="/family/daily/bill-paying" className="nested-submenu-item">Bill Paying Checklist</Link>
+                    <Link to="/family/daily/manage-finance" className="nested-submenu-item">Manage Finance</Link>
+                    <Link to="/family/daily/income-expenses" className="nested-submenu-item">Income & Expenses</Link>
+                    <Link to="/family/daily/telephone-conversation" className="nested-submenu-item">Telephone Conversation</Link>
+                  </div>
+                )}
+              </div>
+              <div className="nav-subsection">
+                <div 
+                  className={`submenu-item nav-header ${monitoringOpen ? 'active' : ''}`}
+                  onClick={() => setMonitoringOpen(!monitoringOpen)}
+                >
+                  Monitoring
+                </div>
+                {monitoringOpen && (
+                  <div className="nested-submenu">
+                    <Link to="/family/monitoring/budget" className="nested-submenu-item">Budget</Link>
+                    <Link to="/family/monitoring/bill-dates" className="nested-submenu-item">Bill Dates</Link>
+                    <Link to="/family/monitoring/multiple-calendars" className="nested-submenu-item">Multiple Calendars</Link>
+                    <Link to="/family/monitoring/reminders-notifications" className="nested-submenu-item">Reminders, Notifications</Link>
+                    <Link to="/family/monitoring/yearly-calendar" className="nested-submenu-item">Yearly Calendar</Link>
+                    <Link to="/family/monitoring/weekly-appointment" className="nested-submenu-item">Weekly Appointment Chart</Link>
+                  </div>
+                )}
+              </div>
+              <div className="nav-subsection">
+                <div 
                   className={`submenu-item nav-header ${investmentsOpen ? 'active' : ''}`}
                   onClick={() => setInvestmentsOpen(!investmentsOpen)}
                 >
@@ -58,23 +94,6 @@ const Sidebar = () => {
                     <Link to="/family/investments/profile" className="nested-submenu-item">Investment Profile</Link>
                     <Link to="/family/investments/loan-amortization" className="nested-submenu-item">Loan Amortization</Link>
                     <Link to="/family/investments/retirement" className="nested-submenu-item">Retirement Financial</Link>
-                  </div>
-                )}
-              </div>
-              <div className="nav-subsection">
-                <div 
-                  className={`submenu-item nav-header ${dailyOpen ? 'active' : ''}`}
-                  onClick={() => setDailyOpen(!dailyOpen)}
-                >
-                  Daily
-                </div>
-                {dailyOpen && (
-                  <div className="nested-submenu">
-                    <Link to="/family/daily/cash-cards-bank" className="nested-submenu-item">Cash, Cards & Bank Transactions</Link>
-                    <Link to="/family/daily/loan-udhar" className="nested-submenu-item">Loan Ledger</Link>
-                    <Link to="/family/daily/bill-paying" className="nested-submenu-item">Bill Paying Checklist</Link>
-                    <Link to="/family/daily/income-expenses" className="nested-submenu-item">Income & Expenses</Link>
-                    <Link to="/family/daily/telephone-conversation" className="nested-submenu-item">Telephone Conversation</Link>
                   </div>
                 )}
               </div>
@@ -99,23 +118,6 @@ const Sidebar = () => {
                     <Link to="/family/static/family-profile" className="nested-submenu-item">Family Profile</Link>
                     <Link to="/family/static/inventory-record" className="nested-submenu-item">Inventory Record</Link>
                     <Link to="/family/static/contact-management" className="nested-submenu-item">Contact Management</Link>
-                  </div>
-                )}
-              </div>
-              <div className="nav-subsection">
-                <div 
-                  className={`submenu-item nav-header ${monitoringOpen ? 'active' : ''}`}
-                  onClick={() => setMonitoringOpen(!monitoringOpen)}
-                >
-                  Monitoring
-                </div>
-                {monitoringOpen && (
-                  <div className="nested-submenu">
-                    <Link to="/family/monitoring/bill-dates" className="nested-submenu-item">Bill Dates</Link>
-                    <Link to="/family/monitoring/multiple-calendars" className="nested-submenu-item">Multiple Calendars</Link>
-                    <Link to="/family/monitoring/reminders-notifications" className="nested-submenu-item">Reminders, Notifications</Link>
-                    <Link to="/family/monitoring/yearly-calendar" className="nested-submenu-item">Yearly Calendar</Link>
-                    <Link to="/family/monitoring/weekly-appointment" className="nested-submenu-item">Weekly Appointment Chart</Link>
                   </div>
                 )}
               </div>
@@ -147,7 +149,7 @@ const Sidebar = () => {
                 {businessDailyOpen && (
                   <div className="nested-submenu">
                     <Link to="/business/daily/cash-cards-bank" className="nested-submenu-item">Cash, Cards & Bank Transactions</Link>
-                    <Link to="/business/daily/loan-udhar" className="nested-submenu-item">Loan Ledger</Link>
+                    <Link to="/business/daily/loan-udhar" className="nested-submenu-item">Udhar Lena/Dena</Link>
                     <Link to="/business/daily/bill-paying" className="nested-submenu-item">Bill Paying Checklist</Link>
                     <Link to="/business/daily/income-expenses" className="nested-submenu-item">Income & Expenses</Link>
                     <Link to="/business/daily/telephone-conversation" className="nested-submenu-item">Telephone Conversation</Link>

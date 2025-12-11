@@ -36,6 +36,8 @@ import WeeklyAppointments from './pages/family/monitoring/WeeklyAppointments';
 import YearlyCalendar from './pages/family/monitoring/YearlyCalendar';
 import MultipleCalendars from './pages/family/monitoring/MultipleCalendars';
 import RemindersNotifications from './pages/family/monitoring/RemindersNotifications';
+import Budget from './pages/family/monitoring/Budget';
+import ManageFinance from './pages/family/daily/ManageFinance';
 import IncomeExpenses from './pages/family/daily/IncomeExpenses';
 import './App.css';
 
@@ -370,6 +372,17 @@ function App() {
             }
           />
           <Route
+            path="/family/daily/manage-finance"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ManageFinance />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/family/daily/income-expenses"
             element={
               <ProtectedRoute>
@@ -435,6 +448,17 @@ function App() {
             }
           />
           
+          <Route
+            path="/family/monitoring/budget"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Budget />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/family/monitoring/reminders-notifications"
             element={

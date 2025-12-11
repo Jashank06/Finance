@@ -55,13 +55,11 @@ const CashCardsBank = () => {
   const [accountHolderFilter, setAccountHolderFilter] = useState('');
   
   // Card transaction filters
-  const [cardTransactionCategoryFilter, setCardTransactionCategoryFilter] = useState('all');
   const [cardTransactionExpenseTypeFilter, setCardTransactionExpenseTypeFilter] = useState('all');
   const [cardTransactionStartDate, setCardTransactionStartDate] = useState('');
   const [cardTransactionEndDate, setCardTransactionEndDate] = useState('');
   
   // Bank transaction filters
-  const [bankTransactionCategoryFilter, setBankTransactionCategoryFilter] = useState('all');
   const [bankTransactionExpenseTypeFilter, setBankTransactionExpenseTypeFilter] = useState('all');
   const [bankTransactionStartDate, setBankTransactionStartDate] = useState('');
   const [bankTransactionEndDate, setBankTransactionEndDate] = useState('');
@@ -1138,22 +1136,6 @@ const CashCardsBank = () => {
               <div className="section-header">
                 <h3>Transactions for {selectedCard.name}</h3>
                 <div className="filter-dropdown">
-                  <label>Category:</label>
-                  <select 
-                    value={cardTransactionCategoryFilter} 
-                    onChange={(e) => setCardTransactionCategoryFilter(e.target.value)}
-                  >
-                    <option value="all">All Categories</option>
-                    <option value="food">Food & Dining</option>
-                    <option value="shopping">Shopping</option>
-                    <option value="transport">Transportation</option>
-                    <option value="entertainment">Entertainment</option>
-                    <option value="utilities">Utilities</option>
-                    <option value="healthcare">Healthcare</option>
-                    <option value="education">Education</option>
-                    <option value="other">Other</option>
-                  </select>
-                  
                   <label>Expense Type:</label>
                   <select 
                     value={cardTransactionExpenseTypeFilter} 
@@ -1190,7 +1172,6 @@ const CashCardsBank = () => {
                     ? transaction.cardId._id || transaction.cardId
                     : transaction.cardId;
                   if (transactionCardId !== selectedCard._id) return false;
-                  if (cardTransactionCategoryFilter !== 'all' && transaction.category !== cardTransactionCategoryFilter) return false;
                   if (cardTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== cardTransactionExpenseTypeFilter) return false;
                   const transactionDate = new Date(transaction.date);
                   if (cardTransactionStartDate && transactionDate < new Date(cardTransactionStartDate)) return false;
@@ -1687,24 +1668,6 @@ const CashCardsBank = () => {
               <div className="section-header">
                 <h3>Transactions for {selectedBank.name}</h3>
                 <div className="filter-dropdown">
-                  <label>Category:</label>
-                  <select 
-                    value={bankTransactionCategoryFilter} 
-                    onChange={(e) => setBankTransactionCategoryFilter(e.target.value)}
-                  >
-                    <option value="all">All Categories</option>
-                    <option value="food">Food & Dining</option>
-                    <option value="shopping">Shopping</option>
-                    <option value="transport">Transportation</option>
-                    <option value="entertainment">Entertainment</option>
-                    <option value="utilities">Utilities</option>
-                    <option value="healthcare">Healthcare</option>
-                    <option value="education">Education</option>
-                    <option value="salary">Salary</option>
-                    <option value="rent">Rent</option>
-                    <option value="other">Other</option>
-                  </select>
-                  
                   <label>Expense Type:</label>
                   <select 
                     value={bankTransactionExpenseTypeFilter} 
@@ -1741,7 +1704,6 @@ const CashCardsBank = () => {
                     ? transaction.accountId._id || transaction.accountId
                     : transaction.accountId;
                   if (transactionAccountId !== selectedBank._id) return false;
-                  if (bankTransactionCategoryFilter !== 'all' && transaction.category !== bankTransactionCategoryFilter) return false;
                   if (bankTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== bankTransactionExpenseTypeFilter) return false;
                   const transactionDate = new Date(transaction.date);
                   if (bankTransactionStartDate && transactionDate < new Date(bankTransactionStartDate)) return false;
