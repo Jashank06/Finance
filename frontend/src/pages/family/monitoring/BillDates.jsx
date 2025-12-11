@@ -17,6 +17,8 @@ const BillDates = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [saving, setSaving] = useState(false);
   const [lastBillData, setLastBillData] = useState({});
+  const [editingBill, setEditingBill] = useState(null);
+  const [showBillOptions, setShowBillOptions] = useState(null);
   const [inputs, setInputs] = useState({
     billType: 'Electricity',
     provider: '',
@@ -116,6 +118,52 @@ const BillDates = () => {
   };
 
   useEffect(() => { fetchEntries(); }, []);
+
+  const handleBillClick = (bill) => {
+    setShowBillOptions(bill);
+  };
+
+  const handleEditBill = (bill) => {
+    setEditingBill(bill);
+    setInputs({
+      billType: bill.billType || '',
+      provider: bill.provider || '',
+      accountNumber: bill.accountNumber || '',
+      cycle: bill.cycle || '',
+      amount: bill.amount || 0,
+      dueDate: bill.dueDate || '',
+      autoDebit: bill.autoDebit || false,
+      paymentMethod: bill.paymentMethod || '',
+      status: bill.status || '',
+      reminderDays: bill.reminderDays || 3,
+      notes: bill.notes || '',
+      startDate: bill.startDate || '',
+      billingUnit: bill.billingUnit || '',
+      nameOnBill: bill.nameOnBill || '',
+      paidAmount: bill.paidAmount || '',
+      paymentDate: bill.paymentDate || '',
+      description: bill.description || '',
+      meterNumber: bill.meterNumber || '',
+      connectionType: bill.connectionType || '',
+      consumerNumber: bill.consumerNumber || '',
+      gasAgency: bill.gasAgency || ''
+    });
+    setShowForm(true);
+    setShowBillOptions(null);
+  };
+
+  const handleDeleteBill = async (bill) => {
+    if (window.confirm(`Are you sure you want to delete the ${bill.provider} bill?`)) {
+      try {
+        await investmentAPI.delete(bill._id);
+        await fetchEntries();
+        setShowBillOptions(null);
+      } catch (error) {
+        console.error('Error deleting bill:', error);
+        alert('Error deleting bill. Please try again.');
+      }
+    }
+  };
 
   const now = new Date();
 
@@ -671,11 +719,76 @@ const BillDates = () => {
                   padding: '8px',
                   minHeight: '100px',
                   fontSize: '12px',
-                  background: day === 27 || day === 28 ? '#dbeafe' : '#fff'
+                  background: day === 27 || day === 28 ? '#dbeafe' : '#fff',
+                  position: 'relative'
                 }}>
                   {bills.map((bill, idx) => (
-                    <div key={idx} style={{ marginBottom: '4px', lineHeight: '1.4' }}>
+                    <div 
+                      key={idx} 
+                      style={{ 
+                        marginBottom: '4px', 
+                        lineHeight: '1.4',
+                        cursor: 'pointer',
+                        padding: '2px 4px',
+                        backgroundColor: '#f0f9ff',
+                        borderRadius: '4px',
+                        border: '1px solid #0ea5e9',
+                        position: 'relative'
+                      }}
+                      onClick={() => handleBillClick({...bill, day})}
+                    >
                       {bill.provider}
+                      {showBillOptions && showBillOptions.provider === bill.provider && showBillOptions.day === day && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: '0',
+                          backgroundColor: 'white',
+                          border: '1px solid #ccc',
+                          borderRadius: '4px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                          zIndex: 1000,
+                          minWidth: '120px'
+                        }}>
+                          <button
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              fontSize: '12px'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditBill(bill);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              fontSize: '12px',
+                              color: '#ef4444'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteBill(bill);
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
