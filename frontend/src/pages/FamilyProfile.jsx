@@ -10,6 +10,25 @@ const FamilyProfile = () => {
   const [showBasicForm, setShowBasicForm] = useState(false);
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [editingMemberIndex, setEditingMemberIndex] = useState(null);
+  const languageOptions = [
+    'Hindi',
+    'English',
+    'Marathi',
+    'Gujarati',
+    'Tamil',
+    'Telugu',
+    'Kannada',
+    'Malayalam',
+    'Punjabi',
+    'Bengali',
+    'Urdu',
+    'Odia',
+    'Assamese',
+    'Rajasthani',
+    'Konkani',
+    'Sindhi',
+    'Others'
+  ];
   
   const [memberFormData, setMemberFormData] = useState({
     name: '',
@@ -292,6 +311,32 @@ const FamilyProfile = () => {
         [field]: value
       }
     }));
+  };
+
+  const handlePermanentAddressChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      permanentAddress: {
+        ...prev.permanentAddress,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSameAsCurrentChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      sameAsCurrent: value,
+      permanentAddress: value ? { ...prev.currentAddress } : prev.permanentAddress
+    }));
+  };
+
+  const handleTopLanguageToggle = (language) => {
+    const currentLanguages = formData.languagesKnown || [];
+    const updatedLanguages = currentLanguages.includes(language)
+      ? currentLanguages.filter((lang) => lang !== language)
+      : [...currentLanguages, language];
+    handleInputChange('languagesKnown', updatedLanguages);
   };
 
   const handleMemberFormChange = (field, value) => {
@@ -593,6 +638,124 @@ const FamilyProfile = () => {
                   </div>
                 </div>
 
+                {/* Address Information */}
+                <div className="form-section">
+                  <h4>Address Information</h4>
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label>Current Address - Street</label>
+                      <input
+                        type="text"
+                        value={formData.currentAddress?.street || ''}
+                        onChange={(e) => handleAddressChange('street', e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group full-width">
+                      <label>Current Address - Area / Locality</label>
+                      <input
+                        type="text"
+                        value={formData.currentAddress?.area || ''}
+                        onChange={(e) => handleAddressChange('area', e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>City</label>
+                      <input
+                        type="text"
+                        value={formData.currentAddress?.city || ''}
+                        onChange={(e) => handleAddressChange('city', e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>State</label>
+                      <input
+                        type="text"
+                        value={formData.currentAddress?.state || ''}
+                        onChange={(e) => handleAddressChange('state', e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Pincode</label>
+                      <input
+                        type="text"
+                        value={formData.currentAddress?.pincode || ''}
+                        onChange={(e) => handleAddressChange('pincode', e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Country</label>
+                      <input
+                        type="text"
+                        value={formData.currentAddress?.country || ''}
+                        onChange={(e) => handleAddressChange('country', e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group full-width">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={!!formData.sameAsCurrent}
+                          onChange={(e) => handleSameAsCurrentChange(e.target.checked)}
+                          style={{ marginRight: '8px' }}
+                        />
+                        Permanent address same as current address
+                      </label>
+                    </div>
+                    {!formData.sameAsCurrent && (
+                      <>
+                        <div className="form-group full-width">
+                          <label>Permanent Address - Street</label>
+                          <input
+                            type="text"
+                            value={formData.permanentAddress?.street || ''}
+                            onChange={(e) => handlePermanentAddressChange('street', e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group full-width">
+                          <label>Permanent Address - Area / Locality</label>
+                          <input
+                            type="text"
+                            value={formData.permanentAddress?.area || ''}
+                            onChange={(e) => handlePermanentAddressChange('area', e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>City</label>
+                          <input
+                            type="text"
+                            value={formData.permanentAddress?.city || ''}
+                            onChange={(e) => handlePermanentAddressChange('city', e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>State</label>
+                          <input
+                            type="text"
+                            value={formData.permanentAddress?.state || ''}
+                            onChange={(e) => handlePermanentAddressChange('state', e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Pincode</label>
+                          <input
+                            type="text"
+                            value={formData.permanentAddress?.pincode || ''}
+                            onChange={(e) => handlePermanentAddressChange('pincode', e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Country</label>
+                          <input
+                            type="text"
+                            value={formData.permanentAddress?.country || ''}
+                            onChange={(e) => handlePermanentAddressChange('country', e.target.value)}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 {/* Professional Information */}
                 <div className="form-section">
                   <h4>Professional Information</h4>
@@ -684,12 +847,18 @@ const FamilyProfile = () => {
                     </div>
                     <div className="form-group full-width">
                       <label>Languages Known</label>
-                      <input
-                        type="text"
-                        value={formData.languagesKnown?.join(', ') || ''}
-                        onChange={(e) => handleInputChange('languagesKnown', e.target.value.split(', ').filter(lang => lang.trim()))}
-                        placeholder="e.g., Hindi, English, Marathi"
-                      />
+                      <div className="language-checkboxes" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                        {languageOptions.map((lang) => (
+                          <label key={lang} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <input
+                              type="checkbox"
+                              checked={formData.languagesKnown?.includes(lang) || false}
+                              onChange={() => handleTopLanguageToggle(lang)}
+                            />
+                            <span>{lang}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                     <div className="form-group">
                       <label>Aadhaar Number</label>

@@ -32,6 +32,8 @@ const investmentSchema = new mongoose.Schema({
       , 'daily-bill-checklist-new'
       , 'bill-checklist-categories'
       , 'daily-telephone-conversation'
+      , 'loan-ledger'
+      , 'on-behalf'
     ],
   },
   type: {

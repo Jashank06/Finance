@@ -12,6 +12,7 @@ const LoanAmortization = () => {
   const [managedExtraPayments, setManagedExtraPayments] = useState({});
   const [editingInterestRate, setEditingInterestRate] = useState(false);
   const [newInterestRate, setNewInterestRate] = useState(0);
+  const [managedRateType, setManagedRateType] = useState('annual'); // Rate type for the loaded loan
   const [showLoanTypeDialog, setShowLoanTypeDialog] = useState(false);
   const [loanType, setLoanType] = useState('');
   
@@ -22,11 +23,16 @@ const LoanAmortization = () => {
     startDate: '2025-04-23',
   });
   
+  const [rateType, setRateType] = useState('annual'); // 'annual' or 'monthly'
+  
   const [extraPayments, setExtraPayments] = useState({});
 
   const schedule = useMemo(() => {
     const n = inputs.tenureYears * 12;
-    const r = inputs.annualRate / 100 / 12;
+    // Convert rate to monthly rate based on rate type
+    const r = rateType === 'monthly' 
+      ? inputs.annualRate / 100 
+      : inputs.annualRate / 100 / 12;
     const emi = r === 0 ? inputs.principal / n : inputs.principal * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
     const rows = [];
     let balance = inputs.principal;
@@ -79,7 +85,7 @@ const LoanAmortization = () => {
       totalCost: totalCost,
       totalExtraPaid: totalExtraPaid
     };
-  }, [inputs, extraPayments]);
+  }, [inputs, extraPayments, rateType]);
   
   useEffect(() => {
     if (view === 'manage') {
@@ -151,7 +157,7 @@ const LoanAmortization = () => {
         startDate: inputs.startDate,
         maturityDate: maturityDate.toISOString().slice(0, 10),
         frequency: 'monthly',
-        notes: JSON.stringify({ tenureYears: inputs.tenureYears }),
+        notes: JSON.stringify({ tenureYears: inputs.tenureYears, rateType: rateType }),
         paymentSchedule: paymentSchedule
       };
       
@@ -197,10 +203,19 @@ const LoanAmortization = () => {
   const loadLoan = async (loanId) => {
     try {
       const response = await investmentAPI.getById(loanId);
-      setSelectedLoan(response.data.investment);
+      const loan = response.data.investment;
+      setSelectedLoan(loan);
       setManagedExtraPayments({});
       setEditingInterestRate(false);
-      setNewInterestRate(response.data.investment.interestRate);
+      setNewInterestRate(loan.interestRate);
+      
+      // Load saved rate type from notes
+      try {
+        const notes = JSON.parse(loan.notes || '{}');
+        setManagedRateType(notes.rateType || 'annual');
+      } catch {
+        setManagedRateType('annual');
+      }
     } catch (error) {
       alert('Error loading loan: ' + (error.response?.data?.message || error.message));
     }
@@ -277,7 +292,10 @@ const LoanAmortization = () => {
     }
     
     // Only recalculate if extra payments are being modified
-    const r = loan.interestRate / 100 / 12;
+    // Use managedRateType to get correct monthly rate
+    const r = managedRateType === 'monthly' 
+      ? loan.interestRate / 100 
+      : loan.interestRate / 100 / 12;
     const newSchedule = [];
     let balance = loan.amount;
     
@@ -357,7 +375,10 @@ const LoanAmortization = () => {
       
       // Keep paid payments as-is, recalculate unpaid payments
       const newSchedule = [...schedule];
-      const newRate = newInterestRate / 100 / 12;
+      // Use managedRateType to get correct monthly rate for new interest rate
+      const newRate = managedRateType === 'monthly' 
+        ? newInterestRate / 100 
+        : newInterestRate / 100 / 12;
       
       // Get the balance from the last paid payment or beginning
       let balance = transitionIndex > 0 
@@ -438,9 +459,11 @@ const LoanAmortization = () => {
       const firstUnpaidPayment = newSchedule.find(p => !p.isPaid);
       const calculatedNewEmi = firstUnpaidPayment ? firstUnpaidPayment.payment : oldEmi;
       
-      // Update the loan with new interest rate and schedule
+      // Update the loan with new interest rate, rate type, and schedule
+      const existingNotes = JSON.parse(selectedLoan.notes || '{}');
       await investmentAPI.update(selectedLoan._id, {
         interestRate: newInterestRate,
+        notes: JSON.stringify({ ...existingNotes, rateType: managedRateType }),
         paymentSchedule: newSchedule
       });
       
@@ -492,13 +515,40 @@ const LoanAmortization = () => {
             </div>
             
             <div className="form-group">
-              <label>Annual interest rate (%)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={inputs.annualRate}
-                onChange={(e) => setInputs({ ...inputs, annualRate: Number(e.target.value) })}
-              />
+              <label>Interest rate (%)</label>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch', width: '100%' }}>
+                <select
+                  value={rateType}
+                  onChange={(e) => setRateType(e.target.value)}
+                  style={{
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    fontSize: '14px',
+                    backgroundColor: 'white',
+                    cursor: 'pointer',
+                    minWidth: '120px',
+                    maxWidth: '150px'
+                  }}
+                >
+                  <option value="annual">Annual</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={inputs.annualRate}
+                  onChange={(e) => setInputs({ ...inputs, annualRate: Number(e.target.value) })}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    fontSize: '14px',
+                    backgroundColor: 'white'
+                  }}
+                />
+              </div>
             </div>
             
             <div className="form-group">
@@ -527,6 +577,16 @@ const LoanAmortization = () => {
         <div className="loan-summary-section">
           <h2 className="section-title">Loan Summary</h2>
           <div className="summary-content">
+            <div className="summary-row">
+              <span className="summary-label">Interest Rate Type</span>
+              <span className="summary-value" style={{ 
+                color: rateType === 'monthly' ? '#2563EB' : '#059669',
+                fontWeight: '600'
+              }}>
+                {rateType === 'monthly' ? 'Monthly' : 'Annual'} ({inputs.annualRate}%)
+              </span>
+            </div>
+            
             <div className="summary-row">
               <span className="summary-label">Monthly payment</span>
               <span className="summary-value">₹{schedule.monthlyPayment.toFixed(2)}</span>
@@ -732,68 +792,102 @@ const LoanAmortization = () => {
                 const newPayments = recalculatedSchedule.length;
                 const paymentsSaved = originalPayments - newPayments;
                 
+                // Calculate interest saved
+                const originalTotalInterest = selectedLoan.paymentSchedule?.reduce((sum, p) => sum + (p.interest || 0), 0) || 0;
+                const newTotalInterest = recalculatedSchedule.reduce((sum, p) => sum + (p.interest || 0), 0) || 0;
+                const interestSaved = originalTotalInterest - newTotalInterest;
+                
+                // Calculate EMI saved (payments saved * monthly EMI)
+                const monthlyEMI = selectedLoan.paymentSchedule?.[0]?.payment || 0;
+                const emiSaved = paymentsSaved * monthlyEMI;
+                
                 return (
                   <>
                     <div className="loan-summary-grid">
                       <div className="summary-card">
-                        <span>Total Amount</span>
+                        <span>Total Loan Amount</span>
                         <strong>₹{selectedLoan.amount.toLocaleString('en-IN')}</strong>
                       </div>
                       <div className="summary-card">
                         <span>Interest Rate</span>
                         {editingInterestRate ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              max="100"
-                              value={newInterestRate}
-                              onChange={(e) => setNewInterestRate(parseFloat(e.target.value) || 0)}
-                              style={{ 
-                                width: '80px', 
-                                padding: '4px 8px',
-                                border: '1px solid #ddd',
-                                borderRadius: '4px',
-                                fontSize: '14px'
-                              }}
-                            />
-                            <span>%</span>
-                            <button 
-                              onClick={updateInterestRate}
-                              style={{
-                                padding: '4px 12px',
-                                fontSize: '12px',
-                                background: '#4CAF50',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Save
-                            </button>
-                            <button 
-                              onClick={() => {
-                                setEditingInterestRate(false);
-                                setNewInterestRate(selectedLoan.interestRate);
-                              }}
-                              style={{
-                                padding: '4px 12px',
-                                fontSize: '12px',
-                                background: '#f44336',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Cancel
-                            </button>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <select
+                                value={managedRateType}
+                                onChange={(e) => setManagedRateType(e.target.value)}
+                                style={{
+                                  padding: '4px 8px',
+                                  border: '1px solid #ddd',
+                                  borderRadius: '4px',
+                                  fontSize: '12px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <option value="annual">Annual</option>
+                                <option value="monthly">Monthly</option>
+                              </select>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max="100"
+                                value={newInterestRate}
+                                onChange={(e) => setNewInterestRate(parseFloat(e.target.value) || 0)}
+                                style={{ 
+                                  width: '80px', 
+                                  padding: '4px 8px',
+                                  border: '1px solid #ddd',
+                                  borderRadius: '4px',
+                                  fontSize: '14px'
+                                }}
+                              />
+                              <span>%</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button 
+                                onClick={updateInterestRate}
+                                style={{
+                                  padding: '4px 12px',
+                                  fontSize: '12px',
+                                  background: '#4CAF50',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Save
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  setEditingInterestRate(false);
+                                  setNewInterestRate(selectedLoan.interestRate);
+                                  // Reload rate type from saved loan
+                                  try {
+                                    const notes = JSON.parse(selectedLoan.notes || '{}');
+                                    setManagedRateType(notes.rateType || 'annual');
+                                  } catch {
+                                    setManagedRateType('annual');
+                                  }
+                                }}
+                                style={{
+                                  padding: '4px 12px',
+                                  fontSize: '12px',
+                                  background: '#f44336',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
                         ) : (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <strong>{selectedLoan.interestRate}%</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <strong>{selectedLoan.interestRate}% ({managedRateType === 'monthly' ? 'Monthly' : 'Annual'})</strong>
                             <button 
                               onClick={() => setEditingInterestRate(true)}
                               style={{
@@ -803,7 +897,8 @@ const LoanAmortization = () => {
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '4px',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                width: 'fit-content'
                               }}
                             >
                               Edit
@@ -823,11 +918,42 @@ const LoanAmortization = () => {
                         <span>Payments Done</span>
                         <strong>{selectedLoan.paymentSchedule?.filter(p => p.isPaid).length || 0}/{originalPayments}</strong>
                       </div>
+                      <div className="summary-card">
+                        <span>Principal Paid</span>
+                        <strong>₹{(() => {
+                          const totalPrincipal = selectedLoan.paymentSchedule?.filter(p => p.isPaid).reduce((sum, p) => sum + (p.principal || 0) + (p.extraPayment || 0), 0) || 0;
+                          return totalPrincipal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+                        })()}</strong>
+                      </div>
+                      <div className="summary-card">
+                        <span>Interest Paid</span>
+                        <strong>₹{(() => {
+                          const totalInterest = selectedLoan.paymentSchedule?.filter(p => p.isPaid).reduce((sum, p) => sum + (p.interest || 0), 0) || 0;
+                          return totalInterest.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+                        })()}</strong>
+                      </div>
+                      <div className="summary-card">
+                        <span>Total EMI Paid</span>
+                        <strong>₹{(() => {
+                          const totalEMI = selectedLoan.paymentSchedule?.filter(p => p.isPaid).reduce((sum, p) => sum + (p.payment || 0) + (p.extraPayment || 0), 0) || 0;
+                          return totalEMI.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+                        })()}</strong>
+                      </div>
                       {paymentsSaved > 0 && (
-                        <div className="summary-card highlight">
-                          <span>Payments Saved</span>
-                          <strong>{paymentsSaved} months</strong>
-                        </div>
+                        <>
+                          <div className="summary-card highlight">
+                            <span>Payments Saved</span>
+                            <strong>{paymentsSaved} months</strong>
+                          </div>
+                          <div className="summary-card highlight">
+                            <span>Interest Saved</span>
+                            <strong>₹{interestSaved.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong>
+                          </div>
+                          <div className="summary-card highlight">
+                            <span>EMI Saved</span>
+                            <strong>₹{emiSaved.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong>
+                          </div>
+                        </>
                       )}
                     </div>
               

@@ -102,8 +102,6 @@ const Sidebar = () => {
                   </div>
                 )}
               </div>
-              <Link to="/family/analytics" className="submenu-item">Analytics</Link>
-              <Link to="/family/tasks" className="submenu-item">Tasks to Do</Link>
               <div className="nav-subsection">
                 <div 
                   className={`submenu-item nav-header ${monitoringOpen ? 'active' : ''}`}
@@ -121,6 +119,8 @@ const Sidebar = () => {
                   </div>
                 )}
               </div>
+              <Link to="/family/analytics" className="submenu-item">Analytics</Link>
+              <Link to="/family/tasks" className="submenu-item">Tasks to Do</Link>
               <Link to="/family/files" className="submenu-item">Files & Folders</Link>
             </div>
           )}

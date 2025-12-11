@@ -15,6 +15,7 @@ const ProjectIncomeExpense = () => {
   const [projects, setProjects] = useState([]);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
+  const [expandedProject, setExpandedProject] = useState(null);
   const formRef = useRef(null);
   const [formData, setFormData] = useState({
     category: 'project-wise',
@@ -301,24 +302,6 @@ const ProjectIncomeExpense = () => {
       <div className="investment-header">
         <h1>Project Wise Income / Expense</h1>
         <div className="header-actions">
-          {uniqueProjects.length > 0 && (
-            <div className="project-filter">
-              <label htmlFor="project-filter">Filter by Project:</label>
-              <select
-                id="project-filter"
-                value={selectedProject}
-                onChange={(e) => handleProjectFilterChange(e.target.value)}
-                className="project-filter-select"
-              >
-                <option value="all">All Projects</option>
-                {uniqueProjects.map(project => (
-                  <option key={project} value={project}>
-                    {project}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
           <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
             <FiPlus /> {showForm ? 'Cancel' : 'Add Record'}
           </button>
@@ -390,7 +373,7 @@ const ProjectIncomeExpense = () => {
           </div>
           <div className="stat-content">
             <p className="stat-label">Total Income</p>
-            <h3 className="stat-value">₹{filteredTotals.income.toLocaleString('en-IN')}</h3>
+            <h3 className="stat-value">₹{totals.income.toLocaleString('en-IN')}</h3>
           </div>
         </div>
 
@@ -400,7 +383,7 @@ const ProjectIncomeExpense = () => {
           </div>
           <div className="stat-content">
             <p className="stat-label">Total Expense</p>
-            <h3 className="stat-value">₹{filteredTotals.expense.toLocaleString('en-IN')}</h3>
+            <h3 className="stat-value">₹{totals.expense.toLocaleString('en-IN')}</h3>
           </div>
         </div>
 
@@ -410,7 +393,7 @@ const ProjectIncomeExpense = () => {
           </div>
           <div className="stat-content">
             <p className="stat-label">Net</p>
-            <h3 className="stat-value" style={{ color: filteredTotals.net >= 0 ? '#10B981' : '#EF4444' }}>₹{filteredTotals.net.toLocaleString('en-IN')}</h3>
+            <h3 className="stat-value" style={{ color: totals.net >= 0 ? '#10B981' : '#EF4444' }}>₹{totals.net.toLocaleString('en-IN')}</h3>
           </div>
         </div>
 
@@ -420,16 +403,16 @@ const ProjectIncomeExpense = () => {
           </div>
           <div className="stat-content">
             <p className="stat-label">Projects</p>
-            <h3 className="stat-value">{filteredProjectAgg.length}</h3>
+            <h3 className="stat-value">{projectAgg.length}</h3>
           </div>
         </div>
       </div>
 
-      {filteredEntries.length > 0 && (
+      {entries.length > 0 && (
         <div className="charts-section">
           <div className="charts-header">
             <h2>Project Analytics</h2>
-            <p>{selectedProject === 'all' ? 'Income vs Expense and project-wise distribution' : `Analytics for: ${selectedProject}`}</p>
+            <p>Income vs Expense and project-wise distribution</p>
           </div>
 
           <div className="charts-grid">
@@ -444,8 +427,8 @@ const ProjectIncomeExpense = () => {
               <div className="chart-content">
                 <ResponsiveContainer width="100%" height={320}>
                   <PieChart>
-                    <Pie data={filteredPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
-                      {filteredPieData.map((entry, idx) => (
+                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
+                      {pieData.map((entry, idx) => (
                         <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} stroke="#fff" strokeWidth={2} />
                       ))}
                     </Pie>
@@ -466,7 +449,7 @@ const ProjectIncomeExpense = () => {
               </div>
               <div className="chart-content">
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={filteredProjectAgg} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <BarChart data={projectAgg} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                     <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
                     <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value/1000).toFixed(0)}K`} />
@@ -489,7 +472,7 @@ const ProjectIncomeExpense = () => {
               </div>
               <div className="chart-content">
                 <ResponsiveContainer width="100%" height={280}>
-                  <AreaChart data={filteredProviderAgg} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <AreaChart data={providerAgg} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <defs>
                       <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
@@ -509,61 +492,102 @@ const ProjectIncomeExpense = () => {
         </div>
       )}
 
-      {filteredEntries.length > 0 && (
-        <div className="table-container">
-          <h2>Entries</h2>
-          <table className="investments-table">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Project</th>
-                <th>Source</th>
-                <th>Amount</th>
-                <th>Frequency</th>
-                <th>Date</th>
-                <th>Notes</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEntries.map((e) => (
-                <tr key={e._id}>
-                  <td>
-                    <span className="investment-type-badge" style={{ 
-                      background: e.type === 'Income' ? 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
-                    }}>
-                      {e.type}
-                    </span>
-                  </td>
-                  <td>{e.name}</td>
-                  <td>{e.source || e.provider || '—'}</td>
-                  <td>₹{(e.amount || 0).toLocaleString('en-IN')}</td>
-                  <td>{e.frequency || 'one-time'}</td>
-                  <td>{new Date(e.startDate).toLocaleDateString('en-IN')}</td>
-                  <td>{e.notes || '—'}</td>
-                  <td>
-                    <div className="investment-actions">
-                      <button onClick={() => handleEdit(e)} className="btn-icon">
-                        <FiEdit2 />
-                      </button>
-                      <button onClick={() => handleDelete(e._id)} className="btn-icon btn-danger">
-                        <FiTrash2 />
-                      </button>
+      {projectAgg.length > 0 && (
+        <div className="projects-summary-section">
+          <h2>Projects Overview</h2>
+          <p style={{ color: '#64748b', marginBottom: '20px' }}>Click on a project to view detailed entries</p>
+          <div className="projects-summary-grid">
+            {projectAgg.map((proj) => {
+              const projectEntries = entries.filter(e => e.name === proj.name);
+              const isExpanded = expandedProject === proj.name;
+              
+              return (
+                <div key={proj.name} className="project-summary-card">
+                  <div 
+                    className="project-summary-header"
+                    onClick={() => setExpandedProject(isExpanded ? null : proj.name)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="project-summary-title">
+                      <FiFolder style={{ marginRight: '10px', color: '#8B5CF6' }} />
+                      <h3>{proj.name}</h3>
+                      <span style={{ marginLeft: 'auto', fontSize: '14px', color: '#64748b' }}>
+                        {isExpanded ? '▼' : '▶'}
+                      </span>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                    <div className="project-summary-stats">
+                      <div className="project-stat income">
+                        <span className="stat-label">Income</span>
+                        <span className="stat-amount">₹{proj.income.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="project-stat expense">
+                        <span className="stat-label">Expense</span>
+                        <span className="stat-amount">₹{proj.expense.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="project-stat net">
+                        <span className="stat-label">Net</span>
+                        <span className="stat-amount" style={{ 
+                          color: proj.net >= 0 ? '#10B981' : '#EF4444' 
+                        }}>
+                          ₹{proj.net.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="project-stat count">
+                        <span className="stat-label">Entries</span>
+                        <span className="stat-amount">{proj.count}</span>
+                      </div>
+                    </div>
+                  </div>
 
-      {filteredEntries.length === 0 && entries.length > 0 && (
-        <div className="empty-state">
-          <p>No entries found for the selected project: "{selectedProject}"</p>
-          <button onClick={() => setSelectedProject('all')} className="btn-secondary">
-            Show All Projects
-          </button>
+                  {isExpanded && (
+                    <div className="project-entries-detail">
+                      <table className="investments-table">
+                        <thead>
+                          <tr>
+                            <th>Type</th>
+                            <th>Source</th>
+                            <th>Amount</th>
+                            <th>Frequency</th>
+                            <th>Date</th>
+                            <th>Notes</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {projectEntries.map((e) => (
+                            <tr key={e._id}>
+                              <td>
+                                <span className="investment-type-badge" style={{ 
+                                  background: e.type === 'Income' ? 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
+                                }}>
+                                  {e.type}
+                                </span>
+                              </td>
+                              <td>{e.source || e.provider || '—'}</td>
+                              <td>₹{(e.amount || 0).toLocaleString('en-IN')}</td>
+                              <td>{e.frequency || 'one-time'}</td>
+                              <td>{new Date(e.startDate).toLocaleDateString('en-IN')}</td>
+                              <td>{e.notes || '—'}</td>
+                              <td>
+                                <div className="investment-actions">
+                                  <button onClick={() => handleEdit(e)} className="btn-icon">
+                                    <FiEdit2 />
+                                  </button>
+                                  <button onClick={() => handleDelete(e._id)} className="btn-icon btn-danger">
+                                    <FiTrash2 />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

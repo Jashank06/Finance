@@ -1113,10 +1113,21 @@ const CashCardsBank = () => {
                 color: 'white',
                 marginBottom: '20px'
               }}>
-                <h3 style={{ marginTop: 0 }}>Card: {selectedCard.name}</h3>
-                <p style={{ margin: '5px 0' }}>Type: {selectedCard.type.replace('-', ' ').toUpperCase()}</p>
-                <p style={{ margin: '5px 0' }}>Issuer: {selectedCard.issuer}</p>
-                <p style={{ margin: '5px 0' }}>Card Number: ****-****-****-{selectedCard.cardNumber.slice(-4)}</p>
+                <div 
+                  style={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: '16px', 
+                    alignItems: 'center', 
+                    fontSize: '15px',
+                    fontWeight: 500
+                  }}
+                >
+                  <span>Card: {selectedCard.name}</span>
+                  <span>Type: {selectedCard.type.replace('-', ' ').toUpperCase()}</span>
+                  <span>Issuer: {selectedCard.issuer}</span>
+                  <span>Card Number: ****-****-****-{selectedCard.cardNumber.slice(-4)}</span>
+                </div>
               </div>
             </div>
           )}
