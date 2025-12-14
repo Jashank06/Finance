@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { BasicDetailsController, CompanyRecordsController, MobileEmailDetailsController, PersonalRecordsController, OnlineAccessDetailsController, InventoryRecordController, ContactManagementController, DigitalAssetsController, CustomerSupportController, FamilyProfileController, LandRecordsController, MembershipListController } = require('../controllers/staticController');
+const { BasicDetailsController, CompanyRecordsController, MobileEmailDetailsController, PersonalRecordsController, OnlineAccessDetailsController, InventoryRecordController, ContactManagementController, DigitalAssetsController, CustomerSupportController, FamilyProfileController, LandRecordsController, MembershipListController, FamilyTasksController } = require('../controllers/staticController');
 const auth = require('../middleware/auth');
 
 // Middleware to protect all routes
@@ -89,6 +89,13 @@ router.get('/membership-list/:id', MembershipListController.getOne);
 router.post('/membership-list', MembershipListController.create);
 router.put('/membership-list/:id', MembershipListController.update);
 router.delete('/membership-list/:id', MembershipListController.delete);
+
+// Family Tasks routes
+router.get('/family-tasks', FamilyTasksController.getAll);
+router.get('/family-tasks/:id', FamilyTasksController.getOne);
+router.post('/family-tasks', FamilyTasksController.create);
+router.put('/family-tasks/:id', FamilyTasksController.update);
+router.delete('/family-tasks/:id', FamilyTasksController.delete);
 
 // Placeholder routes for other static types (to be implemented)
 const createPlaceholderRoutes = (routeName) => {

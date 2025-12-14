@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
-import { FiPhone, FiMail, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
+import { FiMail, FiSmartphone, FiEdit2, FiTrash2, FiPlus, FiPhone } from 'react-icons/fi';
 import './Static.css';
 import { staticAPI } from '../../../utils/staticAPI';
+import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
+import { syncCustomerSupportFromForm } from '../../../utils/customerSupportSyncUtil';
+import { syncRemindersFromForm } from '../../../utils/remindersSyncUtil';
+import { syncBillScheduleFromForm } from '../../../utils/billScheduleSyncUtil';
 
 const defaultEntry = {
   type: 'Mobile',
@@ -37,7 +41,7 @@ const MobileEmailDetails = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  
+
 
   const CATEGORY_KEY = 'static-mobile-email';
 
@@ -90,6 +94,15 @@ const MobileEmailDetails = () => {
       } else {
         await staticAPI.createMobileEmailDetails(formData);
       }
+
+      // Sync to other modules in parallel
+      await Promise.all([
+        syncContactsFromForm(formData, 'MobileEmailDetails'),
+        syncCustomerSupportFromForm(formData, 'MobileEmailDetails'),
+        syncRemindersFromForm(formData, 'MobileEmailDetails'),
+        syncBillScheduleFromForm(formData, 'MobileEmailDetails')
+      ]);
+
       await fetchEntries();
       resetForm();
     } catch (error) {
@@ -167,9 +180,9 @@ const MobileEmailDetails = () => {
                   <input
                     type="text"
                     value={formData.type === 'Mobile' ? formData.mobile : formData.email}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      [formData.type === 'Mobile' ? 'mobile' : 'email']: e.target.value 
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      [formData.type === 'Mobile' ? 'mobile' : 'email']: e.target.value
                     })}
                     placeholder={formData.type === 'Mobile' ? '+91 9876543210' : 'example@email.com'}
                   />
@@ -180,9 +193,9 @@ const MobileEmailDetails = () => {
                   <input
                     type="text"
                     value={formData.type === 'Mobile' ? formData.carrier : formData.provider}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      [formData.type === 'Mobile' ? 'carrier' : 'provider']: e.target.value 
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      [formData.type === 'Mobile' ? 'carrier' : 'provider']: e.target.value
                     })}
                     placeholder={formData.type === 'Mobile' ? 'Airtel, Jio, etc.' : 'Gmail, Yahoo, etc.'}
                   />

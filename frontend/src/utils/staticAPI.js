@@ -114,4 +114,18 @@ export const staticAPI = {
   
   // Get all static data for a user
   getAllStatic: () => api.get('/static'),
+// Family Tasks
+  getFamilyTasks: () => api.get('/static/family-tasks'),
+  
+  createFamilyTask: (data) => api.post('/static/family-tasks', data),
+  
+  updateFamilyTask: (id, data) => api.put(`/static/family-tasks/${id}`, data),
+  
+  deleteFamilyTask: (id) => api.delete(`/static/family-tasks/${id}`),
+
+  // Generic methods for backward compatibility
+  getAll: (category) => api.get(`/static/${category}`),
+  create: (category, data) => api.post(`/static/${category}`, data),
+  update: (id, data) => api.put(`/static/family-tasks/${id}`, data),
+  delete: (id) => api.delete(`/static/family-tasks/${id}`),
 };

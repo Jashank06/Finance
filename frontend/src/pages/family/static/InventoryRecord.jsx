@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { FiPackage, FiDatabase, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import './Static.css';
 import { investmentAPI } from '../../../utils/investmentAPI';
+import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
+import { syncCustomerSupportFromForm } from '../../../utils/customerSupportSyncUtil';
+import { syncRemindersFromForm } from '../../../utils/remindersSyncUtil';
 
 const defaultEntry = {
   itemName: '',
@@ -106,6 +109,16 @@ const InventoryRecord = () => {
       } else {
         await investmentAPI.create(toPayload(formData));
       }
+
+      // Sync contacts to Contact Management
+      await syncContactsFromForm(formData, 'InventoryRecord');
+
+      // Sync customer support to Customer Support
+      await syncCustomerSupportFromForm(formData, 'InventoryRecord');
+
+      // Sync reminders to Reminders & Notifications
+      syncRemindersFromForm(formData, 'InventoryRecord');
+
       await fetchEntries();
       resetForm();
     } catch (error) {

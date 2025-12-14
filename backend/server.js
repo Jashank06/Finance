@@ -26,6 +26,7 @@ const cashMembersRoutes = require('./routes/cashMembers');
 const cashTransactionsRoutes = require('./routes/cashTransactions');
 const budgetRoutes = require('./routes/budget');
 const scheduledExpensesRoutes = require('./routes/scheduledExpenses');
+const cashflowAnalysisRoutes = require('./routes/cashflow-analysis');
 
 const app = express();
 
@@ -35,8 +36,8 @@ app.use(express.json());
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
-.then(() => console.log('MongoDB Atlas Connected Successfully'))
-.catch((err) => console.error('MongoDB connection error:', err));
+  .then(() => console.log('MongoDB Atlas Connected Successfully'))
+  .catch((err) => console.error('MongoDB connection error:', err));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -62,6 +63,7 @@ app.use('/api/cash-members', cashMembersRoutes);
 app.use('/api/cash-transactions', cashTransactionsRoutes);
 app.use('/api/budget', budgetRoutes);
 app.use('/api/scheduled-expenses', scheduledExpensesRoutes);
+app.use('/api/cashflow', cashflowAnalysisRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

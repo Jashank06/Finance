@@ -398,15 +398,15 @@ const LoanLedger = () => {
           <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
             <FiPlus /> {showForm ? 'Cancel' : 'Add Loan'}
           </button>
-          <button className="btn-success" onClick={() => setShowPaymentForm(!showPaymentForm)}>
+          {/* <button className="btn-success" onClick={() => setShowPaymentForm(!showPaymentForm)}>
             <FiArrowDownLeft /> {showPaymentForm ? 'Cancel' : 'Add Payment'}
-          </button>
-          <button className="btn-secondary" onClick={() => setShowOnBehalfForm(!showOnBehalfForm)}>
+          </button> */}
+          <button className="btn-primary" onClick={() => setShowOnBehalfForm(!showOnBehalfForm)}>
             <FiCreditCard /> {showOnBehalfForm ? 'Cancel' : 'On Behalf'}
           </button>
-          <button className="btn-success" onClick={() => setShowOnBehalfPaymentForm(!showOnBehalfPaymentForm)}>
+          {/* <button className="btn-success" onClick={() => setShowOnBehalfPaymentForm(!showOnBehalfPaymentForm)}>
             <FiDollarSign /> {showOnBehalfPaymentForm ? 'Cancel' : 'Add Receipt'}
-          </button>
+          </button> */}
         </div>
       </div>
 

@@ -24,7 +24,7 @@ const cashTransactionSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['traveling', 'school-fees', 'grocery-household', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'other'],
+    enum: ['traveling', 'school-fees', 'grocery-household', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'inventory', 'other'],
     default: 'other',
   },
   description: {

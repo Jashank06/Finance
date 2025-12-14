@@ -19,8 +19,11 @@ const BillDates = () => {
   const [lastBillData, setLastBillData] = useState({});
   const [editingBill, setEditingBill] = useState(null);
   const [showBillOptions, setShowBillOptions] = useState(null);
+  const [referenceBills, setReferenceBills] = useState([]);
+  const [showReferencePanel, setShowReferencePanel] = useState(true);
   const [inputs, setInputs] = useState({
     billType: 'Electricity',
+    billName: '',
     provider: '',
     accountNumber: '',
     cycle: 'monthly',
@@ -80,14 +83,15 @@ const BillDates = () => {
     return {
       _id: inv._id,
       billType: notes.billType || 'Bill',
+      billName: notes.billName || '',
       provider: inv.provider || notes.provider || '',
       accountNumber: inv.accountNumber || notes.accountNumber || '',
       cycle: inv.frequency || notes.cycle || 'monthly',
       amount: inv.amount || notes.amount || 0,
-      dueDate: inv.maturityDate?.slice(0,10) || notes.dueDate || '',
+      dueDate: inv.maturityDate?.slice(0, 10) || notes.dueDate || '',
       autoDebit: notes.autoDebit || false,
       status: notes.status || 'pending',
-      startDate: inv.startDate?.slice(0,10) || notes.startDate || '',
+      startDate: inv.startDate?.slice(0, 10) || notes.startDate || '',
     };
   };
 
@@ -117,7 +121,28 @@ const BillDates = () => {
     }
   };
 
-  useEffect(() => { fetchEntries(); }, []);
+  const fetchReferenceBills = async () => {
+    try {
+      const res = await investmentAPI.getAll(CATEGORY_KEY);
+      const bills = (res.data.investments || []).map(inv => {
+        let notes = {};
+        try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { }
+        return {
+          ...fromInvestment(inv),
+          source: notes.syncedFrom || 'Manual',
+          lastSynced: notes.lastSynced || null
+        };
+      });
+      setReferenceBills(bills);
+    } catch (e) {
+      console.error('Error fetching reference bills:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchEntries();
+    fetchReferenceBills();
+  }, []);
 
   const handleBillClick = (bill) => {
     setShowBillOptions(bill);
@@ -127,6 +152,7 @@ const BillDates = () => {
     setEditingBill(bill);
     setInputs({
       billType: bill.billType || '',
+      billName: bill.billName || '',
       provider: bill.provider || '',
       accountNumber: bill.accountNumber || '',
       cycle: bill.cycle || '',
@@ -153,7 +179,7 @@ const BillDates = () => {
   };
 
   const handleDeleteBill = async (bill) => {
-    if (window.confirm(`Are you sure you want to delete the ${bill.provider} bill?`)) {
+    if (window.confirm(`Are you sure you want to delete the ${bill.billName || bill.provider} bill?`)) {
       try {
         await investmentAPI.delete(bill._id);
         await fetchEntries();
@@ -170,7 +196,7 @@ const BillDates = () => {
   const toPayload = (data) => ({
     category: CATEGORY_KEY,
     type: 'Bill',
-    name: `${data.billType} - ${data.provider || data.accountNumber || ''}`.trim(),
+    name: `${data.billType} - ${data.billName || data.provider || data.accountNumber || ''}`.trim(),
     provider: data.provider || data.billType,
     accountNumber: data.accountNumber || '',
     amount: Number(data.amount) || 0,
@@ -183,7 +209,7 @@ const BillDates = () => {
   const monthlyProvisionsLocal = useMemo(() => {
     const months = Array.from({ length: 12 }, (_, i) => ({
       idx: i,
-      key: `${selectedYear}-${i+1}`,
+      key: `${selectedYear}-${i + 1}`,
       name: new Date(selectedYear, i, 1).toLocaleString('en-US', { month: 'short' }),
       total: 0,
     }));
@@ -241,7 +267,7 @@ const BillDates = () => {
       const bucket = byMonth[d.getMonth()];
       bucket.items.push({
         day: d.getDate(),
-        provider: e.provider || e.billType,
+        provider: e.billName || e.provider || e.billType,
         billType: e.billType,
         cycle: e.cycle,
         amount: Number(e.amount) || 0,
@@ -264,8 +290,8 @@ const BillDates = () => {
       const d = new Date(e.dueDate);
       if (d >= now && d <= end) {
         list.push({
-          date: d.toISOString().slice(0,10),
-          provider: e.provider || e.billType,
+          date: d.toISOString().slice(0, 10),
+          provider: e.billName || e.provider || e.billType,
           billType: e.billType,
           amount: Number(e.amount) || 0,
           cycle: e.cycle,
@@ -291,10 +317,10 @@ const BillDates = () => {
       <div className="investment-header">
         <h1>Bill Dates: Monthly Provisions & Yearly Schedule</h1>
         <div className="header-actions">
-          <button 
-            className="btn-primary" 
+          <button
+            className="btn-primary"
             onClick={() => setShowForm(!showForm)}
-            style={{ 
+            style={{
               background: 'linear-gradient(135deg, #9333EA 0%, #C084FC 100%)',
               color: 'white',
               border: 'none',
@@ -357,7 +383,7 @@ const BillDates = () => {
                 [inputs.billType]: { ...inputs }
               }));
               await fetchEntries();
-              setInputs({ billType: 'Electricity', provider: '', accountNumber: '', cycle: 'monthly', amount: 1000, dueDate: '', autoDebit: false, paymentMethod: 'UPI', status: 'pending', reminderDays: 3, notes: '', startDate: new Date().toISOString().slice(0,10), additional1: '', additional2: '' });
+              setInputs({ billType: 'Electricity', billName: '', provider: '', accountNumber: '', cycle: 'monthly', amount: 1000, dueDate: '', autoDebit: false, paymentMethod: 'UPI', status: 'pending', reminderDays: 3, notes: '', startDate: new Date().toISOString().slice(0, 10), additional1: '', additional2: '' });
               setShowForm(false);
             } catch (error) {
               alert(error.response?.data?.message || 'Error saving bill');
@@ -369,62 +395,63 @@ const BillDates = () => {
               <div className="form-field">
                 <label>Bill Type *</label>
                 <select value={inputs.billType} onChange={(e) => {
-    const newBillType = e.target.value;
-    // Load last saved data for this bill type if available
-    const savedData = lastBillData[newBillType];
-    if (savedData) {
-      setInputs({ 
-        ...savedData, 
-        billType: newBillType,
-        dueDate: '', // Clear due date for new bill
-        paidAmount: '', // Clear paid amount for new bill
-        paymentDate: '' // Clear payment date for new bill
-      });
-    } else {
-      // Reset to defaults for new bill type
-      setInputs({ 
-        billType: newBillType, 
-        provider: '', 
-        accountNumber: '',
-        cycle: 'monthly', 
-        amount: 1000, 
-        dueDate: '', 
-        autoDebit: false, 
-        paymentMethod: 'UPI', 
-        status: 'pending', 
-        reminderDays: 3, 
-        notes: '', 
-        startDate: new Date().toISOString().slice(0,10),
-        billingUnit: '',
-        nameOnBill: '',
-        paidAmount: '',
-        paymentDate: '',
-        description: '',
-        meterNumber: '',
-        connectionType: 'Domestic',
-        consumerNumber: '',
-        gasAgency: '',
-        planType: 'Broadband',
-        dataLimit: '',
-        simNumber: '',
-        networkProvider: '',
-        cardNumber: '',
-        bankName: '',
-        propertyAddress: '',
-        ownerName: '',
-        policyNumber: '',
-        insuranceCompany: '',
-        studentName: '',
-        schoolName: '',
-        grade: '',
-        societyName: '',
-        wing: '',
-        flatNumber: '',
-        additional1: '',
-        additional2: ''
-      });
-    }
-  }} required>
+                  const newBillType = e.target.value;
+                  // Load last saved data for this bill type if available
+                  const savedData = lastBillData[newBillType];
+                  if (savedData) {
+                    setInputs({
+                      ...savedData,
+                      billType: newBillType,
+                      dueDate: '', // Clear due date for new bill
+                      paidAmount: '', // Clear paid amount for new bill
+                      paymentDate: '' // Clear payment date for new bill
+                    });
+                  } else {
+                    // Reset to defaults for new bill type
+                    setInputs({
+                      billType: newBillType,
+                      billName: '',
+                      provider: '',
+                      accountNumber: '',
+                      cycle: 'monthly',
+                      amount: 1000,
+                      dueDate: '',
+                      autoDebit: false,
+                      paymentMethod: 'UPI',
+                      status: 'pending',
+                      reminderDays: 3,
+                      notes: '',
+                      startDate: new Date().toISOString().slice(0, 10),
+                      billingUnit: '',
+                      nameOnBill: '',
+                      paidAmount: '',
+                      paymentDate: '',
+                      description: '',
+                      meterNumber: '',
+                      connectionType: 'Domestic',
+                      consumerNumber: '',
+                      gasAgency: '',
+                      planType: 'Broadband',
+                      dataLimit: '',
+                      simNumber: '',
+                      networkProvider: '',
+                      cardNumber: '',
+                      bankName: '',
+                      propertyAddress: '',
+                      ownerName: '',
+                      policyNumber: '',
+                      insuranceCompany: '',
+                      studentName: '',
+                      schoolName: '',
+                      grade: '',
+                      societyName: '',
+                      wing: '',
+                      flatNumber: '',
+                      additional1: '',
+                      additional2: ''
+                    });
+                  }
+                }} required>
                   <option>Electricity</option>
                   <option>Water</option>
                   <option>Gas</option>
@@ -437,6 +464,10 @@ const BillDates = () => {
                   <option>Maintenance</option>
                   <option>Other</option>
                 </select>
+              </div>
+              <div className="form-field">
+                <label>Bill Name *</label>
+                <input type="text" value={inputs.billName} onChange={(e) => setInputs({ ...inputs, billName: e.target.value })} placeholder="Enter bill name" required />
               </div>
               <div className="form-field">
                 <label>Provider *</label>
@@ -655,8 +686,8 @@ const BillDates = () => {
         <div className="table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2>Monthly Schedule</h2>
           <div style={{ display: 'flex', gap: '12px' }}>
-            <select 
-              value={selectedMonth} 
+            <select
+              value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
               style={{
                 padding: '8px 16px',
@@ -675,8 +706,8 @@ const BillDates = () => {
                 <option key={idx} value={idx}>{month}</option>
               ))}
             </select>
-            <select 
-              value={selectedYear} 
+            <select
+              value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               style={{
                 padding: '8px 16px',
@@ -699,10 +730,10 @@ const BillDates = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '0', border: '2px solid #2563EB' }}>
             {/* Dates 1-10 */}
             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(day => (
-              <div key={`header-${day}`} style={{ 
-                border: '1px solid #2563EB', 
-                padding: '8px', 
-                fontWeight: 'bold', 
+              <div key={`header-${day}`} style={{
+                border: '1px solid #2563EB',
+                padding: '8px',
+                fontWeight: 'bold',
                 textAlign: 'center',
                 background: '#f8fafc'
               }}>
@@ -714,8 +745,8 @@ const BillDates = () => {
               const monthData = (yearlySchedule.length ? yearlySchedule : yearlyScheduleLocal)[selectedMonth];
               const bills = monthData ? monthData.items.filter(it => it.day === day) : [];
               return (
-                <div key={`content-${day}`} style={{ 
-                  border: '1px solid #2563EB', 
+                <div key={`content-${day}`} style={{
+                  border: '1px solid #2563EB',
                   padding: '8px',
                   minHeight: '100px',
                   fontSize: '12px',
@@ -723,10 +754,10 @@ const BillDates = () => {
                   position: 'relative'
                 }}>
                   {bills.map((bill, idx) => (
-                    <div 
-                      key={idx} 
-                      style={{ 
-                        marginBottom: '4px', 
+                    <div
+                      key={idx}
+                      style={{
+                        marginBottom: '4px',
                         lineHeight: '1.4',
                         cursor: 'pointer',
                         padding: '2px 4px',
@@ -735,10 +766,10 @@ const BillDates = () => {
                         border: '1px solid #0ea5e9',
                         position: 'relative'
                       }}
-                      onClick={() => handleBillClick({...bill, day})}
+                      onClick={() => handleBillClick({ ...bill, day })}
                     >
-                      {bill.provider}
-                      {showBillOptions && showBillOptions.provider === bill.provider && showBillOptions.day === day && (
+                      {bill.billName || bill.provider}
+                      {showBillOptions && (showBillOptions.billName || showBillOptions.provider) === (bill.billName || bill.provider) && showBillOptions.day === day && (
                         <div style={{
                           position: 'absolute',
                           top: '100%',
@@ -794,13 +825,13 @@ const BillDates = () => {
                 </div>
               );
             })}
-            
+
             {/* Dates 11-20 */}
             {[11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(day => (
-              <div key={`header-${day}`} style={{ 
-                border: '1px solid #2563EB', 
-                padding: '8px', 
-                fontWeight: 'bold', 
+              <div key={`header-${day}`} style={{
+                border: '1px solid #2563EB',
+                padding: '8px',
+                fontWeight: 'bold',
                 textAlign: 'center',
                 background: '#f8fafc'
               }}>
@@ -812,8 +843,8 @@ const BillDates = () => {
               const monthData = (yearlySchedule.length ? yearlySchedule : yearlyScheduleLocal)[selectedMonth];
               const bills = monthData ? monthData.items.filter(it => it.day === day) : [];
               return (
-                <div key={`content-${day}`} style={{ 
-                  border: '1px solid #2563EB', 
+                <div key={`content-${day}`} style={{
+                  border: '1px solid #2563EB',
                   padding: '8px',
                   minHeight: '100px',
                   fontSize: '12px',
@@ -821,19 +852,19 @@ const BillDates = () => {
                 }}>
                   {bills.map((bill, idx) => (
                     <div key={idx} style={{ marginBottom: '4px', lineHeight: '1.4' }}>
-                      {bill.provider}
+                      {bill.billName || bill.provider}
                     </div>
                   ))}
                 </div>
               );
             })}
-            
+
             {/* Dates 21-30 */}
             {[21, 22, 23, 24, 25, 26, 27, 28, 29, 30].map(day => (
-              <div key={`header-${day}`} style={{ 
-                border: '1px solid #2563EB', 
-                padding: '8px', 
-                fontWeight: 'bold', 
+              <div key={`header-${day}`} style={{
+                border: '1px solid #2563EB',
+                padding: '8px',
+                fontWeight: 'bold',
                 textAlign: 'center',
                 background: '#f8fafc'
               }}>
@@ -845,8 +876,8 @@ const BillDates = () => {
               const monthData = (yearlySchedule.length ? yearlySchedule : yearlyScheduleLocal)[selectedMonth];
               const bills = monthData ? monthData.items.filter(it => it.day === day) : [];
               return (
-                <div key={`content-${day}`} style={{ 
-                  border: '1px solid #2563EB', 
+                <div key={`content-${day}`} style={{
+                  border: '1px solid #2563EB',
                   padding: '8px',
                   minHeight: '100px',
                   fontSize: '12px',
@@ -854,7 +885,7 @@ const BillDates = () => {
                 }}>
                   {bills.map((bill, idx) => (
                     <div key={idx} style={{ marginBottom: '4px', lineHeight: '1.4' }}>
-                      {bill.provider}
+                      {bill.billName || bill.provider}
                     </div>
                   ))}
                 </div>
@@ -873,7 +904,7 @@ const BillDates = () => {
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Provider</th>
+                <th>Bill Name</th>
                 <th>Type</th>
                 <th>Cycle</th>
                 <th>Amount</th>
@@ -913,7 +944,7 @@ const BillDates = () => {
                 <BarChart data={(monthlyProvisions.length ? monthlyProvisions : monthlyProvisionsLocal)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}K`} />
+                  <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`} />
                   <Tooltip formatter={(v) => [`₹${Math.round(v).toLocaleString('en-IN')}`, 'Total']} />
                   <Legend />
                   <Bar dataKey="total" fill="#2563EB" name="Total" radius={[8, 8, 0, 0]} />
@@ -946,6 +977,92 @@ const BillDates = () => {
           </div>
         </div>
       </div>
+
+      {/* Bill Reference Panel */}
+      {showReferencePanel && referenceBills.length > 0 && (
+        <div className="investments-table-card" style={{ marginTop: '20px' }}>
+          <div className="table-header">
+            <h2>📋 All Bills Reference ({referenceBills.length} total)</h2>
+            <p style={{ fontSize: '14px', color: '#64748b', marginTop: '5px' }}>
+              Bills from all sources - Auto-synced from Mobile/Email, Memberships, Digital Assets, Investments
+            </p>
+          </div>
+          <div className="table-container">
+            <table className="investments-table">
+              <thead>
+                <tr>
+                  <th>Bill Type</th>
+                  <th>Provider</th>
+                  <th>Amount</th>
+                  <th>Due Date</th>
+                  <th>Cycle</th>
+                  <th>Source</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {referenceBills.map((bill, idx) => (
+                  <tr key={idx} style={{
+                    background: bill.source !== 'Manual' ? '#f0fdf4' : '#fff'
+                  }}>
+                    <td><strong>{bill.billType}</strong></td>
+                    <td>{bill.provider || bill.billName}</td>
+                    <td>₹{Math.round(bill.amount || 0).toLocaleString('en-IN')}</td>
+                    <td>{bill.dueDate || '-'}</td>
+                    <td>
+                      <span style={{
+                        background: bill.cycle === 'monthly' ? '#dbeafe' :
+                          bill.cycle === 'quarterly' ? '#fef3c7' :
+                            bill.cycle === 'yearly' ? '#dcfce7' : '#f3f4f6',
+                        color: bill.cycle === 'monthly' ? '#1e40af' :
+                          bill.cycle === 'quarterly' ? '#92400e' :
+                            bill.cycle === 'yearly' ? '#166534' : '#374151',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        fontWeight: '500'
+                      }}>
+                        {bill.cycle}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{
+                        background: bill.source === 'Manual' ? '#f3f4f6' : '#dcfce7',
+                        color: bill.source === 'Manual' ? '#374151' : '#166534',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: '500'
+                      }}>
+                        {bill.source === 'MobileEmailDetails' ? '📱 Mobile/Email' :
+                          bill.source === 'MembershipList' ? '🎫 Membership' :
+                            bill.source === 'DigitalAssets' ? '🌐 Digital' :
+                              bill.source === 'GoldSgbInvestment' ? '🪙 Gold/SGB' :
+                                bill.source === 'NpsPpfInvestment' ? '💰 NPS/PPF' :
+                                  bill.source === 'MfInsuranceShares' ? '📈 Insurance' :
+                                    '✏️ Manual'}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{
+                        background: bill.status === 'paid' ? '#d1fae5' :
+                          bill.status === 'pending' ? '#fef3c7' : '#fee2e2',
+                        color: bill.status === 'paid' ? '#065f46' :
+                          bill.status === 'pending' ? '#92400e' : '#991b1b',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '12px'
+                      }}>
+                        {bill.status || 'pending'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

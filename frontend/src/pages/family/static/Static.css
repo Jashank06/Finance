@@ -1290,6 +1290,60 @@
   padding: 30px;
 }
 
+/* Family Members Table Styles */
+.table-container {
+  overflow-x: auto;
+  margin: 20px 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  background: white;
+}
+
+.family-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.family-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.family-table thead th {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.family-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+}
+
+.family-table tbody tr:hover {
+  background: #f8fafc;
+  transform: scale(1.01);
+}
+
+.family-table tbody td {
+  padding: 16px 12px;
+  font-size: 14px;
+  color: #4b5563;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.family-table tbody td:last-child {
+  white-space: nowrap;
+}
+
 .member-view-modal .family-table {
   width: 100%;
   border-collapse: collapse;
@@ -1436,3 +1490,33 @@
   border-bottom: 3px solid #3b82f6;
   display: inline-block;
 }
+
+/* Language Checkboxes */
+.language-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.language-checkboxes .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.language-checkboxes .checkbox-label:hover {
+  background: #e2e8f0;
+}
+
+.language-checkboxes input[type="checkbox"] {
+  cursor: pointer;
+}
+

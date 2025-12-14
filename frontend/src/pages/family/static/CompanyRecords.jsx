@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FiBriefcase, FiPhone, FiMail, FiMapPin, FiEdit2, FiSave, FiX, FiUsers, FiHome, FiGlobe, FiPlus, FiCalendar } from 'react-icons/fi';
 import { staticAPI } from '../../../utils/staticAPI';
 import './Static.css';
+import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
 
 const CompanyRecords = () => {
   const [editMode, setEditMode] = useState(false);
@@ -20,7 +21,7 @@ const CompanyRecords = () => {
     tanNumber: '',
     gstNumber: '',
     cinNumber: '',
-    
+
     // Contact Information
     registeredOffice: {
       address: '',
@@ -42,27 +43,27 @@ const CompanyRecords = () => {
       email: ''
     },
     sameAsRegistered: true,
-    
+
     // Management Information
     directors: [],
     shareholders: [],
     authorizedSignatories: [],
-    
+
     // Business Information
     businessActivities: [],
     turnover: '',
     employeeCount: '',
     branches: [],
-    
+
     // Bank Information
     bankAccounts: [],
-    
+
     // Compliance Information
     complianceStatus: '',
     lastAuditDate: '',
     nextAuditDue: '',
     taxStatus: '',
-    
+
     // Documents
     documents: {
       incorporationCertificate: '',
@@ -143,26 +144,26 @@ const CompanyRecords = () => {
     setFormData(prev => ({
       ...prev,
       sameAsRegistered: checked,
-      corporateOffice: checked 
-        ? { ...prev.registeredOffice } 
+      corporateOffice: checked
+        ? { ...prev.registeredOffice }
         : prev.corporateOffice || {
-            address: '',
-            city: '',
-            state: '',
-            pincode: '',
-            country: 'India',
-            phone: '',
-            email: ''
-          }
+          address: '',
+          city: '',
+          state: '',
+          pincode: '',
+          country: 'India',
+          phone: '',
+          email: ''
+        }
     }));
   };
 
   const addDirector = () => {
     setFormData(prev => ({
       ...prev,
-      directors: [...prev.directors, { 
-        name: '', 
-        din: '', 
+      directors: [...prev.directors, {
+        name: '',
+        din: '',
         appointmentDate: '',
         mcaMobileNumber: '',
         mcaEmailId: '',
@@ -178,7 +179,7 @@ const CompanyRecords = () => {
   const updateDirector = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
-      directors: prev.directors.map((director, i) => 
+      directors: prev.directors.map((director, i) =>
         i === index ? { ...director, [field]: value } : director
       )
     }));
@@ -194,12 +195,12 @@ const CompanyRecords = () => {
   const addBankAccount = () => {
     setFormData(prev => ({
       ...prev,
-      bankAccounts: [...prev.bankAccounts, { 
-        bankName: '', 
-        accountNumber: '', 
-        accountType: '', 
-        ifscCode: '', 
-        branch: '' 
+      bankAccounts: [...prev.bankAccounts, {
+        bankName: '',
+        accountNumber: '',
+        accountType: '',
+        ifscCode: '',
+        branch: ''
       }]
     }));
   };
@@ -207,7 +208,7 @@ const CompanyRecords = () => {
   const updateBankAccount = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
-      bankAccounts: prev.bankAccounts.map((account, i) => 
+      bankAccounts: prev.bankAccounts.map((account, i) =>
         i === index ? { ...account, [field]: value } : account
       )
     }));
@@ -223,14 +224,14 @@ const CompanyRecords = () => {
   const handleSave = async () => {
     try {
       setLoading(true);
-      
+
       let response;
       if (editingCompany) {
         // Update existing company
         const companyId = editingCompany._id || editingCompany.id;
         response = await staticAPI.updateCompanyRecord(companyId, formData);
-        setCompanies(prev => prev.map(company => 
-          (company._id || company.id) === companyId 
+        setCompanies(prev => prev.map(company =>
+          (company._id || company.id) === companyId
             ? { ...formData, _id: companyId }
             : company
         ));
@@ -240,7 +241,10 @@ const CompanyRecords = () => {
         const newCompany = { ...formData, _id: response.data?._id || response.data?.id };
         setCompanies(prev => [...prev, newCompany]);
       }
-      
+
+      // Sync contacts to Contact Management
+      await syncContactsFromForm(formData, 'CompanyRecords');
+
       setShowForm(false);
       setEditingCompany(null);
       setEditMode(false);

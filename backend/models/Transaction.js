@@ -31,7 +31,7 @@ const transactionSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['traveling', 'school-fees', 'grocery-household', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'other']
+    enum: ['traveling', 'school-fees', 'grocery-household', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'inventory', 'other']
   },
   modeOfTransaction: {
     type: String,
@@ -86,7 +86,7 @@ const transactionSchema = new mongoose.Schema({
   }
 });
 
-transactionSchema.pre('save', function(next) {
+transactionSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   if (typeof next === 'function') {
     next();

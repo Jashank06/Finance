@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { FiUsers, FiCalendar, FiDollarSign, FiEdit2, FiTrash2, FiPlus, FiCreditCard, FiAward } from 'react-icons/fi';
 import { staticAPI } from '../../../utils/staticAPI';
 import './Static.css';
+import { syncRemindersFromForm } from '../../../utils/remindersSyncUtil';
+import { syncBillScheduleFromForm } from '../../../utils/billScheduleSyncUtil';
 
 const defaultEntry = {
   membershipType: 'Gym',
@@ -65,6 +67,13 @@ const MembershipList = () => {
       } else {
         await staticAPI.createMembership(formData);
       }
+
+      // Sync reminders and bills to respective modules
+      await Promise.all([
+        syncRemindersFromForm(formData, 'MembershipList'),
+        syncBillScheduleFromForm(formData, 'MembershipList')
+      ]);
+
       await fetchEntries();
       resetForm();
       setEditMode(false);
@@ -123,7 +132,7 @@ const MembershipList = () => {
   const handleBenefitChange = (index, value) => {
     setFormData(prev => ({
       ...prev,
-      benefits: prev.benefits.map((benefit, i) => 
+      benefits: prev.benefits.map((benefit, i) =>
         i === index ? value : benefit
       )
     }));

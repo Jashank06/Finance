@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import './CashMemberManagement.css';
+import { syncInventoryFromTransaction } from '../utils/inventorySyncUtil';
 
 const CashMemberManagement = () => {
   const [members, setMembers] = useState([]);
@@ -71,6 +72,13 @@ const CashMemberManagement = () => {
     }
   };
 
+  const fetchData = async () => {
+    await fetchMembers();
+    if (selectedMember) {
+      await fetchMemberTransactions(selectedMember._id);
+    }
+  };
+
   const handleMemberSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -91,21 +99,31 @@ const CashMemberManagement = () => {
   const handleTransactionSubmit = async (e) => {
     e.preventDefault();
     try {
-      const data = {
-        ...transactionForm,
-        memberId: selectedMember._id
-      };
-      
-      if (editingTransaction) {
-        await api.put(`/cash-transactions/${editingTransaction._id}`, data);
-      } else {
-        await api.post('/cash-transactions', data);
+      // Prepare transaction data for backend (remove frontend-only fields)
+      const dataToSend = { ...transactionForm, memberId: selectedMember._id };
+
+      // If inventory category exists, append it to description  
+      if (dataToSend.inventoryCategory) {
+        const categoryInfo = `[Inventory: ${dataToSend.inventoryCategory}]`;
+        dataToSend.description = dataToSend.description
+          ? `${categoryInfo} ${dataToSend.description}`
+          : categoryInfo;
+        delete dataToSend.inventoryCategory; // Remove field not in backend model
       }
-      
-      fetchMemberTransactions(selectedMember._id);
-      fetchMembers(); // Refresh to update balance
-      resetTransactionForm();
+
+      if (editingTransaction) {
+        await api.put(`/cash-transactions/${editingTransaction._id}`, dataToSend);
+      } else {
+        await api.post('/cash-transactions', dataToSend);
+
+        // Sync to Inventory if category is inventory-related
+        await syncInventoryFromTransaction(transactionForm, 'cash');
+      }
+
       setShowTransactionForm(false);
+      setEditingTransaction(null);
+      resetTransactionForm();
+      fetchData();
     } catch (error) {
       console.error('Error saving transaction:', error);
       alert('Error saving transaction');
@@ -220,10 +238,10 @@ const CashMemberManagement = () => {
     const transactionDate = new Date(transaction.date);
     const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null;
     const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null;
-    
+
     if (startDate && transactionDate < startDate) return false;
     if (endDate && transactionDate > endDate) return false;
-    
+
     return true;
   });
 
@@ -246,7 +264,7 @@ const CashMemberManagement = () => {
         <div className="members-view">
           <div className="section-header">
             <h2>Family Cash Management</h2>
-            <button 
+            <button
               className="add-btn"
               onClick={() => {
                 resetMemberForm();
@@ -281,11 +299,11 @@ const CashMemberManagement = () => {
                     const spent = calculateSpent(member);
                     const percentage = calculatePercentage(member);
                     const isOverBudget = spent > member.budget;
-                    
+
                     return (
                       <tr key={member._id}>
                         <td>
-                          <span 
+                          <span
                             onClick={() => setSelectedMember(member)}
                             className="member-name-link"
                           >
@@ -310,7 +328,7 @@ const CashMemberManagement = () => {
                         <td>
                           <div className="budget-progress">
                             <div className="budget-bar-inline">
-                              <div 
+                              <div
                                 className={`budget-fill-inline ${isOverBudget ? 'over' : ''}`}
                                 style={{ width: `${Math.min(percentage, 100)}%` }}
                               ></div>
@@ -324,8 +342,8 @@ const CashMemberManagement = () => {
                           <div className="table-actions">
                             <button onClick={() => handleMemberEdit(member)} className="edit-btn">Edit</button>
                             <button onClick={() => handleMemberDelete(member._id)} className="delete-btn">Delete</button>
-                            <button 
-                              onClick={() => setSelectedMember(member)} 
+                            <button
+                              onClick={() => setSelectedMember(member)}
                               className="view-btn"
                             >
                               View
@@ -352,16 +370,16 @@ const CashMemberManagement = () => {
                       <input
                         type="text"
                         value={memberForm.name}
-                        onChange={(e) => setMemberForm({...memberForm, name: e.target.value})}
+                        onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
                         required
                       />
                     </div>
-                    
+
                     <div className="form-group">
                       <label>Relation *</label>
                       <select
                         value={memberForm.relation}
-                        onChange={(e) => setMemberForm({...memberForm, relation: e.target.value})}
+                        onChange={(e) => setMemberForm({ ...memberForm, relation: e.target.value })}
                         required
                       >
                         <option value="self">Self</option>
@@ -382,7 +400,7 @@ const CashMemberManagement = () => {
                         type="number"
                         step="0.01"
                         value={memberForm.budget}
-                        onChange={(e) => setMemberForm({...memberForm, budget: e.target.value})}
+                        onChange={(e) => setMemberForm({ ...memberForm, budget: e.target.value })}
                         required
                       />
                     </div>
@@ -393,7 +411,7 @@ const CashMemberManagement = () => {
                         type="number"
                         step="0.01"
                         value={memberForm.initialBalance}
-                        onChange={(e) => setMemberForm({...memberForm, initialBalance: e.target.value})}
+                        onChange={(e) => setMemberForm({ ...memberForm, initialBalance: e.target.value })}
                         required
                       />
                     </div>
@@ -402,7 +420,7 @@ const CashMemberManagement = () => {
                       <label>Currency</label>
                       <select
                         value={memberForm.currency}
-                        onChange={(e) => setMemberForm({...memberForm, currency: e.target.value})}
+                        onChange={(e) => setMemberForm({ ...memberForm, currency: e.target.value })}
                       >
                         <option value="INR">INR</option>
                         <option value="USD">USD</option>
@@ -416,7 +434,7 @@ const CashMemberManagement = () => {
                       <label>Notes</label>
                       <textarea
                         value={memberForm.notes}
-                        onChange={(e) => setMemberForm({...memberForm, notes: e.target.value})}
+                        onChange={(e) => setMemberForm({ ...memberForm, notes: e.target.value })}
                         rows="3"
                       />
                     </div>
@@ -441,7 +459,7 @@ const CashMemberManagement = () => {
       ) : (
         // Transactions View
         <div className="transactions-view">
-          <button 
+          <button
             className="back-btn"
             onClick={() => setSelectedMember(null)}
           >
@@ -452,12 +470,12 @@ const CashMemberManagement = () => {
             <div>
               <h2>{selectedMember.name}'s Transactions</h2>
               <p className="member-info">
-                Budget: {selectedMember.currency} {selectedMember.budget.toLocaleString('en-IN')} | 
-                Current Balance: {selectedMember.currency} {selectedMember.currentBalance.toLocaleString('en-IN')} | 
+                Budget: {selectedMember.currency} {selectedMember.budget.toLocaleString('en-IN')} |
+                Current Balance: {selectedMember.currency} {selectedMember.currentBalance.toLocaleString('en-IN')} |
                 Spent: {selectedMember.currency} {calculateSpent(selectedMember).toLocaleString('en-IN')}
               </p>
             </div>
-            <button 
+            <button
               className="add-btn"
               onClick={() => {
                 resetTransactionForm();
@@ -469,12 +487,12 @@ const CashMemberManagement = () => {
           </div>
 
           {/* Date Filter Section */}
-          <div className="date-filter-section" style={{ 
-            margin: '20px 0', 
-            padding: '15px', 
-            border: '1px solid #e0e0e0', 
+          <div className="date-filter-section" style={{
+            margin: '20px 0',
+            padding: '15px',
+            border: '1px solid #e0e0e0',
             borderRadius: '8px',
-            backgroundColor: '#f9f9f9' 
+            backgroundColor: '#f9f9f9'
           }}>
             <h4 style={{ margin: '0 0 15px 0', color: '#333' }}>Filter by Date Range</h4>
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -483,7 +501,7 @@ const CashMemberManagement = () => {
                 <input
                   type="date"
                   value={dateFilter.startDate}
-                  onChange={(e) => setDateFilter({...dateFilter, startDate: e.target.value})}
+                  onChange={(e) => setDateFilter({ ...dateFilter, startDate: e.target.value })}
                   style={{
                     padding: '6px 10px',
                     border: '1px solid #ddd',
@@ -497,7 +515,7 @@ const CashMemberManagement = () => {
                 <input
                   type="date"
                   value={dateFilter.endDate}
-                  onChange={(e) => setDateFilter({...dateFilter, endDate: e.target.value})}
+                  onChange={(e) => setDateFilter({ ...dateFilter, endDate: e.target.value })}
                   style={{
                     padding: '6px 10px',
                     border: '1px solid #ddd',
@@ -557,14 +575,14 @@ const CashMemberManagement = () => {
                       const isDebit = transaction.type === 'expense';
                       const debit = isDebit ? transaction.amount : 0;
                       const credit = !isDebit ? transaction.amount : 0;
-                      
+
                       // Update running balance
                       if (isDebit) {
                         runningBalance -= transaction.amount;
                       } else {
                         runningBalance += transaction.amount;
                       }
-                      
+
                       return (
                         <tr key={transaction._id}>
                           <td>{index + 1}</td>
@@ -620,7 +638,7 @@ const CashMemberManagement = () => {
                       <label>Type *</label>
                       <select
                         value={transactionForm.type}
-                        onChange={(e) => setTransactionForm({...transactionForm, type: e.target.value})}
+                        onChange={(e) => setTransactionForm({ ...transactionForm, type: e.target.value })}
                         required
                       >
                         <option value="expense">Expense</option>
@@ -635,36 +653,60 @@ const CashMemberManagement = () => {
                         type="number"
                         step="0.01"
                         value={transactionForm.amount}
-                        onChange={(e) => setTransactionForm({...transactionForm, amount: e.target.value})}
+                        onChange={(e) => setTransactionForm({ ...transactionForm, amount: e.target.value })}
                         required
                       />
                     </div>
 
                     <div className="form-group">
-                      <label>Category *</label>
+                      <label>Category:</label>
                       <select
                         value={transactionForm.category}
-                        onChange={(e) => setTransactionForm({...transactionForm, category: e.target.value})}
-                        required
+                        onChange={(e) => setTransactionForm({ ...transactionForm, category: e.target.value })}
                       >
-                        <option value="traveling">Traveling</option>
-                        <option value="school-fees">School Fees</option>
-                        <option value="grocery-household">Grocery / Household</option>
+                        <option value="">Select category...</option>
+                        <option value="food">Food & Dining</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="transport">Transportation</option>
+                        <option value="entertainment">Entertainment</option>
                         <option value="utilities">Utilities</option>
                         <option value="healthcare">Healthcare</option>
-                        <option value="entertainment">Entertainment</option>
-                        <option value="shopping">Shopping</option>
                         <option value="education">Education</option>
+                        <option value="inventory">📦 Inventory</option>
                         <option value="other">Other</option>
                       </select>
                     </div>
+
+                    {/* Show inventory sub-category if Inventory is selected */}
+                    {transactionForm.category === 'inventory' && (
+                      <div className="form-group">
+                        <label>Inventory Category:</label>
+                        <select
+                          value={transactionForm.inventoryCategory || ''}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, inventoryCategory: e.target.value })}
+                          required
+                        >
+                          <option value="">Select inventory type...</option>
+                          <option value="Electronics">📱 Electronics</option>
+                          <option value="Appliances">🏠 Appliances</option>
+                          <option value="Furniture">🪑 Furniture</option>
+                          <option value="Vehicles">🚗 Vehicles</option>
+                          <option value="Tools">🔧 Tools & Equipment</option>
+                          <option value="Books">📚 Books & Media</option>
+                          <option value="Clothing">👕 Clothing & Accessories</option>
+                          <option value="Jewelry">💎 Jewelry</option>
+                          <option value="Sports">⚽ Sports Equipment</option>
+                          <option value="Other">📦 Other Items</option>
+                        </select>
+                      </div>
+                    )}
 
                     <div className="form-group">
                       <label>Date *</label>
                       <input
                         type="date"
                         value={transactionForm.date}
-                        onChange={(e) => setTransactionForm({...transactionForm, date: e.target.value})}
+                        onChange={(e) => setTransactionForm({ ...transactionForm, date: e.target.value })}
                         required
                       />
                     </div>
@@ -673,7 +715,7 @@ const CashMemberManagement = () => {
                       <label>Mode of Transaction *</label>
                       <select
                         value={transactionForm.modeOfTransaction}
-                        onChange={(e) => setTransactionForm({...transactionForm, modeOfTransaction: e.target.value})}
+                        onChange={(e) => setTransactionForm({ ...transactionForm, modeOfTransaction: e.target.value })}
                         required
                       >
                         <option value="cash">Cash</option>
@@ -693,7 +735,7 @@ const CashMemberManagement = () => {
                       <label>Transaction Type</label>
                       <select
                         value={transactionForm.transactionType}
-                        onChange={(e) => setTransactionForm({...transactionForm, transactionType: e.target.value})}
+                        onChange={(e) => setTransactionForm({ ...transactionForm, transactionType: e.target.value })}
                       >
                         <option value="">Select type...</option>
                         <option value="expense">Expense</option>
@@ -711,7 +753,7 @@ const CashMemberManagement = () => {
                       <label>Expense Type</label>
                       <select
                         value={transactionForm.expenseType}
-                        onChange={(e) => setTransactionForm({...transactionForm, expenseType: e.target.value})}
+                        onChange={(e) => setTransactionForm({ ...transactionForm, expenseType: e.target.value })}
                       >
                         <option value="">Select type...</option>
                         <option value="important-necessary">Important & Necessary</option>
@@ -726,7 +768,7 @@ const CashMemberManagement = () => {
                       <label>Description *</label>
                       <textarea
                         value={transactionForm.description}
-                        onChange={(e) => setTransactionForm({...transactionForm, description: e.target.value})}
+                        onChange={(e) => setTransactionForm({ ...transactionForm, description: e.target.value })}
                         rows="2"
                         required
                         placeholder="Brief description of transaction"
@@ -737,7 +779,7 @@ const CashMemberManagement = () => {
                       <label>Details of Transaction (Narration)</label>
                       <textarea
                         value={transactionForm.narration}
-                        onChange={(e) => setTransactionForm({...transactionForm, narration: e.target.value})}
+                        onChange={(e) => setTransactionForm({ ...transactionForm, narration: e.target.value })}
                         rows="2"
                         placeholder="Detailed narration or notes about this transaction"
                       />

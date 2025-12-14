@@ -23,6 +23,8 @@ const ManageFinance = () => {
     description: '',
     isActive: true
   });
+  const [cashFlowData, setCashFlowData] = useState(null);
+  const [transferSuggestions, setTransferSuggestions] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -31,17 +33,23 @@ const ManageFinance = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [banksRes, cardsRes, bankTransactionsRes, expensesRes] = await Promise.all([
+      const [banksRes, cardsRes, bankTransactionsRes, expensesRes, cashFlowRes] = await Promise.all([
         api.get('/bank'),
         api.get('/cards'),
         api.get('/bank-transactions'),
-        api.get('/scheduled-expenses')
+        api.get('/scheduled-expenses'),
+        api.get('/cashflow/analysis')
       ]);
-      
+
       setBanks(banksRes.data || []);
       setCards(cardsRes.data || []);
       setBankTransactions(bankTransactionsRes.data || []);
       setScheduledExpenses(expensesRes.data || []);
+
+      if (cashFlowRes.data && cashFlowRes.data.success) {
+        setCashFlowData(cashFlowRes.data);
+        setTransferSuggestions(cashFlowRes.data.suggestions || []);
+      }
     } catch (error) {
       console.error('Error fetching finance data:', error);
     }
@@ -54,19 +62,19 @@ const ManageFinance = () => {
     const selectedMonth = monthFilter;
     const selectedYear = yearFilter;
     const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-    
+
     let filteredExpenses = scheduledExpenses.filter(expense => expense.isActive);
-    
+
     // Apply bank filter
     if (bankFilter !== 'all') {
       filteredExpenses = filteredExpenses.filter(expense => expense.bankAccount === bankFilter);
     }
-    
+
     return filteredExpenses
       .map(expense => {
         const dueDate = new Date(expense.dueDate);
         const expenseDate = new Date(selectedYear, selectedMonth, dueDate.getDate());
-        
+
         return {
           ...expense,
           actualDueDate: expenseDate,
@@ -82,17 +90,17 @@ const ManageFinance = () => {
   // Function to calculate actual balance including transactions (same as CashCardsBank)
   const calculateAccountBalance = (account) => {
     let balance = parseFloat(account.balance || 0);
-    
+
     // Get all transactions for this account
     const accountTransactions = bankTransactions.filter(transaction => {
       // Handle both string and object accountId
-      const transactionAccountId = typeof transaction.accountId === 'object' 
+      const transactionAccountId = typeof transaction.accountId === 'object'
         ? transaction.accountId._id || transaction.accountId
         : transaction.accountId;
-      
+
       return transactionAccountId === account._id;
     });
-    
+
     // Calculate net transaction amount
     const netTransactionAmount = accountTransactions.reduce((total, transaction) => {
       const amount = parseFloat(transaction.amount || 0);
@@ -104,7 +112,7 @@ const ManageFinance = () => {
         return total; // For other types like fee, interest, etc.
       }
     }, 0);
-    
+
     const finalBalance = balance + netTransactionAmount;
     return finalBalance;
   };
@@ -222,7 +230,7 @@ const ManageFinance = () => {
               <option value={11}>December</option>
             </select>
           </div>
-          
+
           <div className="filter-group">
             <label>Year:</label>
             <select
@@ -230,7 +238,7 @@ const ManageFinance = () => {
               onChange={(e) => setYearFilter(parseInt(e.target.value))}
               className="filter-select"
             >
-              {Array.from({length: 5}, (_, i) => {
+              {Array.from({ length: 5 }, (_, i) => {
                 const year = new Date().getFullYear() - 2 + i;
                 return (
                   <option key={year} value={year}>
@@ -270,7 +278,7 @@ const ManageFinance = () => {
           <div className="section-header">
             <h2>Bank Account Balances</h2>
           </div>
-          
+
           {/* Bank Filter */}
           <div className="bank-filter-container">
             <div className="filter-group">
@@ -298,67 +306,66 @@ const ManageFinance = () => {
               banks
                 .filter(bank => bankFilter === 'all' || bank.accountNumber === bankFilter)
                 .map((bank) => (
-                <div key={bank._id} className="bank-card">
-                  <div className="bank-header">
-                    <h4>{bank.accountHolderName}</h4>
-                    <span className="bank-name">{bank.bankName}</span>
-                  </div>
-                  <div className="bank-details">
-                    <div className="account-info">
-                      <span>A/C: ****{bank.accountNumber?.slice(-4)}</span>
-                      <span className="account-type">{bank.accountType}</span>
+                  <div key={bank._id} className="bank-card">
+                    <div className="bank-header">
+                      <h4>{bank.accountHolderName}</h4>
+                      <span className="bank-name">{bank.bankName}</span>
                     </div>
-                    <div className="balance">
-                      ₹{calculateAccountBalance(bank).toLocaleString('en-IN')}
-                    </div>
-                  </div>
-                  <div className="bank-expenses">
-                    <div className="expenses-header">
-                      <span>Upcoming Expenses</span>
-                    </div>
-                    {currentMonthExpenses
-                      .filter(exp => exp.bankAccount === bank.accountNumber)
-                      .length === 0 ? (
-                      <div className="no-expenses">
-                        No scheduled expenses
+                    <div className="bank-details">
+                      <div className="account-info">
+                        <span>A/C: ****{bank.accountNumber?.slice(-4)}</span>
+                        <span className="account-type">{bank.accountType}</span>
                       </div>
-                    ) : (
-                      currentMonthExpenses
+                      <div className="balance">
+                        ₹{calculateAccountBalance(bank).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                    <div className="bank-expenses">
+                      <div className="expenses-header">
+                        <span>Upcoming Expenses</span>
+                      </div>
+                      {currentMonthExpenses
                         .filter(exp => exp.bankAccount === bank.accountNumber)
-                        .slice(0, 4)
-                        .map(exp => (
-                          <div key={exp._id} className={`mini-expense ${
-                            exp.isOverdue ? 'overdue' : 
-                            exp.isDueToday ? 'due-today' : 
-                            exp.isDueSoon ? 'due-soon' : ''
-                          }`}>
-                            <div className="expense-info">
-                              <span className="expense-title">{exp.title}</span>
-                              <span className="expense-date">
-                                {exp.actualDueDate.toLocaleDateString('en-IN')}
-                              </span>
-                            </div>
-                            <div className="expense-amount">
-                              ₹{exp.amount?.toLocaleString('en-IN')}
-                            </div>
-                            {(exp.isOverdue || exp.isDueToday || exp.isDueSoon) && (
-                              <div className="status-indicator">
-                                {exp.isOverdue && <span className="status overdue">!</span>}
-                                {exp.isDueToday && <span className="status today">•</span>}
-                                {exp.isDueSoon && <span className="status soon">⚠</span>}
+                        .length === 0 ? (
+                        <div className="no-expenses">
+                          No scheduled expenses
+                        </div>
+                      ) : (
+                        currentMonthExpenses
+                          .filter(exp => exp.bankAccount === bank.accountNumber)
+                          .slice(0, 4)
+                          .map(exp => (
+                            <div key={exp._id} className={`mini-expense ${exp.isOverdue ? 'overdue' :
+                              exp.isDueToday ? 'due-today' :
+                                exp.isDueSoon ? 'due-soon' : ''
+                              }`}>
+                              <div className="expense-info">
+                                <span className="expense-title">{exp.title}</span>
+                                <span className="expense-date">
+                                  {exp.actualDueDate.toLocaleDateString('en-IN')}
+                                </span>
                               </div>
-                            )}
-                          </div>
-                        ))
-                    )}
-                    {currentMonthExpenses.filter(exp => exp.bankAccount === bank.accountNumber).length > 4 && (
-                      <div className="more-expenses">
-                        +{currentMonthExpenses.filter(exp => exp.bankAccount === bank.accountNumber).length - 4} more
-                      </div>
-                    )}
+                              <div className="expense-amount">
+                                ₹{exp.amount?.toLocaleString('en-IN')}
+                              </div>
+                              {(exp.isOverdue || exp.isDueToday || exp.isDueSoon) && (
+                                <div className="status-indicator">
+                                  {exp.isOverdue && <span className="status overdue">!</span>}
+                                  {exp.isDueToday && <span className="status today">•</span>}
+                                  {exp.isDueSoon && <span className="status soon">⚠</span>}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                      )}
+                      {currentMonthExpenses.filter(exp => exp.bankAccount === bank.accountNumber).length > 4 && (
+                        <div className="more-expenses">
+                          +{currentMonthExpenses.filter(exp => exp.bankAccount === bank.accountNumber).length - 4} more
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))
             )}
           </div>
         </div>
@@ -410,11 +417,10 @@ const ManageFinance = () => {
                 return (
                   <div
                     key={expense._id}
-                    className={`expense-item ${
-                      expense.isOverdue ? 'overdue' : 
-                      expense.isDueToday ? 'due-today' : 
-                      expense.isDueSoon ? 'due-soon' : ''
-                    } ${!expense.isActive ? 'inactive' : ''}`}
+                    className={`expense-item ${expense.isOverdue ? 'overdue' :
+                      expense.isDueToday ? 'due-today' :
+                        expense.isDueSoon ? 'due-soon' : ''
+                      } ${!expense.isActive ? 'inactive' : ''}`}
                   >
                     <div className="expense-main">
                       <div className="expense-info">
@@ -445,11 +451,11 @@ const ManageFinance = () => {
                           <span className="status-badge soon">Due Soon</span>
                         )}
                         <div className="days-info">
-                          {expense.isOverdue ? 
+                          {expense.isOverdue ?
                             `${Math.abs(expense.daysUntilDue)} days overdue` :
                             expense.isDueToday ?
-                            'Due today' :
-                            `${expense.daysUntilDue} days left`
+                              'Due today' :
+                              `${expense.daysUntilDue} days left`
                           }
                         </div>
                       </div>
@@ -476,6 +482,134 @@ const ManageFinance = () => {
         </div>
       </div>
 
+      {/* Cash Flow Analysis Section */}
+      {cashFlowData && (
+        <>
+          <div className="section cash-flow-analysis standalone">
+            <div className="section-header">
+              <h2>💰 Cash Flow Analysis</h2>
+              <div className="analysis-summary">
+                <span className="stat-item">
+                  {cashFlowData.summary.banksInDeficit > 0 && (
+                    <span className="critical-badge">
+                      ⚠ {cashFlowData.summary.banksInDeficit} Bank{cashFlowData.summary.banksInDeficit > 1 ? 's' : ''} in Deficit
+                    </span>
+                  )}
+                  {cashFlowData.summary.banksInDeficit === 0 && (
+                    <span className="success-badge">✓ All Banks Healthy</span>
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <div className="cashflow-grid">
+              {cashFlowData.banks
+                .filter(bank => bankFilter === 'all' || bank.accountNumber === bankFilter)
+                .map((bankCF) => (
+                  <div key={bankCF.bankId} className={`cashflow-card ${bankCF.healthStatus}`}>
+                    <div className="cashflow-header">
+                      <div>
+                        <h4>{bankCF.accountHolderName}</h4>
+                        <span className="bank-name">{bankCF.bankName}</span>
+                      </div>
+                      <div className={`health-indicator ${bankCF.healthStatus}`}>
+                        {bankCF.healthStatus === 'healthy' && '✓'}
+                        {bankCF.healthStatus === 'warning' && '⚠'}
+                        {bankCF.healthStatus === 'critical' && '!'}
+                      </div>
+                    </div>
+
+                    <div className="cashflow-details">
+                      <div className="cf-row">
+                        <span className="label">Current Balance:</span>
+                        <span className="value balance">₹{bankCF.actualBalance.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="cf-row">
+                        <span className="label">Monthly Expenses:</span>
+                        <span className="value expense">₹{bankCF.monthlyExpenses.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="cf-divider"></div>
+                      <div className="cf-row main">
+                        <span className="label strong">Net Cash Flow:</span>
+                        <span className={`value ${bankCF.status === 'deficit' ? 'deficit' : 'surplus'}`}>
+                          {bankCF.status === 'deficit' ? '-' : '+'}₹{Math.abs(bankCF.cashFlow).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    </div>
+
+                    {bankCF.status === 'deficit' && (
+                      <div className="deficit-warning">
+                        <span className="warning-icon">⚠</span>
+                        <span>Need to add ₹{Math.abs(bankCF.cashFlow).toLocaleString('en-IN')} this month</span>
+                      </div>
+                    )}
+
+                    {bankCF.status === 'surplus' && bankCF.cashFlow > bankCF.monthlyExpenses && (
+                      <div className="surplus-info">
+                        <span className="success-icon">✓</span>
+                        <span>Can transfer ₹{Math.floor(bankCF.cashFlow * 0.5).toLocaleString('en-IN')} safely</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          {/* Transfer Suggestions Section */}
+          {transferSuggestions.length > 0 && (
+            <div className="section transfer-suggestions standalone">
+              <div className="section-header">
+                <h2>💡 Smart Transfer Suggestions</h2>
+                <span className="suggestion-count">{transferSuggestions.length} Suggestion{transferSuggestions.length > 1 ? 's' : ''}</span>
+              </div>
+
+              <div className="suggestions-list">
+                {transferSuggestions.map((suggestion, index) => (
+                  <div key={index} className={`suggestion-card priority-${suggestion.priority}`}>
+                    <div className="suggestion-header">
+                      <span className={`priority-badge ${suggestion.priority}`}>
+                        {suggestion.priority === 'high' ? '🔴 High Priority' : '🟡 Medium Priority'}
+                      </span>
+                    </div>
+
+                    <div className="transfer-flow">
+                      <div className="transfer-from">
+                        <div className="bank-label">From</div>
+                        <div className="bank-info">
+                          <strong>{suggestion.fromBank.name}</strong>
+                          <small>{suggestion.fromBank.accountHolder}</small>
+                          <small className="balance">Balance: ₹{suggestion.fromBank.currentBalance.toLocaleString('en-IN')}</small>
+                        </div>
+                      </div>
+
+                      <div className="transfer-arrow">
+                        <div className="arrow-line">
+                          <span className="arrow-amount">₹{suggestion.suggestedAmount.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className="arrow-icon">→</div>
+                      </div>
+
+                      <div className="transfer-to">
+                        <div className="bank-label">To</div>
+                        <div className="bank-info">
+                          <strong>{suggestion.toBank.name}</strong>
+                          <small>{suggestion.toBank.accountHolder}</small>
+                          <small className="deficit">Deficit: ₹{suggestion.toBank.deficit.toLocaleString('en-IN')}</small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="suggestion-reason">
+                      💬 {suggestion.reason}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       {/* Add/Edit Expense Modal */}
       {showExpenseForm && (
         <div className="modal-overlay">
@@ -490,7 +624,7 @@ const ManageFinance = () => {
                 <input
                   type="text"
                   value={expenseForm.title}
-                  onChange={(e) => setExpenseForm({...expenseForm, title: e.target.value})}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, title: e.target.value })}
                   placeholder="e.g., Credit Card Bill, Home Rent"
                 />
               </div>
@@ -500,7 +634,7 @@ const ManageFinance = () => {
                   type="number"
                   step="0.01"
                   value={expenseForm.amount}
-                  onChange={(e) => setExpenseForm({...expenseForm, amount: parseFloat(e.target.value) || 0})}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, amount: parseFloat(e.target.value) || 0 })}
                   placeholder="Enter amount"
                 />
               </div>
@@ -509,14 +643,14 @@ const ManageFinance = () => {
                 <input
                   type="date"
                   value={expenseForm.dueDate}
-                  onChange={(e) => setExpenseForm({...expenseForm, dueDate: e.target.value})}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, dueDate: e.target.value })}
                 />
               </div>
               <div className="form-group">
                 <label>Frequency</label>
                 <select
                   value={expenseForm.frequency}
-                  onChange={(e) => setExpenseForm({...expenseForm, frequency: e.target.value})}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, frequency: e.target.value })}
                 >
                   <option value="monthly">Monthly</option>
                   <option value="quarterly">Quarterly</option>
@@ -528,7 +662,7 @@ const ManageFinance = () => {
                 <label>Bank Account</label>
                 <select
                   value={expenseForm.bankAccount}
-                  onChange={(e) => setExpenseForm({...expenseForm, bankAccount: e.target.value})}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, bankAccount: e.target.value })}
                 >
                   <option value="">Select Bank Account</option>
                   {banks.map(bank => (
@@ -542,7 +676,7 @@ const ManageFinance = () => {
                 <label>Category</label>
                 <select
                   value={expenseForm.category}
-                  onChange={(e) => setExpenseForm({...expenseForm, category: e.target.value})}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
                 >
                   <option value="bill">Bill Payment</option>
                   <option value="emi">EMI</option>
@@ -560,7 +694,7 @@ const ManageFinance = () => {
                 <label>Description</label>
                 <textarea
                   value={expenseForm.description}
-                  onChange={(e) => setExpenseForm({...expenseForm, description: e.target.value})}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
                   rows="3"
                   placeholder="Additional details about this expense"
                 />

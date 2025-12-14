@@ -561,7 +561,7 @@ const InvestmentProfile = () => {
   return (
     <div className="investment-container">
       <div className="investment-header">
-        <h1>Investment Profile</h1>
+        <h1>Online Access</h1>
         <p>Manage all your financial accounts and credentials in one place</p>
         
         {error && (

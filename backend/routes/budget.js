@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const Target = require('../models/Target');
 
 // Cheque Register Schema
 const chequeRegisterSchema = new mongoose.Schema({
@@ -364,6 +365,71 @@ router.get('/analytics/milestones', async (req, res) => {
   } catch (error) {
     console.error('Error fetching milestone analytics:', error);
     res.status(500).json({ message: 'Error fetching milestone analytics', error: error.message });
+  }
+});
+
+// Targets for Life Routes
+router.get('/targets-for-life', async (req, res) => {
+  try {
+    const targets = await Target.find().sort({ createdAt: -1 });
+    res.json(targets);
+  } catch (error) {
+    console.error('Error fetching targets:', error);
+    res.status(500).json({ message: 'Error fetching targets', error: error.message });
+  }
+});
+
+router.post('/targets-for-life', async (req, res) => {
+  try {
+    const target = new Target({
+      totalSavingsTarget: req.body.totalSavingsTarget,
+      targetDescription: req.body.targetDescription,
+      purchases: req.body.purchases || [],
+      savings: req.body.savings || []
+    });
+    const savedTarget = await target.save();
+    res.status(201).json(savedTarget);
+  } catch (error) {
+    console.error('Error creating target:', error);
+    res.status(400).json({ message: 'Error creating target', error: error.message });
+  }
+});
+
+router.put('/targets-for-life/:id', async (req, res) => {
+  try {
+    const target = await Target.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          totalSavingsTarget: req.body.totalSavingsTarget,
+          targetDescription: req.body.targetDescription,
+          purchases: req.body.purchases || [],
+          savings: req.body.savings || [],
+          updatedAt: new Date()
+        }
+      },
+      { new: true }
+    );
+    if (!target) {
+      return res.status(404).json({ message: 'Target not found' });
+    }
+    res.json(target);
+  } catch (error) {
+    console.error('Error updating target:', error);
+    res.status(400).json({ message: 'Error updating target', error: error.message });
+  }
+});
+
+router.delete('/targets-for-life/:id', async (req, res) => {
+  try {
+    const target = await Target.findByIdAndDelete(req.params.id);
+    if (!target) {
+      return res.status(404).json({ message: 'Target not found' });
+    }
+    res.json({ message: 'Target deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting target:', error);
+    res.status(500).json({ message: 'Error deleting target', error: error.message });
   }
 });
 

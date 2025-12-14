@@ -6,6 +6,7 @@ import FinancialOverviewChart from '../../../components/FinancialOverviewChart';
 import CashMemberManagement from '../../../components/CashMemberManagement';
 import TransactionTable from '../../../components/TransactionTable';
 import './CashCardsBank.css';
+import { syncInventoryFromTransaction } from '../../../utils/inventorySyncUtil';
 
 const ModalPortal = ({ children }) => {
   if (typeof document === 'undefined') return null;
@@ -45,20 +46,20 @@ const CashCardsBank = () => {
   const [selectedCardFilter, setSelectedCardFilter] = useState('all');
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedBank, setSelectedBank] = useState(null);
-  
+
   // Card list filters
   const [cardNameFilter, setCardNameFilter] = useState('');
   const [cardholderNameFilter, setCardholderNameFilter] = useState('');
-  
+
   // Bank list filters
   const [accountNameFilter, setAccountNameFilter] = useState('');
   const [accountHolderFilter, setAccountHolderFilter] = useState('');
-  
+
   // Card transaction filters
   const [cardTransactionExpenseTypeFilter, setCardTransactionExpenseTypeFilter] = useState('all');
   const [cardTransactionStartDate, setCardTransactionStartDate] = useState('');
   const [cardTransactionEndDate, setCardTransactionEndDate] = useState('');
-  
+
   // Bank transaction filters
   const [bankTransactionExpenseTypeFilter, setBankTransactionExpenseTypeFilter] = useState('all');
   const [bankTransactionStartDate, setBankTransactionStartDate] = useState('');
@@ -170,7 +171,7 @@ const CashCardsBank = () => {
         api.get('/transactions'),
         api.get('/bank-transactions')
       ]);
-      
+
       setCashRecords(cashRes.data);
       setCardRecords(cardRes.data);
       setBankRecords(bankRes.data);
@@ -356,28 +357,43 @@ const CashCardsBank = () => {
     e.preventDefault();
     try {
       let response;
-      
+
+      // Prepare transaction data for backend (remove frontend-only fields)
+      const dataToSend = { ...transactionForm };
+
+      // If inventory category exists, append it to description
+      if (dataToSend.inventoryCategory) {
+        const categoryInfo = `[Inventory: ${dataToSend.inventoryCategory}]`;
+        dataToSend.description = dataToSend.description
+          ? `${categoryInfo} ${dataToSend.description}`
+          : categoryInfo;
+        delete dataToSend.inventoryCategory; // Remove field not in backend model
+      }
+
       if (editingTransaction) {
         // Update existing transaction
-        response = await api.put(`/transactions/${editingTransaction._id}`, transactionForm);
-        
+        response = await api.put(`/transactions/${editingTransaction._id}`, dataToSend);
+
         // Update local state
-        setCardTransactions(cardTransactions.map(t => 
+        setCardTransactions(cardTransactions.map(t =>
           t._id === editingTransaction._id ? response.data : t
         ));
       } else {
         // Create new transaction
-        response = await api.post('/transactions', transactionForm);
-        
+        response = await api.post('/transactions', dataToSend);
+
         // Add to local state for immediate display
         const newTransaction = response.data;
         setCardTransactions([...cardTransactions, newTransaction]);
+
+        // Sync to Inventory if category is inventory-related
+        await syncInventoryFromTransaction(transactionForm, 'card');
       }
-      
+
       resetTransactionForm();
       setShowTransactionForm(false);
       setEditingTransaction(null);
-      
+
       // Refresh data to update chart
       fetchData();
     } catch (error) {
@@ -390,28 +406,43 @@ const CashCardsBank = () => {
     e.preventDefault();
     try {
       let response;
-      
+
+      // Prepare transaction data for backend (remove frontend-only fields)
+      const dataToSend = { ...bankTransactionForm };
+
+      // If inventory category exists, append it to description
+      if (dataToSend.inventoryCategory) {
+        const categoryInfo = `[Inventory: ${dataToSend.inventoryCategory}]`;
+        dataToSend.description = dataToSend.description
+          ? `${categoryInfo} ${dataToSend.description}`
+          : categoryInfo;
+        delete dataToSend.inventoryCategory; // Remove field not in backend model
+      }
+
       if (editingBankTransaction) {
         // Update existing bank transaction
-        response = await api.put(`/bank-transactions/${editingBankTransaction._id}`, bankTransactionForm);
-        
+        response = await api.put(`/bank-transactions/${editingBankTransaction._id}`, dataToSend);
+
         // Update local state
-        setBankTransactions(bankTransactions.map(t => 
+        setBankTransactions(bankTransactions.map(t =>
           t._id === editingBankTransaction._id ? response.data : t
         ));
       } else {
         // Create new bank transaction
-        response = await api.post('/bank-transactions', bankTransactionForm);
-        
+        response = await api.post('/bank-transactions', dataToSend);
+
         // Add to local state for immediate display
         const newTransaction = response.data;
         setBankTransactions([...bankTransactions, newTransaction]);
+
+        // Sync to Inventory if category is inventory-related
+        await syncInventoryFromTransaction(bankTransactionForm, 'bank');
       }
-      
+
       resetBankTransactionForm();
       setShowBankTransactionForm(false);
       setEditingBankTransaction(null);
-      
+
       // Refresh data to update chart
       fetchData();
     } catch (error) {
@@ -480,10 +511,10 @@ const CashCardsBank = () => {
     if (window.confirm('Are you sure you want to delete this transaction?')) {
       try {
         await api.delete(`/transactions/${transactionId}`);
-        
+
         // Update local state immediately
         setCardTransactions(cardTransactions.filter(t => t._id !== transactionId));
-        
+
         // Refresh data to update chart
         fetchData();
       } catch (error) {
@@ -515,10 +546,10 @@ const CashCardsBank = () => {
     if (window.confirm('Are you sure you want to delete this bank transaction?')) {
       try {
         await api.delete(`/bank-transactions/${transactionId}`);
-        
+
         // Update local state immediately
         setBankTransactions(bankTransactions.filter(t => t._id !== transactionId));
-        
+
         // Refresh data to update chart
         fetchData();
       } catch (error) {
@@ -535,24 +566,24 @@ const CashCardsBank = () => {
   // Function to calculate actual balance including transactions
   const calculateAccountBalance = (account) => {
     let balance = parseFloat(account.balance || 0);
-    
+
     // Debug: Log account and transactions
     console.log('Account:', account);
     console.log('All bank transactions:', bankTransactions);
-    
+
     // Get all transactions for this account
     const accountTransactions = bankTransactions.filter(transaction => {
       // Handle both string and object accountId
-      const transactionAccountId = typeof transaction.accountId === 'object' 
+      const transactionAccountId = typeof transaction.accountId === 'object'
         ? transaction.accountId._id || transaction.accountId
         : transaction.accountId;
-      
+
       console.log('Comparing:', transactionAccountId, 'with', account._id);
       return transactionAccountId === account._id;
     });
-    
+
     console.log('Account transactions:', accountTransactions);
-    
+
     // Calculate net transaction amount
     const netTransactionAmount = accountTransactions.reduce((total, transaction) => {
       const amount = parseFloat(transaction.amount || 0);
@@ -564,37 +595,37 @@ const CashCardsBank = () => {
         return total; // For other types like fee, interest, etc.
       }
     }, 0);
-    
+
     const finalBalance = balance + netTransactionAmount;
     console.log('Original balance:', balance, 'Net transactions:', netTransactionAmount, 'Final balance:', finalBalance);
-    
+
     return finalBalance;
   };
 
   return (
     <div className="cash-cards-bank">
       <h1>Cash, Cards & Bank Transactions</h1>
-      
+
       <div className="tabs">
-        <button 
+        <button
           className={`tab ${activeTab === 'cash' ? 'active' : ''}`}
           onClick={() => setActiveTab('cash')}
         >
           Cash ({cashRecords.length})
         </button>
-        <button 
+        <button
           className={`tab ${activeTab === 'cards' ? 'active' : ''}`}
           onClick={() => setActiveTab('cards')}
         >
           Cards ({cardRecords.length})
         </button>
-        <button 
+        <button
           className={`tab ${activeTab === 'bank' ? 'active' : ''}`}
           onClick={() => setActiveTab('bank')}
         >
           Bank ({bankRecords.length})
         </button>
-        <button 
+        <button
           className={`tab chart-toggle ${showChart ? 'active' : ''}`}
           onClick={() => setShowChart(!showChart)}
         >
@@ -613,7 +644,7 @@ const CashCardsBank = () => {
           <div className="section-header">
             <h2>Card Management</h2>
             <div className="header-buttons">
-              <button 
+              <button
                 className="add-btn card-btn"
                 onClick={() => {
                   resetCardForm();
@@ -623,7 +654,7 @@ const CashCardsBank = () => {
               >
                 Add Card
               </button>
-              <button 
+              <button
                 className="add-btn transaction-btn"
                 onClick={() => {
                   resetTransactionForm();
@@ -642,208 +673,208 @@ const CashCardsBank = () => {
                   <h3>{editingItem ? 'Edit' : 'Add'} Card</h3>
                   <form onSubmit={handleCardSubmit} autoComplete="off">
                     <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
-                    <div className="form-group">
-                      <label>Type:</label>
-                      <select 
-                        value={cardForm.type} 
-                        onChange={(e) => setCardForm({...cardForm, type: e.target.value})}
-                      >
-                        <option value="credit-card">Credit Card</option>
-                        <option value="debit-card">Debit Card</option>
-                        <option value="prepaid-card">Prepaid Card</option>
-                        <option value="gift-card">Gift Card</option>
-                        <option value="loyalty-card">Loyalty Card</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Name:</label>
-                      <input 
-                        type="text" 
-                        value={cardForm.name}
-                        onChange={(e) => setCardForm({...cardForm, name: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Issuer:</label>
-                      <input 
-                        type="text" 
-                        value={cardForm.issuer}
-                        onChange={(e) => setCardForm({...cardForm, issuer: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Card Number:</label>
-                      <input 
-                        type="text" 
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck="false"
-                        value={cardForm.cardNumber}
-                        onChange={(e) => setCardForm({...cardForm, cardNumber: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Cardholder Name:</label>
-                      <input 
-                        type="text" 
-                        value={cardForm.cardholderName}
-                        onChange={(e) => setCardForm({...cardForm, cardholderName: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Expiry Date (MM/YY):</label>
-                      <input 
-                        type="text" 
-                        placeholder="MM/YY"
-                        value={cardForm.expiryDate}
-                        onChange={(e) => setCardForm({...cardForm, expiryDate: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>CVV:</label>
-                      <input 
-                        type="text" 
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck="false"
-                        value={cardForm.cvv}
-                        onChange={(e) => setCardForm({...cardForm, cvv: e.target.value})}
-                        required
-                      />
-                    </div>
-                    
-                    {cardForm.type === 'credit-card' && (
-                      <>
-                        <div className="form-group">
-                          <label>Credit Limit:</label>
-                          <input 
-                            type="number" 
-                            step="0.01"
-                            value={cardForm.creditLimit}
-                            onChange={(e) => setCardForm({...cardForm, creditLimit: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Interest Rate (%):</label>
-                          <input 
-                            type="number" 
-                            step="0.01"
-                            value={cardForm.interestRate}
-                            onChange={(e) => setCardForm({...cardForm, interestRate: e.target.value})}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Minimum Payment:</label>
-                          <input 
-                            type="number" 
-                            step="0.01"
-                            value={cardForm.minimumPayment}
-                            onChange={(e) => setCardForm({...cardForm, minimumPayment: e.target.value})}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Due Date:</label>
-                          <input 
-                            type="number" 
-                            min="1" 
-                            max="31"
-                            value={cardForm.dueDate}
-                            onChange={(e) => setCardForm({...cardForm, dueDate: e.target.value})}
-                          />
-                        </div>
-                      </>
-                    )}
-                    
-                    {cardForm.type === 'debit-card' && (
-                      <>
-                        <div className="form-group">
-                          <label>Linked Account:</label>
-                          <input 
-                            type="text" 
-                            value={cardForm.linkedAccount}
-                            onChange={(e) => setCardForm({...cardForm, linkedAccount: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Bank Name:</label>
-                          <input 
-                            type="text" 
-                            value={cardForm.bankName}
-                            onChange={(e) => setCardForm({...cardForm, bankName: e.target.value})}
-                          />
-                        </div>
-                      </>
-                    )}
-                    
-                    <div className="form-group">
-                      <label>Currency:</label>
-                      <select 
-                        value={cardForm.currency} 
-                        onChange={(e) => setCardForm({...cardForm, currency: e.target.value})}
-                      >
-                        <option value="INR">INR</option>
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                        <option value="GBP">GBP</option>
-                        <option value="JPY">JPY</option>
-                      </select>
-                    </div>
-                    
-                    <div className="form-group checkbox-group">
-                      <label>
-                        <input 
-                          type="checkbox" 
-                          checked={cardForm.isInternational}
-                          onChange={(e) => setCardForm({...cardForm, isInternational: e.target.checked})}
+                      <div className="form-group">
+                        <label>Type:</label>
+                        <select
+                          value={cardForm.type}
+                          onChange={(e) => setCardForm({ ...cardForm, type: e.target.value })}
+                        >
+                          <option value="credit-card">Credit Card</option>
+                          <option value="debit-card">Debit Card</option>
+                          <option value="prepaid-card">Prepaid Card</option>
+                          <option value="gift-card">Gift Card</option>
+                          <option value="loyalty-card">Loyalty Card</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Name:</label>
+                        <input
+                          type="text"
+                          value={cardForm.name}
+                          onChange={(e) => setCardForm({ ...cardForm, name: e.target.value })}
+                          required
                         />
-                        International Card
-                      </label>
-                    </div>
-                    
-                    <div className="form-group checkbox-group">
-                      <label>
-                        <input 
-                          type="checkbox" 
-                          checked={cardForm.contactless}
-                          onChange={(e) => setCardForm({...cardForm, contactless: e.target.checked})}
+                      </div>
+                      <div className="form-group">
+                        <label>Issuer:</label>
+                        <input
+                          type="text"
+                          value={cardForm.issuer}
+                          onChange={(e) => setCardForm({ ...cardForm, issuer: e.target.value })}
+                          required
                         />
-                        Contactless Enabled
-                      </label>
+                      </div>
+                      <div className="form-group">
+                        <label>Card Number:</label>
+                        <input
+                          type="text"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                          spellCheck="false"
+                          value={cardForm.cardNumber}
+                          onChange={(e) => setCardForm({ ...cardForm, cardNumber: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Cardholder Name:</label>
+                        <input
+                          type="text"
+                          value={cardForm.cardholderName}
+                          onChange={(e) => setCardForm({ ...cardForm, cardholderName: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Expiry Date (MM/YY):</label>
+                        <input
+                          type="text"
+                          placeholder="MM/YY"
+                          value={cardForm.expiryDate}
+                          onChange={(e) => setCardForm({ ...cardForm, expiryDate: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>CVV:</label>
+                        <input
+                          type="text"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                          spellCheck="false"
+                          value={cardForm.cvv}
+                          onChange={(e) => setCardForm({ ...cardForm, cvv: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      {cardForm.type === 'credit-card' && (
+                        <>
+                          <div className="form-group">
+                            <label>Credit Limit:</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={cardForm.creditLimit}
+                              onChange={(e) => setCardForm({ ...cardForm, creditLimit: e.target.value })}
+                              required
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Interest Rate (%):</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={cardForm.interestRate}
+                              onChange={(e) => setCardForm({ ...cardForm, interestRate: e.target.value })}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Minimum Payment:</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={cardForm.minimumPayment}
+                              onChange={(e) => setCardForm({ ...cardForm, minimumPayment: e.target.value })}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Due Date:</label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="31"
+                              value={cardForm.dueDate}
+                              onChange={(e) => setCardForm({ ...cardForm, dueDate: e.target.value })}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {cardForm.type === 'debit-card' && (
+                        <>
+                          <div className="form-group">
+                            <label>Linked Account:</label>
+                            <input
+                              type="text"
+                              value={cardForm.linkedAccount}
+                              onChange={(e) => setCardForm({ ...cardForm, linkedAccount: e.target.value })}
+                              required
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Bank Name:</label>
+                            <input
+                              type="text"
+                              value={cardForm.bankName}
+                              onChange={(e) => setCardForm({ ...cardForm, bankName: e.target.value })}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      <div className="form-group">
+                        <label>Currency:</label>
+                        <select
+                          value={cardForm.currency}
+                          onChange={(e) => setCardForm({ ...cardForm, currency: e.target.value })}
+                        >
+                          <option value="INR">INR</option>
+                          <option value="USD">USD</option>
+                          <option value="EUR">EUR</option>
+                          <option value="GBP">GBP</option>
+                          <option value="JPY">JPY</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group checkbox-group">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={cardForm.isInternational}
+                            onChange={(e) => setCardForm({ ...cardForm, isInternational: e.target.checked })}
+                          />
+                          International Card
+                        </label>
+                      </div>
+
+                      <div className="form-group checkbox-group">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={cardForm.contactless}
+                            onChange={(e) => setCardForm({ ...cardForm, contactless: e.target.checked })}
+                          />
+                          Contactless Enabled
+                        </label>
+                      </div>
+
+                      <div className="form-group full-width">
+                        <label>Description:</label>
+                        <textarea
+                          value={cardForm.description}
+                          onChange={(e) => setCardForm({ ...cardForm, description: e.target.value })}
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="form-group full-width">
+                        <label>Notes:</label>
+                        <textarea
+                          value={cardForm.notes}
+                          onChange={(e) => setCardForm({ ...cardForm, notes: e.target.value })}
+                          rows={2}
+                        />
+                      </div>
                     </div>
-                    
-                    <div className="form-group full-width">
-                      <label>Description:</label>
-                      <textarea 
-                        value={cardForm.description}
-                        onChange={(e) => setCardForm({...cardForm, description: e.target.value})}
-                        rows={2}
-                      />
+
+                    <div className="form-actions">
+                      <button type="button" onClick={() => setShowCardForm(false)}>Cancel</button>
+                      <button type="submit">{editingItem ? 'Update' : 'Save'}</button>
                     </div>
-                    
-                    <div className="form-group full-width">
-                      <label>Notes:</label>
-                      <textarea 
-                        value={cardForm.notes}
-                        onChange={(e) => setCardForm({...cardForm, notes: e.target.value})}
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="form-actions">
-                    <button type="button" onClick={() => setShowCardForm(false)}>Cancel</button>
-                    <button type="submit">{editingItem ? 'Update' : 'Save'}</button>
-                  </div>
-                </form>
+                  </form>
                 </div>
               </div>
             </ModalPortal>
@@ -857,141 +888,166 @@ const CashCardsBank = () => {
                   <h3>{editingTransaction ? 'Edit' : 'Add'} Card Transaction</h3>
                   <form onSubmit={handleTransactionSubmit} autoComplete="off">
                     <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
-                    <div className="form-group">
-                      <label>Select Card:</label>
-                      <select 
-                        value={transactionForm.cardId} 
-                        onChange={(e) => setTransactionForm({...transactionForm, cardId: e.target.value})}
-                        required
-                      >
-                        <option value="">Choose a card...</option>
-                        {cardRecords.map(card => (
-                          <option key={card._id} value={card._id}>
-                            {card.name} - {card.issuer}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="form-group">
+                        <label>Select Card:</label>
+                        <select
+                          value={transactionForm.cardId}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, cardId: e.target.value })}
+                          required
+                        >
+                          <option value="">Choose a card...</option>
+                          {cardRecords.map(card => (
+                            <option key={card._id} value={card._id}>
+                              {card.name} - {card.issuer}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Transaction Type:</label>
+                        <select
+                          value={transactionForm.type}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, type: e.target.value })}
+                        >
+                          <option value="purchase">Purchase</option>
+                          <option value="payment">Payment</option>
+                          <option value="withdrawal">Cash Withdrawal</option>
+                          <option value="refund">Refund</option>
+                          <option value="fee">Fee/Charge</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Amount:</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={transactionForm.amount}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, amount: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Currency:</label>
+                        <select
+                          value={transactionForm.currency}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, currency: e.target.value })}
+                        >
+                          <option value="INR">INR</option>
+                          <option value="USD">USD</option>
+                          <option value="EUR">EUR</option>
+                          <option value="GBP">GBP</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Merchant/Description:</label>
+                        <input
+                          type="text"
+                          value={transactionForm.merchant}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, merchant: e.target.value })}
+                          placeholder="e.g., Amazon, Grocery Store"
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Category:</label>
+                        <select
+                          value={transactionForm.category}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, category: e.target.value })}
+                        >
+                          <option value="">Select category...</option>
+                          <option value="food">Food & Dining</option>
+                          <option value="shopping">Shopping</option>
+                          <option value="transport">Transportation</option>
+                          <option value="entertainment">Entertainment</option>
+                          <option value="utilities">Utilities</option>
+                          <option value="healthcare">Healthcare</option>
+                          <option value="education">Education</option>
+                          <option value="inventory">📦 Inventory</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+
+                      {/* Show inventory sub-category if Inventory is selected */}
+                      {transactionForm.category === 'inventory' && (
+                        <div className="form-group">
+                          <label>Inventory Category:</label>
+                          <select
+                            value={transactionForm.inventoryCategory || ''}
+                            onChange={(e) => setTransactionForm({ ...transactionForm, inventoryCategory: e.target.value })}
+                            required
+                          >
+                            <option value="">Select inventory type...</option>
+                            <option value="Electronics">📱 Electronics</option>
+                            <option value="Appliances">🏠 Appliances</option>
+                            <option value="Furniture">🪑 Furniture</option>
+                            <option value="Vehicles">🚗 Vehicles</option>
+                            <option value="Tools">🔧 Tools & Equipment</option>
+                            <option value="Books">📚 Books & Media</option>
+                            <option value="Clothing">👕 Clothing & Accessories</option>
+                            <option value="Jewelry">💎 Jewelry</option>
+                            <option value="Sports">⚽ Sports Equipment</option>
+                            <option value="Other">📦 Other Items</option>
+                          </select>
+                        </div>
+                      )}
+                      <div className="form-group">
+                        <label>Date:</label>
+                        <input
+                          type="date"
+                          value={transactionForm.date}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, date: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Type of Transaction:</label>
+                        <select
+                          value={transactionForm.transactionType}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, transactionType: e.target.value })}
+                        >
+                          <option value="">Select type...</option>
+                          <option value="expense">Expense</option>
+                          <option value="transfer">Transfer</option>
+                          <option value="loan-give">Loan Give</option>
+                          <option value="loan-take">Loan Take</option>
+                          <option value="on-behalf-in">On-behalf - Amount In</option>
+                          <option value="on-behalf-out">On-behalf - Amount Out</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Expense Type:</label>
+                        <select
+                          value={transactionForm.expenseType}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, expenseType: e.target.value })}
+                        >
+                          <option value="">Select type...</option>
+                          <option value="important-necessary">Important & Necessary</option>
+                          <option value="less-important">Less Important</option>
+                          <option value="avoidable-loss">Avoidable & Loss</option>
+                          <option value="unnecessary">Un-necessary</option>
+                          <option value="basic-necessity">Basic Necessity</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Description (Optional):</label>
+                        <textarea
+                          value={transactionForm.description}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, description: e.target.value })}
+                          placeholder="Additional notes..."
+                          rows="3"
+                        ></textarea>
+                      </div>
                     </div>
-                    <div className="form-group">
-                      <label>Transaction Type:</label>
-                      <select 
-                        value={transactionForm.type} 
-                        onChange={(e) => setTransactionForm({...transactionForm, type: e.target.value})}
-                      >
-                        <option value="purchase">Purchase</option>
-                        <option value="payment">Payment</option>
-                        <option value="withdrawal">Cash Withdrawal</option>
-                        <option value="refund">Refund</option>
-                        <option value="fee">Fee/Charge</option>
-                      </select>
+
+                    <div className="form-actions">
+                      <button type="button" onClick={() => {
+                        setShowTransactionForm(false);
+                        setEditingTransaction(null);
+                        resetTransactionForm();
+                      }}>Cancel</button>
+                      <button type="submit">{editingTransaction ? 'Update' : 'Add'} Transaction</button>
                     </div>
-                    <div className="form-group">
-                      <label>Amount:</label>
-                      <input 
-                        type="number" 
-                        step="0.01"
-                        value={transactionForm.amount}
-                        onChange={(e) => setTransactionForm({...transactionForm, amount: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Currency:</label>
-                      <select 
-                        value={transactionForm.currency} 
-                        onChange={(e) => setTransactionForm({...transactionForm, currency: e.target.value})}
-                      >
-                        <option value="INR">INR</option>
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                        <option value="GBP">GBP</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Merchant/Description:</label>
-                      <input 
-                        type="text" 
-                        value={transactionForm.merchant}
-                        onChange={(e) => setTransactionForm({...transactionForm, merchant: e.target.value})}
-                        placeholder="e.g., Amazon, Grocery Store"
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Category:</label>
-                      <select 
-                        value={transactionForm.category} 
-                        onChange={(e) => setTransactionForm({...transactionForm, category: e.target.value})}
-                      >
-                        <option value="">Select category...</option>
-                        <option value="food">Food & Dining</option>
-                        <option value="shopping">Shopping</option>
-                        <option value="transport">Transportation</option>
-                        <option value="entertainment">Entertainment</option>
-                        <option value="utilities">Utilities</option>
-                        <option value="healthcare">Healthcare</option>
-                        <option value="education">Education</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Date:</label>
-                      <input 
-                        type="date" 
-                        value={transactionForm.date}
-                        onChange={(e) => setTransactionForm({...transactionForm, date: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Type of Transaction:</label>
-                      <select 
-                        value={transactionForm.transactionType} 
-                        onChange={(e) => setTransactionForm({...transactionForm, transactionType: e.target.value})}
-                      >
-                        <option value="">Select type...</option>
-                        <option value="expense">Expense</option>
-                        <option value="transfer">Transfer</option>
-                        <option value="loan-give">Loan Give</option>
-                        <option value="loan-take">Loan Take</option>
-                        <option value="on-behalf-in">On-behalf - Amount In</option>
-                        <option value="on-behalf-out">On-behalf - Amount Out</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Expense Type:</label>
-                      <select 
-                        value={transactionForm.expenseType} 
-                        onChange={(e) => setTransactionForm({...transactionForm, expenseType: e.target.value})}
-                      >
-                        <option value="">Select type...</option>
-                        <option value="important-necessary">Important & Necessary</option>
-                        <option value="less-important">Less Important</option>
-                        <option value="avoidable-loss">Avoidable & Loss</option>
-                        <option value="unnecessary">Un-necessary</option>
-                        <option value="basic-necessity">Basic Necessity</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Description (Optional):</label>
-                      <textarea 
-                        value={transactionForm.description}
-                        onChange={(e) => setTransactionForm({...transactionForm, description: e.target.value})}
-                        placeholder="Additional notes..."
-                        rows="3"
-                      ></textarea>
-                    </div>
-                  </div>
-                  
-                  <div className="form-actions">
-                    <button type="button" onClick={() => {
-                      setShowTransactionForm(false);
-                      setEditingTransaction(null);
-                      resetTransactionForm();
-                    }}>Cancel</button>
-                    <button type="submit">{editingTransaction ? 'Update' : 'Add'} Transaction</button>
-                  </div>
-                </form>
+                  </form>
                 </div>
               </div>
             </ModalPortal>
@@ -1002,16 +1058,16 @@ const CashCardsBank = () => {
             <>
               <div className="filter-dropdown" style={{ marginBottom: '20px' }}>
                 <label>Card Name:</label>
-                <input 
+                <input
                   type="text"
                   placeholder="Search by card name..."
                   value={cardNameFilter}
                   onChange={(e) => setCardNameFilter(e.target.value)}
                   style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px', minWidth: '200px' }}
                 />
-                
+
                 <label>Cardholder Name:</label>
-                <input 
+                <input
                   type="text"
                   placeholder="Search by cardholder..."
                   value={cardholderNameFilter}
@@ -1019,85 +1075,85 @@ const CashCardsBank = () => {
                   style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px', minWidth: '200px' }}
                 />
               </div>
-              
+
               <div className="records-table">
                 <table>
-                <thead>
-                  <tr>
-                    <th>Cardholder Name</th>
-                    <th>Card Name</th>
-                    <th>Type</th>
-                    <th>Issuer</th>
-                    <th>Card Number</th>
-                    <th>Expiry</th>
-                    <th>Credit Limit</th>
-                    <th>Currency</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cardRecords
-                    .filter(card => {
-                      // Filter by card name
-                      if (cardNameFilter && !card.name.toLowerCase().includes(cardNameFilter.toLowerCase())) return false;
-                      // Filter by cardholder name
-                      if (cardholderNameFilter && !card.cardholderName.toLowerCase().includes(cardholderNameFilter.toLowerCase())) return false;
-                      return true;
-                    })
-                    .map(card => (
-                    <tr key={card._id}>
-                      <td>{card.cardholderName}</td>
-                      <td>
-                        <span 
-                          onClick={() => setSelectedCard(card)}
-                          style={{ 
-                            color: '#007bff', 
-                            cursor: 'pointer', 
-                            fontWeight: '600',
-                            textDecoration: 'underline'
-                          }}
-                        >
-                          {card.name}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`record-type-badge ${card.type.split('-').join(' ')}`}>
-                          {card.type.replace('-', ' ')}
-                        </span>
-                      </td>
-                      <td>{card.issuer}</td>
-                      <td>****-****-****-{card.cardNumber.slice(-4)}</td>
-                      <td>{card.expiryDate}</td>
-                      <td>
-                        {card.creditLimit ? `${card.currency} ${card.creditLimit}` : '-'}
-                      </td>
-                      <td>{card.currency}</td>
-                      <td>
-                        <div className="table-actions">
-                          <button onClick={() => handleEdit(card, 'card')} className="edit-btn">Edit</button>
-                          <button onClick={() => handleDelete(card._id, 'cards')} className="delete-btn">Delete</button>
-                        </div>
-                      </td>
+                  <thead>
+                    <tr>
+                      <th>Cardholder Name</th>
+                      <th>Card Name</th>
+                      <th>Type</th>
+                      <th>Issuer</th>
+                      <th>Card Number</th>
+                      <th>Expiry</th>
+                      <th>Credit Limit</th>
+                      <th>Currency</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              {cardRecords.filter(card => {
-                // Filter by card name
-                if (cardNameFilter && !card.name.toLowerCase().includes(cardNameFilter.toLowerCase())) return false;
-                // Filter by cardholder name
-                if (cardholderNameFilter && !card.cardholderName.toLowerCase().includes(cardholderNameFilter.toLowerCase())) return false;
-                return true;
-              }).length === 0 && (
-                <div className="empty-state">
-                  <p>{cardNameFilter || cardholderNameFilter ? 'No cards found matching the filters.' : 'No cards added yet. Add your first card to get started!'}</p>
-                </div>
-              )}
-            </div>
+                  </thead>
+                  <tbody>
+                    {cardRecords
+                      .filter(card => {
+                        // Filter by card name
+                        if (cardNameFilter && !card.name.toLowerCase().includes(cardNameFilter.toLowerCase())) return false;
+                        // Filter by cardholder name
+                        if (cardholderNameFilter && !card.cardholderName.toLowerCase().includes(cardholderNameFilter.toLowerCase())) return false;
+                        return true;
+                      })
+                      .map(card => (
+                        <tr key={card._id}>
+                          <td>{card.cardholderName}</td>
+                          <td>
+                            <span
+                              onClick={() => setSelectedCard(card)}
+                              style={{
+                                color: '#007bff',
+                                cursor: 'pointer',
+                                fontWeight: '600',
+                                textDecoration: 'underline'
+                              }}
+                            >
+                              {card.name}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`record-type-badge ${card.type.split('-').join(' ')}`}>
+                              {card.type.replace('-', ' ')}
+                            </span>
+                          </td>
+                          <td>{card.issuer}</td>
+                          <td>****-****-****-{card.cardNumber.slice(-4)}</td>
+                          <td>{card.expiryDate}</td>
+                          <td>
+                            {card.creditLimit ? `${card.currency} ${card.creditLimit}` : '-'}
+                          </td>
+                          <td>{card.currency}</td>
+                          <td>
+                            <div className="table-actions">
+                              <button onClick={() => handleEdit(card, 'card')} className="edit-btn">Edit</button>
+                              <button onClick={() => handleDelete(card._id, 'cards')} className="delete-btn">Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+                {cardRecords.filter(card => {
+                  // Filter by card name
+                  if (cardNameFilter && !card.name.toLowerCase().includes(cardNameFilter.toLowerCase())) return false;
+                  // Filter by cardholder name
+                  if (cardholderNameFilter && !card.cardholderName.toLowerCase().includes(cardholderNameFilter.toLowerCase())) return false;
+                  return true;
+                }).length === 0 && (
+                    <div className="empty-state">
+                      <p>{cardNameFilter || cardholderNameFilter ? 'No cards found matching the filters.' : 'No cards added yet. Add your first card to get started!'}</p>
+                    </div>
+                  )}
+              </div>
             </>
           ) : (
             <div>
-              <button 
+              <button
                 onClick={() => setSelectedCard(null)}
                 className="add-btn"
                 style={{ marginBottom: '20px' }}
@@ -1111,12 +1167,12 @@ const CashCardsBank = () => {
                 color: 'white',
                 marginBottom: '20px'
               }}>
-                <div 
-                  style={{ 
-                    display: 'flex', 
-                    flexWrap: 'wrap', 
-                    gap: '16px', 
-                    alignItems: 'center', 
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '16px',
+                    alignItems: 'center',
                     fontSize: '15px',
                     fontWeight: 500
                   }}
@@ -1137,8 +1193,8 @@ const CashCardsBank = () => {
                 <h3>Transactions for {selectedCard.name}</h3>
                 <div className="filter-dropdown">
                   <label>Expense Type:</label>
-                  <select 
-                    value={cardTransactionExpenseTypeFilter} 
+                  <select
+                    value={cardTransactionExpenseTypeFilter}
                     onChange={(e) => setCardTransactionExpenseTypeFilter(e.target.value)}
                   >
                     <option value="all">All Expense Types</option>
@@ -1148,18 +1204,18 @@ const CashCardsBank = () => {
                     <option value="unnecessary">Un-necessary</option>
                     <option value="basic-necessity">Basic Necessity</option>
                   </select>
-                  
+
                   <label>From Date:</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={cardTransactionStartDate}
                     onChange={(e) => setCardTransactionStartDate(e.target.value)}
                     style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
                   />
-                  
+
                   <label>To Date:</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={cardTransactionEndDate}
                     onChange={(e) => setCardTransactionEndDate(e.target.value)}
                     style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
@@ -1199,7 +1255,7 @@ const CashCardsBank = () => {
           <div className="section-header">
             <h2>Bank Accounts</h2>
             <div className="header-buttons">
-              <button 
+              <button
                 className="add-btn"
                 onClick={() => {
                   resetBankForm();
@@ -1209,7 +1265,7 @@ const CashCardsBank = () => {
               >
                 Add Bank Account
               </button>
-              <button 
+              <button
                 className="add-btn transaction-btn"
                 onClick={() => {
                   resetBankTransactionForm();
@@ -1228,284 +1284,284 @@ const CashCardsBank = () => {
                   <h3>{editingItem ? 'Edit' : 'Add'} Bank Account</h3>
                   <form onSubmit={handleBankSubmit} autoComplete="off">
                     <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
-                    <div className="form-group">
-                      <label>Account Type:</label>
-                      <select 
-                        value={bankForm.type} 
-                        onChange={(e) => setBankForm({...bankForm, type: e.target.value})}
-                      >
-                        <option value="savings">Savings</option>
-                        <option value="current">Current</option>
-                        <option value="fixed-deposit">Fixed Deposit</option>
-                        <option value="recurring-deposit">Recurring Deposit</option>
-                        <option value="nri-account">NRI Account</option>
-                        <option value="joint-account">Joint Account</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Account Name:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.name}
-                        onChange={(e) => setBankForm({...bankForm, name: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Bank Name:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.bankName}
-                        onChange={(e) => setBankForm({...bankForm, bankName: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Account Number:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.accountNumber}
-                        onChange={(e) => setBankForm({...bankForm, accountNumber: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Account Holder Name:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.accountHolderName}
-                        onChange={(e) => setBankForm({...bankForm, accountHolderName: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Currency:</label>
-                      <select 
-                        value={bankForm.currency} 
-                        onChange={(e) => setBankForm({...bankForm, currency: e.target.value})}
-                      >
-                        <option value="INR">INR</option>
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                        <option value="GBP">GBP</option>
-                        <option value="JPY">JPY</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Balance:</label>
-                      <input 
-                        type="number" 
-                        step="0.01"
-                        value={bankForm.balance}
-                        onChange={(e) => setBankForm({...bankForm, balance: e.target.value})}
-                        required
-                      />
-                    </div>
-                    
-                    {(bankForm.type === 'fixed-deposit' || bankForm.type === 'recurring-deposit') && (
-                      <>
-                        <div className="form-group">
-                          <label>Deposit Amount:</label>
-                          <input 
-                            type="number" 
-                            step="0.01"
-                            value={bankForm.depositAmount}
-                            onChange={(e) => setBankForm({...bankForm, depositAmount: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Interest Rate (%):</label>
-                          <input 
-                            type="number" 
-                            step="0.01"
-                            value={bankForm.interestRate}
-                            onChange={(e) => setBankForm({...bankForm, interestRate: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Tenure (months):</label>
-                          <input 
-                            type="number" 
-                            value={bankForm.tenure}
-                            onChange={(e) => setBankForm({...bankForm, tenure: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div className="form-group checkbox-group">
-                          <label>
-                            <input 
-                              type="checkbox" 
-                              checked={bankForm.autoRenewal}
-                              onChange={(e) => setBankForm({...bankForm, autoRenewal: e.target.checked})}
-                            />
-                            Auto Renewal
-                          </label>
-                        </div>
-                      </>
-                    )}
-                    
-                    <div className="form-group">
-                      <label>IFSC Code:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.ifscCode}
-                        onChange={(e) => setBankForm({...bankForm, ifscCode: e.target.value.toUpperCase()})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>MICR Code:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.micrCode}
-                        onChange={(e) => setBankForm({...bankForm, micrCode: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Branch Name:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.branchName}
-                        onChange={(e) => setBankForm({...bankForm, branchName: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Branch Address:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.branchAddress}
-                        onChange={(e) => setBankForm({...bankForm, branchAddress: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>City:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.city}
-                        onChange={(e) => setBankForm({...bankForm, city: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>State:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.state}
-                        onChange={(e) => setBankForm({...bankForm, state: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Pincode:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.pincode}
-                        onChange={(e) => setBankForm({...bankForm, pincode: e.target.value})}
-                      />
-                    </div>
-                    
-                    <div className="form-group checkbox-group">
-                      <label>
-                        <input 
-                          type="checkbox" 
-                          checked={bankForm.netBankingEnabled}
-                          onChange={(e) => setBankForm({...bankForm, netBankingEnabled: e.target.checked})}
-                        />
-                        Net Banking Enabled
-                      </label>
-                    </div>
-                    
-                    <div className="form-group checkbox-group">
-                      <label>
-                        <input 
-                          type="checkbox" 
-                          checked={bankForm.mobileBankingEnabled}
-                          onChange={(e) => setBankForm({...bankForm, mobileBankingEnabled: e.target.checked})}
-                        />
-                        Mobile Banking Enabled
-                      </label>
-                    </div>
-                    
-                    <div className="form-group checkbox-group">
-                      <label>
-                        <input 
-                          type="checkbox" 
-                          checked={bankForm.upiEnabled}
-                          onChange={(e) => setBankForm({...bankForm, upiEnabled: e.target.checked})}
-                        />
-                        UPI Enabled
-                      </label>
-                    </div>
-                    
-                    {bankForm.upiEnabled && (
                       <div className="form-group">
-                        <label>UPI ID:</label>
-                        <input 
-                          type="text" 
-                          value={bankForm.upiId}
-                          onChange={(e) => setBankForm({...bankForm, upiId: e.target.value})}
+                        <label>Account Type:</label>
+                        <select
+                          value={bankForm.type}
+                          onChange={(e) => setBankForm({ ...bankForm, type: e.target.value })}
+                        >
+                          <option value="savings">Savings</option>
+                          <option value="current">Current</option>
+                          <option value="fixed-deposit">Fixed Deposit</option>
+                          <option value="recurring-deposit">Recurring Deposit</option>
+                          <option value="nri-account">NRI Account</option>
+                          <option value="joint-account">Joint Account</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Account Name:</label>
+                        <input
+                          type="text"
+                          value={bankForm.name}
+                          onChange={(e) => setBankForm({ ...bankForm, name: e.target.value })}
+                          required
                         />
                       </div>
-                    )}
-                    
-                    <div className="form-group">
-                      <label>Nominee Name:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.nomineeName}
-                        onChange={(e) => setBankForm({...bankForm, nomineeName: e.target.value})}
-                      />
+                      <div className="form-group">
+                        <label>Bank Name:</label>
+                        <input
+                          type="text"
+                          value={bankForm.bankName}
+                          onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Account Number:</label>
+                        <input
+                          type="text"
+                          value={bankForm.accountNumber}
+                          onChange={(e) => setBankForm({ ...bankForm, accountNumber: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Account Holder Name:</label>
+                        <input
+                          type="text"
+                          value={bankForm.accountHolderName}
+                          onChange={(e) => setBankForm({ ...bankForm, accountHolderName: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Currency:</label>
+                        <select
+                          value={bankForm.currency}
+                          onChange={(e) => setBankForm({ ...bankForm, currency: e.target.value })}
+                        >
+                          <option value="INR">INR</option>
+                          <option value="USD">USD</option>
+                          <option value="EUR">EUR</option>
+                          <option value="GBP">GBP</option>
+                          <option value="JPY">JPY</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Balance:</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={bankForm.balance}
+                          onChange={(e) => setBankForm({ ...bankForm, balance: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      {(bankForm.type === 'fixed-deposit' || bankForm.type === 'recurring-deposit') && (
+                        <>
+                          <div className="form-group">
+                            <label>Deposit Amount:</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={bankForm.depositAmount}
+                              onChange={(e) => setBankForm({ ...bankForm, depositAmount: e.target.value })}
+                              required
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Interest Rate (%):</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={bankForm.interestRate}
+                              onChange={(e) => setBankForm({ ...bankForm, interestRate: e.target.value })}
+                              required
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Tenure (months):</label>
+                            <input
+                              type="number"
+                              value={bankForm.tenure}
+                              onChange={(e) => setBankForm({ ...bankForm, tenure: e.target.value })}
+                              required
+                            />
+                          </div>
+                          <div className="form-group checkbox-group">
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={bankForm.autoRenewal}
+                                onChange={(e) => setBankForm({ ...bankForm, autoRenewal: e.target.checked })}
+                              />
+                              Auto Renewal
+                            </label>
+                          </div>
+                        </>
+                      )}
+
+                      <div className="form-group">
+                        <label>IFSC Code:</label>
+                        <input
+                          type="text"
+                          value={bankForm.ifscCode}
+                          onChange={(e) => setBankForm({ ...bankForm, ifscCode: e.target.value.toUpperCase() })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>MICR Code:</label>
+                        <input
+                          type="text"
+                          value={bankForm.micrCode}
+                          onChange={(e) => setBankForm({ ...bankForm, micrCode: e.target.value })}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Branch Name:</label>
+                        <input
+                          type="text"
+                          value={bankForm.branchName}
+                          onChange={(e) => setBankForm({ ...bankForm, branchName: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Branch Address:</label>
+                        <input
+                          type="text"
+                          value={bankForm.branchAddress}
+                          onChange={(e) => setBankForm({ ...bankForm, branchAddress: e.target.value })}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>City:</label>
+                        <input
+                          type="text"
+                          value={bankForm.city}
+                          onChange={(e) => setBankForm({ ...bankForm, city: e.target.value })}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>State:</label>
+                        <input
+                          type="text"
+                          value={bankForm.state}
+                          onChange={(e) => setBankForm({ ...bankForm, state: e.target.value })}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Pincode:</label>
+                        <input
+                          type="text"
+                          value={bankForm.pincode}
+                          onChange={(e) => setBankForm({ ...bankForm, pincode: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="form-group checkbox-group">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={bankForm.netBankingEnabled}
+                            onChange={(e) => setBankForm({ ...bankForm, netBankingEnabled: e.target.checked })}
+                          />
+                          Net Banking Enabled
+                        </label>
+                      </div>
+
+                      <div className="form-group checkbox-group">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={bankForm.mobileBankingEnabled}
+                            onChange={(e) => setBankForm({ ...bankForm, mobileBankingEnabled: e.target.checked })}
+                          />
+                          Mobile Banking Enabled
+                        </label>
+                      </div>
+
+                      <div className="form-group checkbox-group">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={bankForm.upiEnabled}
+                            onChange={(e) => setBankForm({ ...bankForm, upiEnabled: e.target.checked })}
+                          />
+                          UPI Enabled
+                        </label>
+                      </div>
+
+                      {bankForm.upiEnabled && (
+                        <div className="form-group">
+                          <label>UPI ID:</label>
+                          <input
+                            type="text"
+                            value={bankForm.upiId}
+                            onChange={(e) => setBankForm({ ...bankForm, upiId: e.target.value })}
+                          />
+                        </div>
+                      )}
+
+                      <div className="form-group">
+                        <label>Nominee Name:</label>
+                        <input
+                          type="text"
+                          value={bankForm.nomineeName}
+                          onChange={(e) => setBankForm({ ...bankForm, nomineeName: e.target.value })}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Nominee Relationship:</label>
+                        <input
+                          type="text"
+                          value={bankForm.nomineeRelationship}
+                          onChange={(e) => setBankForm({ ...bankForm, nomineeRelationship: e.target.value })}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Nominee Age:</label>
+                        <input
+                          type="number"
+                          value={bankForm.nomineeAge}
+                          onChange={(e) => setBankForm({ ...bankForm, nomineeAge: e.target.value })}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Nominee Contact:</label>
+                        <input
+                          type="text"
+                          value={bankForm.nomineeContact}
+                          onChange={(e) => setBankForm({ ...bankForm, nomineeContact: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="form-group full-width">
+                        <label>Description:</label>
+                        <textarea
+                          value={bankForm.description}
+                          onChange={(e) => setBankForm({ ...bankForm, description: e.target.value })}
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="form-group full-width">
+                        <label>Notes:</label>
+                        <textarea
+                          value={bankForm.notes}
+                          onChange={(e) => setBankForm({ ...bankForm, notes: e.target.value })}
+                          rows={2}
+                        />
+                      </div>
                     </div>
-                    <div className="form-group">
-                      <label>Nominee Relationship:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.nomineeRelationship}
-                        onChange={(e) => setBankForm({...bankForm, nomineeRelationship: e.target.value})}
-                      />
+
+                    <div className="form-actions">
+                      <button type="button" onClick={() => setShowBankForm(false)}>Cancel</button>
+                      <button type="submit">{editingItem ? 'Update' : 'Save'}</button>
                     </div>
-                    <div className="form-group">
-                      <label>Nominee Age:</label>
-                      <input 
-                        type="number" 
-                        value={bankForm.nomineeAge}
-                        onChange={(e) => setBankForm({...bankForm, nomineeAge: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Nominee Contact:</label>
-                      <input 
-                        type="text" 
-                        value={bankForm.nomineeContact}
-                        onChange={(e) => setBankForm({...bankForm, nomineeContact: e.target.value})}
-                      />
-                    </div>
-                    
-                    <div className="form-group full-width">
-                      <label>Description:</label>
-                      <textarea 
-                        value={bankForm.description}
-                        onChange={(e) => setBankForm({...bankForm, description: e.target.value})}
-                        rows={2}
-                      />
-                    </div>
-                    
-                    <div className="form-group full-width">
-                      <label>Notes:</label>
-                      <textarea 
-                        value={bankForm.notes}
-                        onChange={(e) => setBankForm({...bankForm, notes: e.target.value})}
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="form-actions">
-                    <button type="button" onClick={() => setShowBankForm(false)}>Cancel</button>
-                    <button type="submit">{editingItem ? 'Update' : 'Save'}</button>
-                  </div>
-                </form>
+                  </form>
                 </div>
               </div>
             </ModalPortal>
@@ -1518,145 +1574,170 @@ const CashCardsBank = () => {
                   <h3>{editingBankTransaction ? 'Edit' : 'Add'} Bank Transaction</h3>
                   <form onSubmit={handleBankTransactionSubmit} autoComplete="off">
                     <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
-                    <div className="form-group">
-                      <label>Select Account:</label>
-                      <select 
-                        value={bankTransactionForm.accountId} 
-                        onChange={(e) => setBankTransactionForm({...bankTransactionForm, accountId: e.target.value})}
-                        required
-                      >
-                        <option value="">Choose an account...</option>
-                        {bankRecords.map(account => (
-                          <option key={account._id} value={account._id}>
-                            {account.name} - {account.bankName}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="form-group">
+                        <label>Select Account:</label>
+                        <select
+                          value={bankTransactionForm.accountId}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, accountId: e.target.value })}
+                          required
+                        >
+                          <option value="">Choose an account...</option>
+                          {bankRecords.map(account => (
+                            <option key={account._id} value={account._id}>
+                              {account.name} - {account.bankName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Transaction Type:</label>
+                        <select
+                          value={bankTransactionForm.type}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, type: e.target.value })}
+                          required
+                        >
+                          <option value="withdrawal">Withdrawal</option>
+                          <option value="deposit">Deposit</option>
+                          <option value="transfer">Transfer</option>
+                          <option value="payment">Payment</option>
+                          <option value="fee">Fee</option>
+                          <option value="interest">Interest</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Amount:</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={bankTransactionForm.amount}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, amount: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Merchant/Payee:</label>
+                        <input
+                          type="text"
+                          value={bankTransactionForm.merchant}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, merchant: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Category:</label>
+                        <select
+                          value={bankTransactionForm.category}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, category: e.target.value })}
+                        >
+                          <option value="">Select category...</option>
+                          <option value="food">Food & Dining</option>
+                          <option value="shopping">Shopping</option>
+                          <option value="transportation">Transportation</option>
+                          <option value="entertainment">Entertainment</option>
+                          <option value="utilities">Utilities</option>
+                          <option value="healthcare">Healthcare</option>
+                          <option value="education">Education</option>
+                          <option value="salary">Salary</option>
+                          <option value="rent">Rent</option>
+                          <option value="inventory">📦 Inventory</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+
+                      {/* Show inventory sub-category if Inventory is selected */}
+                      {bankTransactionForm.category === 'inventory' && (
+                        <div className="form-group">
+                          <label>Inventory Category:</label>
+                          <select
+                            value={bankTransactionForm.inventoryCategory || ''}
+                            onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, inventoryCategory: e.target.value })}
+                            required
+                          >
+                            <option value="">Select inventory type...</option>
+                            <option value="Electronics">📱 Electronics</option>
+                            <option value="Appliances">🏠 Appliances</option>
+                            <option value="Furniture">🪑 Furniture</option>
+                            <option value="Vehicles">🚗 Vehicles</option>
+                            <option value="Tools">🔧 Tools & Equipment</option>
+                            <option value="Books">📚 Books & Media</option>
+                            <option value="Clothing">👕 Clothing & Accessories</option>
+                            <option value="Jewelry">💎 Jewelry</option>
+                            <option value="Sports">⚽ Sports Equipment</option>
+                            <option value="Other">📦 Other Items</option>
+                          </select>
+                        </div>
+                      )}
+                      <div className="form-group">
+                        <label>Date:</label>
+                        <input
+                          type="date"
+                          value={bankTransactionForm.date}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, date: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Type of Transaction:</label>
+                        <select
+                          value={bankTransactionForm.transactionType}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, transactionType: e.target.value })}
+                        >
+                          <option value="">Select type...</option>
+                          <option value="expense">Expense</option>
+                          <option value="transfer">Transfer</option>
+                          <option value="loan-give">Loan Give</option>
+                          <option value="loan-take">Loan Take</option>
+                          <option value="on-behalf-in">On-behalf - Amount In</option>
+                          <option value="on-behalf-out">On-behalf - Amount Out</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Expense Type:</label>
+                        <select
+                          value={bankTransactionForm.expenseType}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, expenseType: e.target.value })}
+                        >
+                          <option value="">Select type...</option>
+                          <option value="important-necessary">Important & Necessary</option>
+                          <option value="less-important">Less Important</option>
+                          <option value="avoidable-loss">Avoidable & Loss</option>
+                          <option value="unnecessary">Un-necessary</option>
+                          <option value="basic-necessity">Basic Necessity</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Description (Optional):</label>
+                        <textarea
+                          value={bankTransactionForm.description}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, description: e.target.value })}
+                          placeholder="Additional notes..."
+                          rows="3"
+                        ></textarea>
+                      </div>
+                      <div className="form-group">
+                        <label>Currency:</label>
+                        <select
+                          value={bankTransactionForm.currency}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, currency: e.target.value })}
+                        >
+                          <option value="INR">INR</option>
+                          <option value="USD">USD</option>
+                          <option value="EUR">EUR</option>
+                          <option value="GBP">GBP</option>
+                          <option value="JPY">JPY</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="form-group">
-                      <label>Transaction Type:</label>
-                      <select 
-                        value={bankTransactionForm.type} 
-                        onChange={(e) => setBankTransactionForm({...bankTransactionForm, type: e.target.value})}
-                        required
-                      >
-                        <option value="withdrawal">Withdrawal</option>
-                        <option value="deposit">Deposit</option>
-                        <option value="transfer">Transfer</option>
-                        <option value="payment">Payment</option>
-                        <option value="fee">Fee</option>
-                        <option value="interest">Interest</option>
-                      </select>
+
+                    <div className="form-actions">
+                      <button type="button" onClick={() => {
+                        setShowBankTransactionForm(false);
+                        setEditingBankTransaction(null);
+                        resetBankTransactionForm();
+                      }}>Cancel</button>
+                      <button type="submit">{editingBankTransaction ? 'Update' : 'Add'} Transaction</button>
                     </div>
-                    <div className="form-group">
-                      <label>Amount:</label>
-                      <input 
-                        type="number" 
-                        step="0.01"
-                        value={bankTransactionForm.amount}
-                        onChange={(e) => setBankTransactionForm({...bankTransactionForm, amount: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Merchant/Payee:</label>
-                      <input 
-                        type="text" 
-                        value={bankTransactionForm.merchant}
-                        onChange={(e) => setBankTransactionForm({...bankTransactionForm, merchant: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Category:</label>
-                      <select 
-                        value={bankTransactionForm.category} 
-                        onChange={(e) => setBankTransactionForm({...bankTransactionForm, category: e.target.value})}
-                      >
-                        <option value="">Select category...</option>
-                        <option value="food">Food & Dining</option>
-                        <option value="shopping">Shopping</option>
-                        <option value="transport">Transportation</option>
-                        <option value="entertainment">Entertainment</option>
-                        <option value="utilities">Utilities</option>
-                        <option value="healthcare">Healthcare</option>
-                        <option value="education">Education</option>
-                        <option value="salary">Salary</option>
-                        <option value="rent">Rent</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Date:</label>
-                      <input 
-                        type="date" 
-                        value={bankTransactionForm.date}
-                        onChange={(e) => setBankTransactionForm({...bankTransactionForm, date: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Type of Transaction:</label>
-                      <select 
-                        value={bankTransactionForm.transactionType} 
-                        onChange={(e) => setBankTransactionForm({...bankTransactionForm, transactionType: e.target.value})}
-                      >
-                        <option value="">Select type...</option>
-                        <option value="expense">Expense</option>
-                        <option value="transfer">Transfer</option>
-                        <option value="loan-give">Loan Give</option>
-                        <option value="loan-take">Loan Take</option>
-                        <option value="on-behalf-in">On-behalf - Amount In</option>
-                        <option value="on-behalf-out">On-behalf - Amount Out</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Expense Type:</label>
-                      <select 
-                        value={bankTransactionForm.expenseType} 
-                        onChange={(e) => setBankTransactionForm({...bankTransactionForm, expenseType: e.target.value})}
-                      >
-                        <option value="">Select type...</option>
-                        <option value="important-necessary">Important & Necessary</option>
-                        <option value="less-important">Less Important</option>
-                        <option value="avoidable-loss">Avoidable & Loss</option>
-                        <option value="unnecessary">Un-necessary</option>
-                        <option value="basic-necessity">Basic Necessity</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Description (Optional):</label>
-                      <textarea 
-                        value={bankTransactionForm.description}
-                        onChange={(e) => setBankTransactionForm({...bankTransactionForm, description: e.target.value})}
-                        placeholder="Additional notes..."
-                        rows="3"
-                      ></textarea>
-                    </div>
-                    <div className="form-group">
-                      <label>Currency:</label>
-                      <select 
-                        value={bankTransactionForm.currency} 
-                        onChange={(e) => setBankTransactionForm({...bankTransactionForm, currency: e.target.value})}
-                      >
-                        <option value="INR">INR</option>
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                        <option value="GBP">GBP</option>
-                        <option value="JPY">JPY</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div className="form-actions">
-                    <button type="button" onClick={() => {
-                      setShowBankTransactionForm(false);
-                      setEditingBankTransaction(null);
-                      resetBankTransactionForm();
-                    }}>Cancel</button>
-                    <button type="submit">{editingBankTransaction ? 'Update' : 'Add'} Transaction</button>
-                  </div>
-                </form>
+                  </form>
                 </div>
               </div>
             </ModalPortal>
@@ -1669,8 +1750,8 @@ const CashCardsBank = () => {
                 <h3>Transactions for {selectedBank.name}</h3>
                 <div className="filter-dropdown">
                   <label>Expense Type:</label>
-                  <select 
-                    value={bankTransactionExpenseTypeFilter} 
+                  <select
+                    value={bankTransactionExpenseTypeFilter}
                     onChange={(e) => setBankTransactionExpenseTypeFilter(e.target.value)}
                   >
                     <option value="all">All Expense Types</option>
@@ -1680,18 +1761,18 @@ const CashCardsBank = () => {
                     <option value="unnecessary">Un-necessary</option>
                     <option value="basic-necessity">Basic Necessity</option>
                   </select>
-                  
+
                   <label>From Date:</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={bankTransactionStartDate}
                     onChange={(e) => setBankTransactionStartDate(e.target.value)}
                     style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
                   />
-                  
+
                   <label>To Date:</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={bankTransactionEndDate}
                     onChange={(e) => setBankTransactionEndDate(e.target.value)}
                     style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
@@ -1727,16 +1808,16 @@ const CashCardsBank = () => {
             <>
               <div className="filter-dropdown" style={{ marginBottom: '20px' }}>
                 <label>Account Name:</label>
-                <input 
+                <input
                   type="text"
                   placeholder="Search by account name..."
                   value={accountNameFilter}
                   onChange={(e) => setAccountNameFilter(e.target.value)}
                   style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px', minWidth: '200px' }}
                 />
-                
+
                 <label>Account Holder:</label>
-                <input 
+                <input
                   type="text"
                   placeholder="Search by account holder..."
                   value={accountHolderFilter}
@@ -1744,83 +1825,83 @@ const CashCardsBank = () => {
                   style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px', minWidth: '200px' }}
                 />
               </div>
-              
+
               <div className="records-table">
                 <table>
-                <thead>
-                  <tr>
-                    <th>Account Holder</th>
-                    <th>Account Name</th>
-                    <th>Type</th>
-                    <th>Bank Name</th>
-                    <th>Account Number</th>
-                    <th>Balance</th>
-                    <th>IFSC Code</th>
-                    <th>Branch</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bankRecords
-                    .filter(account => {
-                      // Filter by account name
-                      if (accountNameFilter && !account.name.toLowerCase().includes(accountNameFilter.toLowerCase())) return false;
-                      // Filter by account holder name
-                      if (accountHolderFilter && !account.accountHolderName.toLowerCase().includes(accountHolderFilter.toLowerCase())) return false;
-                      return true;
-                    })
-                    .map(account => (
-                    <tr key={account._id}>
-                      <td>{account.accountHolderName}</td>
-                      <td>
-                        <span 
-                          onClick={() => setSelectedBank(account)}
-                          style={{ 
-                            color: '#007bff', 
-                            cursor: 'pointer', 
-                            fontWeight: '600',
-                            textDecoration: 'underline'
-                          }}
-                        >
-                          {account.name}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`record-type-badge ${account.type.split('-').join(' ')}`}>
-                          {account.type.replace('-', ' ')}
-                        </span>
-                      </td>
-                      <td>{account.bankName}</td>
-                      <td>****-****-{account.accountNumber ? account.accountNumber.slice(-4) : '****'}</td>
-                      <td className="amount">{account.currency} {calculateAccountBalance(account).toLocaleString()}</td>
-                      <td>{account.ifscCode}</td>
-                      <td>{account.branchName || '-'}</td>
-                      <td>
-                        <div className="table-actions">
-                          <button onClick={() => handleEdit(account, 'bank')} className="edit-btn">Edit</button>
-                          <button onClick={() => handleDelete(account._id, 'bank')} className="delete-btn">Delete</button>
-                        </div>
-                      </td>
+                  <thead>
+                    <tr>
+                      <th>Account Holder</th>
+                      <th>Account Name</th>
+                      <th>Type</th>
+                      <th>Bank Name</th>
+                      <th>Account Number</th>
+                      <th>Balance</th>
+                      <th>IFSC Code</th>
+                      <th>Branch</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              {bankRecords.filter(account => {
-                // Filter by account name
-                if (accountNameFilter && !account.name.toLowerCase().includes(accountNameFilter.toLowerCase())) return false;
-                // Filter by account holder name
-                if (accountHolderFilter && !account.accountHolderName.toLowerCase().includes(accountHolderFilter.toLowerCase())) return false;
-                return true;
-              }).length === 0 && (
-                <div className="empty-state">
-                  <p>{accountNameFilter || accountHolderFilter ? 'No bank accounts found matching the filters.' : 'No bank accounts added yet. Add your first bank account to get started!'}</p>
-                </div>
-              )}
-            </div>
+                  </thead>
+                  <tbody>
+                    {bankRecords
+                      .filter(account => {
+                        // Filter by account name
+                        if (accountNameFilter && !account.name.toLowerCase().includes(accountNameFilter.toLowerCase())) return false;
+                        // Filter by account holder name
+                        if (accountHolderFilter && !account.accountHolderName.toLowerCase().includes(accountHolderFilter.toLowerCase())) return false;
+                        return true;
+                      })
+                      .map(account => (
+                        <tr key={account._id}>
+                          <td>{account.accountHolderName}</td>
+                          <td>
+                            <span
+                              onClick={() => setSelectedBank(account)}
+                              style={{
+                                color: '#007bff',
+                                cursor: 'pointer',
+                                fontWeight: '600',
+                                textDecoration: 'underline'
+                              }}
+                            >
+                              {account.name}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`record-type-badge ${account.type.split('-').join(' ')}`}>
+                              {account.type.replace('-', ' ')}
+                            </span>
+                          </td>
+                          <td>{account.bankName}</td>
+                          <td>****-****-{account.accountNumber ? account.accountNumber.slice(-4) : '****'}</td>
+                          <td className="amount">{account.currency} {calculateAccountBalance(account).toLocaleString()}</td>
+                          <td>{account.ifscCode}</td>
+                          <td>{account.branchName || '-'}</td>
+                          <td>
+                            <div className="table-actions">
+                              <button onClick={() => handleEdit(account, 'bank')} className="edit-btn">Edit</button>
+                              <button onClick={() => handleDelete(account._id, 'bank')} className="delete-btn">Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+                {bankRecords.filter(account => {
+                  // Filter by account name
+                  if (accountNameFilter && !account.name.toLowerCase().includes(accountNameFilter.toLowerCase())) return false;
+                  // Filter by account holder name
+                  if (accountHolderFilter && !account.accountHolderName.toLowerCase().includes(accountHolderFilter.toLowerCase())) return false;
+                  return true;
+                }).length === 0 && (
+                    <div className="empty-state">
+                      <p>{accountNameFilter || accountHolderFilter ? 'No bank accounts found matching the filters.' : 'No bank accounts added yet. Add your first bank account to get started!'}</p>
+                    </div>
+                  )}
+              </div>
             </>
           ) : (
             <div>
-              <button 
+              <button
                 onClick={() => setSelectedBank(null)}
                 className="add-btn"
                 style={{ marginBottom: '20px' }}
@@ -1844,10 +1925,10 @@ const CashCardsBank = () => {
           )}
         </div>
       )}
-      
+
       {/* Financial Overview Chart */}
       {showChart && (cashRecords.length > 0 || cardRecords.length > 0 || bankRecords.length > 0 || cardTransactions.length > 0 || bankTransactions.length > 0) && (
-        <FinancialOverviewChart 
+        <FinancialOverviewChart
           cashRecords={cashRecords}
           cardRecords={cardRecords}
           bankRecords={bankRecords}

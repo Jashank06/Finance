@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { FiUser, FiFileText, FiEdit2, FiTrash2, FiPlus, FiLink } from 'react-icons/fi';
 import './Static.css';
 import { staticAPI } from '../../../utils/staticAPI';
+import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
+import { syncCustomerSupportFromForm } from '../../../utils/customerSupportSyncUtil';
+import { syncRemindersFromForm } from '../../../utils/remindersSyncUtil';
 
 const defaultEntry = {
   docType: 'Aadhaar',
@@ -27,7 +30,7 @@ const PersonalRecords = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  
+
 
   const CATEGORY_KEY = 'static-personal-records';
 
@@ -81,6 +84,16 @@ const PersonalRecords = () => {
       } else {
         await staticAPI.createPersonalRecord(formData);
       }
+
+      // Sync contacts to Contact Management
+      await syncContactsFromForm(formData, 'PersonalRecords');
+
+      // Sync customer support to Customer Support
+      await syncCustomerSupportFromForm(formData, 'PersonalRecords');
+
+      // Sync reminders to Reminders & Notifications
+      syncRemindersFromForm(formData, 'PersonalRecords');
+
       await fetchEntries();
       resetForm();
     } catch (error) {

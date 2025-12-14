@@ -91,7 +91,7 @@ const Sidebar = () => {
                     <Link to="/family/investments/mf-insurance-shares" className="nested-submenu-item">MF, Insurance, Shares</Link>
                     <Link to="/family/investments/valuation-allocation" className="nested-submenu-item">Investment Valuation & Sectoral Allocation</Link>
                     <Link to="/family/investments/project-income-expense" className="nested-submenu-item">Project Wise Income / Expense</Link>
-                    <Link to="/family/investments/profile" className="nested-submenu-item">Investment Profile</Link>
+                    <Link to="/family/investments/profile" className="nested-submenu-item">Online Access</Link>
                     <Link to="/family/investments/loan-amortization" className="nested-submenu-item">Loan Amortization</Link>
                     <Link to="/family/investments/retirement" className="nested-submenu-item">Retirement Financial</Link>
                   </div>

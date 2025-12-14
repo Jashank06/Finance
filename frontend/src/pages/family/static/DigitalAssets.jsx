@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react';
 import { FiGlobe, FiServer, FiGithub, FiDatabase, FiEdit2, FiTrash2, FiPlus, FiLock, FiKey, FiFileText, FiMonitor, FiShield, FiCalendar, FiUser, FiMail, FiLink, FiSettings, FiCode, FiCheckCircle, FiAlertCircle, FiCopy } from 'react-icons/fi';
 import './Static.css';
 import { staticAPI } from '../../../utils/staticAPI';
+import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
+import { syncCustomerSupportFromForm } from '../../../utils/customerSupportSyncUtil';
+import { syncBillScheduleFromForm } from '../../../utils/billScheduleSyncUtil';
 
 const defaultWebsiteEntry = {
   // Basic Information
   projectName: '',
   purpose: '',
   projectType: 'business',
-  
+
   // Domain Information
   domain: {
     domainName: '',
@@ -21,7 +24,7 @@ const defaultWebsiteEntry = {
     sslStatus: 'active',
     sslExpiry: ''
   },
-  
+
   // Admin Section
   admin: {
     adminUrl: '',
@@ -31,7 +34,7 @@ const defaultWebsiteEntry = {
     backupCodes: '',
     recoveryEmail: ''
   },
-  
+
   // Hosting Server Section
   hosting: {
     serverHosting: 'shared',
@@ -49,7 +52,7 @@ const defaultWebsiteEntry = {
     ipAddresses: [],
     serverLocation: ''
   },
-  
+
   // GitHub Details
   github: {
     repoName: '',
@@ -60,7 +63,7 @@ const defaultWebsiteEntry = {
     collaborators: [],
     repoVisibility: 'private'
   },
-  
+
   // Database
   database: {
     type: 'mongodb',
@@ -74,7 +77,7 @@ const defaultWebsiteEntry = {
     backupFrequency: 'daily',
     lastBackupDate: ''
   },
-  
+
   // Technology Stack
   technology: {
     frontend: [],
@@ -85,7 +88,7 @@ const defaultWebsiteEntry = {
     versionControl: 'git',
     packageManager: 'npm'
   },
-  
+
   // Project Documentation
   documentation: {
     projectDocs: '',
@@ -95,7 +98,7 @@ const defaultWebsiteEntry = {
     architectureDiagrams: '',
     changeLog: ''
   },
-  
+
   // Environment & Configuration
   environment: {
     envFile: '',
@@ -104,7 +107,7 @@ const defaultWebsiteEntry = {
     testingUrl: '',
     developmentNotes: ''
   },
-  
+
   // Landing Pages & Frontend
   frontend: {
     landingPages: [],
@@ -114,7 +117,7 @@ const defaultWebsiteEntry = {
     buildTools: [],
     bundler: 'webpack'
   },
-  
+
   // Backend Services
   backend: {
     apis: [],
@@ -124,7 +127,7 @@ const defaultWebsiteEntry = {
     rateLimiting: true,
     corsEnabled: true
   },
-  
+
   // Security & Monitoring
   security: {
     sslCertificate: true,
@@ -135,7 +138,7 @@ const defaultWebsiteEntry = {
     uptimeMonitoring: '',
     securityHeaders: true
   },
-  
+
   // Maintenance & Support
   maintenance: {
     lastUpdateDate: '',
@@ -145,7 +148,7 @@ const defaultWebsiteEntry = {
     maintenanceWindow: '',
     downtimeHistory: []
   },
-  
+
   // Development Information
   development: {
     developerName: '',
@@ -154,7 +157,7 @@ const defaultWebsiteEntry = {
     developmentDurationUnit: 'months',
     totalMonths: ''
   },
-  
+
   // Monitoring Information
   monitoring: {
     monitoringProvider: '',
@@ -163,7 +166,7 @@ const defaultWebsiteEntry = {
     monitoringDurationUnit: 'months',
     totalMonths: ''
   },
-  
+
   // Additional Notes
   notes: '',
   tags: [],
@@ -218,18 +221,18 @@ const DigitalAssets = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.projectName.trim()) {
       alert('Project Name is required');
       return;
     }
-    
+
     try {
       setLoading(true);
-      
+
       console.log('Submitting form data:', formData);
-      
+
       if (editingId) {
         await staticAPI.updateDigitalAsset(editingId, formData);
         // Refresh data from backend
@@ -243,7 +246,14 @@ const DigitalAssets = () => {
         await fetchWebsites();
         showSuccessPopupFn('Website added successfully!');
       }
-      
+
+      // Sync to other modules
+      await Promise.all([
+        syncContactsFromForm(formData, 'DigitalAssets'),
+        syncCustomerSupportFromForm(formData, 'DigitalAssets'),
+        syncBillScheduleFromForm(formData, 'DigitalAssets')
+      ]);
+
       resetForm();
     } catch (error) {
       console.error('Error saving website:', error);
@@ -312,7 +322,7 @@ const DigitalAssets = () => {
   const handleProjectTypeChange = (value) => {
     setCustomProjectType(value);
     handleInputChange(null, 'projectType', value);
-    
+
     // Add custom type to dropdown if it doesn't exist
     if (value && !projectTypes.includes(value.toLowerCase())) {
       setProjectTypes([...projectTypes, value.toLowerCase()]);
@@ -327,7 +337,7 @@ const DigitalAssets = () => {
   const showSuccessPopupFn = (message) => {
     setSuccessMessage(message);
     setShowSuccessPopup(true);
-    
+
     // Auto-hide after 3 seconds
     setTimeout(() => {
       setShowSuccessPopup(false);
@@ -357,10 +367,10 @@ const DigitalAssets = () => {
       website.admin?.recoveryEmail
     ];
 
-    const filledFields = mandatoryFields.filter(field => 
+    const filledFields = mandatoryFields.filter(field =>
       field !== undefined && field !== null && field !== ''
     ).length;
-    
+
     return Math.round((filledFields / mandatoryFields.length) * 100);
   };
 
@@ -511,8 +521,8 @@ const DigitalAssets = () => {
                           <td>
                             <div className="completion-percentage">
                               <div className={`completion-bar ${completionPercentage === 100 ? 'complete' : completionPercentage >= 50 ? 'partial' : 'low'}`}>
-                                <div 
-                                  className="completion-fill" 
+                                <div
+                                  className="completion-fill"
                                   style={{ width: `${completionPercentage}%` }}
                                 ></div>
                               </div>
@@ -1466,99 +1476,99 @@ const DigitalAssets = () => {
                 </div>
               )}
               {/* Development Section */}
-{activeSection === 'development' && (
-  <div className="static-section">
-    <div className="section-header">
-      <FiCode className="section-icon" />
-      <h3>Development Details</h3>
-    </div>
-    <div className="section-content">
-      <div className="form-grid">
-        <div className="form-group">
-          <label>Developer Name</label>
-          <input
-            type="text"
-            value={formData.development?.developerName || ''}
-            onChange={(e) => handleInputChange('development', 'developerName', e.target.value)}
-            placeholder="Developer/Company Name"
-          />
-        </div>
-        <div className="form-group">
-          <label>Development Cost (₹)</label>
-          <input
-            type="number"
-            value={formData.development?.developmentCost || ''}
-            onChange={(e) => handleInputChange('development', 'developmentCost', e.target.value)}
-            placeholder="Total development cost"
-          />
-        </div>
-        <div className="form-group">
-          <label>Development Duration</label>
-          <div className="duration-input">
-            <input
-              type="number"
-              value={formData.development?.developmentDuration || ''}
-              onChange={(e) => handleInputChange('development', 'developmentDuration', e.target.value)}
-              placeholder="e.g. 3"
-            />
-            <select
-              value={formData.development?.developmentDurationUnit || 'months'}
-              onChange={(e) => handleInputChange('development', 'developmentDurationUnit', e.target.value)}
-            >
-              <option value="days">Days</option>
-              <option value="weeks">Weeks</option>
-              <option value="months">Months</option>
-              <option value="years">Years</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+              {activeSection === 'development' && (
+                <div className="static-section">
+                  <div className="section-header">
+                    <FiCode className="section-icon" />
+                    <h3>Development Details</h3>
+                  </div>
+                  <div className="section-content">
+                    <div className="form-grid">
+                      <div className="form-group">
+                        <label>Developer Name</label>
+                        <input
+                          type="text"
+                          value={formData.development?.developerName || ''}
+                          onChange={(e) => handleInputChange('development', 'developerName', e.target.value)}
+                          placeholder="Developer/Company Name"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Development Cost (₹)</label>
+                        <input
+                          type="number"
+                          value={formData.development?.developmentCost || ''}
+                          onChange={(e) => handleInputChange('development', 'developmentCost', e.target.value)}
+                          placeholder="Total development cost"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Development Duration</label>
+                        <div className="duration-input">
+                          <input
+                            type="number"
+                            value={formData.development?.developmentDuration || ''}
+                            onChange={(e) => handleInputChange('development', 'developmentDuration', e.target.value)}
+                            placeholder="e.g. 3"
+                          />
+                          <select
+                            value={formData.development?.developmentDurationUnit || 'months'}
+                            onChange={(e) => handleInputChange('development', 'developmentDurationUnit', e.target.value)}
+                          >
+                            <option value="days">Days</option>
+                            <option value="weeks">Weeks</option>
+                            <option value="months">Months</option>
+                            <option value="years">Years</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-{/* Monitoring Section */}
-{activeSection === 'monitoring' && (
-  <div className="static-section">
-    <div className="section-header">
-      <FiShield className="section-icon" />
-      <h3>Monitoring Details</h3>
-    </div>
-    <div className="section-content">
-      <div className="form-grid">
-        <div className="form-group">
-          <label>Monitoring Provider</label>
-          <input
-            type="text"
-            value={formData.monitoring?.monitoringProvider || ''}
-            onChange={(e) => handleInputChange('monitoring', 'monitoringProvider', e.target.value)}
-            placeholder="e.g., UptimeRobot, Pingdom"
-          />
-        </div>
-        <div className="form-group">
-          <label>Monthly Cost (₹)</label>
-          <input
-            type="number"
-            value={formData.monitoring?.monitoringCost || ''}
-            onChange={(e) => handleInputChange('monitoring', 'monitoringCost', e.target.value)}
-            placeholder="Monthly monitoring cost"
-          />
-        </div>
-        <div className="form-group">
-          <label>Billing Cycle</label>
-          <select
-            value={formData.monitoring?.monitoringDurationUnit || 'months'}
-            onChange={(e) => handleInputChange('monitoring', 'monitoringDurationUnit', e.target.value)}
-          >
-            <option value="monthly">Monthly</option>
-            <option value="quarterly">Quarterly</option>
-            <option value="yearly">Yearly</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+              {/* Monitoring Section */}
+              {activeSection === 'monitoring' && (
+                <div className="static-section">
+                  <div className="section-header">
+                    <FiShield className="section-icon" />
+                    <h3>Monitoring Details</h3>
+                  </div>
+                  <div className="section-content">
+                    <div className="form-grid">
+                      <div className="form-group">
+                        <label>Monitoring Provider</label>
+                        <input
+                          type="text"
+                          value={formData.monitoring?.monitoringProvider || ''}
+                          onChange={(e) => handleInputChange('monitoring', 'monitoringProvider', e.target.value)}
+                          placeholder="e.g., UptimeRobot, Pingdom"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Monthly Cost (₹)</label>
+                        <input
+                          type="number"
+                          value={formData.monitoring?.monitoringCost || ''}
+                          onChange={(e) => handleInputChange('monitoring', 'monitoringCost', e.target.value)}
+                          placeholder="Monthly monitoring cost"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Billing Cycle</label>
+                        <select
+                          value={formData.monitoring?.monitoringDurationUnit || 'months'}
+                          onChange={(e) => handleInputChange('monitoring', 'monitoringDurationUnit', e.target.value)}
+                        >
+                          <option value="monthly">Monthly</option>
+                          <option value="quarterly">Quarterly</option>
+                          <option value="yearly">Yearly</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Notes Section */}
               <div className="static-section">
@@ -1591,7 +1601,7 @@ const DigitalAssets = () => {
           </div>
         )}
       </div>
-      
+
       {/* Custom Success Popup */}
       {showSuccessPopup && (
         <div className="success-popup">
@@ -1601,7 +1611,7 @@ const DigitalAssets = () => {
           <div className="success-popup-message">
             {successMessage}
           </div>
-          <button 
+          <button
             className="success-popup-close"
             onClick={() => setShowSuccessPopup(false)}
           >

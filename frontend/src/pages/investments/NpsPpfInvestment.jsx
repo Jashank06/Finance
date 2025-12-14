@@ -3,6 +3,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiTrendingUp, FiDollarSign } from 'react-ico
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { investmentAPI } from '../../utils/investmentAPI';
 import './Investment.css';
+import { syncBillScheduleFromForm } from '../../utils/billScheduleSyncUtil';
 
 const NpsPpfInvestment = () => {
   const [investments, setInvestments] = useState([]);
@@ -63,6 +64,9 @@ const NpsPpfInvestment = () => {
       } else {
         await investmentAPI.create(dataToSend);
       }
+
+      // Sync bills to Bill Dates/Checklist
+      await syncBillScheduleFromForm(formData, 'NpsPpfInvestment');
 
       resetForm();
       fetchInvestments();

@@ -21,6 +21,7 @@ import MobileEmailDetails from './pages/family/static/MobileEmailDetails';
 import CompanyRecords from './pages/family/static/CompanyRecords';
 import PersonalRecords from './pages/family/static/PersonalRecords';
 import FamilyProfile from './pages/FamilyProfile';
+import FamilyTasks from './pages/family/FamilyTasks';
 import InventoryRecord from './pages/family/static/InventoryRecord';
 import ContactManagement from './pages/family/static/ContactManagement';
 import DigitalAssets from './pages/family/static/DigitalAssets';
@@ -90,6 +91,17 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <PlaceholderPage title="Family Section" />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/family/tasks"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <FamilyTasks />
                 </Layout>
               </ProtectedRoute>
             }

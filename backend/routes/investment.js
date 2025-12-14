@@ -385,6 +385,7 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
       try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { notes = {}; }
       return {
         billType: notes.billType || 'Bill',
+        billName: notes.billName || '',
         provider: inv.provider || notes.provider || '',
         accountNumber: inv.accountNumber || notes.accountNumber || '',
         cycle: inv.frequency || notes.cycle || 'monthly',
@@ -442,7 +443,7 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
       const d = new Date(e.dueDate);
       if (d.getFullYear() !== currentYear) continue;
       const bucket = byMonth[d.getMonth()];
-      bucket.items.push({ day: d.getDate(), provider: e.provider || e.billType, billType: e.billType, cycle: e.cycle, amount: Number(e.amount) || 0 });
+      bucket.items.push({ day: d.getDate(), provider: e.billName || e.provider || e.billType, billType: e.billType, cycle: e.cycle, amount: Number(e.amount) || 0 });
       bucket.total += Number(e.amount) || 0;
     }
     for (const m of byMonth) { m.items.sort((a, b) => a.day - b.day); }
@@ -455,7 +456,7 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
       if (!e.dueDate) continue;
       const d = new Date(e.dueDate);
       if (d >= now && d <= end) {
-        upcoming.push({ date: d.toISOString().slice(0,10), provider: e.provider || e.billType, billType: e.billType, amount: Number(e.amount) || 0, cycle: e.cycle });
+        upcoming.push({ date: d.toISOString().slice(0,10), provider: e.billName || e.provider || e.billType, billType: e.billType, amount: Number(e.amount) || 0, cycle: e.cycle });
       }
     }
     upcoming.sort((a, b) => (a.date > b.date ? 1 : -1));

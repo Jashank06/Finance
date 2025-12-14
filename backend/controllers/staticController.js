@@ -842,6 +842,20 @@ const MembershipListSchema = new mongoose.Schema({
   notes: String
 }, { timestamps: true });
 
+const FamilyTasksSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  category: String,
+  feature: String,
+  subsection: String,
+  dateOfTaskCreation: String,
+  taskDetailsDescription: String,
+  dateForUpdate: String,
+  updates: String,
+  notes: String,
+  status: String,
+  priority: String
+}, { timestamps: true });
+
 // Create models
 const BasicDetails = mongoose.model('BasicDetails', BasicDetailsSchema);
 const CompanyRecords = mongoose.model('CompanyRecords', CompanyRecordsSchema);
@@ -855,6 +869,7 @@ const CustomerSupport = mongoose.model('CustomerSupport', CustomerSupportSchema)
 const FamilyProfile = mongoose.model('FamilyProfile', FamilyProfileSchema);
 const LandRecords = mongoose.model('LandRecords', LandRecordsSchema);
 const MembershipList = mongoose.model('MembershipList', MembershipListSchema);
+const FamilyTasks = mongoose.model('FamilyTasks', FamilyTasksSchema);
 
 // Custom DigitalAssets controller with proper validation
 // Generic controller factory function
@@ -1045,6 +1060,7 @@ module.exports = {
   FamilyProfileController: createStaticController(FamilyProfile),
   LandRecordsController: createStaticController(LandRecords),
   MembershipListController: createStaticController(MembershipList),
+  FamilyTasksController: createStaticController(FamilyTasks),
   
   // Export models for use in routes
   BasicDetails,

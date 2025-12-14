@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiTrendingUp, FiDollarSign, FiActivity, FiBarChart2 } from 'react-icons/fi';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { FiPlus, FiEdit2, FiTrash2, FiTrendingUp, FiDollarSign, FiPieChart, FiActivity, FiBarChart2 } from 'react-icons/fi';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid, AreaChart, Area, BarChart, Bar } from 'recharts';
 import { investmentAPI } from '../../utils/investmentAPI';
 import './Investment.css';
+import { syncContactsFromForm } from '../../utils/contactSyncUtil';
+import { syncBillScheduleFromForm } from '../../utils/billScheduleSyncUtil';
 
 const GoldSgbInvestment = () => {
   const [investments, setInvestments] = useState([]);
@@ -97,7 +99,7 @@ const GoldSgbInvestment = () => {
         interestRate: parseFloat(formData.interestRate) || 0,
         startDate: formData.purchaseDate, // Map to backend field
       };
-      
+
       // Remove purchaseDate as backend expects startDate
       delete dataToSend.purchaseDate;
 
@@ -106,6 +108,12 @@ const GoldSgbInvestment = () => {
       } else {
         await investmentAPI.create(dataToSend);
       }
+
+      // Sync to other modules
+      await Promise.all([
+        syncContactsFromForm(formData, 'GoldSgbInvestment'),
+        syncBillScheduleFromForm(formData, 'GoldSgbInvestment')
+      ]);
 
       resetForm();
       fetchInvestments();
@@ -173,7 +181,7 @@ const GoldSgbInvestment = () => {
     const totalReturns = totalCurrent - totalInvested;
     const returnsPercent = totalInvested > 0 ? ((totalReturns / totalInvested) * 100).toFixed(2) : 0;
     const totalQuantity = investments.reduce((sum, inv) => sum + inv.quantity, 0);
-    
+
     return { totalInvested, totalCurrent, totalReturns, returnsPercent, totalQuantity };
   };
 
@@ -284,7 +292,7 @@ const GoldSgbInvestment = () => {
             <h2>Portfolio Analytics</h2>
             <p>Comprehensive visualization of your Gold & SGB investments</p>
           </div>
-          
+
           <div className="charts-grid">
             <div className="chart-card premium">
               <div className="chart-header">
@@ -309,15 +317,15 @@ const GoldSgbInvestment = () => {
                       animationDuration={1500}
                     >
                       {chartData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
+                        <Cell
+                          key={`cell - ${index} `}
                           fill={COLORS[index % COLORS.length]}
                           stroke="#fff"
                           strokeWidth={2}
                         />
                       ))}
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{
                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
                         border: '1px solid #e2e8f0',
@@ -326,10 +334,10 @@ const GoldSgbInvestment = () => {
                         fontSize: '14px',
                         fontWeight: '600'
                       }}
-                      formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, 'Value']}
+                      formatter={(value) => [`₹${value.toLocaleString('en-IN')} `, 'Value']}
                     />
-                    <Legend 
-                      verticalAlign="bottom" 
+                    <Legend
+                      verticalAlign="bottom"
                       height={36}
                       iconType="circle"
                       wrapperStyle={{
@@ -352,32 +360,32 @@ const GoldSgbInvestment = () => {
               </div>
               <div className="chart-content">
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart 
+                  <BarChart
                     data={performanceData}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
                     <defs>
                       <linearGradient id="investedGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#FFD700" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#FFA500" stopOpacity={0.6}/>
+                        <stop offset="5%" stopColor="#FFD700" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#FFA500" stopOpacity={0.6} />
                       </linearGradient>
                       <linearGradient id="currentGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#32CD32" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#228B22" stopOpacity={0.6}/>
+                        <stop offset="5%" stopColor="#32CD32" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#228B22" stopOpacity={0.6} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
-                    <XAxis 
-                      dataKey="name" 
+                    <XAxis
+                      dataKey="name"
                       tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }}
                       axisLine={{ stroke: '#e2e8f0' }}
                     />
-                    <YAxis 
+                    <YAxis
                       tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }}
                       axisLine={{ stroke: '#e2e8f0' }}
-                      tickFormatter={(value) => `₹${(value/1000).toFixed(0)}K`}
+                      tickFormatter={(value) => `₹${(value / 1000).toFixed(0)} K`}
                     />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{
                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
                         border: '1px solid #e2e8f0',
@@ -386,24 +394,24 @@ const GoldSgbInvestment = () => {
                         fontSize: '14px',
                         fontWeight: '600'
                       }}
-                      formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, '']}
+                      formatter={(value) => [`₹${value.toLocaleString('en-IN')} `, '']}
                     />
-                    <Legend 
+                    <Legend
                       wrapperStyle={{
                         fontSize: '13px',
                         fontWeight: '500'
                       }}
                     />
-                    <Bar 
-                      dataKey="invested" 
-                      fill="url(#investedGradient)" 
+                    <Bar
+                      dataKey="invested"
+                      fill="url(#investedGradient)"
                       name="Invested Amount"
                       radius={[8, 8, 0, 0]}
                       animationDuration={1500}
                     />
-                    <Bar 
-                      dataKey="current" 
-                      fill="url(#currentGradient)" 
+                    <Bar
+                      dataKey="current"
+                      fill="url(#currentGradient)"
                       name="Current Value"
                       radius={[8, 8, 0, 0]}
                       animationDuration={1500}
@@ -423,28 +431,28 @@ const GoldSgbInvestment = () => {
               </div>
               <div className="chart-content">
                 <ResponsiveContainer width="100%" height={280}>
-                  <AreaChart 
+                  <AreaChart
                     data={providerData}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
                     <defs>
                       <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#C084FC" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#9333EA" stopOpacity={0.2}/>
+                        <stop offset="5%" stopColor="#C084FC" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#9333EA" stopOpacity={0.2} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
-                    <XAxis 
-                      dataKey="name" 
+                    <XAxis
+                      dataKey="name"
                       tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }}
                       axisLine={{ stroke: '#e2e8f0' }}
                     />
-                    <YAxis 
+                    <YAxis
                       tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }}
                       axisLine={{ stroke: '#e2e8f0' }}
-                      tickFormatter={(value) => `₹${(value/1000).toFixed(0)}K`}
+                      tickFormatter={(value) => `₹${(value / 1000).toFixed(0)} K`}
                     />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{
                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
                         border: '1px solid #e2e8f0',
@@ -453,12 +461,12 @@ const GoldSgbInvestment = () => {
                         fontSize: '14px',
                         fontWeight: '600'
                       }}
-                      formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, 'Portfolio Value']}
+                      formatter={(value) => [`₹${value.toLocaleString('en-IN')} `, 'Portfolio Value']}
                     />
-                    <Area 
-                      type="monotone" 
-                      dataKey="value" 
-                      stroke="#C084FC" 
+                    <Area
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#C084FC"
                       strokeWidth={3}
                       fill="url(#areaGradient)"
                       animationDuration={2000}
@@ -500,10 +508,10 @@ const GoldSgbInvestment = () => {
                 return (
                   <tr key={investment._id}>
                     <td>
-                      <span className="investment-type-badge" style={{ 
-                        background: investment.type.includes('Gold') ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' : 
-                                   investment.type.includes('Silver') ? 'linear-gradient(135deg, #C0C0C0 0%, #4169E1 100%)' :
-                                   'linear-gradient(135deg, #C084FC 0%, #9333EA 100%)'
+                      <span className="investment-type-badge" style={{
+                        background: investment.type.includes('Gold') ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' :
+                          investment.type.includes('Silver') ? 'linear-gradient(135deg, #C0C0C0 0%, #4169E1 100%)' :
+                            'linear-gradient(135deg, #C084FC 0%, #9333EA 100%)'
                       }}>
                         {investment.type}
                       </span>
@@ -717,7 +725,7 @@ const GoldSgbInvestment = () => {
         </div>
       )}
 
-      </div>
+    </div>
   );
 };
 

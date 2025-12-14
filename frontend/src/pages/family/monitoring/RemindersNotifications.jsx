@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiBell, FiClock, FiCalendar, FiRepeat, FiPlus, FiTrash2, FiCheck, FiX, FiAlertCircle } from 'react-icons/fi';
 import './RemindersNotifications.css';
+import { getRemindersFromStorage, createReminder, deleteReminderFromStorage, updateReminderStatus } from '../../../utils/remindersSyncUtil';
 
 const RemindersNotifications = () => {
   const [reminders, setReminders] = useState([]);
@@ -9,7 +10,7 @@ const RemindersNotifications = () => {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [activeTab, setActiveTab] = useState('reminders');
   const [filter, setFilter] = useState('all');
-  
+
   const [newReminder, setNewReminder] = useState({
     title: '',
     description: '',
@@ -30,34 +31,17 @@ const RemindersNotifications = () => {
     method: 'email'
   });
 
+  // Load reminders from backend on mount
   useEffect(() => {
-    setReminders([
-      {
-        id: 1,
-        title: 'Pay Electricity Bill',
-        description: 'Monthly electricity bill payment',
-        dateTime: '2024-12-15T10:00',
-        type: 'recurring',
-        repeat: 'monthly',
-        priority: 'high',
-        category: 'bills',
-        method: 'notification',
-        status: 'active'
-      },
-      {
-        id: 2,
-        title: 'Doctor Appointment',
-        description: 'Annual health checkup',
-        dateTime: '2024-12-20T14:30',
-        type: 'one-time',
-        repeat: 'none',
-        priority: 'medium',
-        category: 'health',
-        method: 'notification',
-        status: 'active'
-      }
-    ]);
+    const loadReminders = async () => {
+      const loadedReminders = await getRemindersFromStorage();
+      setReminders(loadedReminders);
+    };
+    loadReminders();
+  }, []);
 
+  // Keep notifications as demo data for now
+  useEffect(() => {
     setNotifications([
       {
         id: 1,
@@ -72,14 +56,22 @@ const RemindersNotifications = () => {
     ]);
   }, []);
 
-  const handleAddReminder = () => {
+  const handleAddReminder = async () => {
     if (newReminder.title && newReminder.dateTime) {
       const reminder = {
         ...newReminder,
-        id: Date.now(),
         status: 'active'
       };
-      setReminders([...reminders, reminder]);
+
+      // Save to backend
+      const success = await createReminder(reminder);
+
+      if (success) {
+        // Reload reminders from backend
+        const updated = await getRemindersFromStorage();
+        setReminders(updated);
+      }
+
       setNewReminder({
         title: '',
         description: '',
@@ -115,28 +107,32 @@ const RemindersNotifications = () => {
     }
   };
 
-  const deleteReminder = (id) => {
-    setReminders(reminders.filter(r => r.id !== id));
+  const deleteReminder = async (id) => {
+    await deleteReminderFromStorage(id);
+    const updated = await getRemindersFromStorage();
+    setReminders(updated);
   };
 
   const deleteNotification = (id) => {
     setNotifications(notifications.filter(n => n.id !== id));
   };
 
-  const toggleReminderStatus = (id) => {
-    setReminders(reminders.map(r => 
-      r.id === id ? { ...r, status: r.status === 'active' ? 'paused' : 'active' } : r
-    ));
+  const toggleReminderStatus = async (id) => {
+    const reminder = reminders.find(r => r.id === id);
+    const newStatus = reminder.status === 'active' ? 'paused' : 'active';
+    await updateReminderStatus(id, newStatus);
+    const updated = await getRemindersFromStorage();
+    setReminders(updated);
   };
 
   const markNotificationAsRead = (id) => {
-    setNotifications(notifications.map(n => 
+    setNotifications(notifications.map(n =>
       n.id === id ? { ...n, read: true } : n
     ));
   };
 
   const getPriorityColor = (priority) => {
-    switch(priority) {
+    switch (priority) {
       case 'high': return '#EF4444';
       case 'medium': return '#F59E0B';
       case 'low': return '#10B981';
@@ -145,7 +141,7 @@ const RemindersNotifications = () => {
   };
 
   const getTypeIcon = (type) => {
-    switch(type) {
+    switch (type) {
       case 'success': return <FiCheck className="type-icon success" />;
       case 'warning': return <FiAlertCircle className="type-icon warning" />;
       case 'error': return <FiX className="type-icon error" />;
@@ -184,20 +180,20 @@ const RemindersNotifications = () => {
       {/* Tabs Section */}
       <div className="tabs-container">
         <div className="tabs">
-          <button 
-            className={`tab ${activeTab === 'reminders' ? 'active' : ''}`}
+          <button
+            className={`tab ${activeTab === 'reminders' ? 'active' : ''} `}
             onClick={() => setActiveTab('reminders')}
           >
             <FiClock /> Reminders ({reminders.length})
           </button>
-          <button 
-            className={`tab ${activeTab === 'notifications' ? 'active' : ''}`}
+          <button
+            className={`tab ${activeTab === 'notifications' ? 'active' : ''} `}
             onClick={() => setActiveTab('notifications')}
           >
             <FiBell /> Notifications ({notifications.length})
           </button>
         </div>
-        
+
         {activeTab === 'reminders' && (
           <div className="filter-section">
             <label>Filter:</label>
@@ -252,11 +248,11 @@ const RemindersNotifications = () => {
                       <td>
                         <div className="cell-content">
                           <FiClock />
-                          {new Date(reminder.dateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          {new Date(reminder.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </td>
                       <td>
-                        <span 
+                        <span
                           className="badge priority"
                           style={{ backgroundColor: getPriorityColor(reminder.priority) }}
                         >
@@ -279,20 +275,20 @@ const RemindersNotifications = () => {
                         </div>
                       </td>
                       <td>
-                        <span className={`badge status ${reminder.status}`}>
+                        <span className={`badge status ${reminder.status} `}>
                           {reminder.status}
                         </span>
                       </td>
                       <td>
                         <div className="action-buttons">
-                          <button 
-                            className={`icon-btn ${reminder.status}`}
+                          <button
+                            className={`icon - btn ${reminder.status} `}
                             onClick={() => toggleReminderStatus(reminder.id)}
                             title={reminder.status === 'active' ? 'Pause' : 'Activate'}
                           >
                             {reminder.status === 'active' ? <FiX /> : <FiCheck />}
                           </button>
-                          <button 
+                          <button
                             className="icon-btn delete"
                             onClick={() => deleteReminder(reminder.id)}
                             title="Delete"
@@ -331,7 +327,7 @@ const RemindersNotifications = () => {
                 </thead>
                 <tbody>
                   {notifications.map(notification => (
-                    <tr 
+                    <tr
                       key={notification.id}
                       className={!notification.read ? 'unread' : ''}
                       onClick={() => markNotificationAsRead(notification.id)}
@@ -353,13 +349,13 @@ const RemindersNotifications = () => {
                       <td><span className="badge">{notification.method}</span></td>
                       <td><span className="badge status">{notification.status}</span></td>
                       <td>
-                        <span className={`badge ${notification.read ? 'read' : 'unread'}`}>
+                        <span className={`badge ${notification.read ? 'read' : 'unread'} `}>
                           {notification.read ? 'Read' : 'Unread'}
                         </span>
                       </td>
                       <td>
                         <div className="action-buttons">
-                          <button 
+                          <button
                             className="icon-btn delete"
                             onClick={(e) => {
                               e.stopPropagation();
