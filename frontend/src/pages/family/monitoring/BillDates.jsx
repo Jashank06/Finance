@@ -148,8 +148,75 @@ const BillDates = () => {
     setShowBillOptions(bill);
   };
 
-  const handleEditBill = (bill) => {
-    setEditingBill(bill);
+  const handleEditBill = async (bill) => {
+    // Find the original bill with _id from entries or referenceBills
+    let originalBill = null;
+    const allBills = [...entries, ...referenceBills];
+    
+    for (const b of allBills) {
+      if ((b.billName === bill.billName && b.provider === bill.provider && b.dueDate === bill.dueDate) ||
+          (b._id && b._id === bill._id)) {
+        originalBill = b;
+        break;
+      }
+    }
+    
+    // If not found in local arrays, fetch from API
+    if (!originalBill) {
+      try {
+        const res = await investmentAPI.getAll(CATEGORY_KEY);
+        const fetchedBills = (res.data.investments || []).map(inv => {
+          let notes = {};
+          try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { notes = {}; }
+          return {
+            _id: inv._id,
+            ...fromInvestment(inv),
+            source: notes.syncedFrom || 'Manual',
+            lastSynced: notes.lastSynced || null
+          };
+        });
+        
+        for (const b of fetchedBills) {
+          console.log('Checking against fetched bill:', b);
+          // More flexible matching - try multiple combinations
+          if (
+            // Match by provider, billType, cycle, and amount (with tolerance)
+            (b.provider === bill.provider && 
+             b.billType === bill.billType && 
+             b.cycle === bill.cycle && 
+             Math.abs(Number(b.amount) - Number(bill.amount)) < 1) ||
+            // Match by provider and billName (if both exist)
+            (b.billName && bill.billName && b.billName === bill.billName && b.provider === bill.provider) ||
+            // Match by provider and day (from dueDate)
+            (b.provider === bill.provider && 
+             b.dueDate && new Date(b.dueDate).getDate() === bill.day) ||
+            // Match by billType, cycle, and amount (if provider is not reliable)
+            (b.billType === bill.billType && 
+             b.cycle === bill.cycle && 
+             Math.abs(Number(b.amount) - Number(bill.amount)) < 1) ||
+            // Match by day and amount only (last resort)
+            (b.dueDate && new Date(b.dueDate).getDate() === bill.day && 
+             Math.abs(Number(b.amount) - Number(bill.amount)) < 1)
+          ) {
+            originalBill = b;
+            console.log('Found match with fetched bill:', b);
+            break;
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching bills for edit:', error);
+      }
+    }
+    
+    // Debug: log what we found
+    console.log('Calendar bill:', bill);
+    console.log('Original bill found:', originalBill);
+    
+    // If originalBill is found, use it for editing
+    // If not found, use the calendar bill but mark it as a new bill (no _id)
+    const billToEdit = originalBill || { ...bill, _id: null };
+    console.log('Bill to edit:', billToEdit);
+    setEditingBill(billToEdit);
     setInputs({
       billType: bill.billType || '',
       billName: bill.billName || '',
@@ -159,18 +226,21 @@ const BillDates = () => {
       amount: bill.amount || 0,
       dueDate: bill.dueDate || '',
       autoDebit: bill.autoDebit || false,
-      paymentMethod: bill.paymentMethod || '',
-      status: bill.status || '',
+      paymentMethod: bill.paymentMethod || 'UPI',
+      status: bill.status || 'pending',
       reminderDays: bill.reminderDays || 3,
       notes: bill.notes || '',
       startDate: bill.startDate || '',
+      // Electricity specific fields
       billingUnit: bill.billingUnit || '',
       nameOnBill: bill.nameOnBill || '',
       paidAmount: bill.paidAmount || '',
       paymentDate: bill.paymentDate || '',
       description: bill.description || '',
+      // Water specific fields
       meterNumber: bill.meterNumber || '',
-      connectionType: bill.connectionType || '',
+      connectionType: bill.connectionType || 'Domestic',
+      // Gas specific fields
       consumerNumber: bill.consumerNumber || '',
       gasAgency: bill.gasAgency || ''
     });
@@ -181,11 +251,43 @@ const BillDates = () => {
   const handleDeleteBill = async (bill) => {
     if (window.confirm(`Are you sure you want to delete the ${bill.billName || bill.provider} bill?`)) {
       try {
-        await investmentAPI.delete(bill._id);
+        // Since entries and referenceBills are empty, we need to find the bill by matching properties
+        // First, try to fetch all bills to find a match
+        const res = await investmentAPI.getAll(CATEGORY_KEY);
+        const allBills = (res.data.investments || []).map(inv => {
+          let notes = {};
+          try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { notes = {}; }
+          return {
+            _id: inv._id,
+            ...fromInvestment(inv),
+            source: notes.syncedFrom || 'Manual',
+            lastSynced: notes.lastSynced || null
+          };
+        });
+        
+        // Find matching bill by comparing properties
+        let originalBill = null;
+        for (const b of allBills) {
+          if ((b.provider === bill.provider && 
+               b.billType === bill.billType && 
+               b.cycle === bill.cycle && 
+               Math.abs(Number(b.amount) - Number(bill.amount)) < 1) ||
+              (b.billName === bill.billName && b.provider === bill.provider)) {
+            originalBill = b;
+            break;
+          }
+        }
+        
+        const billId = originalBill?._id;
+        if (!billId) {
+          alert('Cannot delete bill: No valid ID found');
+          return;
+        }
+        await investmentAPI.delete(billId);
         await fetchEntries();
+        await fetchReferenceBills();
         setShowBillOptions(null);
       } catch (error) {
-        console.error('Error deleting bill:', error);
         alert('Error deleting bill. Please try again.');
       }
     }
@@ -260,17 +362,38 @@ const BillDates = () => {
       items: [],
       total: 0,
     }));
-    for (const e of entries) {
+    // Combine entries with referenceBills to get _id
+    const allBills = [...entries, ...referenceBills];
+    const uniqueBills = allBills.reduce((acc, bill) => {
+      const key = bill._id || `${bill.provider}-${bill.billName}-${bill.dueDate}`;
+      if (!acc[key]) {
+        acc[key] = bill;
+      }
+      return acc;
+    }, {});
+    
+    for (const e of Object.values(uniqueBills)) {
       if (!e.dueDate) continue;
       const d = new Date(e.dueDate);
       if (d.getFullYear() !== selectedYear) continue;
       const bucket = byMonth[d.getMonth()];
       bucket.items.push({
+        _id: e._id,
+        id: e._id, // Add id as backup
         day: d.getDate(),
-        provider: e.billName || e.provider || e.billType,
+        provider: e.provider,
+        billName: e.billName || e.provider || e.billType,
         billType: e.billType,
         cycle: e.cycle,
         amount: Number(e.amount) || 0,
+        accountNumber: e.accountNumber,
+        dueDate: e.dueDate,
+        autoDebit: e.autoDebit,
+        status: e.status,
+        startDate: e.startDate,
+        paymentMethod: e.paymentMethod,
+        reminderDays: e.reminderDays,
+        notes: e.notes,
       });
       bucket.total += Number(e.amount) || 0;
     }
@@ -278,7 +401,7 @@ const BillDates = () => {
       m.items.sort((a, b) => a.day - b.day);
     }
     return byMonth;
-  }, [entries, selectedYear]);
+  }, [entries, referenceBills, selectedYear]);
 
   const upcomingLocal = useMemo(() => {
     const horizon = 60; // days
@@ -371,19 +494,26 @@ const BillDates = () => {
 
       {showForm && (
         <div className="investment-form-card">
-          <h2>Add Bill</h2>
+          <h2>{editingBill ? 'Edit Bill' : 'Add Bill'}</h2>
           <form className="investment-form" onSubmit={async (e) => {
             e.preventDefault();
             try {
               setSaving(true);
-              await investmentAPI.create(toPayload(inputs));
+              // If editing (editingBill has _id), update; otherwise create
+              if (editingBill && editingBill._id) {
+                await investmentAPI.update(editingBill._id, toPayload(inputs));
+              } else {
+                await investmentAPI.create(toPayload(inputs));
+              }
               // Save current bill data for this bill type
               setLastBillData(prev => ({
                 ...prev,
                 [inputs.billType]: { ...inputs }
               }));
               await fetchEntries();
+              await fetchReferenceBills();
               setInputs({ billType: 'Electricity', billName: '', provider: '', accountNumber: '', cycle: 'monthly', amount: 1000, dueDate: '', autoDebit: false, paymentMethod: 'UPI', status: 'pending', reminderDays: 3, notes: '', startDate: new Date().toISOString().slice(0, 10), additional1: '', additional2: '' });
+              setEditingBill(null);
               setShowForm(false);
             } catch (error) {
               alert(error.response?.data?.message || 'Error saving bill');
@@ -676,7 +806,22 @@ const BillDates = () => {
             </div>
 
             <div className="form-actions">
-              <button className="btn-success" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+              <button className="btn-success" type="submit" disabled={saving}>
+                {saving ? 'Saving...' : (editingBill ? 'Update' : 'Save')}
+              </button>
+              {editingBill && (
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => {
+                    setEditingBill(null);
+                    setInputs({ billType: 'Electricity', billName: '', provider: '', accountNumber: '', cycle: 'monthly', amount: 1000, dueDate: '', autoDebit: false, paymentMethod: 'UPI', status: 'pending', reminderDays: 3, notes: '', startDate: new Date().toISOString().slice(0, 10), additional1: '', additional2: '' });
+                    setShowForm(false);
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
             </div>
           </form>
         </div>
@@ -848,11 +993,76 @@ const BillDates = () => {
                   padding: '8px',
                   minHeight: '100px',
                   fontSize: '12px',
-                  background: day === 27 || day === 28 ? '#dbeafe' : '#fff'
+                  background: day === 27 || day === 28 ? '#dbeafe' : '#fff',
+                  position: 'relative'
                 }}>
                   {bills.map((bill, idx) => (
-                    <div key={idx} style={{ marginBottom: '4px', lineHeight: '1.4' }}>
+                    <div
+                      key={idx}
+                      style={{
+                        marginBottom: '4px',
+                        lineHeight: '1.4',
+                        cursor: 'pointer',
+                        padding: '2px 4px',
+                        backgroundColor: '#f0f9ff',
+                        borderRadius: '4px',
+                        border: '1px solid #0ea5e9',
+                        position: 'relative'
+                      }}
+                      onClick={() => handleBillClick({ ...bill, day })}
+                    >
                       {bill.billName || bill.provider}
+                      {showBillOptions && (showBillOptions.billName || showBillOptions.provider) === (bill.billName || bill.provider) && showBillOptions.day === day && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: '0',
+                          backgroundColor: 'white',
+                          border: '1px solid #ccc',
+                          borderRadius: '4px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                          zIndex: 1000,
+                          minWidth: '120px'
+                        }}>
+                          <button
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              fontSize: '12px'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditBill(bill);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              fontSize: '12px',
+                              color: '#ef4444'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteBill(bill);
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -881,11 +1091,76 @@ const BillDates = () => {
                   padding: '8px',
                   minHeight: '100px',
                   fontSize: '12px',
-                  background: day === 27 || day === 28 ? '#dbeafe' : '#fff'
+                  background: day === 27 || day === 28 ? '#dbeafe' : '#fff',
+                  position: 'relative'
                 }}>
                   {bills.map((bill, idx) => (
-                    <div key={idx} style={{ marginBottom: '4px', lineHeight: '1.4' }}>
+                    <div
+                      key={idx}
+                      style={{
+                        marginBottom: '4px',
+                        lineHeight: '1.4',
+                        cursor: 'pointer',
+                        padding: '2px 4px',
+                        backgroundColor: '#f0f9ff',
+                        borderRadius: '4px',
+                        border: '1px solid #0ea5e9',
+                        position: 'relative'
+                      }}
+                      onClick={() => handleBillClick({ ...bill, day })}
+                    >
                       {bill.billName || bill.provider}
+                      {showBillOptions && (showBillOptions.billName || showBillOptions.provider) === (bill.billName || bill.provider) && showBillOptions.day === day && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: '0',
+                          backgroundColor: 'white',
+                          border: '1px solid #ccc',
+                          borderRadius: '4px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                          zIndex: 1000,
+                          minWidth: '120px'
+                        }}>
+                          <button
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              fontSize: '12px'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditBill(bill);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              fontSize: '12px',
+                              color: '#ef4444'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteBill(bill);
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

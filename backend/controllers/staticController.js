@@ -354,7 +354,11 @@ const MobileEmailDetailsSchema = new mongoose.Schema({
   passkeysAndSecurityKey: String,
   password: String,
   purpose: String,
-  notes: String
+  notes: String,
+  ownerName: String,
+  relationship: String,
+  isPrimary: Boolean,
+  twoFA: Boolean
 }, { timestamps: true });
 
 const PersonalRecordsSchema = new mongoose.Schema({
@@ -699,7 +703,27 @@ const FamilyProfileSchema = new mongoose.Schema({
     aadhaarNumber: String,
     panNumber: String,
     passportNumber: String,
-    drivingLicense: String
+    drivingLicense: String,
+    additionalInfo: {
+      nickname: String,
+      nationality: { type: String, default: 'Indian' },
+      religion: String,
+      caste: String,
+      motherTongue: String,
+      languagesKnown: [String],
+      voterID: String,
+      residentialAddress: String,
+      emergencyContactName: String,
+      emergencyContactRelation: String,
+      emergencyContactMobile: String,
+      emergencyContactAddress: String,
+      alternatePhone: String,
+      workAddress: String,
+      socialMediaProfiles: String,
+      insuranceDetails: String,
+      bankAccountInfo: String,
+      specialNotes: String
+    }
   }],
   // Professional Information
   occupation: String,
@@ -756,7 +780,27 @@ const FamilyProfileSchema = new mongoose.Schema({
     aadhaarNumber: String,
     panNumber: String,
     passportNumber: String,
-    drivingLicense: String
+    drivingLicense: String,
+    additionalInfo: {
+      nickname: String,
+      nationality: { type: String, default: 'Indian' },
+      religion: String,
+      caste: String,
+      motherTongue: String,
+      languagesKnown: [String],
+      voterID: String,
+      residentialAddress: String,
+      emergencyContactName: String,
+      emergencyContactRelation: String,
+      emergencyContactMobile: String,
+      emergencyContactAddress: String,
+      alternatePhone: String,
+      workAddress: String,
+      socialMediaProfiles: String,
+      insuranceDetails: String,
+      bankAccountInfo: String,
+      specialNotes: String
+    }
   }],
   primaryPhone: String,
   emergencyName: String,

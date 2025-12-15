@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiUsers, FiEdit2, FiSave, FiX, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { staticAPI } from '../utils/staticAPI';
+import { syncMobileEmailFromFamilyProfile } from '../utils/mobileEmailSyncUtil';
 import './family/static/Static.css';
 import '../components/Modal.css';
 
@@ -46,6 +47,7 @@ const FamilyProfile = () => {
       motherTongue: '',
       languagesKnown: [],
       voterID: '',
+      residentialAddress: '',
       emergencyContactName: '',
       emergencyContactRelation: '',
       emergencyContactMobile: '',
@@ -111,6 +113,7 @@ const FamilyProfile = () => {
         motherTongue: '',
         languagesKnown: [],
         voterID: '',
+        residentialAddress: '',
         emergencyContactName: '',
         emergencyContactRelation: '',
         emergencyContactMobile: '',
@@ -138,6 +141,7 @@ const FamilyProfile = () => {
         motherTongue: '',
         languagesKnown: [],
         voterID: '',
+        residentialAddress: '',
         emergencyContactName: '',
         emergencyContactRelation: '',
         emergencyContactMobile: '',
@@ -205,6 +209,9 @@ const FamilyProfile = () => {
       } else {
         await staticAPI.createFamilyProfile(profileData);
       }
+
+      // Auto-sync mobile and email to Mobile & Email Details
+      await syncMobileEmailFromFamilyProfile(memberFormData);
 
       setShowMemberForm(false);
       setEditingMemberIndex(null);
@@ -663,6 +670,30 @@ const FamilyProfile = () => {
                   </div>
 
                   <div className="form-section">
+                    <h4>Address Information</h4>
+                    <div className="form-grid">
+                      <div className="form-group full-width">
+                        <label>Residential Address</label>
+                        <textarea
+                          value={memberFormData.additionalInfo?.residentialAddress || ''}
+                          onChange={(e) => handleAdditionalInfoChange('residentialAddress', e.target.value)}
+                          placeholder="Home/Residential Address"
+                          rows="3"
+                        />
+                      </div>
+                      <div className="form-group full-width">
+                        <label>Work Address</label>
+                        <textarea
+                          value={memberFormData.additionalInfo?.workAddress || ''}
+                          onChange={(e) => handleAdditionalInfoChange('workAddress', e.target.value)}
+                          placeholder="Office Address"
+                          rows="2"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-section">
                     <h4>Emergency Contact & Other Details</h4>
                     <div className="form-grid">
                       <div className="form-group">
@@ -707,15 +738,6 @@ const FamilyProfile = () => {
                           value={memberFormData.additionalInfo?.emergencyContactAddress || ''}
                           onChange={(e) => handleAdditionalInfoChange('emergencyContactAddress', e.target.value)}
                           placeholder="Full Address"
-                          rows="2"
-                        />
-                      </div>
-                      <div className="form-group full-width">
-                        <label>Work Address</label>
-                        <textarea
-                          value={memberFormData.additionalInfo?.workAddress || ''}
-                          onChange={(e) => handleAdditionalInfoChange('workAddress', e.target.value)}
-                          placeholder="Office Address"
                           rows="2"
                         />
                       </div>
