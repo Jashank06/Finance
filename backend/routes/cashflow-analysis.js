@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const auth = require('../middleware/auth');
 
 // Import models
 const Bank = require('../models/Bank');
@@ -10,33 +11,31 @@ const BankTransaction = require('../models/BankTransaction');
 const ScheduledExpense = mongoose.model('ScheduledExpense');
 
 // GET cash flow analysis for all banks
-router.get('/analysis', async (req, res) => {
+router.get('/analysis', auth, async (req, res) => {
   try {
-    const { userId } = req.query;
-
     // Fetch all banks
-    const banks = await Bank.find(userId ? { userId } : {});
-    
+    const banks = await Bank.find({ userId: req.user.id });
+
     // Fetch all active scheduled expenses
-    const scheduledExpenses = await ScheduledExpense.find({ isActive: true });
-    
+    const scheduledExpenses = await ScheduledExpense.find({ userId: req.user.id, isActive: true });
+
     // Fetch all bank transactions
-    const bankTransactions = await BankTransaction.find();
+    const bankTransactions = await BankTransaction.find({ user: req.user.id });
 
     // Calculate cash flow for each bank
     const cashFlowData = banks.map(bank => {
       // Calculate actual balance including transactions
       let actualBalance = parseFloat(bank.balance || 0);
-      
+
       // Get transactions for this bank
       const accountTransactions = bankTransactions.filter(transaction => {
-        const transactionAccountId = typeof transaction.accountId === 'object' 
+        const transactionAccountId = typeof transaction.accountId === 'object'
           ? transaction.accountId._id?.toString() || transaction.accountId.toString()
           : transaction.accountId?.toString();
-        
+
         return transactionAccountId === bank._id.toString();
       });
-      
+
       // Apply transaction adjustments
       const netTransactionAmount = accountTransactions.reduce((total, transaction) => {
         const amount = parseFloat(transaction.amount || 0);
@@ -47,7 +46,7 @@ router.get('/analysis', async (req, res) => {
         }
         return total;
       }, 0);
-      
+
       actualBalance += netTransactionAmount;
 
       // Calculate total monthly expenses for this bank
@@ -58,7 +57,7 @@ router.get('/analysis', async (req, res) => {
       // Calculate total monthly expense amount
       const monthlyExpenses = bankExpenses.reduce((total, expense) => {
         let monthlyAmount = parseFloat(expense.amount || 0);
-        
+
         // Convert to monthly equivalent
         switch (expense.frequency) {
           case 'monthly':
@@ -73,8 +72,8 @@ router.get('/analysis', async (req, res) => {
             // Check if due this month
             const dueDate = new Date(expense.dueDate);
             const now = new Date();
-            if (dueDate.getMonth() === now.getMonth() && 
-                dueDate.getFullYear() === now.getFullYear()) {
+            if (dueDate.getMonth() === now.getMonth() &&
+              dueDate.getFullYear() === now.getFullYear()) {
               monthlyAmount = monthlyAmount;
             } else {
               monthlyAmount = 0;
@@ -83,14 +82,14 @@ router.get('/analysis', async (req, res) => {
           default:
             break;
         }
-        
+
         return total + monthlyAmount;
       }, 0);
 
       // Calculate surplus/deficit
       const cashFlow = actualBalance - monthlyExpenses;
       const status = cashFlow >= 0 ? 'surplus' : 'deficit';
-      
+
       // Determine health status
       let healthStatus = 'healthy';
       if (cashFlow < 0) {
@@ -144,10 +143,10 @@ router.get('/analysis', async (req, res) => {
 
   } catch (error) {
     console.error('Error analyzing cash flow:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: 'Error analyzing cash flow', 
-      error: error.message 
+      message: 'Error analyzing cash flow',
+      error: error.message
     });
   }
 });
@@ -155,12 +154,12 @@ router.get('/analysis', async (req, res) => {
 // Helper function to generate transfer suggestions
 function generateTransferSuggestions(cashFlowData) {
   const suggestions = [];
-  
+
   // Get banks with deficit and surplus
   const deficitBanks = cashFlowData
     .filter(b => b.status === 'deficit')
     .sort((a, b) => a.cashFlow - b.cashFlow); // Most critical first
-  
+
   const surplusBanks = cashFlowData
     .filter(b => b.status === 'surplus' && b.cashFlow > b.monthlyExpenses * 0.5) // Has significant surplus
     .sort((a, b) => b.cashFlow - a.cashFlow); // Most surplus first
@@ -168,7 +167,7 @@ function generateTransferSuggestions(cashFlowData) {
   // Match deficit banks with surplus banks
   for (const deficitBank of deficitBanks) {
     const amountNeeded = Math.abs(deficitBank.cashFlow);
-    
+
     for (const surplusBank of surplusBanks) {
       if (surplusBank.cashFlow > 0) {
         // Calculate safe transfer amount (don't drain surplus bank completely)
