@@ -3,7 +3,7 @@ import { FiUsers, FiEdit2, FiSave, FiX, FiPlus, FiTrash2 } from 'react-icons/fi'
 import { staticAPI } from '../../../utils/staticAPI';
 import './Static.css';
 import '../../../components/Modal.css';
-import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
+import { syncMobileEmailFromFamilyProfile } from '../../../utils/mobileEmailSyncUtil';
 
 const FamilyProfile = () => {
   const [loading, setLoading] = useState(false);
@@ -115,6 +115,12 @@ const FamilyProfile = () => {
         await staticAPI.createFamilyProfile(profileData);
       }
 
+      // Sync to Mobile & Email Details
+      const syncResult = await syncMobileEmailFromFamilyProfile(memberFormData);
+      if (syncResult.count > 0) {
+        alert(`Synced ${syncResult.count} contact(s) to Mobile & Email Details`);
+      }
+
       setShowMemberForm(false);
       setEditingMemberIndex(null);
     } catch (error) {
@@ -149,6 +155,8 @@ const FamilyProfile = () => {
     setShowMemberForm(false);
     setEditingMemberIndex(null);
   };
+
+
 
   if (loading) {
     return (

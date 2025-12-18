@@ -27,6 +27,19 @@ const cashTransactionSchema = new mongoose.Schema({
     enum: ['traveling', 'school-fees', 'grocery-household', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'inventory', 'other'],
     default: 'other',
   },
+  // Three-level category structure (new)
+  broaderCategory: {
+    type: String
+  },
+  mainCategory: {
+    type: String
+  },
+  subCategory: {
+    type: String
+  },
+  customSubCategory: {
+    type: String
+  },
   description: {
     type: String,
     required: true,
@@ -67,7 +80,7 @@ const cashTransactionSchema = new mongoose.Schema({
   },
 });
 
-cashTransactionSchema.pre('save', function() {
+cashTransactionSchema.pre('save', function () {
   this.updatedAt = Date.now();
 });
 

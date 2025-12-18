@@ -33,6 +33,19 @@ const transactionSchema = new mongoose.Schema({
     type: String,
     enum: ['traveling', 'school-fees', 'grocery-household', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'inventory', 'other']
   },
+  // Three-level category structure (new)
+  broaderCategory: {
+    type: String
+  },
+  mainCategory: {
+    type: String
+  },
+  subCategory: {
+    type: String
+  },
+  customSubCategory: {
+    type: String
+  },
   modeOfTransaction: {
     type: String,
     enum: ['credit-card', 'debit-card', 'upi', 'neft', 'rtgs', 'imps', 'cheque', 'dd', 'cash', 'other'],

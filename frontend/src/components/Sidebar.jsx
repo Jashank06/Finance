@@ -24,15 +24,15 @@ const Sidebar = () => {
       <div className="sidebar-header">
         <h2>Finance App</h2>
       </div>
-      
+
       <nav className="sidebar-nav">
         <Link to="/dashboard" className="nav-item">Dashboard</Link>
         <Link to="/family-profile" className="nav-item">Family Profile</Link>
         <Link to="/company-profile" className="nav-item">Company Profile</Link>
-        
+
         {/* Family Section */}
         <div className="nav-section">
-          <div 
+          <div
             className={`nav-item nav-header ${familyOpen ? 'active' : ''}`}
             onClick={() => setFamilyOpen(!familyOpen)}
           >
@@ -41,7 +41,7 @@ const Sidebar = () => {
           {familyOpen && (
             <div className="submenu">
               <div className="nav-subsection">
-                <div 
+                <div
                   className={`submenu-item nav-header ${dailyOpen ? 'active' : ''}`}
                   onClick={() => setDailyOpen(!dailyOpen)}
                 >
@@ -54,12 +54,13 @@ const Sidebar = () => {
                     <Link to="/family/daily/bill-paying" className="nested-submenu-item">Bill Paying Checklist</Link>
                     <Link to="/family/daily/manage-finance" className="nested-submenu-item">Manage Finance</Link>
                     <Link to="/family/daily/income-expenses" className="nested-submenu-item">Income & Expenses</Link>
-                    <Link to="/family/daily/telephone-conversation" className="nested-submenu-item">Telephone Conversation</Link>
+                    <Link to="/family/daily/cheque-register" className="nested-submenu-item">Cheque Register</Link>
+                    <Link to="/family/daily/daily-cash-register" className="nested-submenu-item">Daily Cash Register</Link>
                   </div>
                 )}
               </div>
               <div className="nav-subsection">
-                <div 
+                <div
                   className={`submenu-item nav-header ${monitoringOpen ? 'active' : ''}`}
                   onClick={() => setMonitoringOpen(!monitoringOpen)}
                 >
@@ -67,7 +68,8 @@ const Sidebar = () => {
                 </div>
                 {monitoringOpen && (
                   <div className="nested-submenu">
-                    <Link to="/family/monitoring/budget" className="nested-submenu-item">Budget</Link>
+                    <Link to="/family/monitoring/milestones" className="nested-submenu-item">Milestone & Task Timeline</Link>
+                    <Link to="/family/monitoring/targets-for-life" className="nested-submenu-item">Targets for Life</Link>
                     <Link to="/family/monitoring/bill-dates" className="nested-submenu-item">Bill Dates</Link>
                     <Link to="/family/monitoring/multiple-calendars" className="nested-submenu-item">Multiple Calendars</Link>
                     <Link to="/family/monitoring/reminders-notifications" className="nested-submenu-item">Reminders, Notifications</Link>
@@ -77,7 +79,7 @@ const Sidebar = () => {
                 )}
               </div>
               <div className="nav-subsection">
-                <div 
+                <div
                   className={`submenu-item nav-header ${investmentsOpen ? 'active' : ''}`}
                   onClick={() => setInvestmentsOpen(!investmentsOpen)}
                 >
@@ -88,7 +90,7 @@ const Sidebar = () => {
                     <Link to="/family/investments/nps-ppf" className="nested-submenu-item">NPS / Post Office / PPF</Link>
                     <Link to="/family/investments/gold-sgb" className="nested-submenu-item">Gold / SGB / Silver / Bonds</Link>
                     <Link to="/family/investments/bank-schemes" className="nested-submenu-item">Bank Schemes - RD, FD</Link>
-                    <Link to="/family/investments/mf-insurance-shares" className="nested-submenu-item">MF, Insurance, Shares</Link>
+                    {/* <Link to="/family/investments/mf-insurance-shares" className="nested-submenu-item">MF, Insurance, Shares</Link> */}
                     <Link to="/family/investments/valuation-allocation" className="nested-submenu-item">Investment Valuation & Sectoral Allocation</Link>
                     <Link to="/family/investments/project-income-expense" className="nested-submenu-item">Project Wise Income / Expense</Link>
                     <Link to="/family/investments/profile" className="nested-submenu-item">Online Access</Link>
@@ -98,7 +100,7 @@ const Sidebar = () => {
                 )}
               </div>
               <div className="nav-subsection">
-                <div 
+                <div
                   className={`submenu-item nav-header ${staticOpen ? 'active' : ''}`}
                   onClick={() => setStaticOpen(!staticOpen)}
                 >
@@ -107,7 +109,7 @@ const Sidebar = () => {
                 {staticOpen && (
                   <div className="nested-submenu">
                     <Link to="/family/static/basic-details" className="nested-submenu-item">Basic Details</Link>
-                    <Link to="/family/static/company-records" className="nested-submenu-item">Company Records</Link>
+                    {/* <Link to="/family/static/company-records" className="nested-submenu-item">Company Records</Link> */}
                     <Link to="/family/static/customer-support" className="nested-submenu-item">Customer Support</Link>
                     <Link to="/family/static/land-records" className="nested-submenu-item">Land Records</Link>
                     <Link to="/family/static/membership-list" className="nested-submenu-item">Membership List</Link>
@@ -115,22 +117,23 @@ const Sidebar = () => {
                     <Link to="/family/static/mobile-email-details" className="nested-submenu-item">Mobile & Email Details</Link>
                     <Link to="/family/static/personal-records" className="nested-submenu-item">Personal Records</Link>
                     <Link to="/family/static/digital-assets" className="nested-submenu-item">Digital Assets</Link>
-                    <Link to="/family/static/family-profile" className="nested-submenu-item">Family Profile</Link>
+                    {/* <Link to="/family/static/family-profile" className="nested-submenu-item">Family Profile</Link> */}
                     <Link to="/family/static/inventory-record" className="nested-submenu-item">Inventory Record</Link>
-                    <Link to="/family/static/contact-management" className="nested-submenu-item">Contact Management</Link>
                   </div>
                 )}
               </div>
               <Link to="/family/analytics" className="submenu-item">Analytics</Link>
               <Link to="/family/tasks" className="submenu-item">Tasks to Do</Link>
+              <Link to="/family/daily/telephone-conversation" className="submenu-item">Telephone Conversation</Link>
+              {/* <Link to="/family/static/contact-management" className="submenu-item">Contact Management</Link> */}
               <Link to="/family/files" className="submenu-item">Files & Folders</Link>
             </div>
           )}
         </div>
-        
+
         {/* Business Section */}
         <div className="nav-section">
-          <div 
+          <div
             className={`nav-item nav-header ${businessOpen ? 'active' : ''}`}
             onClick={() => setBusinessOpen(!businessOpen)}
           >
@@ -140,7 +143,7 @@ const Sidebar = () => {
             <div className="submenu">
               <Link to="/business/investments" className="submenu-item">Investments</Link>
               <div className="nav-subsection">
-                <div 
+                <div
                   className={`submenu-item nav-header ${businessDailyOpen ? 'active' : ''}`}
                   onClick={() => setBusinessDailyOpen(!businessDailyOpen)}
                 >
@@ -167,7 +170,7 @@ const Sidebar = () => {
             </div>
           )}
         </div>
-        
+
         <Link to="/libraries" className="nav-item">Libraries</Link>
         <Link to="/subscription" className="nav-item">Subscription Plan</Link>
         <Link to="/feedback" className="nav-item">Feedback</Link>

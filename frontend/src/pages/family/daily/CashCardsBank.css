@@ -323,7 +323,8 @@
   gap: 8px;
 }
 
-.edit-btn, .delete-btn {
+.edit-btn,
+.delete-btn {
   padding: 4px 8px;
   border: none;
   border-radius: 4px;
@@ -455,13 +456,18 @@
   right: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
   animation: shimmer 3s infinite;
 }
 
 @keyframes shimmer {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .card-item:hover {
@@ -721,8 +727,15 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Month Selector Styles */
@@ -733,6 +746,8 @@
   margin-bottom: 24px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   animation: slideInDown 0.5s ease-out;
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes slideInDown {
@@ -740,6 +755,7 @@
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -819,7 +835,7 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
   animation: rotate 20s linear infinite;
 }
 
@@ -828,6 +844,7 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -835,8 +852,13 @@
 }
 
 @keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .chart-header {
@@ -861,6 +883,7 @@
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -892,17 +915,32 @@
   max-width: 220px;
 }
 
-.summary-card:nth-child(1) { animation-delay: 0.1s; }
-.summary-card:nth-child(2) { animation-delay: 0.2s; }
-.summary-card:nth-child(3) { animation-delay: 0.3s; }
-.summary-card:nth-child(4) { animation-delay: 0.4s; }
-.summary-card:nth-child(5) { animation-delay: 0.5s; }
+.summary-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.summary-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.summary-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.summary-card:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+.summary-card:nth-child(5) {
+  animation-delay: 0.5s;
+}
 
 @keyframes scaleIn {
   from {
     opacity: 0;
     transform: scale(0.8) translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -916,7 +954,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -981,6 +1019,7 @@
     opacity: 0;
     transform: scale(0.5);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -1007,16 +1046,28 @@
   animation: fadeIn 0.6s ease-out backwards;
 }
 
-.chart-container:nth-child(1) { animation-delay: 0.6s; }
-.chart-container:nth-child(2) { animation-delay: 0.7s; }
-.chart-container:nth-child(3) { animation-delay: 0.8s; }
-.chart-container:nth-child(4) { animation-delay: 0.9s; }
+.chart-container:nth-child(1) {
+  animation-delay: 0.6s;
+}
+
+.chart-container:nth-child(2) {
+  animation-delay: 0.7s;
+}
+
+.chart-container:nth-child(3) {
+  animation-delay: 0.8s;
+}
+
+.chart-container:nth-child(4) {
+  animation-delay: 0.9s;
+}
 
 @keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1099,7 +1150,7 @@
   .form-grid {
     grid-template-columns: repeat(3, 1fr);
   }
-  
+
   .modal-content {
     max-width: 1400px;
   }
@@ -1109,7 +1160,7 @@
   .form-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .modal-content {
     max-width: 1000px;
   }
@@ -1119,64 +1170,64 @@
   .cash-cards-bank {
     padding: 10px;
   }
-  
+
   .tabs {
     flex-direction: column;
     gap: 5px;
   }
-  
+
   .tab {
     text-align: left;
     border-bottom: 1px solid #e0e0e0;
     border-radius: 0;
   }
-  
+
   .tab.active {
     border-bottom-color: #007bff;
   }
-  
+
   .section-header {
     flex-direction: column;
     gap: 15px;
     align-items: stretch;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-content {
     padding: 20px;
     width: 95%;
   }
-  
+
   .records-table {
     overflow-x: auto;
   }
-  
+
   .records-table table {
     min-width: 600px;
   }
-  
+
   .table-actions {
     flex-direction: column;
     gap: 4px;
   }
-  
+
   .record-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
-  
+
   .record-actions {
     flex-direction: column;
   }
-  
+
   .charts-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .summary-cards {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1286,7 +1337,7 @@
   right: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
   animation: shimmer 4s infinite;
 }
 
@@ -1297,7 +1348,7 @@
   left: 0;
   right: 0;
   height: 60px;
-  background: linear-gradient(to top, rgba(255,255,255,0.1), transparent);
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.1), transparent);
   border-radius: 0 0 16px 16px;
 }
 
@@ -1308,11 +1359,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
-    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 2px, transparent 2px),
-    radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 2px, transparent 2px),
-    radial-gradient(circle at 40% 60%, rgba(255,255,255,0.05) 1px, transparent 1px),
-    radial-gradient(circle at 60% 40%, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 2px, transparent 2px),
+    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 2px, transparent 2px),
+    radial-gradient(circle at 40% 60%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 60% 40%, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 50px 50px, 50px 50px, 30px 30px, 30px 30px;
   opacity: 0.3;
   pointer-events: none;

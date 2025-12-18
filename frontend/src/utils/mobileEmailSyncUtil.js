@@ -10,7 +10,7 @@ import { staticAPI } from './staticAPI';
 export const syncMobileEmailFromFamilyProfile = async (memberData) => {
   try {
     const entries = extractMobileEmailFromMember(memberData);
-    
+
     if (entries.length === 0) {
       return { success: true, message: 'No mobile/email to sync', count: 0 };
     }
@@ -20,7 +20,7 @@ export const syncMobileEmailFromFamilyProfile = async (memberData) => {
       try {
         // Check if entry already exists
         const existing = await findExistingEntry(entry);
-        
+
         if (existing) {
           // Update existing entry
           await staticAPI.updateMobileEmailDetails(existing._id, entry);
@@ -59,87 +59,64 @@ export const syncMobileEmailFromFamilyProfile = async (memberData) => {
 const extractMobileEmailFromMember = (memberData) => {
   const entries = [];
 
-  // Check if member has any contact information
-  const hasMobile = memberData.mobile && memberData.mobile.trim() !== '';
-  const hasEmail = memberData.email && memberData.email.trim() !== '';
-  const hasWorkPhone = memberData.workPhone && memberData.workPhone.trim() !== '';
-  const hasAlternatePhone = memberData.additionalInfo?.alternatePhone && memberData.additionalInfo.alternatePhone.trim() !== '';
-
-  // If member has either mobile or email, create a combined entry
-  if (hasMobile || hasEmail) {
-    const entry = {
-      type: hasMobile ? 'Mobile' : 'Email',
-      name: memberData.name || 'Family Member',
-      relation: memberData.relation || '',
-      mobile: memberData.mobile || '',
-      carrier: '',
-      simType: 'Prepaid',
-      planName: '',
-      planAmount: '',
-      address: memberData.additionalInfo?.residentialAddress || '',
-      alternateNumber: memberData.additionalInfo?.alternatePhone || memberData.workPhone || '',
-      customerCareNo: '',
-      customerCareEmail: '',
-      billingCycle: '',
-      accountNo: '',
-      email: memberData.email || '',
-      provider: hasEmail ? 'Gmail' : '',
-      googleAccountEmail: memberData.email || '',
-      recoveryEmail: '',
-      recoveryNumber: memberData.mobile || '',
-      alternateEmails: '',
-      passkeysAndSecurityKey: '',
-      password: '',
-      purpose: 'Personal',
-      twoFA: false,
-      notes: `Auto-synced from Family Profile - ${memberData.relation || 'Member'}`,
-      ownerName: memberData.name || '',
-      relationship: memberData.relation || '',
-      isPrimary: true
-    };
-    
-    console.log('📧 Syncing mobile/email entry:', {
-      name: entry.name,
-      mobile: entry.mobile,
-      email: entry.email,
-      hasMobile,
-      hasEmail
-    });
-    
-    entries.push(entry);
-  }
-
-  // Create separate entry for work phone if it exists and is different from primary mobile
-  if (hasWorkPhone && memberData.workPhone !== memberData.mobile) {
+  // 1. Mobile Entry
+  if (memberData.mobile && memberData.mobile.trim() !== '') {
     entries.push({
       type: 'Mobile',
-      name: memberData.name || 'Family Member',
+      name: `${memberData.name || 'Member'} - Personal Mobile`,
+      relation: memberData.relation || '',
+      mobile: memberData.mobile,
+      carrier: '', // Can be filled if available
+      simType: 'Prepaid',
+      address: memberData.additionalInfo?.residentialAddress || '',
+      email: '', // Separate entry for email
+      purpose: 'Personal',
+      isPrimary: true,
+      ownerName: memberData.name || '',
+      relationship: memberData.relation || '',
+      notes: `Auto-synced from Family Profile - Personal Mobile`,
+      twoFA: false
+    });
+  }
+
+  // 2. Email Entry
+  if (memberData.email && memberData.email.trim() !== '') {
+    entries.push({
+      type: 'Email',
+      name: `${memberData.name || 'Member'} - Personal Email`,
+      relation: memberData.relation || '',
+      mobile: '',
+      email: memberData.email,
+      provider: 'Gmail', // Default or extract domain
+      googleAccountEmail: memberData.email,
+      purpose: 'Personal',
+      isPrimary: true,
+      ownerName: memberData.name || '',
+      relationship: memberData.relation || '',
+      notes: `Auto-synced from Family Profile - Personal Email`,
+      twoFA: false
+    });
+  }
+
+  // 3. Work Phone Entry
+  if (memberData.workPhone && memberData.workPhone.trim() !== '') {
+    // Check if work phone is different from mobile, OR if user wants separate entry even if same
+    // Requirement implies separate entry for Work Phone
+    entries.push({
+      type: 'Mobile',
+      name: `${memberData.name || 'Member'} - Work Phone`,
       relation: memberData.relation || '',
       mobile: memberData.workPhone,
       carrier: '',
       simType: 'Postpaid',
-      planName: '',
-      planAmount: '',
       address: memberData.additionalInfo?.workAddress || '',
-      alternateNumber: memberData.mobile || '',
-      customerCareNo: '',
-      customerCareEmail: '',
-      billingCycle: '',
-      accountNo: '',
-      email: '',
-      provider: '',
-      googleAccountEmail: '',
-      recoveryEmail: '',
-      recoveryNumber: '',
-      alternateEmails: '',
-      passkeysAndSecurityKey: '',
-      password: '',
-      purpose: 'Work Phone',
-      twoFA: false,
-      notes: `Auto-synced from Family Profile - Work Phone - ${memberData.relation || 'Member'}`,
+      email: memberData.workEmail || '',
+      purpose: 'Work',
+      isPrimary: false,
       ownerName: memberData.name || '',
       relationship: memberData.relation || '',
-      isPrimary: false
+      notes: `Auto-synced from Family Profile - Work Phone`,
+      twoFA: false
     });
   }
 
@@ -154,26 +131,35 @@ const findExistingEntry = async (entry) => {
     const response = await staticAPI.getMobileEmailDetails();
     const entries = response.data || [];
 
-    // Try to find by name and relation to update the same person's entry
+    // Find if a record exists with SAME TYPE and SAME MOBILE/EMAIL for the SAME OWNER
+    // This allows one person to have multiple distinct entries (Mobile, Email, Work Phone)
     const existing = entries.find(e => {
-      const nameMatch = e.name && entry.name && 
-                       e.name.toLowerCase().trim() === entry.name.toLowerCase().trim();
-      const relationMatch = e.relation && entry.relation && 
-                           e.relation.toLowerCase().trim() === entry.relation.toLowerCase().trim();
-      
-      // If both name and relation match, it's the same person
-      if (nameMatch && relationMatch) {
-        return true;
+      // Must match owner name (or relation implies owner in some contexts, but strict ownerName check is better)
+      const ownerMatch = e.ownerName && entry.ownerName &&
+        e.ownerName.toLowerCase().trim() === entry.ownerName.toLowerCase().trim();
+
+      if (!ownerMatch) return false;
+
+      // For Mobile type entries
+      if (entry.type === 'Mobile' && e.type === 'Mobile') {
+        const mobileMatch = entry.mobile && e.mobile &&
+          e.mobile.replace(/\s/g, '') === entry.mobile.replace(/\s/g, '');
+        // Also distinguish between "Personal Mobile" and "Work Phone" if numbers are same (rare but possible) or different.
+        // We rely on 'notes' or 'name' to distinguish if numbers are remarkably same? 
+        // Actually, if numbers are same, we might not want duplicates unless purpose differs.
+        // But user ASKED for separate entries. 
+        // Let's use 'purpose' or 'name' as secondary differentiator if needed.
+        const purposeMatch = (e.purpose || '').toLowerCase() === (entry.purpose || '').toLowerCase();
+
+        return mobileMatch && purposeMatch;
       }
-      
-      // Also check by mobile or email as fallback
-      if (entry.mobile && e.mobile && e.mobile.replace(/\s/g, '') === entry.mobile.replace(/\s/g, '')) {
-        return true;
+
+      // For Email type entries
+      if (entry.type === 'Email' && e.type === 'Email') {
+        return entry.email && e.email &&
+          e.email.toLowerCase().trim() === entry.email.toLowerCase().trim();
       }
-      if (entry.email && e.email && e.email.toLowerCase().trim() === entry.email.toLowerCase().trim()) {
-        return true;
-      }
-      
+
       return false;
     });
 

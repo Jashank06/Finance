@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
 import api from '../../../utils/api';
+import { staticAPI } from '../../../utils/staticAPI';
 import FinancialOverviewChart from '../../../components/FinancialOverviewChart';
 import CashMemberManagement from '../../../components/CashMemberManagement';
 import TransactionTable from '../../../components/TransactionTable';
 import './CashCardsBank.css';
 import { syncInventoryFromTransaction } from '../../../utils/inventorySyncUtil';
+import { getBroaderCategories, getMainCategories, getSubCategories } from '../../../utils/categoryData';
 
 const ModalPortal = ({ children }) => {
   if (typeof document === 'undefined') return null;
@@ -28,6 +30,10 @@ const CashCardsBank = () => {
     amount: '',
     merchant: '',
     category: 'other',
+    broaderCategory: '',
+    mainCategory: '',
+    subCategory: '',
+    customSubCategory: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
     currency: 'INR',
@@ -43,6 +49,7 @@ const CashCardsBank = () => {
   const [loading, setLoading] = useState(true);
   const [showChart, setShowChart] = useState(true);
   const [selectedBankFilter, setSelectedBankFilter] = useState('all');
+  const [familyMembers, setFamilyMembers] = useState([]);
   const [selectedCardFilter, setSelectedCardFilter] = useState('all');
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedBank, setSelectedBank] = useState(null);
@@ -150,7 +157,11 @@ const CashCardsBank = () => {
     type: 'purchase',
     amount: '',
     merchant: '',
-    category: '',
+    category: 'other',
+    broaderCategory: '',
+    mainCategory: '',
+    subCategory: '',
+    customSubCategory: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
     currency: 'INR',
@@ -164,12 +175,13 @@ const CashCardsBank = () => {
 
   const fetchData = async () => {
     try {
-      const [cashRes, cardRes, bankRes, transactionRes, bankTransactionRes] = await Promise.all([
+      const [cashRes, cardRes, bankRes, transactionRes, bankTransactionRes, familyRes] = await Promise.all([
         api.get('/cash'),
         api.get('/cards'),
         api.get('/bank'),
         api.get('/transactions'),
-        api.get('/bank-transactions')
+        api.get('/bank-transactions'),
+        staticAPI.getFamilyProfile()
       ]);
 
       setCashRecords(cashRes.data);
@@ -177,6 +189,12 @@ const CashCardsBank = () => {
       setBankRecords(bankRes.data);
       setCardTransactions(transactionRes.data);
       setBankTransactions(bankTransactionRes.data);
+
+      // Extract family members
+      if (familyRes.data && familyRes.data.length > 0) {
+        setFamilyMembers(familyRes.data[0].members || []);
+      }
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -275,7 +293,11 @@ const CashCardsBank = () => {
       type: 'purchase',
       amount: '',
       merchant: '',
-      category: '',
+      category: 'other',
+      broaderCategory: '',
+      mainCategory: '',
+      subCategory: '',
+      customSubCategory: '',
       description: '',
       date: new Date().toISOString().split('T')[0],
       currency: 'INR',
@@ -291,6 +313,10 @@ const CashCardsBank = () => {
       amount: '',
       merchant: '',
       category: 'other',
+      broaderCategory: '',
+      mainCategory: '',
+      subCategory: '',
+      customSubCategory: '',
       description: '',
       date: new Date().toISOString().split('T')[0],
       currency: 'INR',
@@ -635,7 +661,7 @@ const CashCardsBank = () => {
 
       {/* Cash Section */}
       {activeTab === 'cash' && (
-        <CashMemberManagement />
+        <CashMemberManagement familyMembers={familyMembers} />
       )}
 
       {/* Cards Section */}
@@ -688,12 +714,16 @@ const CashCardsBank = () => {
                       </div>
                       <div className="form-group">
                         <label>Name:</label>
-                        <input
-                          type="text"
+                        <select
                           value={cardForm.name}
                           onChange={(e) => setCardForm({ ...cardForm, name: e.target.value })}
                           required
-                        />
+                        >
+                          <option value="">Select family member...</option>
+                          {familyMembers.map((member, index) => (
+                            <option key={index} value={member.name}>{member.name}</option>
+                          ))}
+                        </select>
                       </div>
                       <div className="form-group">
                         <label>Issuer:</label>
@@ -949,45 +979,88 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Category:</label>
+                        <label>Broader Category:</label>
                         <select
-                          value={transactionForm.category}
-                          onChange={(e) => setTransactionForm({ ...transactionForm, category: e.target.value })}
+                          value={transactionForm.broaderCategory}
+                          onChange={(e) => {
+                            const broader = e.target.value;
+                            setTransactionForm({
+                              ...transactionForm,
+                              broaderCategory: broader,
+                              mainCategory: '',
+                              subCategory: '',
+                              customSubCategory: ''
+                            });
+                          }}
+                          required
                         >
-                          <option value="">Select category...</option>
-                          <option value="food">Food & Dining</option>
-                          <option value="shopping">Shopping</option>
-                          <option value="transport">Transportation</option>
-                          <option value="entertainment">Entertainment</option>
-                          <option value="utilities">Utilities</option>
-                          <option value="healthcare">Healthcare</option>
-                          <option value="education">Education</option>
-                          <option value="inventory">📦 Inventory</option>
-                          <option value="other">Other</option>
+                          <option value="">Select broader category...</option>
+                          {getBroaderCategories().map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
                         </select>
                       </div>
 
-                      {/* Show inventory sub-category if Inventory is selected */}
-                      {transactionForm.category === 'inventory' && (
+                      {/* Main Category - shown only when Broader Category is selected */}
+                      {transactionForm.broaderCategory && (
                         <div className="form-group">
-                          <label>Inventory Category:</label>
+                          <label>Main Category:</label>
                           <select
-                            value={transactionForm.inventoryCategory || ''}
-                            onChange={(e) => setTransactionForm({ ...transactionForm, inventoryCategory: e.target.value })}
+                            value={transactionForm.mainCategory}
+                            onChange={(e) => {
+                              const main = e.target.value;
+                              setTransactionForm({
+                                ...transactionForm,
+                                mainCategory: main,
+                                subCategory: '',
+                                customSubCategory: ''
+                              });
+                            }}
                             required
                           >
-                            <option value="">Select inventory type...</option>
-                            <option value="Electronics">📱 Electronics</option>
-                            <option value="Appliances">🏠 Appliances</option>
-                            <option value="Furniture">🪑 Furniture</option>
-                            <option value="Vehicles">🚗 Vehicles</option>
-                            <option value="Tools">🔧 Tools & Equipment</option>
-                            <option value="Books">📚 Books & Media</option>
-                            <option value="Clothing">👕 Clothing & Accessories</option>
-                            <option value="Jewelry">💎 Jewelry</option>
-                            <option value="Sports">⚽ Sports Equipment</option>
-                            <option value="Other">📦 Other Items</option>
+                            <option value="">Select main category...</option>
+                            {getMainCategories(transactionForm.broaderCategory).map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
                           </select>
+                        </div>
+                      )}
+
+                      {/* Sub Category - shown only when Main Category is selected */}
+                      {transactionForm.mainCategory && (
+                        <div className="form-group">
+                          <label>Sub Category:</label>
+                          <select
+                            value={transactionForm.subCategory}
+                            onChange={(e) => {
+                              const sub = e.target.value;
+                              setTransactionForm({
+                                ...transactionForm,
+                                subCategory: sub,
+                                customSubCategory: sub === 'Other' ? '' : transactionForm.customSubCategory
+                              });
+                            }}
+                            required
+                          >
+                            <option value="">Select sub category...</option>
+                            {getSubCategories(transactionForm.broaderCategory, transactionForm.mainCategory).map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Custom Sub Category - shown only when "Other" is selected */}
+                      {transactionForm.subCategory === 'Other' && (
+                        <div className="form-group">
+                          <label>Custom Sub Category:</label>
+                          <input
+                            type="text"
+                            value={transactionForm.customSubCategory}
+                            onChange={(e) => setTransactionForm({ ...transactionForm, customSubCategory: e.target.value })}
+                            placeholder="Enter custom sub category..."
+                            required
+                          />
                         </div>
                       )}
                       <div className="form-group">
@@ -1327,12 +1400,16 @@ const CashCardsBank = () => {
                       </div>
                       <div className="form-group">
                         <label>Account Holder Name:</label>
-                        <input
-                          type="text"
+                        <select
                           value={bankForm.accountHolderName}
                           onChange={(e) => setBankForm({ ...bankForm, accountHolderName: e.target.value })}
                           required
-                        />
+                        >
+                          <option value="">Select family member...</option>
+                          {familyMembers.map((member, index) => (
+                            <option key={index} value={member.name}>{member.name}</option>
+                          ))}
+                        </select>
                       </div>
                       <div className="form-group">
                         <label>Currency:</label>
@@ -1624,47 +1701,88 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Category:</label>
+                        <label>Broader Category:</label>
                         <select
-                          value={bankTransactionForm.category}
-                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, category: e.target.value })}
+                          value={bankTransactionForm.broaderCategory}
+                          onChange={(e) => {
+                            const broader = e.target.value;
+                            setBankTransactionForm({
+                              ...bankTransactionForm,
+                              broaderCategory: broader,
+                              mainCategory: '',
+                              subCategory: '',
+                              customSubCategory: ''
+                            });
+                          }}
+                          required
                         >
-                          <option value="">Select category...</option>
-                          <option value="food">Food & Dining</option>
-                          <option value="shopping">Shopping</option>
-                          <option value="transportation">Transportation</option>
-                          <option value="entertainment">Entertainment</option>
-                          <option value="utilities">Utilities</option>
-                          <option value="healthcare">Healthcare</option>
-                          <option value="education">Education</option>
-                          <option value="salary">Salary</option>
-                          <option value="rent">Rent</option>
-                          <option value="inventory">📦 Inventory</option>
-                          <option value="other">Other</option>
+                          <option value="">Select broader category...</option>
+                          {getBroaderCategories().map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
                         </select>
                       </div>
 
-                      {/* Show inventory sub-category if Inventory is selected */}
-                      {bankTransactionForm.category === 'inventory' && (
+                      {/* Main Category - shown only when Broader Category is selected */}
+                      {bankTransactionForm.broaderCategory && (
                         <div className="form-group">
-                          <label>Inventory Category:</label>
+                          <label>Main Category:</label>
                           <select
-                            value={bankTransactionForm.inventoryCategory || ''}
-                            onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, inventoryCategory: e.target.value })}
+                            value={bankTransactionForm.mainCategory}
+                            onChange={(e) => {
+                              const main = e.target.value;
+                              setBankTransactionForm({
+                                ...bankTransactionForm,
+                                mainCategory: main,
+                                subCategory: '',
+                                customSubCategory: ''
+                              });
+                            }}
                             required
                           >
-                            <option value="">Select inventory type...</option>
-                            <option value="Electronics">📱 Electronics</option>
-                            <option value="Appliances">🏠 Appliances</option>
-                            <option value="Furniture">🪑 Furniture</option>
-                            <option value="Vehicles">🚗 Vehicles</option>
-                            <option value="Tools">🔧 Tools & Equipment</option>
-                            <option value="Books">📚 Books & Media</option>
-                            <option value="Clothing">👕 Clothing & Accessories</option>
-                            <option value="Jewelry">💎 Jewelry</option>
-                            <option value="Sports">⚽ Sports Equipment</option>
-                            <option value="Other">📦 Other Items</option>
+                            <option value="">Select main category...</option>
+                            {getMainCategories(bankTransactionForm.broaderCategory).map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
                           </select>
+                        </div>
+                      )}
+
+                      {/* Sub Category - shown only when Main Category is selected */}
+                      {bankTransactionForm.mainCategory && (
+                        <div className="form-group">
+                          <label>Sub Category:</label>
+                          <select
+                            value={bankTransactionForm.subCategory}
+                            onChange={(e) => {
+                              const sub = e.target.value;
+                              setBankTransactionForm({
+                                ...bankTransactionForm,
+                                subCategory: sub,
+                                customSubCategory: sub === 'Other' ? '' : bankTransactionForm.customSubCategory
+                              });
+                            }}
+                            required
+                          >
+                            <option value="">Select sub category...</option>
+                            {getSubCategories(bankTransactionForm.broaderCategory, bankTransactionForm.mainCategory).map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Custom Sub Category - shown only when "Other" is selected */}
+                      {bankTransactionForm.subCategory === 'Other' && (
+                        <div className="form-group">
+                          <label>Custom Sub Category:</label>
+                          <input
+                            type="text"
+                            value={bankTransactionForm.customSubCategory}
+                            onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, customSubCategory: e.target.value })}
+                            placeholder="Enter custom sub category..."
+                            required
+                          />
                         </div>
                       )}
                       <div className="form-group">

@@ -1,12 +1,12 @@
 import React from 'react';
 import './TransactionTable.css';
 
-const TransactionTable = ({ 
-  transactions, 
+const TransactionTable = ({
+  transactions,
   currency = 'INR',
   initialBalance = 0,
   onEdit,
-  onDelete 
+  onDelete
 }) => {
   if (transactions.length === 0) {
     return (
@@ -32,7 +32,9 @@ const TransactionTable = ({
             <th>Credit</th>
             <th>Balance</th>
             <th>Type of Transaction</th>
-            <th>Category</th>
+            <th>Broader Category</th>
+            <th>Main Category</th>
+            <th>Sub Category</th>
             <th>Relevance/Expense Type</th>
             <th>Details (Narration)</th>
             <th>Actions</th>
@@ -41,35 +43,35 @@ const TransactionTable = ({
         <tbody>
           {transactions.map((transaction, index) => {
             // Determine if it's debit or credit
-            const isDebit = transaction.type === 'withdrawal' || 
-                           transaction.type === 'purchase' || 
-                           transaction.type === 'payment' || 
-                           transaction.type === 'fee' ||
-                           transaction.type === 'expense';
-            
-            const isCredit = transaction.type === 'deposit' || 
-                            transaction.type === 'refund' || 
-                            transaction.type === 'income' ||
-                            transaction.type === 'interest';
-            
+            const isDebit = transaction.type === 'withdrawal' ||
+              transaction.type === 'purchase' ||
+              transaction.type === 'payment' ||
+              transaction.type === 'fee' ||
+              transaction.type === 'expense';
+
+            const isCredit = transaction.type === 'deposit' ||
+              transaction.type === 'refund' ||
+              transaction.type === 'income' ||
+              transaction.type === 'interest';
+
             const debit = isDebit ? transaction.amount : 0;
             const credit = isCredit ? transaction.amount : 0;
-            
+
             // Update running balance
             if (isDebit) {
               runningBalance -= transaction.amount;
             } else if (isCredit) {
               runningBalance += transaction.amount;
             }
-            
+
             return (
               <tr key={transaction._id}>
                 <td className="sr-no">{index + 1}</td>
                 <td className="date-col">{new Date(transaction.date).toLocaleDateString('en-IN')}</td>
                 <td className="mode-col">
                   <span className="mode-badge">
-                    {transaction.modeOfTransaction ? 
-                      transaction.modeOfTransaction.toUpperCase().replace(/-/g, ' ') : 
+                    {transaction.modeOfTransaction ?
+                      transaction.modeOfTransaction.toUpperCase().replace(/-/g, ' ') :
                       (transaction.type === 'purchase' || transaction.type === 'payment' ? 'CARD' : 'NEFT')
                     }
                   </span>
@@ -87,20 +89,25 @@ const TransactionTable = ({
                   {currency} {runningBalance.toLocaleString('en-IN')}
                 </td>
                 <td className="transaction-type-col">
-                  {transaction.transactionType ? 
-                    transaction.transactionType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 
+                  {transaction.transactionType ?
+                    transaction.transactionType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) :
                     '-'
                   }
                 </td>
                 <td className="category-col">
-                  {transaction.category ? 
-                    transaction.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 
-                    '-'
-                  }
+                  {transaction.broaderCategory || '-'}
+                </td>
+                <td className="category-col">
+                  {transaction.mainCategory || '-'}
+                </td>
+                <td className="category-col">
+                  {transaction.subCategory === 'Other' && transaction.customSubCategory
+                    ? transaction.customSubCategory
+                    : (transaction.subCategory || '-')}
                 </td>
                 <td className="expense-type-col">
-                  {transaction.expenseType ? 
-                    transaction.expenseType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 
+                  {transaction.expenseType ?
+                    transaction.expenseType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) :
                     '-'
                   }
                 </td>
@@ -109,14 +116,14 @@ const TransactionTable = ({
                 </td>
                 <td className="actions-col">
                   <div className="table-actions">
-                    <button 
-                      onClick={() => onEdit && onEdit(transaction)} 
+                    <button
+                      onClick={() => onEdit && onEdit(transaction)}
                       className="edit-btn"
                     >
                       Edit
                     </button>
-                    <button 
-                      onClick={() => onDelete && onDelete(transaction._id)} 
+                    <button
+                      onClick={() => onDelete && onDelete(transaction._id)}
                       className="delete-btn"
                     >
                       Delete

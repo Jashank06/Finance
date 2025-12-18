@@ -37,9 +37,12 @@ import WeeklyAppointments from './pages/family/monitoring/WeeklyAppointments';
 import YearlyCalendar from './pages/family/monitoring/YearlyCalendar';
 import MultipleCalendars from './pages/family/monitoring/MultipleCalendars';
 import RemindersNotifications from './pages/family/monitoring/RemindersNotifications';
-import Budget from './pages/family/monitoring/Budget';
 import ManageFinance from './pages/family/daily/ManageFinance';
 import IncomeExpenses from './pages/family/daily/IncomeExpenses';
+import ChequeRegister from './pages/family/daily/ChequeRegister';
+import DailyCashRegister from './pages/family/daily/DailyCashRegister';
+import Milestones from './pages/family/monitoring/Milestones';
+import TargetsForLife from './pages/family/monitoring/TargetsForLife';
 import './App.css';
 
 function App() {
@@ -49,7 +52,7 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
-          
+
           {/* Protected Routes */}
           <Route
             path="/dashboard"
@@ -61,7 +64,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family-profile"
             element={
@@ -72,7 +75,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/company-profile"
             element={
@@ -83,7 +86,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           {/* Family Routes */}
           <Route
             path="/family/*"
@@ -95,7 +98,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/tasks"
             element={
@@ -106,7 +109,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           {/* Business Routes */}
           <Route
             path="/business/*"
@@ -118,7 +121,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           {/* Investment Routes under Family */}
           <Route
             path="/family/investments/nps-ppf"
@@ -130,7 +133,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/investments/gold-sgb"
             element={
@@ -141,7 +144,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/investments/bank-schemes"
             element={
@@ -152,7 +155,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/investments/mf-insurance-shares"
             element={
@@ -163,7 +166,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/investments/valuation-allocation"
             element={
@@ -174,7 +177,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/investments/project-income-expense"
             element={
@@ -185,7 +188,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/investments/profile"
             element={
@@ -196,7 +199,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/investments/loan-amortization"
             element={
@@ -207,7 +210,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/investments/retirement"
             element={
@@ -218,7 +221,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           {/* Static Routes under Family */}
           <Route
             path="/family/static/basic-details"
@@ -230,7 +233,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/static/online-access-details"
             element={
@@ -252,7 +255,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/static/company-records"
             element={
@@ -263,7 +266,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/static/personal-records"
             element={
@@ -274,7 +277,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/static/family-profile"
             element={
@@ -285,7 +288,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/static/inventory-record"
             element={
@@ -296,7 +299,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/static/contact-management"
             element={
@@ -307,7 +310,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/static/digital-assets"
             element={
@@ -318,7 +321,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/static/customer-support"
             element={
@@ -329,7 +332,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/static/land-records"
             element={
@@ -340,7 +343,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/static/membership-list"
             element={
@@ -351,7 +354,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           {/* Daily Routes under Family */}
           <Route
             path="/family/daily/cash-cards-bank"
@@ -378,7 +381,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout>
-<BillChecklistNew />
+                  <BillChecklistNew />
                 </Layout>
               </ProtectedRoute>
             }
@@ -448,7 +451,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/family/monitoring/multiple-calendars"
             element={
@@ -459,13 +462,46 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
-            path="/family/monitoring/budget"
+            path="/family/daily/cheque-register"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <Budget />
+                  <ChequeRegister />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/family/daily/daily-cash-register"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <DailyCashRegister />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/family/monitoring/milestones"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Milestones />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/family/monitoring/targets-for-life"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TargetsForLife />
                 </Layout>
               </ProtectedRoute>
             }
@@ -481,7 +517,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/libraries"
             element={
@@ -492,7 +528,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/subscription"
             element={
@@ -503,7 +539,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/feedback"
             element={
@@ -514,7 +550,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/contact"
             element={
@@ -525,7 +561,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
