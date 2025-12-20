@@ -6,6 +6,7 @@ import './Static.css';
 const BasicDetails = () => {
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [familyMembers, setFamilyMembers] = useState([]);
   const [formData, setFormData] = useState({
     // Personal Information
     firstName: '',
@@ -136,7 +137,8 @@ const BasicDetails = () => {
     rmName: '',
     rmMobile: '',
     rmEmail: '',
-    branchAddress: ''
+    branchAddress: '',
+    goalPurpose: ''
   });
 
   const [newShare, setNewShare] = useState({
@@ -155,7 +157,8 @@ const BasicDetails = () => {
     rmName: '',
     rmMobile: '',
     rmEmail: '',
-    branchAddress: ''
+    branchAddress: '',
+    goalPurpose: ''
   });
 
   const [newInsurance, setNewInsurance] = useState({
@@ -175,7 +178,8 @@ const BasicDetails = () => {
     rmName: '',
     rmMobile: '',
     rmEmail: '',
-    branchAddress: ''
+    branchAddress: '',
+    goalPurpose: ''
   });
 
   const [newBank, setNewBank] = useState({
@@ -193,7 +197,8 @@ const BasicDetails = () => {
     registeredEmail: '',
     rmName: '',
     rmMobile: '',
-    rmEmail: ''
+    rmEmail: '',
+    goalPurpose: ''
   });
 
   const [newMobileBill, setNewMobileBill] = useState({
@@ -206,7 +211,8 @@ const BasicDetails = () => {
     alternateNo: '',
     address: '',
     planNo: '',
-    customerNumber: ''
+    customerNumber: '',
+    goalPurpose: ''
   });
 
   const [newCard, setNewCard] = useState({
@@ -221,7 +227,8 @@ const BasicDetails = () => {
     password: '',
     customerCareNumber: '',
     customerCareEmail: '',
-    cardType: ''
+    cardType: '',
+    goalPurpose: ''
   });
 
   const [newPaymentGateway, setNewPaymentGateway] = useState({
@@ -231,7 +238,8 @@ const BasicDetails = () => {
     accountNumber: '',
     url: '',
     userId: '',
-    password: ''
+    password: '',
+    goalPurpose: ''
   });
 
   const [newMutualFundPortfolio, setNewMutualFundPortfolio] = useState({
@@ -286,7 +294,19 @@ const BasicDetails = () => {
 
   useEffect(() => {
     fetchBasicDetails();
+    fetchFamilyMembers();
   }, []);
+
+  const fetchFamilyMembers = async () => {
+    try {
+      const response = await staticAPI.getFamilyProfile();
+      if (response.data && response.data.length > 0) {
+        setFamilyMembers(response.data[0].members || []);
+      }
+    } catch (error) {
+      console.error('Error fetching family members:', error);
+    }
+  };
 
   const fetchBasicDetails = async () => {
     try {
@@ -328,6 +348,7 @@ const BasicDetails = () => {
           sameAsCurrent: true,
           familyHead: 'John Doe',
           familyMembers: [
+            { name: 'John Doe', relation: 'Self', age: '35', gender: 'Male', occupation: 'Software Engineer', mobile: '+91 98765 43210', email: 'john.doe@email.com' },
             { name: 'Jane Doe', relation: 'Spouse', age: '32', gender: 'Female', occupation: 'Teacher', mobile: '+91 87654 32109', email: 'jane.doe@email.com' },
             { name: 'Johnny Doe', relation: 'Son', age: '8', gender: 'Male', occupation: 'Student', mobile: '', email: '' }
           ],
@@ -397,6 +418,7 @@ const BasicDetails = () => {
         sameAsCurrent: true,
         familyHead: 'John Doe',
         familyMembers: [
+          { name: 'John Doe', relation: 'Self', age: '35', gender: 'Male', occupation: 'Software Engineer', mobile: '+91 98765 43210', email: 'john.doe@email.com' },
           { name: 'Jane Doe', relation: 'Spouse', age: '32', gender: 'Female', occupation: 'Teacher', mobile: '+91 87654 32109', email: 'jane.doe@email.com' },
           { name: 'Johnny Doe', relation: 'Son', age: '8', gender: 'Male', occupation: 'Student', mobile: '', email: '' }
         ],
@@ -830,19 +852,28 @@ const BasicDetails = () => {
   const handleSave = async () => {
     try {
       setLoading(true);
+      console.log('=== SAVING BASIC DETAILS ===');
+      console.log('Form data:', formData);
+      console.log('Has _id:', !!formData._id);
+      
       let response;
       
       if (formData._id) {
         // Update existing record
+        console.log('Updating existing record with ID:', formData._id);
         response = await staticAPI.updateBasicDetails(formData._id, formData);
       } else {
         // Create new record
+        console.log('Creating new record');
         response = await staticAPI.createBasicDetails(formData);
       }
       
+      console.log('Save response:', response);
       setFormData(response.data);
       setEditMode(false);
+      console.log('=== SAVE SUCCESSFUL ===');
     } catch (error) {
+      console.error('=== SAVE ERROR ===');
       console.error('Error saving basic details:', error);
       alert('Failed to save basic details. Please try again.');
     } finally {
@@ -904,55 +935,76 @@ const BasicDetails = () => {
             <h3>Mutual Funds Information</h3>
           </div>
           <div className="section-content">
-            <div className="mutual-funds-list">
-              {formData.mutualFunds && formData.mutualFunds.length > 0 ? (
-                formData.mutualFunds.map((fund, index) => (
-                  <div key={index} className="family-member-card">
-                    <div className="member-info">
-                      <div className="member-header">
-                        <h5>{fund.mfName}</h5>
-                        <span className="relation-badge">{fund.fundHouse}</span>
-                      </div>
-                      <div className="member-details">
-                        <div className="form-grid">
-                          <p><strong>Folio No:</strong> {fund.folioNo}</p>
-                          <p><strong>Mode of Holding:</strong> {fund.modeOfHolding}</p>
-                          <p><strong>Holding Type:</strong> {fund.holdingType}</p>
-                          <p><strong>Investor Name:</strong> {fund.investorName}</p>
-                          <p><strong>UCC:</strong> {fund.ucc}</p>
-                          <p><strong>Registered Mobile:</strong> {fund.registeredMobile}</p>
-                          <p><strong>Registered Bank:</strong> {fund.registeredBank}</p>
-                          <p><strong>Nominee:</strong> {fund.nominee}</p>
-                          <p><strong>Customer Care:</strong> {fund.customerCareNumber}</p>
-                          <p><strong>Customer Care Email:</strong> {fund.customerCareEmail}</p>
-                          <p><strong>RM Name:</strong> {fund.rmName}</p>
-                          <p><strong>RM Mobile:</strong> {fund.rmMobile}</p>
-                          <p><strong>RM Email:</strong> {fund.rmEmail}</p>
-                        </div>
-                        <div className="form-group full-width">
-                          <p><strong>Registered Address:</strong> {fund.registeredAddress}</p>
-                          <p><strong>Branch Address:</strong> {fund.branchAddress}</p>
-                        </div>
-                      </div>
-                    </div>
-                    {editMode && (
-                      <button
-                        className="btn-remove"
-                        onClick={() => removeMutualFund(index)}
-                      >
-                        <FiX />
-                      </button>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p className="no-data">No mutual funds added yet.</p>
-              )}
+            {formData.mutualFunds && formData.mutualFunds.length > 0 ? (
+              <div className="records-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Fund Name</th>
+                      <th>Fund House</th>
+                      <th>Folio No.</th>
+                      <th>Mode of Holding</th>
+                      <th>Holding Type</th>
+                      <th>Investor Name</th>
+                      <th>UCC</th>
+                      <th>Registered Mobile</th>
+                      <th>Registered Bank</th>
+                      <th>Nominee</th>
+                      <th>Customer Care</th>
+                      <th>Customer Care Email</th>
+                      <th>RM Name</th>
+                      <th>RM Mobile</th>
+                      <th>RM Email</th>
+                      <th>Registered Address</th>
+                      <th>Branch Address</th>
+                      {editMode && <th>Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.mutualFunds.map((fund, index) => (
+                      <tr key={index}>
+                        <td>{fund.mfName || '-'}</td>
+                        <td>{fund.fundHouse || '-'}</td>
+                        <td>{fund.folioNo || '-'}</td>
+                        <td>{fund.modeOfHolding || '-'}</td>
+                        <td>{fund.holdingType || '-'}</td>
+                        <td>{fund.investorName || '-'}</td>
+                        <td>{fund.ucc || '-'}</td>
+                        <td>{fund.registeredMobile || '-'}</td>
+                        <td>{fund.registeredBank || '-'}</td>
+                        <td>{fund.nominee || '-'}</td>
+                        <td>{fund.customerCareNumber || '-'}</td>
+                        <td>{fund.customerCareEmail || '-'}</td>
+                        <td>{fund.rmName || '-'}</td>
+                        <td>{fund.rmMobile || '-'}</td>
+                        <td>{fund.rmEmail || '-'}</td>
+                        <td>{fund.registeredAddress || '-'}</td>
+                        <td>{fund.branchAddress || '-'}</td>
+                        {editMode && (
+                          <td>
+                            <div className="table-actions">
+                              <button
+                                className="btn-remove"
+                                onClick={() => removeMutualFund(index)}
+                              >
+                                <FiX />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="no-data">No mutual funds added yet.</p>
+            )}
 
-              {editMode && (
-                <div className="add-family-member">
-                  <h5>Add Mutual Fund</h5>
-                  <div className="form-grid">
+            {editMode && (
+              <div className="add-family-member">
+                <h5>Add Mutual Fund</h5>
+                <div className="form-grid">
                     <div className="form-group">
                       <label>Fund House *</label>
                       <input
@@ -986,11 +1038,15 @@ const BasicDetails = () => {
                     </div>
                     <div className="form-group">
                       <label>Name of Investor</label>
-                      <input
-                        type="text"
+                      <select
                         value={newMutualFund.investorName}
                         onChange={(e) => setNewMutualFund({...newMutualFund, investorName: e.target.value})}
-                      />
+                      >
+                        <option value="">Select family member...</option>
+                        {familyMembers && familyMembers.map((member, index) => (
+                          <option key={index} value={member.name}>{member.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="form-group">
                       <label>UCC (Unique Client Code)</label>
@@ -1098,6 +1154,15 @@ const BasicDetails = () => {
                         rows={2}
                       />
                     </div>
+                    <div className="form-group full-width">
+                      <label>Goal / Purpose</label>
+                      <input
+                        type="text"
+                        value={newMutualFund.goalPurpose}
+                        onChange={(e) => setNewMutualFund({...newMutualFund, goalPurpose: e.target.value})}
+                        placeholder="e.g., Retirement, Children's Education, Wealth Creation"
+                      />
+                    </div>
                   </div>
                   <button className="btn-primary" onClick={addMutualFund}>
                     <FiPlus /> Add Mutual Fund
@@ -1193,11 +1258,15 @@ const BasicDetails = () => {
                     </div>
                     <div className="form-group">
                       <label>Name of Investor</label>
-                      <input
-                        type="text"
+                      <select
                         value={newShare.investorName}
                         onChange={(e) => setNewShare({...newShare, investorName: e.target.value})}
-                      />
+                      >
+                        <option value="">Select family member...</option>
+                        {familyMembers && familyMembers.map((member, index) => (
+                          <option key={index} value={member.name}>{member.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="form-group">
                       <label>Trading Id</label>
@@ -1295,6 +1364,15 @@ const BasicDetails = () => {
                         value={newShare.branchAddress}
                         onChange={(e) => setNewShare({...newShare, branchAddress: e.target.value})}
                         rows={2}
+                      />
+                    </div>
+                    <div className="form-group full-width">
+                      <label>Goal / Purpose</label>
+                      <input
+                        type="text"
+                        value={newShare.goalPurpose}
+                        onChange={(e) => setNewShare({...newShare, goalPurpose: e.target.value})}
+                        placeholder="e.g., Long-term Investment, Trading, Dividend Income"
                       />
                     </div>
                   </div>
@@ -1507,6 +1585,15 @@ const BasicDetails = () => {
                         rows={2}
                       />
                     </div>
+                    <div className="form-group full-width">
+                      <label>Goal / Purpose</label>
+                      <input
+                        type="text"
+                        value={newInsurance.goalPurpose}
+                        onChange={(e) => setNewInsurance({...newInsurance, goalPurpose: e.target.value})}
+                        placeholder="e.g., Life Coverage, Health Protection, Investment, Tax Saving"
+                      />
+                    </div>
                   </div>
                   <button className="btn-primary" onClick={addInsurance}>
                     <FiPlus /> Add Insurance Policy
@@ -1700,6 +1787,15 @@ const BasicDetails = () => {
                         onChange={(e) => setNewBank({...newBank, rmEmail: e.target.value})}
                       />
                     </div>
+                    <div className="form-group full-width">
+                      <label>Goal / Purpose</label>
+                      <input
+                        type="text"
+                        value={newBank.goalPurpose}
+                        onChange={(e) => setNewBank({...newBank, goalPurpose: e.target.value})}
+                        placeholder="e.g., Salary Account, Savings Account, Investment Account"
+                      />
+                    </div>
                   </div>
                   <button className="btn-primary" onClick={addBank}>
                     <FiPlus /> Add Bank Account
@@ -1835,6 +1931,15 @@ const BasicDetails = () => {
                         value={newMobileBill.address}
                         onChange={(e) => setNewMobileBill({...newMobileBill, address: e.target.value})}
                         rows={2}
+                      />
+                    </div>
+                    <div className="form-group full-width">
+                      <label>Goal / Purpose</label>
+                      <input
+                        type="text"
+                        value={newMobileBill.goalPurpose}
+                        onChange={(e) => setNewMobileBill({...newMobileBill, goalPurpose: e.target.value})}
+                        placeholder="e.g., Personal Use, Business Use, Family Connection"
                       />
                     </div>
                   </div>
@@ -1996,6 +2101,15 @@ const BasicDetails = () => {
                         onChange={(e) => setNewCard({...newCard, customerCareEmail: e.target.value})}
                       />
                     </div>
+                    <div className="form-group full-width">
+                      <label>Goal / Purpose</label>
+                      <input
+                        type="text"
+                        value={newCard.goalPurpose}
+                        onChange={(e) => setNewCard({...newCard, goalPurpose: e.target.value})}
+                        placeholder="e.g., Online Shopping, Travel Booking, Daily Expenses"
+                      />
+                    </div>
                   </div>
                   <button className="btn-primary" onClick={addCard}>
                     <FiPlus /> Add Card
@@ -2104,6 +2218,15 @@ const BasicDetails = () => {
                         onChange={(e) => setNewPaymentGateway({...newPaymentGateway, password: e.target.value})}
                       />
                     </div>
+                    <div className="form-group full-width">
+                      <label>Goal / Purpose</label>
+                      <input
+                        type="text"
+                        value={newPaymentGateway.goalPurpose}
+                        onChange={(e) => setNewPaymentGateway({...newPaymentGateway, goalPurpose: e.target.value})}
+                        placeholder="e.g., Business Transactions, Online Payments, E-commerce"
+                      />
+                    </div>
                   </div>
                   <button className="btn-primary" onClick={addPaymentGateway}>
                     <FiPlus /> Add Payment Gateway
@@ -2180,11 +2303,15 @@ const BasicDetails = () => {
                     </div>
                     <div className="form-group">
                       <label>Name of Investor</label>
-                      <input
-                        type="text"
+                      <select
                         value={newMutualFundPortfolio.investorName}
                         onChange={(e) => setNewMutualFundPortfolio({...newMutualFundPortfolio, investorName: e.target.value})}
-                      />
+                      >
+                        <option value="">Select family member...</option>
+                        {familyMembers && familyMembers.map((member, index) => (
+                          <option key={index} value={member.name}>{member.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="form-group">
                       <label>Name of Fund *</label>
@@ -2356,11 +2483,15 @@ const BasicDetails = () => {
                     </div>
                     <div className="form-group">
                       <label>Name of Investor</label>
-                      <input
-                        type="text"
+                      <select
                         value={newSharePortfolio.investorName}
                         onChange={(e) => setNewSharePortfolio({...newSharePortfolio, investorName: e.target.value})}
-                      />
+                      >
+                        <option value="">Select family member...</option>
+                        {familyMembers && familyMembers.map((member, index) => (
+                          <option key={index} value={member.name}>{member.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="form-group">
                       <label>Name of Script *</label>
@@ -2636,8 +2767,7 @@ const BasicDetails = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </div> 
   );
 };
 

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 import api from '../../../utils/api';
 import { staticAPI } from '../../../utils/staticAPI';
 import FinancialOverviewChart from '../../../components/FinancialOverviewChart';
@@ -24,6 +25,13 @@ const CashCardsBank = () => {
   const [showCardForm, setShowCardForm] = useState(false);
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [cardTransactions, setCardTransactions] = useState([]);
+  const [showCardColumnsModal, setShowCardColumnsModal] = useState(false);
+  const [showBankColumnsModal, setShowBankColumnsModal] = useState(false);
+  const [uploadingCard, setUploadingCard] = useState(false);
+  const [uploadingBank, setUploadingBank] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const cardFileInputRef = useRef(null);
+  const bankFileInputRef = useRef(null);
   const [bankTransactionForm, setBankTransactionForm] = useState({
     accountId: '',
     type: 'withdrawal',
@@ -505,6 +513,10 @@ const CashCardsBank = () => {
         amount: item.amount,
         merchant: item.merchant,
         category: item.category,
+        broaderCategory: item.broaderCategory || '',
+        mainCategory: item.mainCategory || '',
+        subCategory: item.subCategory || '',
+        customSubCategory: item.customSubCategory || '',
         description: item.description,
         date: new Date(item.date).toISOString().split('T')[0],
         currency: item.currency,
@@ -557,6 +569,10 @@ const CashCardsBank = () => {
       amount: transaction.amount,
       merchant: transaction.merchant,
       category: transaction.category,
+      broaderCategory: transaction.broaderCategory || '',
+      mainCategory: transaction.mainCategory || '',
+      subCategory: transaction.subCategory || '',
+      customSubCategory: transaction.customSubCategory || '',
       description: transaction.description,
       date: new Date(transaction.date).toISOString().split('T')[0],
       currency: transaction.currency,
@@ -581,6 +597,303 @@ const CashCardsBank = () => {
       } catch (error) {
         console.error('Error deleting bank transaction:', error);
         alert('Error deleting bank transaction');
+      }
+    }
+  };
+
+  const handleCardExcelUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setUploadingCard(true);
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        alert('Excel file is empty!');
+        setUploadingCard(false);
+        return;
+      }
+
+      const required = ['Card', 'Transaction Type', 'Amount', 'Broader Category', 'Date'];
+      const firstRow = jsonData[0];
+      const missing = required.filter(col => !(col in firstRow));
+
+      if (missing.length > 0) {
+        alert(`Missing required columns: ${missing.join(', ')}`);
+        setUploadingCard(false);
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Helper to match keys case-insensitively and ignore whitespace
+      const getValue = (row, key) => {
+        const normalizedKey = key.toLowerCase().replace(/\s+/g, '').trim();
+        const actualKey = Object.keys(row).find(k =>
+          k.toLowerCase().replace(/\s+/g, '').trim() === normalizedKey
+        );
+        return actualKey ? row[actualKey] : undefined;
+      };
+
+      // Helper to parse date from DD/MM/YY or Excel serial
+      const parseExcelDate = (input) => {
+        if (!input) return new Date().toISOString().split('T')[0];
+
+        // Case 1: Excel Serial Date (Number)
+        if (typeof input === 'number') {
+          const date = new Date(Math.round((input - 25569) * 86400 * 1000));
+          return date.toISOString().split('T')[0];
+        }
+
+        // Case 2: String DD/MM/YY or DD/MM/YYYY
+        if (typeof input === 'string') {
+          // check if it matches DD/MM/YY or DD/MM/YYYY
+          if (input.includes('/')) {
+            const parts = input.trim().split('/');
+            if (parts.length === 3) {
+              let [d, m, y] = parts;
+              // Handle YY -> 20YY
+              if (y.length === 2) y = '20' + y;
+              return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+            }
+          }
+        }
+
+        // Fallback
+        try {
+          const date = new Date(input);
+          if (!isNaN(date.getTime())) {
+            return date.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          console.error("Date parse error", input);
+        }
+
+        return new Date().toISOString().split('T')[0];
+      };
+
+      setUploadProgress(0); // Initialize progress
+      const totalRows = jsonData.length;
+
+      for (let i = 0; i < totalRows; i++) {
+        const row = jsonData[i];
+        try {
+          const cardNameStr = String(getValue(row, 'Card') || '').trim();
+          const normalizedCardName = cardNameStr.toLowerCase();
+
+          // 1. Direct Match
+          let card = cardRecords.find(c =>
+            c.name.trim().toLowerCase() === normalizedCardName ||
+            c.issuer.trim().toLowerCase() === normalizedCardName ||
+            String(c.lastFourDigits) === cardNameStr
+          );
+
+          // 2. Parsed Match ('-' separation)
+          if (!card && cardNameStr.includes('-')) {
+            const tokens = cardNameStr.split('-').map(t => t.trim().toLowerCase());
+
+            // Find all candidates
+            const candidates = cardRecords.filter(c =>
+              tokens.includes(c.name.trim().toLowerCase()) ||
+              tokens.includes(c.issuer.trim().toLowerCase())
+            );
+
+            if (candidates.length === 1) {
+              card = candidates[0];
+            } else if (candidates.length > 1) {
+              // Disambiguate using cardholderName
+              const preciseMatch = candidates.find(c =>
+                c.cardholderName && tokens.includes(c.cardholderName.trim().toLowerCase())
+              );
+              card = preciseMatch || candidates[0];
+            }
+          }
+
+          if (!card) {
+            console.error(`Card not found: "${cardName}". Available: ${cardRecords.map(c => c.name).join(', ')}`);
+            errorCount++;
+            continue;
+          }
+
+          const transaction = {
+            cardId: card._id,
+            type: getValue(row, 'Transaction Type')?.toLowerCase() || 'purchase',
+            amount: parseFloat(getValue(row, 'Amount')) || 0,
+            currency: getValue(row, 'Currency') || 'INR',
+            merchant: getValue(row, 'Merchant/Description') || '',
+            broaderCategory: getValue(row, 'Broader Category') || '',
+            mainCategory: getValue(row, 'Main Category') || '',
+            subCategory: getValue(row, 'Sub Category') || '',
+            customSubCategory: getValue(row, 'Custom Sub Category') || '',
+            description: getValue(row, 'Description') || '',
+            date: parseExcelDate(getValue(row, 'Date')),
+            transactionType: getValue(row, 'Type of Transaction') || undefined, // ensure undefined
+            expenseType: getValue(row, 'Expense Type') || undefined // ensure undefined
+          };
+
+          await api.post('/transactions', transaction);
+          successCount++;
+        } catch (error) {
+          console.error('Error importing row:', error);
+          errorCount++;
+        }
+
+        // Update progress percentage
+        setUploadProgress(Math.round(((i + 1) / totalRows) * 100));
+      }
+
+      alert(`Card transactions import completed!\nSuccess: ${successCount}\nErrors: ${errorCount}`);
+      fetchData();
+    } catch (error) {
+      console.error('Error processing Excel file:', error);
+      alert('Error processing Excel file. Please check the format.');
+    } finally {
+      setUploadingCard(false);
+      setUploadProgress(0); // Reset progress after completion or error
+      if (cardFileInputRef.current) {
+        cardFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleBankExcelUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setUploadingBank(true);
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        alert('Excel file is empty!');
+        setUploadingBank(false);
+        return;
+      }
+
+      const required = ['Account', 'Transaction Type', 'Amount', 'Broader Category', 'Date'];
+      const firstRow = jsonData[0];
+      const missing = required.filter(col => !(col in firstRow));
+
+      if (missing.length > 0) {
+        alert(`Missing required columns: ${missing.join(', ')}`);
+        setUploadingBank(false);
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Reuse getValue helper from Card upload scope if needed, but redefine here for safety/scoping
+      const getValue = (row, key) => {
+        const normalizedKey = key.toLowerCase().replace(/\s+/g, '').trim();
+        const actualKey = Object.keys(row).find(k =>
+          k.toLowerCase().replace(/\s+/g, '').trim() === normalizedKey
+        );
+        return actualKey ? row[actualKey] : undefined;
+      };
+
+      // Helper to parse date from DD/MM/YY or Excel serial
+      const parseExcelDate = (input) => {
+        if (!input) return new Date().toISOString().split('T')[0];
+
+        // Case 1: Excel Serial Date (Number)
+        if (typeof input === 'number') {
+          const date = new Date(Math.round((input - 25569) * 86400 * 1000));
+          return date.toISOString().split('T')[0];
+        }
+
+        // Case 2: String DD/MM/YY or DD/MM/YYYY
+        if (typeof input === 'string') {
+          // check if it matches DD/MM/YY or DD/MM/YYYY
+          if (input.includes('/')) {
+            const parts = input.trim().split('/');
+            if (parts.length === 3) {
+              let [d, m, y] = parts;
+              // Handle YY -> 20YY
+              if (y.length === 2) y = '20' + y;
+              return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+            }
+          }
+        }
+
+        // Fallback
+        try {
+          const date = new Date(input);
+          if (!isNaN(date.getTime())) {
+            return date.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          console.error("Date parse error", input);
+        }
+
+        return new Date().toISOString().split('T')[0];
+      };
+
+      setUploadProgress(0); // Initialize progress
+      const totalRows = jsonData.length;
+
+      for (let i = 0; i < totalRows; i++) {
+        const row = jsonData[i];
+        try {
+          const accountName = getValue(row, 'Account');
+          // Match by Name OR Account Number (converted to string for safety)
+          const account = bankRecords.find(b =>
+            b.name === accountName ||
+            (b.accountNumber && String(b.accountNumber) === String(accountName))
+          );
+
+          if (!account) {
+            console.error(`Account not found: ${accountName}`);
+            errorCount++;
+            continue;
+          }
+
+          const transaction = {
+            accountId: account._id,
+            type: getValue(row, 'Transaction Type')?.toLowerCase() || 'withdrawal',
+            amount: parseFloat(getValue(row, 'Amount')) || 0,
+            currency: getValue(row, 'Currency') || 'INR',
+            merchant: getValue(row, 'Merchant/Description') || '',
+            broaderCategory: getValue(row, 'Broader Category') || '',
+            mainCategory: getValue(row, 'Main Category') || '',
+            subCategory: getValue(row, 'Sub Category') || '',
+            customSubCategory: getValue(row, 'Custom Sub Category') || '',
+            description: getValue(row, 'Description') || '',
+            date: parseExcelDate(getValue(row, 'Date')),
+            transactionType: getValue(row, 'Type of Transaction') || undefined, // ensure undefined
+            expenseType: getValue(row, 'Expense Type') || undefined // ensure undefined
+          };
+
+          await api.post('/bank-transactions', transaction);
+          successCount++;
+        } catch (error) {
+          console.error('Error importing row:', error);
+          errorCount++;
+        }
+
+        // Update progress percentage
+        setUploadProgress(Math.round(((i + 1) / totalRows) * 100));
+      }
+
+      alert(`Bank transactions import completed!\nSuccess: ${successCount}\nErrors: ${errorCount}`);
+      fetchData();
+    } catch (error) {
+      console.error('Error processing Excel file:', error);
+      alert('Error processing Excel file. Please check the format.');
+    } finally {
+      setUploadingBank(false);
+      if (bankFileInputRef.current) {
+        bankFileInputRef.current.value = '';
       }
     }
   };
@@ -670,6 +983,13 @@ const CashCardsBank = () => {
           <div className="section-header">
             <h2>Card Management</h2>
             <div className="header-buttons">
+              <input
+                type="file"
+                ref={cardFileInputRef}
+                onChange={handleCardExcelUpload}
+                accept=".xlsx,.xls"
+                style={{ display: 'none' }}
+              />
               <button
                 className="add-btn card-btn"
                 onClick={() => {
@@ -688,6 +1008,21 @@ const CashCardsBank = () => {
                 }}
               >
                 Add Transaction
+              </button>
+              <button
+                className="add-btn"
+                onClick={() => cardFileInputRef.current?.click()}
+                disabled={uploadingCard}
+                style={{ background: uploadingCard ? '#9ca3af' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
+              >
+                {uploadingCard ? 'Uploading...' : '📄 Upload Excel'}
+              </button>
+              <button
+                className="add-btn"
+                onClick={() => setShowCardColumnsModal(true)}
+                style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)' }}
+              >
+                ℹ️ Columns
               </button>
             </div>
           </div>
@@ -1328,6 +1663,13 @@ const CashCardsBank = () => {
           <div className="section-header">
             <h2>Bank Accounts</h2>
             <div className="header-buttons">
+              <input
+                type="file"
+                ref={bankFileInputRef}
+                onChange={handleBankExcelUpload}
+                accept=".xlsx,.xls"
+                style={{ display: 'none' }}
+              />
               <button
                 className="add-btn"
                 onClick={() => {
@@ -1346,6 +1688,21 @@ const CashCardsBank = () => {
                 }}
               >
                 Add Bank Transaction
+              </button>
+              <button
+                className="add-btn"
+                onClick={() => bankFileInputRef.current?.click()}
+                disabled={uploadingBank}
+                style={{ background: uploadingBank ? '#9ca3af' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
+              >
+                {uploadingBank ? 'Uploading...' : '📄 Upload Excel'}
+              </button>
+              <button
+                className="add-btn"
+                onClick={() => setShowBankColumnsModal(true)}
+                style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)' }}
+              >
+                ℹ️ Columns
               </button>
             </div>
           </div>
@@ -2053,6 +2410,155 @@ const CashCardsBank = () => {
           cardTransactions={cardTransactions}
           bankTransactions={bankTransactions}
         />
+      )}
+
+      {/* Card Columns Info Modal */}
+      {showCardColumnsModal && (
+        <ModalPortal>
+          <div className="ccb-modal">
+            <div className="ccb-modal-content" style={{ maxWidth: '800px' }}>
+              <h3>📋 Required Excel Columns for Card Transactions</h3>
+              <p style={{ marginBottom: '20px', color: '#64748b' }}>
+                Your Excel file should have these columns (case-sensitive):
+              </p>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead style={{ background: '#f1f5f9' }}>
+                  <tr>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Column Name</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Required</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Example</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Card</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>John - HDFC or card name</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Transaction Type</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>purchase, payment, withdrawal</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Amount</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>1500.50</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Currency</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>INR, USD</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Merchant/Description</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Amazon, Grocery Store</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Broader Category</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Personal, Business</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Date</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>20/12/25 (DD/MM/YY)</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div className="form-actions" style={{ marginTop: '24px' }}>
+                <button type="button" onClick={() => setShowCardColumnsModal(false)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* Bank Columns Info Modal */}
+      {showBankColumnsModal && (
+        <ModalPortal>
+          <div className="ccb-modal">
+            <div className="ccb-modal-content" style={{ maxWidth: '800px' }}>
+              <h3>📋 Required Excel Columns for Bank Transactions</h3>
+              <p style={{ marginBottom: '20px', color: '#64748b' }}>
+                Your Excel file should have these columns (case-sensitive):
+              </p>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead style={{ background: '#f1f5f9' }}>
+                  <tr>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Column Name</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Required</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Example</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Account</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Account Name OR Account Number (Use Number for unique matching)</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Transaction Type</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>deposit, withdrawal, transfer</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Amount</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>5000.00</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Currency</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>INR, USD</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Merchant/Description</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Salary, Bill Payment</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Broader Category</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Personal, Business</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Date</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>20/12/25 (DD/MM/YY)</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div className="form-actions" style={{ marginTop: '24px' }}>
+                <button type="button" onClick={() => setShowBankColumnsModal(false)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* Processing Overlay */}
+      {(uploadingCard || uploadingBank) && (
+        <ModalPortal>
+          <div className="processing-overlay">
+            <div className="processing-content">
+              <div className="spinner"></div>
+              <div className="processing-text">Processing Upload...</div>
+              <div className="processing-subtext">Optimizing your data</div>
+
+              {/* Progress Bar */}
+              <div className="progress-container">
+                <div className="progress-bar" style={{ width: `${uploadProgress}%` }}></div>
+              </div>
+              <div className="processing-text progress-text">{uploadProgress}%</div>
+            </div>
+          </div>
+        </ModalPortal>
       )}
     </div>
   );

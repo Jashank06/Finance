@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
+import * as XLSX from 'xlsx';
 import './CashMemberManagement.css';
 import { syncInventoryFromTransaction } from '../utils/inventorySyncUtil';
 import { getBroaderCategories, getMainCategories, getSubCategories } from '../utils/categoryData';
@@ -13,10 +14,16 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
   const [editingMember, setEditingMember] = useState(null);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showColumnsModal, setShowColumnsModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
   const [dateFilter, setDateFilter] = useState({
     startDate: '',
     endDate: ''
   });
+
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const [memberForm, setMemberForm] = useState({
     name: '',
@@ -171,6 +178,10 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
       type: transaction.type,
       amount: transaction.amount,
       category: transaction.category,
+      broaderCategory: transaction.broaderCategory || '',
+      mainCategory: transaction.mainCategory || '',
+      subCategory: transaction.subCategory || '',
+      customSubCategory: transaction.customSubCategory || '',
       description: transaction.description,
       date: new Date(transaction.date).toISOString().split('T')[0],
       transactionType: transaction.transactionType || '',
@@ -193,6 +204,45 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
       } catch (error) {
         console.error('Error deleting transaction:', error);
         alert('Error deleting transaction');
+      }
+    }
+  };
+
+  const handleSelectTransaction = (id) => {
+    setSelectedTransactionIds(prev =>
+      prev.includes(id) ? prev.filter(tid => tid !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = (e, currentTransactions) => {
+    if (e.target.checked) {
+      setSelectedTransactionIds(currentTransactions.map(t => t._id));
+    } else {
+      setSelectedTransactionIds([]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedTransactionIds.length === 0) return;
+
+    if (window.confirm(`Are you sure you want to delete ${selectedTransactionIds.length} transactions?`)) {
+      try {
+        setLoading(true);
+        // Execute all deletes in parallel
+        await Promise.all(selectedTransactionIds.map(id => api.delete(`/cash-transactions/${id}`)));
+
+        // Refresh data
+        await fetchMemberTransactions(selectedMember._id);
+        await fetchMembers();
+
+        // Clear selection
+        setSelectedTransactionIds([]);
+        setLoading(false);
+        alert('Transactions deleted successfully');
+      } catch (error) {
+        console.error('Error in bulk delete:', error);
+        setLoading(false);
+        alert('Error deleting some transactions');
       }
     }
   };
@@ -230,6 +280,131 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
       narration: ''
     });
     setEditingTransaction(null);
+  };
+
+  const handleExcelUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        alert('Excel file is empty!');
+        setUploading(false);
+        return;
+      }
+
+      // Validate columns
+      const required = ['Type', 'Amount', 'Broader Category', 'Date'];
+      const firstRow = jsonData[0];
+      const missing = required.filter(col => !(col in firstRow));
+
+      if (missing.length > 0) {
+        alert(`Missing required columns: ${missing.join(', ')}`);
+        setUploading(false);
+        return;
+      }
+
+      // Import transactions
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Helper to match keys case-insensitively and ignore whitespace
+      const getValue = (row, key) => {
+        const normalizedKey = key.toLowerCase().replace(/\s+/g, '').trim();
+        const actualKey = Object.keys(row).find(k =>
+          k.toLowerCase().replace(/\s+/g, '').trim() === normalizedKey
+        );
+        return actualKey ? row[actualKey] : undefined;
+      };
+
+      // Helper to parse date from DD/MM/YY or Excel serial
+      const parseExcelDate = (input) => {
+        if (!input) return new Date().toISOString().split('T')[0];
+
+        // Case 1: Excel Serial Date (Number)
+        if (typeof input === 'number') {
+          const date = new Date(Math.round((input - 25569) * 86400 * 1000));
+          return date.toISOString().split('T')[0];
+        }
+
+        // Case 2: String DD/MM/YY or DD/MM/YYYY
+        if (typeof input === 'string') {
+          // check if it matches DD/MM/YY or DD/MM/YYYY
+          if (input.includes('/')) {
+            const parts = input.trim().split('/');
+            if (parts.length === 3) {
+              let [d, m, y] = parts;
+              // Handle YY -> 20YY
+              if (y.length === 2) y = '20' + y;
+              return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+            }
+          }
+        }
+
+        // Fallback: Try standard date parsing
+        try {
+          const date = new Date(input);
+          if (!isNaN(date.getTime())) {
+            return date.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          console.error("Date parse error", input);
+        }
+
+        return new Date().toISOString().split('T')[0];
+      };
+
+      setUploadProgress(0); // Initialize progress
+      const totalRows = jsonData.length;
+
+      for (let i = 0; i < totalRows; i++) {
+        const row = jsonData[i];
+        try {
+          const transaction = {
+            memberId: selectedMember._id,
+            type: getValue(row, 'Type')?.toLowerCase() || 'expense',
+            amount: parseFloat(getValue(row, 'Amount')) || 0,
+            broaderCategory: getValue(row, 'Broader Category') || '',
+            mainCategory: getValue(row, 'Main Category') || '',
+            subCategory: getValue(row, 'Sub Category') || '',
+            customSubCategory: getValue(row, 'Custom Sub Category') || '',
+            description: getValue(row, 'Description') || '',
+            date: parseExcelDate(getValue(row, 'Date')),
+            transactionType: getValue(row, 'Type of Transaction') || undefined, // ensure undefined
+            expenseType: getValue(row, 'Expense Type') || undefined, // ensure undefined
+            modeOfTransaction: getValue(row, 'Mode of Transaction')?.toLowerCase() || 'cash',
+            narration: getValue(row, 'Narration') || ''
+          };
+
+          await api.post('/cash-transactions', transaction);
+          successCount++;
+        } catch (error) {
+          console.error('Error importing row:', error);
+          errorCount++;
+        }
+
+        // Update progress percentage
+        setUploadProgress(Math.round(((i + 1) / totalRows) * 100));
+      }
+
+      alert(`Import completed!\nSuccess: ${successCount}\nErrors: ${errorCount}`);
+      fetchData();
+    } catch (error) {
+      console.error('Error processing Excel file:', error);
+      alert('Error processing Excel file. Please check the format.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const calculateSpent = (member) => {
@@ -488,15 +663,39 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
                 Spent: {selectedMember.currency} {calculateSpent(selectedMember).toLocaleString('en-IN')}
               </p>
             </div>
-            <button
-              className="add-btn"
-              onClick={() => {
-                resetTransactionForm();
-                setShowTransactionForm(true);
-              }}
-            >
-              Add Transaction
-            </button>
+            <div className="header-buttons" style={{ display: 'flex', gap: '10px' }}>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleExcelUpload}
+                accept=".xlsx,.xls"
+                style={{ display: 'none' }}
+              />
+              <button
+                className="add-btn"
+                onClick={() => {
+                  resetTransactionForm();
+                  setShowTransactionForm(true);
+                }}
+              >
+                Add Transaction
+              </button>
+              <button
+                className="add-btn"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                style={{ background: uploading ? '#9ca3af' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
+              >
+                {uploading ? 'Uploading...' : '📄 Upload Excel'}
+              </button>
+              <button
+                className="add-btn"
+                onClick={() => setShowColumnsModal(true)}
+                style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)' }}
+              >
+                ℹ️ Columns
+              </button>
+            </div>
           </div>
 
           {/* Date Filter Section */}
@@ -554,6 +753,24 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
               <span style={{ color: '#666', fontSize: '14px' }}>
                 Showing {filteredTransactions.length} of {transactions.length} transactions
               </span>
+
+              {selectedTransactionIds.length > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  style={{
+                    padding: '6px 15px',
+                    backgroundColor: '#d32f2f',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    marginLeft: 'auto'
+                  }}
+                >
+                  Delete Selected ({selectedTransactionIds.length})
+                </button>
+              )}
             </div>
           </div>
 
@@ -566,6 +783,13 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
               <table>
                 <thead>
                   <tr>
+                    <th>
+                      <input
+                        type="checkbox"
+                        checked={filteredTransactions.length > 0 && selectedTransactionIds.length === filteredTransactions.length}
+                        onChange={(e) => handleSelectAll(e, filteredTransactions)}
+                      />
+                    </th>
                     <th>Sr. No.</th>
                     <th>Date</th>
                     <th>Mode of Transaction</th>
@@ -600,8 +824,15 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
 
                       return (
                         <tr key={transaction._id}>
+                          <td>
+                            <input
+                              type="checkbox"
+                              checked={selectedTransactionIds.includes(transaction._id)}
+                              onChange={() => handleSelectTransaction(transaction._id)}
+                            />
+                          </td>
                           <td>{index + 1}</td>
-                          <td>{new Date(transaction.date).toLocaleDateString('en-IN')}</td>
+                          <td>{new Date(transaction.date).toLocaleDateString('en-GB')}</td>
                           <td>
                             <span className="mode-badge">
                               {transaction.modeOfTransaction ? transaction.modeOfTransaction.toUpperCase().replace('-', ' ') : 'CASH'}
@@ -653,217 +884,308 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
           {/* Transaction Form Modal */}
           {showTransactionForm && (
             <div className="modal-overlay" onClick={() => setShowTransactionForm(false)}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h3>{editingTransaction ? 'Edit' : 'Add'} Transaction</h3>
-                <form onSubmit={handleTransactionSubmit}>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Type *</label>
-                      <select
-                        value={transactionForm.type}
-                        onChange={(e) => setTransactionForm({ ...transactionForm, type: e.target.value })}
-                        required
-                      >
-                        <option value="expense">Expense</option>
-                        <option value="income">Income</option>
-                        <option value="transfer">Transfer</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label>Amount *</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={transactionForm.amount}
-                        onChange={(e) => setTransactionForm({ ...transactionForm, amount: e.target.value })}
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Broader Category:</label>
-                      <select
-                        value={transactionForm.broaderCategory}
-                        onChange={(e) => {
-                          const broader = e.target.value;
-                          setTransactionForm({
-                            ...transactionForm,
-                            broaderCategory: broader,
-                            mainCategory: '',
-                            subCategory: '',
-                            customSubCategory: ''
-                          });
-                        }}
-                        required
-                      >
-                        <option value="">Select broader category...</option>
-                        {getBroaderCategories().map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Main Category - shown only when Broader Category is selected */}
-                    {transactionForm.broaderCategory && (
+              <div className="ccb-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="ccb-modal-content">
+                  <h3>{editingTransaction ? 'Edit' : 'Add'} Cash Transaction</h3>
+                  <form onSubmit={handleTransactionSubmit} autoComplete="off">
+                    <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
                       <div className="form-group">
-                        <label>Main Category:</label>
+                        <label>Type</label>
                         <select
-                          value={transactionForm.mainCategory}
+                          value={transactionForm.type}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, type: e.target.value })}
+                          required
+                        >
+                          <option value="expense">Expense</option>
+                          <option value="income">Income</option>
+                          <option value="transfer">Transfer</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Amount</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={transactionForm.amount}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, amount: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Broader Category:</label>
+                        <select
+                          value={transactionForm.broaderCategory}
                           onChange={(e) => {
-                            const main = e.target.value;
+                            const broader = e.target.value;
                             setTransactionForm({
                               ...transactionForm,
-                              mainCategory: main,
+                              broaderCategory: broader,
+                              mainCategory: '',
                               subCategory: '',
                               customSubCategory: ''
                             });
                           }}
                           required
                         >
-                          <option value="">Select main category...</option>
-                          {getMainCategories(transactionForm.broaderCategory).map(cat => (
+                          <option value="">Select broader category...</option>
+                          {getBroaderCategories().map(cat => (
                             <option key={cat} value={cat}>{cat}</option>
                           ))}
                         </select>
                       </div>
-                    )}
 
-                    {/* Sub Category - shown only when Main Category is selected */}
-                    {transactionForm.mainCategory && (
-                      <div className="form-group">
-                        <label>Sub Category:</label>
-                        <select
-                          value={transactionForm.subCategory}
-                          onChange={(e) => {
-                            const sub = e.target.value;
-                            setTransactionForm({
-                              ...transactionForm,
-                              subCategory: sub,
-                              customSubCategory: sub === 'Other' ? '' : transactionForm.customSubCategory
-                            });
-                          }}
-                          required
-                        >
-                          <option value="">Select sub category...</option>
-                          {getSubCategories(transactionForm.broaderCategory, transactionForm.mainCategory).map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                      {/* Main Category - shown only when Broader Category is selected */}
+                      {transactionForm.broaderCategory && (
+                        <div className="form-group">
+                          <label>Main Category:</label>
+                          <select
+                            value={transactionForm.mainCategory}
+                            onChange={(e) => {
+                              const main = e.target.value;
+                              setTransactionForm({
+                                ...transactionForm,
+                                mainCategory: main,
+                                subCategory: '',
+                                customSubCategory: ''
+                              });
+                            }}
+                            required
+                          >
+                            <option value="">Select main category...</option>
+                            {getMainCategories(transactionForm.broaderCategory).map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
-                    {/* Custom Sub Category - shown only when "Other" is selected */}
-                    {transactionForm.subCategory === 'Other' && (
+                      {/* Sub Category - shown only when Main Category is selected */}
+                      {transactionForm.mainCategory && (
+                        <div className="form-group">
+                          <label>Sub Category:</label>
+                          <select
+                            value={transactionForm.subCategory}
+                            onChange={(e) => {
+                              const sub = e.target.value;
+                              setTransactionForm({
+                                ...transactionForm,
+                                subCategory: sub,
+                                customSubCategory: sub === 'Other' ? '' : transactionForm.customSubCategory
+                              });
+                            }}
+                            required
+                          >
+                            <option value="">Select sub category...</option>
+                            {getSubCategories(transactionForm.broaderCategory, transactionForm.mainCategory).map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Custom Sub Category - shown only when "Other" is selected */}
+                      {transactionForm.subCategory === 'Other' && (
+                        <div className="form-group">
+                          <label>Custom Sub Category:</label>
+                          <input
+                            type="text"
+                            value={transactionForm.customSubCategory}
+                            onChange={(e) => setTransactionForm({ ...transactionForm, customSubCategory: e.target.value })}
+                            placeholder="Enter custom sub category..."
+                            required
+                          />
+                        </div>
+                      )}
+
                       <div className="form-group">
-                        <label>Custom Sub Category:</label>
+                        <label>Date</label>
                         <input
-                          type="text"
-                          value={transactionForm.customSubCategory}
-                          onChange={(e) => setTransactionForm({ ...transactionForm, customSubCategory: e.target.value })}
-                          placeholder="Enter custom sub category..."
+                          type="date"
+                          value={transactionForm.date}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, date: e.target.value })}
                           required
                         />
                       </div>
-                    )}
 
-                    <div className="form-group">
-                      <label>Date *</label>
-                      <input
-                        type="date"
-                        value={transactionForm.date}
-                        onChange={(e) => setTransactionForm({ ...transactionForm, date: e.target.value })}
-                        required
-                      />
+                      <div className="form-group">
+                        <label>Mode of Transaction</label>
+                        <select
+                          value={transactionForm.modeOfTransaction}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, modeOfTransaction: e.target.value })}
+                          required
+                        >
+                          <option value="cash">Cash</option>
+                          <option value="credit-card">Credit Card</option>
+                          <option value="debit-card">Debit Card</option>
+                          <option value="upi">UPI</option>
+                          <option value="neft">NEFT</option>
+                          <option value="rtgs">RTGS</option>
+                          <option value="imps">IMPS</option>
+                          <option value="cheque">Cheque</option>
+                          <option value="dd">DD (Demand Draft)</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Type of Transaction</label>
+                        <select
+                          value={transactionForm.transactionType}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, transactionType: e.target.value })}
+                        >
+                          <option value="">Select type...</option>
+                          <option value="expense">Expense</option>
+                          <option value="transfer">Transfer</option>
+                          <option value="loan-give">Loan Give</option>
+                          <option value="loan-take">Loan Take</option>
+                          <option value="udhar-give">Udhar Give</option>
+                          <option value="udhar-receive">Udhar Receive</option>
+                          <option value="on-behalf-in">On-behalf - Amount In</option>
+                          <option value="on-behalf-out">On-behalf - Amount Out</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Expense Type</label>
+                        <select
+                          value={transactionForm.expenseType}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, expenseType: e.target.value })}
+                        >
+                          <option value="">Select type...</option>
+                          <option value="important-necessary">Important & Necessary</option>
+                          <option value="less-important">Less Important</option>
+                          <option value="avoidable-loss">Avoidable & Loss</option>
+                          <option value="unnecessary">Un-necessary</option>
+                          <option value="basic-necessity">Basic Necessity</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Description (Optional):</label>
+                        <textarea
+                          value={transactionForm.description}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, description: e.target.value })}
+                          placeholder="Additional notes..."
+                          rows="3"
+                        ></textarea>
+                      </div>
                     </div>
 
-                    <div className="form-group">
-                      <label>Mode of Transaction *</label>
-                      <select
-                        value={transactionForm.modeOfTransaction}
-                        onChange={(e) => setTransactionForm({ ...transactionForm, modeOfTransaction: e.target.value })}
-                        required
-                      >
-                        <option value="cash">Cash</option>
-                        <option value="credit-card">Credit Card</option>
-                        <option value="debit-card">Debit Card</option>
-                        <option value="upi">UPI</option>
-                        <option value="neft">NEFT</option>
-                        <option value="rtgs">RTGS</option>
-                        <option value="imps">IMPS</option>
-                        <option value="cheque">Cheque</option>
-                        <option value="dd">DD (Demand Draft)</option>
-                        <option value="other">Other</option>
-                      </select>
+                    <div className="form-actions">
+                      <button type="button" onClick={() => {
+                        setShowTransactionForm(false);
+                        resetTransactionForm();
+                      }}>
+                        Cancel
+                      </button>
+                      <button type="submit">
+                        {editingTransaction ? 'Update' : 'Save'} Transaction
+                      </button>
                     </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
 
-                    <div className="form-group">
-                      <label>Transaction Type</label>
-                      <select
-                        value={transactionForm.transactionType}
-                        onChange={(e) => setTransactionForm({ ...transactionForm, transactionType: e.target.value })}
-                      >
-                        <option value="">Select type...</option>
-                        <option value="expense">Expense</option>
-                        <option value="transfer">Transfer</option>
-                        <option value="loan-give">Loan Give</option>
-                        <option value="loan-take">Loan Take</option>
-                        <option value="udhar-give">Udhar Give</option>
-                        <option value="udhar-receive">Udhar Receive</option>
-                        <option value="on-behalf-in">On-behalf - Amount In</option>
-                        <option value="on-behalf-out">On-behalf - Amount Out</option>
-                      </select>
-                    </div>
+          {/* Columns Info Modal */}
+          {showColumnsModal && (
+            <div className="modal-overlay" onClick={() => setShowColumnsModal(false)}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+                <h3>📋 Required Excel Columns for Cash Transactions</h3>
+                <p style={{ marginBottom: '20px', color: '#64748b' }}>
+                  Your Excel file should have these columns (case-sensitive):
+                </p>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead style={{ background: '#f1f5f9' }}>
+                    <tr>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Column Name</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Required</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Example</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Type</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>expense, income, transfer</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Amount</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>1500.50</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Broader Category</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Personal, Business</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Main Category</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Food, Transportation</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Sub Category</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Groceries, Fuel</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Date</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>20/12/25 (DD/MM/YY)</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Mode of Transaction</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>cash, upi, credit-card</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Type of Transaction</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>expense, transfer, loan-give</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Expense Type</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>important-necessary, basic-necessity</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Description</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Monthly grocery shopping</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Narration</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Additional notes</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="form-actions" style={{ marginTop: '24px' }}>
+                  <button type="button" onClick={() => setShowColumnsModal(false)}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
-                    <div className="form-group">
-                      <label>Expense Type</label>
-                      <select
-                        value={transactionForm.expenseType}
-                        onChange={(e) => setTransactionForm({ ...transactionForm, expenseType: e.target.value })}
-                      >
-                        <option value="">Select type...</option>
-                        <option value="important-necessary">Important & Necessary</option>
-                        <option value="less-important">Less Important</option>
-                        <option value="avoidable-loss">Avoidable & Loss</option>
-                        <option value="unnecessary">Un-necessary</option>
-                        <option value="basic-necessity">Basic Necessity</option>
-                      </select>
-                    </div>
+          {/* Processing Overlay */}
+          {uploading && (
+            <div className="processing-overlay">
+              <div className="processing-content">
+                <div className="spinner"></div>
+                <div className="processing-text">Processing Upload...</div>
+                <div className="processing-subtext">Optimizing your data</div>
 
-                    <div className="form-group full-width">
-                      <label>Description *</label>
-                      <textarea
-                        value={transactionForm.description}
-                        onChange={(e) => setTransactionForm({ ...transactionForm, description: e.target.value })}
-                        rows="2"
-                        required
-                        placeholder="Brief description of transaction"
-                      />
-                    </div>
-
-                    <div className="form-group full-width">
-                      <label>Details of Transaction (Narration)</label>
-                      <textarea
-                        value={transactionForm.narration}
-                        onChange={(e) => setTransactionForm({ ...transactionForm, narration: e.target.value })}
-                        rows="2"
-                        placeholder="Detailed narration or notes about this transaction"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-actions">
-                    <button type="button" onClick={() => {
-                      setShowTransactionForm(false);
-                      resetTransactionForm();
-                    }}>
-                      Cancel
-                    </button>
-                    <button type="submit">
-                      {editingTransaction ? 'Update' : 'Add'} Transaction
-                    </button>
-                  </div>
-                </form>
+                {/* Progress Bar */}
+                <div className="progress-container">
+                  <div className="progress-bar" style={{ width: `${uploadProgress}%` }}></div>
+                </div>
+                <div className="processing-text progress-text">{uploadProgress}%</div>
               </div>
             </div>
           )}

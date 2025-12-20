@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiTrendingUp, FiDollarSign, FiPieChart, FiActivity, FiBarChart2 } from 'react-icons/fi';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid, AreaChart, Area, BarChart, Bar } from 'recharts';
 import { investmentAPI } from '../../utils/investmentAPI';
+import { staticAPI } from '../../utils/staticAPI';
 import './Investment.css';
 import { syncContactsFromForm } from '../../utils/contactSyncUtil';
 import { syncBillScheduleFromForm } from '../../utils/billScheduleSyncUtil';
@@ -11,6 +12,7 @@ const GoldSgbInvestment = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [familyMembers, setFamilyMembers] = useState([]);
   const formRef = useRef(null);
   const [formData, setFormData] = useState({
     category: 'gold-sgb',
@@ -25,6 +27,8 @@ const GoldSgbInvestment = () => {
     interestRate: '',
     purity: '',
     storageType: 'digital',
+    nameOfInvestor: '',
+    subBroker: '',
     notes: '',
   });
 
@@ -32,7 +36,19 @@ const GoldSgbInvestment = () => {
 
   useEffect(() => {
     fetchInvestments();
+    fetchFamilyMembers();
   }, []);
+
+  const fetchFamilyMembers = async () => {
+    try {
+      const familyRes = await staticAPI.getFamilyProfile();
+      if (familyRes.data && familyRes.data.length > 0) {
+        setFamilyMembers(familyRes.data[0].members || []);
+      }
+    } catch (error) {
+      console.error('Error fetching family members:', error);
+    }
+  };
 
   useEffect(() => {
     // Auto-scroll to form when it's shown
@@ -583,6 +599,29 @@ const GoldSgbInvestment = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g., MMTC-PAMP Digital Gold"
                   required
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Name of Investor</label>
+                <select
+                  value={formData.nameOfInvestor}
+                  onChange={(e) => setFormData({ ...formData, nameOfInvestor: e.target.value })}
+                >
+                  <option value="">Select family member...</option>
+                  {familyMembers.map((member, index) => (
+                    <option key={index} value={member.name}>{member.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label>Sub Broker</label>
+                <input
+                  type="text"
+                  value={formData.subBroker}
+                  onChange={(e) => setFormData({ ...formData, subBroker: e.target.value })}
+                  placeholder="Sub broker name"
                 />
               </div>
             </div>

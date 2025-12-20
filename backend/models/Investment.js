@@ -57,6 +57,8 @@ const investmentSchema = new mongoose.Schema({
   // Generic fields
   accountNumber: String,
   amount: Number, // total amount (quantity * purchasePrice)
+  nameOfInvestor: String, // Name of the investor
+  subBroker: String, // Sub broker name
   startDate: {
     type: Date,
     required: true,

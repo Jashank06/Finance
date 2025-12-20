@@ -8,6 +8,73 @@
   backdrop-filter: blur(10px);
 }
 
+/* Records Table Styles */
+.records-table {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow-x: auto;
+  overflow-y: visible;
+  margin-top: 20px;
+}
+
+.records-table table {
+  width: 100%;
+  min-width: 1400px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.records-table th {
+  background: #f8f9fa;
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #e0e0e0;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.records-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #666;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.records-table tr:last-child td {
+  border-bottom: none;
+}
+
+.records-table tr:hover {
+  background: #f8f9fa;
+}
+
+.table-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-remove {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-remove:hover {
+  background: #c82333;
+}
+
 /* Custom Success Popup */
 .success-popup {
   position: fixed;

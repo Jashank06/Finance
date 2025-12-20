@@ -43,13 +43,13 @@ const milestoneSchema = new mongoose.Schema({
   description: { type: String },
   startDate: { type: Date, required: true },
   endDate: { type: Date },
-  status: { 
-    type: String, 
+  status: {
+    type: String,
     enum: ['planning', 'in-progress', 'completed', 'on-hold', 'cancelled'],
     default: 'planning'
   },
-  priority: { 
-    type: String, 
+  priority: {
+    type: String,
     enum: ['low', 'medium', 'high', 'critical'],
     default: 'medium'
   },
@@ -382,10 +382,13 @@ router.get('/targets-for-life', async (req, res) => {
 router.post('/targets-for-life', async (req, res) => {
   try {
     const target = new Target({
-      totalSavingsTarget: req.body.totalSavingsTarget,
-      targetDescription: req.body.targetDescription,
-      purchases: req.body.purchases || [],
-      savings: req.body.savings || []
+      goalType: req.body.goalType,
+      specificGoal: req.body.specificGoal,
+      timeHorizon: req.body.timeHorizon,
+      estimatedCost: req.body.estimatedCost,
+      recommendedInvestmentVehicle: req.body.recommendedInvestmentVehicle,
+      riskTolerance: req.body.riskTolerance,
+      targetDate: req.body.targetDate
     });
     const savedTarget = await target.save();
     res.status(201).json(savedTarget);
@@ -401,10 +404,13 @@ router.put('/targets-for-life/:id', async (req, res) => {
       req.params.id,
       {
         $set: {
-          totalSavingsTarget: req.body.totalSavingsTarget,
-          targetDescription: req.body.targetDescription,
-          purchases: req.body.purchases || [],
-          savings: req.body.savings || [],
+          goalType: req.body.goalType,
+          specificGoal: req.body.specificGoal,
+          timeHorizon: req.body.timeHorizon,
+          estimatedCost: req.body.estimatedCost,
+          recommendedInvestmentVehicle: req.body.recommendedInvestmentVehicle,
+          riskTolerance: req.body.riskTolerance,
+          targetDate: req.body.targetDate,
           updatedAt: new Date()
         }
       },

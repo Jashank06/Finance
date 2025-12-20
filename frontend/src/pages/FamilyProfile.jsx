@@ -54,9 +54,10 @@ const FamilyProfile = () => {
       emergencyContactAddress: '',
       alternatePhone: '',
       workAddress: '',
-      socialMediaProfiles: '',
-      insuranceDetails: '',
-      bankAccountInfo: '',
+      socialMediaProfile1: '',
+      socialMediaProfile2: '',
+      socialMediaProfile3: '',
+      socialMediaProfile4: '',
       specialNotes: ''
     }
   });
@@ -120,7 +121,10 @@ const FamilyProfile = () => {
         emergencyContactAddress: '',
         alternatePhone: '',
         workAddress: '',
-        socialMediaProfiles: '',
+        socialMediaProfile1: '',
+        socialMediaProfile2: '',
+        socialMediaProfile3: '',
+        socialMediaProfile4: '',
         insuranceDetails: '',
         bankAccountInfo: '',
         specialNotes: ''
@@ -148,7 +152,10 @@ const FamilyProfile = () => {
         emergencyContactAddress: '',
         alternatePhone: '',
         workAddress: '',
-        socialMediaProfiles: '',
+        socialMediaProfile1: '',
+        socialMediaProfile2: '',
+        socialMediaProfile3: '',
+        socialMediaProfile4: '',
         insuranceDetails: '',
         bankAccountInfo: '',
         specialNotes: ''
@@ -157,11 +164,35 @@ const FamilyProfile = () => {
     setShowMemberForm(true);
   };
 
+  const calculateAgeFromDateOfBirth = (dateOfBirth) => {
+    if (!dateOfBirth) return '';
+    
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age > 0 ? age.toString() : '';
+  };
+
   const handleMemberFormChange = (field, value) => {
-    setMemberFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setMemberFormData(prev => {
+      const updatedData = {
+        ...prev,
+        [field]: value
+      };
+      
+      // Auto-calculate age when dateOfBirth changes
+      if (field === 'dateOfBirth') {
+        updatedData.age = calculateAgeFromDateOfBirth(value);
+      }
+      
+      return updatedData;
+    });
   };
 
   const handleAdditionalInfoChange = (field, value) => {
@@ -397,6 +428,8 @@ const FamilyProfile = () => {
                         value={memberFormData.age}
                         onChange={(e) => handleMemberFormChange('age', e.target.value)}
                         placeholder="Age"
+                        readOnly
+                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
                       />
                     </div>
                     <div className="form-group">
@@ -742,30 +775,39 @@ const FamilyProfile = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Social Media Profiles</label>
+                        <label>Social Media Profile 1</label>
                         <input
                           type="text"
-                          value={memberFormData.additionalInfo?.socialMediaProfiles || ''}
-                          onChange={(e) => handleAdditionalInfoChange('socialMediaProfiles', e.target.value)}
-                          placeholder="Links or handles"
+                          value={memberFormData.additionalInfo?.socialMediaProfile1 || ''}
+                          onChange={(e) => handleAdditionalInfoChange('socialMediaProfile1', e.target.value)}
+                          placeholder="Social media profile 1"
                         />
                       </div>
                       <div className="form-group">
-                        <label>Insurance Details</label>
+                        <label>Social Media Profile 2</label>
                         <input
                           type="text"
-                          value={memberFormData.additionalInfo?.insuranceDetails || ''}
-                          onChange={(e) => handleAdditionalInfoChange('insuranceDetails', e.target.value)}
-                          placeholder="Policy numbers"
+                          value={memberFormData.additionalInfo?.socialMediaProfile2 || ''}
+                          onChange={(e) => handleAdditionalInfoChange('socialMediaProfile2', e.target.value)}
+                          placeholder="Social media profile 2"
                         />
                       </div>
                       <div className="form-group">
-                        <label>Bank Account Info</label>
+                        <label>Social Media Profile 3</label>
                         <input
                           type="text"
-                          value={memberFormData.additionalInfo?.bankAccountInfo || ''}
-                          onChange={(e) => handleAdditionalInfoChange('bankAccountInfo', e.target.value)}
-                          placeholder="Account details"
+                          value={memberFormData.additionalInfo?.socialMediaProfile3 || ''}
+                          onChange={(e) => handleAdditionalInfoChange('socialMediaProfile3', e.target.value)}
+                          placeholder="Social media profile 3"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Social Media Profile 4</label>
+                        <input
+                          type="text"
+                          value={memberFormData.additionalInfo?.socialMediaProfile4 || ''}
+                          onChange={(e) => handleAdditionalInfoChange('socialMediaProfile4', e.target.value)}
+                          placeholder="Social media profile 4"
                         />
                       </div>
                       <div className="form-group full-width">

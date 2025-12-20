@@ -12,6 +12,16 @@ const BillChecklist = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  // Filter entries based on selected year
+  const filteredEntries = useMemo(() => {
+    return entries.filter(entry => {
+      if (!entry.dueDate) return false;
+      const entryYear = new Date(entry.dueDate).getFullYear();
+      return entryYear === selectedYear;
+    });
+  }, [entries, selectedYear]);
   const [inputs, setInputs] = useState({
     billType: 'Electricity',
     provider: '',
@@ -126,7 +136,7 @@ const BillChecklist = () => {
   const totals = useMemo(() => {
     let pending = 0, paid = 0, overdue = 0, upcoming = 0;
     const now = new Date();
-    for (const e of entries) {
+    for (const e of filteredEntries) {
       const amt = Number(e.amount) || 0;
       if (e.status === 'pending') pending += amt;
       else if (e.status === 'paid') paid += amt;
@@ -134,28 +144,28 @@ const BillChecklist = () => {
       const due = e.dueDate ? new Date(e.dueDate) : null;
       if (due && due >= now) upcoming += amt;
     }
-    return { pending, paid, overdue, upcoming, count: entries.length };
-  }, [entries]);
+    return { pending, paid, overdue, upcoming, count: filteredEntries.length };
+  }, [filteredEntries]);
 
   const providerAgg = useMemo(() => {
     const map = new Map();
-    for (const e of entries) {
+    for (const e of filteredEntries) {
       const key = e.provider || e.billType || 'Unknown';
       const prev = map.get(key) || { name: key, amount: 0 };
       prev.amount += Number(e.amount) || 0;
       map.set(key, prev);
     }
     return Array.from(map.values());
-  }, [entries]);
+  }, [filteredEntries]);
 
   const statusPie = useMemo(() => {
     const data = [
-      { name: 'Pending', value: entries.filter(e => e.status === 'pending').length },
-      { name: 'Paid', value: entries.filter(e => e.status === 'paid').length },
-      { name: 'Overdue', value: entries.filter(e => e.status === 'overdue').length },
+      { name: 'Pending', value: filteredEntries.filter(e => e.status === 'pending').length },
+      { name: 'Paid', value: filteredEntries.filter(e => e.status === 'paid').length },
+      { name: 'Overdue', value: filteredEntries.filter(e => e.status === 'overdue').length },
     ];
     return data;
-  }, [entries]);
+  }, [filteredEntries]);
 
   const COLORS = ['#2563EB', '#10B981', '#EF4444', '#8B5CF6'];
 
@@ -163,10 +173,10 @@ const BillChecklist = () => {
     const now = new Date();
     const months = [];
     for (let i = 0; i < 12; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const d = new Date(selectedYear, now.getMonth() + i, 1);
       months.push({ key: `${d.getFullYear()}-${d.getMonth()+1}`, name: d.toLocaleString('en-US', { month: 'short' }), total: 0 });
     }
-    for (const e of entries) {
+    for (const e of filteredEntries) {
       if (!e.dueDate) continue;
       const due = new Date(e.dueDate);
       const key = `${due.getFullYear()}-${due.getMonth()+1}`;
@@ -174,7 +184,7 @@ const BillChecklist = () => {
       if (slot) slot.total += Number(e.amount) || 0;
     }
     return months.map(m => ({ name: m.name, value: m.total }));
-  }, [entries]);
+  }, [filteredEntries, selectedYear]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -296,6 +306,20 @@ const BillChecklist = () => {
       <div className="investment-header">
         <h1>Bill Paying Checklist</h1>
         <div className="header-actions">
+          <div className="year-filter">
+            <label htmlFor="year-select">Year:</label>
+            <select 
+              id="year-select"
+              value={selectedYear} 
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="year-select"
+            >
+              {Array.from({ length: 5 }, (_, i) => {
+                const year = new Date().getFullYear() - 2 + i;
+                return <option key={year} value={year}>{year}</option>;
+              })}
+            </select>
+          </div>
           <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
             <FiPlus /> {showForm ? 'Cancel' : 'Add Bill'}
           </button>
@@ -441,7 +465,7 @@ const BillChecklist = () => {
               </tr>
             </thead>
             <tbody>
-              {entries.map((e, idx) => (
+              {filteredEntries.map((e, idx) => (
                 <tr key={e._id || idx}>
                   <td>{e.billType}</td>
                   <td>{e.provider}</td>

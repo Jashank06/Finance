@@ -104,7 +104,8 @@ const BasicDetailsSchema = new mongoose.Schema({
     rmName: String,
     rmMobile: String,
     rmEmail: String,
-    branchAddress: String
+    branchAddress: String,
+    goalPurpose: String
   }],
   shares: [{
     dematCompany: String,
@@ -122,7 +123,8 @@ const BasicDetailsSchema = new mongoose.Schema({
     rmName: String,
     rmMobile: String,
     rmEmail: String,
-    branchAddress: String
+    branchAddress: String,
+    goalPurpose: String
   }],
   insurance: [{
     insuranceCompany: String,
@@ -141,7 +143,8 @@ const BasicDetailsSchema = new mongoose.Schema({
     rmName: String,
     rmMobile: String,
     rmEmail: String,
-    branchAddress: String
+    branchAddress: String,
+    goalPurpose: String
   }],
   banks: [{
     bankName: String,
@@ -158,7 +161,8 @@ const BasicDetailsSchema = new mongoose.Schema({
     registeredEmail: String,
     rmName: String,
     rmMobile: String,
-    rmEmail: String
+    rmEmail: String,
+    goalPurpose: String
   }],
   mobileBills: [{
     mobileNumber: String,
@@ -170,7 +174,8 @@ const BasicDetailsSchema = new mongoose.Schema({
     alternateNo: String,
     address: String,
     planNo: String,
-    customerNumber: String
+    customerNumber: String,
+    goalPurpose: String
   }],
   cards: [{
     bankName: String,
@@ -184,7 +189,8 @@ const BasicDetailsSchema = new mongoose.Schema({
     password: String,
     customerCareNumber: String,
     customerCareEmail: String,
-    cardType: String
+    cardType: String,
+    goalPurpose: String
   }],
   paymentGateways: [{
     company: String,
@@ -193,7 +199,8 @@ const BasicDetailsSchema = new mongoose.Schema({
     accountNumber: String,
     url: String,
     userId: String,
-    password: String
+    password: String,
+    goalPurpose: String
   }],
   mutualFundsPortfolio: [{
     srNo: String,
@@ -719,9 +726,10 @@ const FamilyProfileSchema = new mongoose.Schema({
       emergencyContactAddress: String,
       alternatePhone: String,
       workAddress: String,
-      socialMediaProfiles: String,
-      insuranceDetails: String,
-      bankAccountInfo: String,
+      socialMediaProfile1: String,
+      socialMediaProfile2: String,
+      socialMediaProfile3: String,
+      socialMediaProfile4: String,
       specialNotes: String
     }
   }],
@@ -796,9 +804,10 @@ const FamilyProfileSchema = new mongoose.Schema({
       emergencyContactAddress: String,
       alternatePhone: String,
       workAddress: String,
-      socialMediaProfiles: String,
-      insuranceDetails: String,
-      bankAccountInfo: String,
+      socialMediaProfile1: String,
+      socialMediaProfile2: String,
+      socialMediaProfile3: String,
+      socialMediaProfile4: String,
       specialNotes: String
     }
   }],

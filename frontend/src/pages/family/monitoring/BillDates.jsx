@@ -29,6 +29,7 @@ const BillDates = () => {
     cycle: 'monthly',
     amount: 1000,
     dueDate: '',
+    payableDate: '',
     autoDebit: false,
     paymentMethod: 'UPI',
     status: 'pending',
@@ -83,7 +84,7 @@ const BillDates = () => {
     return {
       _id: inv._id,
       billType: notes.billType || 'Bill',
-      billName: notes.billName || '',
+      billName: notes.billName || inv.provider || notes.provider || notes.billType || '',
       provider: inv.provider || notes.provider || '',
       accountNumber: inv.accountNumber || notes.accountNumber || '',
       cycle: inv.frequency || notes.cycle || 'monthly',
@@ -149,17 +150,27 @@ const BillDates = () => {
   };
 
   const handleEditBill = async (bill) => {
+    console.log('Edit bill received:', bill);
+    console.log('Entries available:', entries.length);
+    console.log('Reference bills available:', referenceBills.length);
+    
     // Find the original bill with _id from entries or referenceBills
     let originalBill = null;
     const allBills = [...entries, ...referenceBills];
+    console.log('All bills for matching:', allBills.map(b => ({ _id: b._id, billName: b.billName, dueDate: b.dueDate })));
     
     for (const b of allBills) {
-      if ((b.billName === bill.billName && b.provider === bill.provider && b.dueDate === bill.dueDate) ||
-          (b._id && b._id === bill._id)) {
+      console.log('Checking bill:', b.billName, 'against:', bill.billName || bill.provider);
+      if ((b.billName === (bill.billName || bill.provider) && b.dueDate === bill.dueDate) ||
+          (b._id && b._id === bill._id) ||
+          (b.billName === (bill.billName || bill.provider) && b.billType === bill.billType && Math.abs(Number(b.amount) - Number(bill.amount)) < 1)) {
         originalBill = b;
+        console.log('Found original bill:', originalBill);
         break;
       }
     }
+    
+    console.log('Original bill found locally:', originalBill);
     
     // If not found in local arrays, fetch from API
     if (!originalBill) {
@@ -180,21 +191,20 @@ const BillDates = () => {
           console.log('Checking against fetched bill:', b);
           // More flexible matching - try multiple combinations
           if (
-            // Match by provider, billType, cycle, and amount (with tolerance)
-            (b.provider === bill.provider && 
+            // Match by billName and dueDate (primary method)
+            (b.billName && (bill.billName || bill.provider) && b.billName === (bill.billName || bill.provider) && b.dueDate === bill.dueDate) ||
+            // Match by billName, billType, and amount (fallback)
+            (b.billName && (bill.billName || bill.provider) && b.billName === (bill.billName || bill.provider) && 
              b.billType === bill.billType && 
-             b.cycle === bill.cycle && 
              Math.abs(Number(b.amount) - Number(bill.amount)) < 1) ||
-            // Match by provider and billName (if both exist)
-            (b.billName && bill.billName && b.billName === bill.billName && b.provider === bill.provider) ||
-            // Match by provider and day (from dueDate)
-            (b.provider === bill.provider && 
+            // Match by billName and day (from dueDate)
+            (b.billName && (bill.billName || bill.provider) && b.billName === (bill.billName || bill.provider) && 
              b.dueDate && new Date(b.dueDate).getDate() === bill.day) ||
-            // Match by billType, cycle, and amount (if provider is not reliable)
+            // Match by billType, cycle, and amount (last resort)
             (b.billType === bill.billType && 
              b.cycle === bill.cycle && 
              Math.abs(Number(b.amount) - Number(bill.amount)) < 1) ||
-            // Match by day and amount only (last resort)
+            // Match by day and amount only (final fallback)
             (b.dueDate && new Date(b.dueDate).getDate() === bill.day && 
              Math.abs(Number(b.amount) - Number(bill.amount)) < 1)
           ) {
@@ -216,34 +226,36 @@ const BillDates = () => {
     // If not found, use the calendar bill but mark it as a new bill (no _id)
     const billToEdit = originalBill || { ...bill, _id: null };
     console.log('Bill to edit:', billToEdit);
-    setEditingBill(billToEdit);
+    console.log('Setting inputs with billName:', billToEdit.billName);
     setInputs({
-      billType: bill.billType || '',
-      billName: bill.billName || '',
-      provider: bill.provider || '',
-      accountNumber: bill.accountNumber || '',
-      cycle: bill.cycle || '',
-      amount: bill.amount || 0,
-      dueDate: bill.dueDate || '',
-      autoDebit: bill.autoDebit || false,
-      paymentMethod: bill.paymentMethod || 'UPI',
-      status: bill.status || 'pending',
-      reminderDays: bill.reminderDays || 3,
-      notes: bill.notes || '',
-      startDate: bill.startDate || '',
+      billType: billToEdit.billType || '',
+      billName: billToEdit.billName || '',
+      provider: billToEdit.provider || '',
+      accountNumber: billToEdit.accountNumber || '',
+      cycle: billToEdit.cycle || '',
+      amount: billToEdit.amount || 0,
+      dueDate: billToEdit.dueDate || '',
+      payableDate: billToEdit.payableDate || '',
+      autoDebit: billToEdit.autoDebit || false,
+      paymentMethod: billToEdit.paymentMethod || 'UPI',
+      status: billToEdit.status || 'pending',
+      reminderDays: billToEdit.reminderDays || 3,
+      notes: billToEdit.notes || '',
+      startDate: billToEdit.startDate || '',
       // Electricity specific fields
-      billingUnit: bill.billingUnit || '',
-      nameOnBill: bill.nameOnBill || '',
-      paidAmount: bill.paidAmount || '',
-      paymentDate: bill.paymentDate || '',
-      description: bill.description || '',
+      billingUnit: billToEdit.billingUnit || '',
+      nameOnBill: billToEdit.nameOnBill || '',
+      paidAmount: billToEdit.paidAmount || '',
+      paymentDate: billToEdit.paymentDate || '',
+      description: billToEdit.description || '',
       // Water specific fields
-      meterNumber: bill.meterNumber || '',
-      connectionType: bill.connectionType || 'Domestic',
+      meterNumber: billToEdit.meterNumber || '',
+      connectionType: billToEdit.connectionType || 'Domestic',
       // Gas specific fields
-      consumerNumber: bill.consumerNumber || '',
-      gasAgency: bill.gasAgency || ''
+      consumerNumber: billToEdit.consumerNumber || '',
+      gasAgency: billToEdit.gasAgency || ''
     });
+    setEditingBill(billToEdit);
     setShowForm(true);
     setShowBillOptions(null);
   };
@@ -268,11 +280,9 @@ const BillDates = () => {
         // Find matching bill by comparing properties
         let originalBill = null;
         for (const b of allBills) {
-          if ((b.provider === bill.provider && 
-               b.billType === bill.billType && 
-               b.cycle === bill.cycle && 
-               Math.abs(Number(b.amount) - Number(bill.amount)) < 1) ||
-              (b.billName === bill.billName && b.provider === bill.provider)) {
+          if ((b.billName === (bill.billName || bill.provider) && b.dueDate === bill.dueDate) ||
+              (b._id && b._id === bill._id) ||
+              (b.billName === (bill.billName || bill.provider) && b.billType === bill.billType && Math.abs(Number(b.amount) - Number(bill.amount)) < 1)) {
             originalBill = b;
             break;
           }
@@ -500,9 +510,13 @@ const BillDates = () => {
             try {
               setSaving(true);
               // If editing (editingBill has _id), update; otherwise create
+              console.log('editingBill:', editingBill);
+              console.log('editingBill._id:', editingBill?._id);
               if (editingBill && editingBill._id) {
+                console.log('Updating existing bill with ID:', editingBill._id);
                 await investmentAPI.update(editingBill._id, toPayload(inputs));
               } else {
+                console.log('Creating new bill');
                 await investmentAPI.create(toPayload(inputs));
               }
               // Save current bill data for this bill type
@@ -600,10 +614,6 @@ const BillDates = () => {
                 <input type="text" value={inputs.billName} onChange={(e) => setInputs({ ...inputs, billName: e.target.value })} placeholder="Enter bill name" required />
               </div>
               <div className="form-field">
-                <label>Provider *</label>
-                <input type="text" value={inputs.provider} onChange={(e) => setInputs({ ...inputs, provider: e.target.value })} required />
-              </div>
-              <div className="form-field">
                 <label>Account Number</label>
                 <input type="text" value={inputs.accountNumber} onChange={(e) => setInputs({ ...inputs, accountNumber: e.target.value })} />
               </div>
@@ -626,6 +636,10 @@ const BillDates = () => {
               <div className="form-field">
                 <label>Due Date *</label>
                 <input type="date" value={inputs.dueDate} onChange={(e) => setInputs({ ...inputs, dueDate: e.target.value })} required />
+              </div>
+              <div className="form-field">
+                <label>Payable Date</label>
+                <input type="date" value={inputs.payableDate} onChange={(e) => setInputs({ ...inputs, payableDate: e.target.value })} />
               </div>
             </div>
 

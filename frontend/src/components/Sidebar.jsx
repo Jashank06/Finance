@@ -51,7 +51,6 @@ const Sidebar = () => {
                   <div className="nested-submenu">
                     <Link to="/family/daily/cash-cards-bank" className="nested-submenu-item">Cash, Cards & Bank Transactions</Link>
                     <Link to="/family/daily/loan-udhar" className="nested-submenu-item">Udhar Lena/Dena</Link>
-                    <Link to="/family/daily/bill-paying" className="nested-submenu-item">Bill Paying Checklist</Link>
                     <Link to="/family/daily/manage-finance" className="nested-submenu-item">Manage Finance</Link>
                     <Link to="/family/daily/income-expenses" className="nested-submenu-item">Income & Expenses</Link>
                     <Link to="/family/daily/cheque-register" className="nested-submenu-item">Cheque Register</Link>
@@ -71,6 +70,7 @@ const Sidebar = () => {
                     <Link to="/family/monitoring/milestones" className="nested-submenu-item">Milestone & Task Timeline</Link>
                     <Link to="/family/monitoring/targets-for-life" className="nested-submenu-item">Targets for Life</Link>
                     <Link to="/family/monitoring/bill-dates" className="nested-submenu-item">Bill Dates</Link>
+                    <Link to="/family/daily/bill-paying" className="nested-submenu-item">Bill Paying Checklist</Link>
                     <Link to="/family/monitoring/multiple-calendars" className="nested-submenu-item">Multiple Calendars</Link>
                     <Link to="/family/monitoring/reminders-notifications" className="nested-submenu-item">Reminders, Notifications</Link>
                     <Link to="/family/monitoring/yearly-calendar" className="nested-submenu-item">Yearly Calendar</Link>

@@ -347,11 +347,11 @@ const InventoryRecord = () => {
                   <tr>
                     <th>Item</th>
                     <th>Category</th>
-                    <th>Location</th>
-                    <th>Qty</th>
-                    <th>Unit</th>
+                    <th>Name of Company</th>
+                    <th>Warranty / Guarantee Date</th>
                     <th>Vendor</th>
-                    <th>Actions</th>
+                    <th>Date of Purchase</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -359,10 +359,10 @@ const InventoryRecord = () => {
                     <tr key={idx}>
                       <td>{e.itemName}</td>
                       <td>{e.category}</td>
-                      <td>{e.location}</td>
-                      <td>{e.quantity}</td>
-                      <td>{e.unit}</td>
+                      <td>{e.companyName}</td>
+                      <td>{e.warrantyExpiry || 'N/A'}</td>
                       <td>{e.vendorName}</td>
+                      <td>{e.purchaseDate || 'N/A'}</td>
                       <td>
                         <div className="investment-actions">
                           <button onClick={() => handleEdit(idx)} className="btn-icon"><FiEdit2 /></button>

@@ -183,7 +183,7 @@ const LandRecords = () => {
   }, []);
 
   useEffect(() => {
-    if (editMode) {
+    if (editMode && !editingId) {
       switch(editMode) {
         case 'land':
           setFormData(defaultEntry);
@@ -198,7 +198,7 @@ const LandRecords = () => {
           setFormData(defaultEntry);
       }
     }
-  }, [editMode]);
+  }, [editMode, editingId]);
 
   const fetchEntries = async () => {
     try {
