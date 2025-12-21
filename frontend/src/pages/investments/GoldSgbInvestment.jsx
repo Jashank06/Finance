@@ -6,6 +6,7 @@ import { staticAPI } from '../../utils/staticAPI';
 import './Investment.css';
 import { syncContactsFromForm } from '../../utils/contactSyncUtil';
 import { syncBillScheduleFromForm } from '../../utils/billScheduleSyncUtil';
+import { syncInvestmentProfileFromForm } from '../../utils/syncInvestmentProfileUtil';
 
 const GoldSgbInvestment = () => {
   const [investments, setInvestments] = useState([]);
@@ -128,7 +129,8 @@ const GoldSgbInvestment = () => {
       // Sync to other modules
       await Promise.all([
         syncContactsFromForm(formData, 'GoldSgbInvestment'),
-        syncBillScheduleFromForm(formData, 'GoldSgbInvestment')
+        syncBillScheduleFromForm(formData, 'GoldSgbInvestment'),
+        syncInvestmentProfileFromForm(formData, 'GoldSgbInvestment')
       ]);
 
       resetForm();

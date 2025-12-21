@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FiPlus, FiEdit, FiTrash2, FiShield, FiCreditCard, FiDollarSign, FiPieChart, FiTrendingUp, FiDatabase } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiShield, FiCreditCard, FiDollarSign, FiPieChart, FiTrendingUp, FiDatabase, FiBarChart2 } from 'react-icons/fi';
 import { investmentProfileAPI } from '../../utils/investmentProfileAPI';
 import BankAccountModal from '../../components/BankAccountModal';
 import CardDetailModal from '../../components/CardDetailModal';
@@ -7,6 +7,8 @@ import PaymentGatewayModal from '../../components/PaymentGatewayModal';
 import InsuranceProfileModal from '../../components/InsuranceProfileModal';
 import MutualFundProfileModal from '../../components/MutualFundProfileModal';
 import ShareProfileModal from '../../components/ShareProfileModal';
+import NpsPpfProfileModal from '../../components/NpsPpfProfileModal';
+import GoldBondProfileModal from '../../components/GoldBondProfileModal';
 import './Investment.css';
 
 const InvestmentProfile = () => {
@@ -16,17 +18,21 @@ const InvestmentProfile = () => {
   const [insurance, setInsurance] = useState([]);
   const [mutualFunds, setMutualFunds] = useState([]);
   const [shares, setShares] = useState([]);
+  const [npsPpf, setNpsPpf] = useState([]);
+  const [goldBonds, setGoldBonds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('bank-accounts');
   const [error, setError] = useState(null);
-  
+
   const [modals, setModals] = useState({
     bankAccount: { isOpen: false, editData: null },
     cardDetail: { isOpen: false, editData: null },
     paymentGateway: { isOpen: false, editData: null },
     insurance: { isOpen: false, editData: null },
     mutualFund: { isOpen: false, editData: null },
-    share: { isOpen: false, editData: null }
+    share: { isOpen: false, editData: null },
+    npsPpf: { isOpen: false, editData: null },
+    goldBond: { isOpen: false, editData: null }
   });
 
   useEffect(() => {
@@ -44,14 +50,18 @@ const InvestmentProfile = () => {
         paymentGatewaysRes,
         insuranceRes,
         mutualFundsRes,
-        sharesRes
+        sharesRes,
+        npsPpfRes,
+        goldBondsRes
       ] = await Promise.all([
         investmentProfileAPI.getBankAccounts(),
         investmentProfileAPI.getCardDetails(),
         investmentProfileAPI.getPaymentGateways(),
         investmentProfileAPI.getInsurance(),
         investmentProfileAPI.getMutualFunds(),
-        investmentProfileAPI.getShares()
+        investmentProfileAPI.getShares(),
+        investmentProfileAPI.getNpsPpf(),
+        investmentProfileAPI.getGoldBonds()
       ]);
 
       setBankAccounts(bankAccountsRes.data.data || []);
@@ -60,6 +70,8 @@ const InvestmentProfile = () => {
       setInsurance(insuranceRes.data.data || []);
       setMutualFunds(mutualFundsRes.data.data || []);
       setShares(sharesRes.data.data || []);
+      setNpsPpf(npsPpfRes.data.data || []);
+      setGoldBonds(goldBondsRes.data.data || []);
 
     } catch (error) {
       console.error('Error fetching investment profile data:', error);
@@ -74,7 +86,7 @@ const InvestmentProfile = () => {
 
     try {
       setLoading(true);
-      
+
       switch (type) {
         case 'bank-account':
           await investmentProfileAPI.deleteBankAccount(id);
@@ -92,14 +104,21 @@ const InvestmentProfile = () => {
           await investmentProfileAPI.deleteMutualFund(id);
           break;
         case 'share':
+        case 'share':
           await investmentProfileAPI.deleteShare(id);
+          break;
+        case 'nps-ppf':
+          await investmentProfileAPI.deleteNpsPpf(id);
+          break;
+        case 'gold-bond':
+          await investmentProfileAPI.deleteGoldBonds(id);
           break;
         default:
           throw new Error('Unknown item type');
       }
 
       await fetchAllData();
-      
+
     } catch (error) {
       console.error(`Error deleting ${type}:`, error);
       setError(`Failed to delete ${type}. Please try again.`);
@@ -153,7 +172,7 @@ const InvestmentProfile = () => {
           <FiPlus /> Add Bank Account
         </button>
       </div>
-      
+
       <div className="table-container">
         <table className="investment-table">
           <thead>
@@ -201,13 +220,13 @@ const InvestmentProfile = () => {
                   <td>{item.customerCareEmailId || '-'}</td>
                   <td>
                     <div className="action-buttons">
-                      <button 
+                      <button
                         className="edit-btn"
                         onClick={() => openModal('bankAccount', item)}
                       >
                         <FiEdit />
                       </button>
-                      <button 
+                      <button
                         className="delete-btn"
                         onClick={() => handleDelete('bank-account', item._id)}
                       >
@@ -235,7 +254,7 @@ const InvestmentProfile = () => {
           <FiPlus /> Add Card
         </button>
       </div>
-      
+
       <div className="table-container">
         <table className="investment-table">
           <thead>
@@ -273,13 +292,13 @@ const InvestmentProfile = () => {
                   <td>{item.customerCareEmailId || '-'}</td>
                   <td>
                     <div className="action-buttons">
-                      <button 
+                      <button
                         className="edit-btn"
                         onClick={() => openModal('cardDetail', item)}
                       >
                         <FiEdit />
                       </button>
-                      <button 
+                      <button
                         className="delete-btn"
                         onClick={() => handleDelete('card-detail', item._id)}
                       >
@@ -307,7 +326,7 @@ const InvestmentProfile = () => {
           <FiPlus /> Add Payment Gateway
         </button>
       </div>
-      
+
       <div className="table-container">
         <table className="investment-table">
           <thead>
@@ -331,13 +350,13 @@ const InvestmentProfile = () => {
                   <td>••••••••</td>
                   <td>
                     <div className="action-buttons">
-                      <button 
+                      <button
                         className="edit-btn"
                         onClick={() => openModal('paymentGateway', item)}
                       >
                         <FiEdit />
                       </button>
-                      <button 
+                      <button
                         className="delete-btn"
                         onClick={() => handleDelete('payment-gateway', item._id)}
                       >
@@ -365,7 +384,7 @@ const InvestmentProfile = () => {
           <FiPlus /> Add Insurance
         </button>
       </div>
-      
+
       <div className="table-container">
         <table className="investment-table">
           <thead>
@@ -403,13 +422,13 @@ const InvestmentProfile = () => {
                   <td>{item.emailId || '-'}</td>
                   <td>
                     <div className="action-buttons">
-                      <button 
+                      <button
                         className="edit-btn"
                         onClick={() => openModal('insurance', item)}
                       >
                         <FiEdit />
                       </button>
-                      <button 
+                      <button
                         className="delete-btn"
                         onClick={() => handleDelete('insurance', item._id)}
                       >
@@ -437,7 +456,7 @@ const InvestmentProfile = () => {
           <FiPlus /> Add Mutual Fund
         </button>
       </div>
-      
+
       <div className="table-container">
         <table className="investment-table">
           <thead>
@@ -465,13 +484,13 @@ const InvestmentProfile = () => {
                   <td>{item.password ? '••••••••' : '-'}</td>
                   <td>
                     <div className="action-buttons">
-                      <button 
+                      <button
                         className="edit-btn"
                         onClick={() => openModal('mutualFund', item)}
                       >
                         <FiEdit />
                       </button>
-                      <button 
+                      <button
                         className="delete-btn"
                         onClick={() => handleDelete('mutual-fund', item._id)}
                       >
@@ -499,7 +518,7 @@ const InvestmentProfile = () => {
           <FiPlus /> Add Share
         </button>
       </div>
-      
+
       <div className="table-container">
         <table className="investment-table">
           <thead>
@@ -525,15 +544,153 @@ const InvestmentProfile = () => {
                   <td>{item.password ? '••••••••' : '-'}</td>
                   <td>
                     <div className="action-buttons">
-                      <button 
+                      <button
                         className="edit-btn"
                         onClick={() => openModal('share', item)}
                       >
                         <FiEdit />
                       </button>
-                      <button 
+                      <button
                         className="delete-btn"
                         onClick={() => handleDelete('share', item._id)}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const NpsPpfSection = () => (
+    <div className="investment-section">
+      <div className="section-header">
+        <div>
+          <h3>NPS & PPF Details</h3>
+          <p className="section-subtitle">Manage your NPS, PPF, and Post Office account access</p>
+        </div>
+        <button className="add-button" onClick={() => openModal('npsPpf')}>
+          <FiPlus /> Add NPS/PPF
+        </button>
+      </div>
+
+      <div className="table-container">
+        <table className="investment-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Investor</th>
+              <th>Account No.</th>
+              <th>Sub Broker</th>
+              <th>URL</th>
+              <th>User ID</th>
+              <th>Password</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {npsPpf.length === 0 ? (
+              <tr>
+                <td colSpan="9" className="no-data">No details found. Click "Add NPS/PPF" to get started.</td>
+              </tr>
+            ) : (
+              npsPpf.map((item) => (
+                <tr key={item._id}>
+                  <td>{item.name}</td>
+                  <td>{item.nameOfInvestor || '-'}</td>
+                  <td>{item.accountNumber || '-'}</td>
+                  <td>{item.subBroker || '-'}</td>
+                  <td>{item.url ? <a href={item.url} target="_blank" rel="noopener noreferrer">Link</a> : '-'}</td>
+                  <td>{item.loginUserId || '-'}</td>
+                  <td>{item.password ? '••••••••' : '-'}</td>
+                  <td>{item.notes || '-'}</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        className="edit-btn"
+                        onClick={() => openModal('npsPpf', item)}
+                      >
+                        <FiEdit />
+                      </button>
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDelete('nps-ppf', item._id)}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const GoldBondsSection = () => (
+    <div className="investment-section">
+      <div className="section-header">
+        <div>
+          <h3>Gold & Bonds Details</h3>
+          <p className="section-subtitle">Manage your Digital Gold, SGB, and Bond account access</p>
+        </div>
+        <button className="add-button" onClick={() => openModal('goldBond')}>
+          <FiPlus /> Add Gold/Bond
+        </button>
+      </div>
+
+      <div className="table-container">
+        <table className="investment-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Investor</th>
+              <th>Provider</th>
+              <th>Demat A/c</th>
+              <th>Sub Broker</th>
+              <th>URL</th>
+              <th>User ID</th>
+              <th>Password</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {goldBonds.length === 0 ? (
+              <tr>
+                <td colSpan="10" className="no-data">No details found. Click "Add Gold/Bond" to get started.</td>
+              </tr>
+            ) : (
+              goldBonds.map((item) => (
+                <tr key={item._id}>
+                  <td>{item.name}</td>
+                  <td>{item.nameOfInvestor || '-'}</td>
+                  <td>{item.provider || '-'}</td>
+                  <td>{item.dematAccountNumber || '-'}</td>
+                  <td>{item.subBroker || '-'}</td>
+                  <td>{item.url ? <a href={item.url} target="_blank" rel="noopener noreferrer">Link</a> : '-'}</td>
+                  <td>{item.loginUserId || '-'}</td>
+                  <td>{item.password ? '••••••••' : '-'}</td>
+                  <td>{item.notes || '-'}</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        className="edit-btn"
+                        onClick={() => openModal('goldBond', item)}
+                      >
+                        <FiEdit />
+                      </button>
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDelete('gold-bond', item._id)}
                       >
                         <FiTrash2 />
                       </button>
@@ -563,7 +720,7 @@ const InvestmentProfile = () => {
       <div className="investment-header">
         <h1>Online Access</h1>
         <p>Manage all your financial accounts and credentials in one place</p>
-        
+
         {error && (
           <div className="error-message">
             <p>{error}</p>
@@ -581,7 +738,9 @@ const InvestmentProfile = () => {
           <TabButton id="payment-gateways" label="Payment Gateway" icon={FiDollarSign} isActive={activeTab === 'payment-gateways'} onClick={setActiveTab} />
           <TabButton id="insurance" label="Insurance" icon={FiShield} isActive={activeTab === 'insurance'} onClick={setActiveTab} />
           <TabButton id="mutual-funds" label="Mutual Fund" icon={FiPieChart} isActive={activeTab === 'mutual-funds'} onClick={setActiveTab} />
-          <TabButton id="shares" label="Shares" icon={FiTrendingUp} isActive={activeTab === 'shares'} onClick={setActiveTab} />
+          <TabButton id="nps-ppf" label="NPS & PPF" icon={FiTrendingUp} isActive={activeTab === 'nps-ppf'} onClick={setActiveTab} />
+          <TabButton id="gold-bonds" label="Gold & Bonds" icon={FiDollarSign} isActive={activeTab === 'gold-bonds'} onClick={setActiveTab} />
+          <TabButton id="shares" label="Shares" icon={FiBarChart2} isActive={activeTab === 'shares'} onClick={setActiveTab} />
         </div>
       </div>
 
@@ -591,6 +750,8 @@ const InvestmentProfile = () => {
         {activeTab === 'payment-gateways' && <PaymentGatewaysSection />}
         {activeTab === 'insurance' && <InsuranceSection />}
         {activeTab === 'mutual-funds' && <MutualFundsSection />}
+        {activeTab === 'nps-ppf' && <NpsPpfSection />}
+        {activeTab === 'gold-bonds' && <GoldBondsSection />}
         {activeTab === 'shares' && <SharesSection />}
       </div>
 
@@ -601,40 +762,54 @@ const InvestmentProfile = () => {
         onSuccess={handleModalSuccess}
         editData={modals.bankAccount.editData}
       />
-      
+
       <CardDetailModal
         isOpen={modals.cardDetail.isOpen}
         onClose={() => closeModal('cardDetail')}
         onSuccess={handleModalSuccess}
         editData={modals.cardDetail.editData}
       />
-      
+
       <PaymentGatewayModal
         isOpen={modals.paymentGateway.isOpen}
         onClose={() => closeModal('paymentGateway')}
         onSuccess={handleModalSuccess}
         editData={modals.paymentGateway.editData}
       />
-      
+
       <InsuranceProfileModal
         isOpen={modals.insurance.isOpen}
         onClose={() => closeModal('insurance')}
         onSuccess={handleModalSuccess}
         editData={modals.insurance.editData}
       />
-      
+
       <MutualFundProfileModal
         isOpen={modals.mutualFund.isOpen}
         onClose={() => closeModal('mutualFund')}
         onSuccess={handleModalSuccess}
         editData={modals.mutualFund.editData}
       />
-      
+
       <ShareProfileModal
         isOpen={modals.share.isOpen}
         onClose={() => closeModal('share')}
         onSuccess={handleModalSuccess}
         editData={modals.share.editData}
+      />
+
+      <NpsPpfProfileModal
+        isOpen={modals.npsPpf.isOpen}
+        onClose={() => closeModal('npsPpf')}
+        onSuccess={handleModalSuccess}
+        editData={modals.npsPpf.editData}
+      />
+
+      <GoldBondProfileModal
+        isOpen={modals.goldBond.isOpen}
+        onClose={() => closeModal('goldBond')}
+        onSuccess={handleModalSuccess}
+        editData={modals.goldBond.editData}
       />
     </div>
   );

@@ -4,7 +4,9 @@ const {
   PaymentGateway,
   InsuranceProfile,
   MutualFundProfile,
-  ShareProfile
+  ShareProfile,
+  NpsPpfProfile,
+  GoldBondProfile
 } = require('../models/InvestmentProfile');
 
 // Generic controller factory function
@@ -90,5 +92,7 @@ module.exports = {
   PaymentGatewayController: createController(PaymentGateway),
   InsuranceProfileController: createController(InsuranceProfile),
   MutualFundProfileController: createController(MutualFundProfile),
-  ShareProfileController: createController(ShareProfile)
+  ShareProfileController: createController(ShareProfile),
+  NpsPpfProfileController: createController(NpsPpfProfile),
+  GoldBondProfileController: createController(GoldBondProfile)
 };

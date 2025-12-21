@@ -3,6 +3,7 @@ const router = express.Router();
 const CashTransaction = require('../models/CashTransaction');
 const CashMember = require('../models/CashMember');
 const auth = require('../middleware/auth');
+const { syncExpenseToBillDates } = require('../utils/billExpenseSync');
 
 // Get all transactions for a user
 router.get('/', auth, async (req, res) => {
@@ -115,6 +116,13 @@ router.post('/', auth, async (req, res) => {
     
     // Populate member info before returning
     await savedTransaction.populate('memberId', 'name relation');
+    
+    // Auto-sync to Bill Dates if expense is for "jo jo"
+    try {
+      await syncExpenseToBillDates(savedTransaction.toObject(), req.user.id);
+    } catch (syncError) {
+      console.error('Bill sync error (non-blocking):', syncError);
+    }
     
     res.status(201).json(savedTransaction);
   } catch (error) {

@@ -66,6 +66,19 @@ const transactionSchema = new mongoose.Schema({
     type: String,
     enum: ['important-necessary', 'less-important', 'avoidable-loss', 'unnecessary', 'basic-necessity'],
   },
+  // Cross-module payment integration
+  payingFor: {
+    module: {
+      type: String,
+      enum: ['loan-ledger', 'project-expense', 'project-income', 'loan-amortization', 'cheque-register', 'daily-cash', 'manage-finance', 'targets', 'bill-dates', 'bill-checklist', 'nps-investments', 'gold-investments', 'rd-fd-deposits', 'retirement-planner']
+    },
+    referenceId: {
+      type: mongoose.Schema.Types.ObjectId
+    },
+    referenceName: {
+      type: String
+    }
+  },
   date: {
     type: Date,
     required: true

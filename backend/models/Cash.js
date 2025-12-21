@@ -33,14 +33,14 @@ const cashSchema = new mongoose.Schema({
   },
   location: {
     type: String,
-    required: function() {
+    required: function () {
       return this.type === 'physical-cash';
     },
   },
   // Digital wallet specific fields
   walletProvider: {
     type: String,
-    required: function() {
+    required: function () {
       return this.type === 'digital-wallet';
     },
   },
@@ -52,7 +52,7 @@ const cashSchema = new mongoose.Schema({
   // Cryptocurrency specific fields
   cryptoType: {
     type: String,
-    required: function() {
+    required: function () {
       return this.type === 'cryptocurrency';
     },
   },
@@ -68,6 +68,19 @@ const cashSchema = new mongoose.Schema({
   expenseType: {
     type: String,
     enum: ['important-necessary', 'less-important', 'avoidable-loss', 'unnecessary', 'basic-necessity'],
+  },
+  // Cross-module payment integration
+  payingFor: {
+    module: {
+      type: String,
+      enum: ['loan-ledger', 'project-expense', 'project-income', 'loan-amortization', 'cheque-register', 'daily-cash', 'manage-finance', 'targets', 'bill-dates', 'bill-checklist', 'nps-investments', 'gold-investments', 'rd-fd-deposits', 'retirement-planner']
+    },
+    referenceId: {
+      type: mongoose.Schema.Types.ObjectId
+    },
+    referenceName: {
+      type: String
+    }
   },
   lastUpdated: {
     type: Date,
@@ -89,7 +102,7 @@ const cashSchema = new mongoose.Schema({
   },
 });
 
-cashSchema.pre('save', function(next) {
+cashSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   if (typeof next === 'function') {
     next();

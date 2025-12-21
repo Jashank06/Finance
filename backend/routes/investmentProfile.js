@@ -6,7 +6,9 @@ const {
   PaymentGatewayController,
   InsuranceProfileController,
   MutualFundProfileController,
-  ShareProfileController
+  ShareProfileController,
+  NpsPpfProfileController,
+  GoldBondProfileController
 } = require('../controllers/investmentProfileController');
 const auth = require('../middleware/auth');
 
@@ -54,5 +56,19 @@ router.get('/shares/:id', ShareProfileController.getOne);
 router.post('/shares', ShareProfileController.create);
 router.put('/shares/:id', ShareProfileController.update);
 router.delete('/shares/:id', ShareProfileController.delete);
+
+// NPS & PPF Profile routes
+router.get('/nps-ppf', NpsPpfProfileController.getAll);
+router.get('/nps-ppf/:id', NpsPpfProfileController.getOne);
+router.post('/nps-ppf', NpsPpfProfileController.create);
+router.put('/nps-ppf/:id', NpsPpfProfileController.update);
+router.delete('/nps-ppf/:id', NpsPpfProfileController.delete);
+
+// Gold & Bonds Profile routes
+router.get('/gold-bonds', GoldBondProfileController.getAll);
+router.get('/gold-bonds/:id', GoldBondProfileController.getOne);
+router.post('/gold-bonds', GoldBondProfileController.create);
+router.put('/gold-bonds/:id', GoldBondProfileController.update);
+router.delete('/gold-bonds/:id', GoldBondProfileController.delete);
 
 module.exports = router;

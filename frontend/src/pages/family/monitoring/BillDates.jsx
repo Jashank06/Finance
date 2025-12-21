@@ -131,9 +131,25 @@ const BillDates = () => {
         return {
           ...fromInvestment(inv),
           source: notes.syncedFrom || 'Manual',
-          lastSynced: notes.lastSynced || null
+          lastSynced: notes.lastSynced || null,
+          status: notes.status || 'pending'
         };
-      });
+      })
+        // Filter out paid bills for current month
+        .filter(bill => {
+          // Show bill if not paid, or if paid but for a different month
+          if (bill.status !== 'paid') return true;
+
+          // If paid, check if it's for current month
+          const billDate = new Date(bill.dueDate);
+          const now = new Date();
+          const isSameMonth = billDate.getMonth() === now.getMonth() &&
+            billDate.getFullYear() === now.getFullYear();
+
+          // Hide if paid in current month, show if paid in different month
+          return !isSameMonth;
+        });
+
       setReferenceBills(bills);
     } catch (e) {
       console.error('Error fetching reference bills:', e);
@@ -153,25 +169,25 @@ const BillDates = () => {
     console.log('Edit bill received:', bill);
     console.log('Entries available:', entries.length);
     console.log('Reference bills available:', referenceBills.length);
-    
+
     // Find the original bill with _id from entries or referenceBills
     let originalBill = null;
     const allBills = [...entries, ...referenceBills];
     console.log('All bills for matching:', allBills.map(b => ({ _id: b._id, billName: b.billName, dueDate: b.dueDate })));
-    
+
     for (const b of allBills) {
       console.log('Checking bill:', b.billName, 'against:', bill.billName || bill.provider);
       if ((b.billName === (bill.billName || bill.provider) && b.dueDate === bill.dueDate) ||
-          (b._id && b._id === bill._id) ||
-          (b.billName === (bill.billName || bill.provider) && b.billType === bill.billType && Math.abs(Number(b.amount) - Number(bill.amount)) < 1)) {
+        (b._id && b._id === bill._id) ||
+        (b.billName === (bill.billName || bill.provider) && b.billType === bill.billType && Math.abs(Number(b.amount) - Number(bill.amount)) < 1)) {
         originalBill = b;
         console.log('Found original bill:', originalBill);
         break;
       }
     }
-    
+
     console.log('Original bill found locally:', originalBill);
-    
+
     // If not found in local arrays, fetch from API
     if (!originalBill) {
       try {
@@ -186,7 +202,7 @@ const BillDates = () => {
             lastSynced: notes.lastSynced || null
           };
         });
-        
+
         for (const b of fetchedBills) {
           console.log('Checking against fetched bill:', b);
           // More flexible matching - try multiple combinations
@@ -194,19 +210,19 @@ const BillDates = () => {
             // Match by billName and dueDate (primary method)
             (b.billName && (bill.billName || bill.provider) && b.billName === (bill.billName || bill.provider) && b.dueDate === bill.dueDate) ||
             // Match by billName, billType, and amount (fallback)
-            (b.billName && (bill.billName || bill.provider) && b.billName === (bill.billName || bill.provider) && 
-             b.billType === bill.billType && 
-             Math.abs(Number(b.amount) - Number(bill.amount)) < 1) ||
+            (b.billName && (bill.billName || bill.provider) && b.billName === (bill.billName || bill.provider) &&
+              b.billType === bill.billType &&
+              Math.abs(Number(b.amount) - Number(bill.amount)) < 1) ||
             // Match by billName and day (from dueDate)
-            (b.billName && (bill.billName || bill.provider) && b.billName === (bill.billName || bill.provider) && 
-             b.dueDate && new Date(b.dueDate).getDate() === bill.day) ||
+            (b.billName && (bill.billName || bill.provider) && b.billName === (bill.billName || bill.provider) &&
+              b.dueDate && new Date(b.dueDate).getDate() === bill.day) ||
             // Match by billType, cycle, and amount (last resort)
-            (b.billType === bill.billType && 
-             b.cycle === bill.cycle && 
-             Math.abs(Number(b.amount) - Number(bill.amount)) < 1) ||
+            (b.billType === bill.billType &&
+              b.cycle === bill.cycle &&
+              Math.abs(Number(b.amount) - Number(bill.amount)) < 1) ||
             // Match by day and amount only (final fallback)
-            (b.dueDate && new Date(b.dueDate).getDate() === bill.day && 
-             Math.abs(Number(b.amount) - Number(bill.amount)) < 1)
+            (b.dueDate && new Date(b.dueDate).getDate() === bill.day &&
+              Math.abs(Number(b.amount) - Number(bill.amount)) < 1)
           ) {
             originalBill = b;
             console.log('Found match with fetched bill:', b);
@@ -217,11 +233,11 @@ const BillDates = () => {
         console.error('Error fetching bills for edit:', error);
       }
     }
-    
+
     // Debug: log what we found
     console.log('Calendar bill:', bill);
     console.log('Original bill found:', originalBill);
-    
+
     // If originalBill is found, use it for editing
     // If not found, use the calendar bill but mark it as a new bill (no _id)
     const billToEdit = originalBill || { ...bill, _id: null };
@@ -276,18 +292,18 @@ const BillDates = () => {
             lastSynced: notes.lastSynced || null
           };
         });
-        
+
         // Find matching bill by comparing properties
         let originalBill = null;
         for (const b of allBills) {
           if ((b.billName === (bill.billName || bill.provider) && b.dueDate === bill.dueDate) ||
-              (b._id && b._id === bill._id) ||
-              (b.billName === (bill.billName || bill.provider) && b.billType === bill.billType && Math.abs(Number(b.amount) - Number(bill.amount)) < 1)) {
+            (b._id && b._id === bill._id) ||
+            (b.billName === (bill.billName || bill.provider) && b.billType === bill.billType && Math.abs(Number(b.amount) - Number(bill.amount)) < 1)) {
             originalBill = b;
             break;
           }
         }
-        
+
         const billId = originalBill?._id;
         if (!billId) {
           alert('Cannot delete bill: No valid ID found');
@@ -381,7 +397,7 @@ const BillDates = () => {
       }
       return acc;
     }, {});
-    
+
     for (const e of Object.values(uniqueBills)) {
       if (!e.dueDate) continue;
       const d = new Date(e.dueDate);
@@ -824,9 +840,9 @@ const BillDates = () => {
                 {saving ? 'Saving...' : (editingBill ? 'Update' : 'Save')}
               </button>
               {editingBill && (
-                <button 
-                  type="button" 
-                  className="btn-secondary" 
+                <button
+                  type="button"
+                  className="btn-secondary"
                   onClick={() => {
                     setEditingBill(null);
                     setInputs({ billType: 'Electricity', billName: '', provider: '', accountNumber: '', cycle: 'monthly', amount: 1000, dueDate: '', autoDebit: false, paymentMethod: 'UPI', status: 'pending', reminderDays: 3, notes: '', startDate: new Date().toISOString().slice(0, 10), additional1: '', additional2: '' });
@@ -1181,36 +1197,6 @@ const BillDates = () => {
               );
             })}
           </div>
-        </div>
-      </div>
-
-      <div className="investments-table-card">
-        <div className="table-header">
-          <h2>Upcoming (Next 60 days)</h2>
-        </div>
-        <div className="table-container">
-          <table className="investments-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Bill Name</th>
-                <th>Type</th>
-                <th>Cycle</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(upcoming.length ? upcoming : upcomingLocal).map((u, idx) => (
-                <tr key={idx}>
-                  <td>{u.date}</td>
-                  <td>{u.provider}</td>
-                  <td>{u.billType}</td>
-                  <td>{u.cycle}</td>
-                  <td>₹{Math.round(u.amount).toLocaleString('en-IN')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
 

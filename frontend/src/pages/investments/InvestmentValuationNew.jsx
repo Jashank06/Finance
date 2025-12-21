@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { FiBarChart2, FiPieChart, FiTrendingUp, FiDollarSign, FiActivity, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { investmentValuationAPI } from '../../utils/investmentValuationAPI';
+import { staticAPI } from '../../utils/staticAPI';
+import { investmentAPI } from '../../utils/investmentAPI';
 import MutualFundModal from '../../components/MutualFundModal';
 import ShareModal from '../../components/ShareModal';
 import InsuranceModal from '../../components/InsuranceModal';
@@ -19,7 +21,7 @@ const InvestmentValuationNew = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('summary');
   const [error, setError] = useState(null);
-  
+
   // Modal states
   const [modals, setModals] = useState({
     mutualFund: { isOpen: false, editData: null, type: 'lumpsum' },
@@ -43,29 +45,146 @@ const InvestmentValuationNew = () => {
         mutualFundsRes,
         sharesRes,
         insuranceRes,
-        loansRes
+        loansRes,
+        basicRes,
+        amortizationLoansRes
       ] = await Promise.all([
         investmentValuationAPI.getSummary(),
         investmentValuationAPI.getMutualFunds(),
         investmentValuationAPI.getShares(),
         investmentValuationAPI.getInsurance(),
-        investmentValuationAPI.getLoans()
+        investmentValuationAPI.getLoans(),
+        staticAPI.getBasicDetails(),
+        investmentAPI.getLoans() // Fetch amortization loans
       ]);
+
+      const basicDetails = basicRes.data && basicRes.data.length > 0 ? basicRes.data[0] : null;
+      const amortizationLoans = amortizationLoansRes.data && amortizationLoansRes.data.loans ? amortizationLoansRes.data.loans : [];
 
       // Separate mutual funds by type
       const allMutualFunds = mutualFundsRes.data.data.mutualFunds || [];
       setMutualFundsLumpsum(allMutualFunds.filter(mf => mf.investmentType === 'lumpsum'));
       setMutualFundsSIP(allMutualFunds.filter(mf => mf.investmentType === 'sip'));
 
+      // Merge Basic Details Mutual Funds (Portfolio)
+      if (basicDetails && basicDetails.mutualFundsPortfolio) {
+        const basicMFs = basicDetails.mutualFundsPortfolio.map((item, index) => ({
+          _id: `basic-mf-port-${index}`,
+          broker: item.fundHouse,
+          investorName: item.investorName,
+          fundName: item.fundName,
+          fundType: 'Growth', // Default assumption
+          folioNumber: item.folioNumber,
+          units: item.numberOfUnits,
+          purchaseNAV: item.purchaseNAV,
+          purchaseValue: parseFloat(item.purchaseValue) || 0,
+          currentNAV: item.currentNAV,
+          marketValue: parseFloat(item.currentValuation) || 0,
+          profit: (parseFloat(item.currentValuation) || 0) - (parseFloat(item.purchaseValue) || 0),
+          investmentType: 'lumpsum', // Assumption for portfolio items
+          source: 'Basic Details (Portfolio)'
+        }));
+        setMutualFundsLumpsum(prev => [...prev, ...basicMFs]);
+      }
+
+      // Merge Basic Details Mutual Funds (Static Info)
+      if (basicDetails && basicDetails.mutualFunds) {
+        const staticMFs = basicDetails.mutualFunds.map((item, index) => ({
+          _id: `basic-mf-static-${index}`,
+          broker: item.fundHouse,
+          investorName: item.investorName,
+          fundName: item.mfName, // Note: Schema uses mfName for static, fundName for portfolio
+          fundType: 'Growth', // Default assumption
+          folioNumber: item.folioNo, // Note: Schema uses folioNo for static, folioNumber for portfolio
+          units: 0,
+          purchaseNAV: 0,
+          purchaseValue: 0,
+          currentNAV: 0,
+          marketValue: 0,
+          profit: 0,
+          investmentType: 'lumpsum', // Assumption
+          source: 'Basic Details (Static)'
+        }));
+        // Avoid duplicates if possible, or just append. 
+        // User likely wants to see them even if 0 value.
+        setMutualFundsLumpsum(prev => [...prev, ...staticMFs]);
+      }
+
       // Set other data
       setShares(sharesRes.data.data.shares || []);
+
+      // Merge Basic Details Shares
+      // Merge Basic Details Shares
+      if (basicDetails && basicDetails.sharesPortfolio) {
+        const basicShares = basicDetails.sharesPortfolio.map((item, index) => {
+          // Basic Details has purchaseNAV, currentNAV, purchaseValue, currentValuation
+          // Investment Valuation expects purchasePrice, currentPrice, purchaseAmount, currentValuation
+          const purchasePrice = parseFloat(item.purchaseNAV) || 0;
+          const currentPrice = parseFloat(item.currentNAV) || 0; // Mapping NAV to Price
+          const quantity = parseFloat(item.numberOfUnits) || 0;
+          const purchaseVal = parseFloat(item.purchaseValue) || 0;
+          const currentVal = parseFloat(item.currentValuation) || 0;
+
+          return {
+            _id: `basic-share-${index}`,
+            broker: item.dematCompany || '-',
+            investorName: item.investorName || '-',
+            scripName: item.scriptName || 'Unknown Script', // Note: scriptName vs scripName
+            purchasePrice: purchasePrice,
+            quantity: quantity,
+            purchaseAmount: purchaseVal,
+            currentPrice: currentPrice,
+            currentValuation: currentVal,
+            unrealisedPL: currentVal - purchaseVal,
+            purchaseDate: item.dateOfPurchase ? new Date(item.dateOfPurchase).toLocaleDateString() : '-',
+            source: 'Basic Details'
+          };
+        });
+        setShares(prev => {
+          // Filter out any duplicates if necessary, or just append
+          // For now, simple append
+          return [...prev, ...basicShares];
+        });
+      }
 
       // Separate insurance by type
       const allInsurance = insuranceRes.data.data.insurance || [];
       setLifeInsurance(allInsurance.filter(ins => ins.insuranceType === 'life'));
       setHealthInsurance(allInsurance.filter(ins => ins.insuranceType === 'health'));
 
+      // Merge Basic Details Insurance (Life implied)
+      if (basicDetails && basicDetails.insurancePortfolio) {
+        const basicInsurance = basicDetails.insurancePortfolio.map((item, index) => ({
+          _id: `basic-ins-${index}`,
+          companyName: item.insuranceCompany,
+          policyName: item.policyName,
+          policyNumber: item.policyNumber,
+          premiumAmount: parseFloat(item.premiumAmount) || 0,
+          sumAssured: parseFloat(item.sumAssured) || 0,
+          maturityDate: item.maturityDate,
+          insuranceType: 'life',
+          source: 'Basic Details'
+        }));
+        setLifeInsurance(prev => [...prev, ...basicInsurance]);
+      }
+
       setLoans(loansRes.data.data.loans || []);
+
+      // Merge Amortization Loans (Lent only)
+      const lentLoans = amortizationLoans.filter(l => l.type === 'Lent').map(l => ({
+        _id: l._id,
+        debtorName: l.name, // Mapping Name to Debtor
+        companyName: 'Personal Loan',
+        loanType: 'Personal',
+        commencementDate: l.startDate,
+        closureDate: l.maturityDate,
+        emiAmount: l.monthlyPayment, // Using calculated monthly payment
+        // principalAmount: l.amount,
+        balance: l.amount, // Using original amount as balance proxy if tracking not uniform
+        source: 'Loan Amortization'
+      }));
+
+      setLoans(prev => [...prev, ...lentLoans]);
 
     } catch (error) {
       console.error('Error fetching investment data:', error);
@@ -80,7 +199,7 @@ const InvestmentValuationNew = () => {
 
     try {
       setLoading(true);
-      
+
       switch (type) {
         case 'mutual-fund':
           await investmentValuationAPI.deleteMutualFund(id);
@@ -100,7 +219,7 @@ const InvestmentValuationNew = () => {
 
       // Refresh data after deletion
       await fetchAllData();
-      
+
     } catch (error) {
       console.error(`Error deleting ${type}:`, error);
       setError(`Failed to delete ${type}. Please try again.`);
@@ -239,13 +358,13 @@ const InvestmentValuationNew = () => {
           <div className="chart-content">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie 
-                  data={chartData} 
-                  cx="50%" 
-                  cy="50%" 
-                  innerRadius={60} 
-                  outerRadius={120} 
-                  paddingAngle={2} 
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={120}
+                  paddingAngle={2}
                   dataKey="value"
                 >
                   {chartData.map((entry, index) => (
@@ -270,7 +389,7 @@ const InvestmentValuationNew = () => {
           <FiPlus /> Add New
         </button>
       </div>
-      
+
       <div className="table-container">
         <table className="investment-table">
           <thead>
@@ -322,13 +441,13 @@ const InvestmentValuationNew = () => {
                   <td>{item.holdingPattern}</td>
                   <td>
                     <div className="action-buttons">
-                      <button 
+                      <button
                         className="edit-btn"
                         onClick={() => openModal('mutualFund', item, 'lumpsum')}
                       >
                         <FiEdit />
                       </button>
-                      <button 
+                      <button
                         className="delete-btn"
                         onClick={() => handleDelete('mutual-fund', item._id)}
                       >
@@ -353,7 +472,7 @@ const InvestmentValuationNew = () => {
           <FiPlus /> Add New
         </button>
       </div>
-      
+
       <div className="table-container">
         <table className="investment-table">
           <thead>
@@ -430,7 +549,7 @@ const InvestmentValuationNew = () => {
           <FiPlus /> Add New
         </button>
       </div>
-      
+
       <div className="table-container">
         <table className="investment-table">
           <thead>
@@ -517,7 +636,7 @@ const InvestmentValuationNew = () => {
           <FiPlus /> Add New
         </button>
       </div>
-      
+
       <div className="table-container">
         <table className="investment-table">
           <thead>
@@ -582,7 +701,7 @@ const InvestmentValuationNew = () => {
           <FiPlus /> Add New
         </button>
       </div>
-      
+
       <div className="table-container">
         <table className="investment-table">
           <thead>
@@ -639,7 +758,7 @@ const InvestmentValuationNew = () => {
           <FiPlus /> Add New
         </button>
       </div>
-      
+
       <div className="table-container">
         <table className="investment-table">
           <thead>
@@ -711,7 +830,7 @@ const InvestmentValuationNew = () => {
       <div className="investment-header">
         <h1>Investment Valuation</h1>
         <p>Complete portfolio overview with detailed analysis</p>
-        
+
         {error && (
           <div className="error-message">
             <p>{error}</p>
@@ -752,14 +871,14 @@ const InvestmentValuationNew = () => {
         editData={modals.mutualFund.editData}
         investmentType={modals.mutualFund.type}
       />
-      
+
       <ShareModal
         isOpen={modals.share.isOpen}
         onClose={() => closeModal('share')}
         onSuccess={handleModalSuccess}
         editData={modals.share.editData}
       />
-      
+
       <InsuranceModal
         isOpen={modals.insurance.isOpen}
         onClose={() => closeModal('insurance')}
@@ -767,7 +886,7 @@ const InvestmentValuationNew = () => {
         editData={modals.insurance.editData}
         insuranceType={modals.insurance.type}
       />
-      
+
       <LoanModal
         isOpen={modals.loan.isOpen}
         onClose={() => closeModal('loan')}

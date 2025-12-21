@@ -77,6 +77,33 @@ const ShareProfileSchema = new mongoose.Schema({
   password: String
 }, { timestamps: true });
 
+// NPS & PPF Schema
+const NpsPpfProfileSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  name: String, // e.g., "My NPS Account"
+  accountNumber: String,
+  subBroker: String,
+  nameOfInvestor: String,
+  url: String,
+  loginUserId: String,
+  password: String,
+  notes: String
+}, { timestamps: true });
+
+// Gold & Bonds Schema
+const GoldBondProfileSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  name: String, // e.g., "Digital Gold Portfolio"
+  provider: String, // Platform name
+  subBroker: String,
+  nameOfInvestor: String,
+  dematAccountNumber: String,
+  url: String,
+  loginUserId: String,
+  password: String,
+  notes: String
+}, { timestamps: true });
+
 // Create models
 const BankAccount = mongoose.model('BankAccount', BankAccountSchema);
 const CardDetail = mongoose.model('CardDetail', CardDetailSchema);
@@ -84,6 +111,8 @@ const PaymentGateway = mongoose.model('PaymentGateway', PaymentGatewaySchema);
 const InsuranceProfile = mongoose.model('InsuranceProfile', InsuranceProfileSchema);
 const MutualFundProfile = mongoose.model('MutualFundProfile', MutualFundProfileSchema);
 const ShareProfile = mongoose.model('ShareProfile', ShareProfileSchema);
+const NpsPpfProfile = mongoose.model('NpsPpfProfile', NpsPpfProfileSchema);
+const GoldBondProfile = mongoose.model('GoldBondProfile', GoldBondProfileSchema);
 
 module.exports = {
   BankAccount,
@@ -91,5 +120,7 @@ module.exports = {
   PaymentGateway,
   InsuranceProfile,
   MutualFundProfile,
-  ShareProfile
+  ShareProfile,
+  NpsPpfProfile,
+  GoldBondProfile
 };

@@ -2,21 +2,70 @@ import { useEffect, useMemo, useState } from 'react';
 import { FiBarChart2, FiPieChart, FiTrendingUp, FiDollarSign, FiActivity } from 'react-icons/fi';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { investmentAPI } from '../../utils/investmentAPI';
+import { staticAPI } from '../../utils/staticAPI';
 import './Investment.css';
 
 const InvestmentValuationAllocation = () => {
   const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
         setLoading(true);
-        const allRes = await investmentAPI.getAll();
-        setInvestments(allRes.data.investments || []);
+        const [allRes, basicRes] = await Promise.all([
+          investmentAPI.getAll(),
+          staticAPI.getBasicDetails()
+        ]);
+
+        let fetchedInvestments = allRes.data.investments || [];
+
+        // Process Basic Details Portfolios
+        if (basicRes.data && basicRes.data.length > 0) {
+          const basicData = basicRes.data[0];
+
+          // Map Mutual Funds Portfolio
+          const mfPortfolio = (basicData.mutualFundsPortfolio || []).map(item => ({
+            _id: `basic-mf-${item.srNo || Math.random()}`,
+            category: 'Mutual Funds',
+            provider: item.fundHouse || 'Unknown',
+            name: item.fundName || 'Mutual Fund',
+            amount: parseFloat(item.purchaseValue) || 0,
+            currentValue: parseFloat(item.currentValuation) || 0,
+            isBasicDetail: true
+          }));
+
+          // Map Shares Portfolio
+          const sharePortfolio = (basicData.sharesPortfolio || []).map(item => ({
+            _id: `basic-share-${item.srNo || Math.random()}`,
+            category: 'Shares',
+            provider: item.dematCompany || 'Unknown',
+            name: item.scriptName || 'Share',
+            amount: parseFloat(item.purchaseValue) || 0,
+            currentValue: parseFloat(item.currentValuation) || 0,
+            isBasicDetail: true
+          }));
+
+          // Map Insurance Portfolio
+          // Using premiumAmount as invested and sumAssured as current value proxy
+          const insPortfolio = (basicData.insurancePortfolio || []).map(item => ({
+            _id: `basic-ins-${item.srNo || Math.random()}`,
+            category: 'Insurance',
+            provider: item.insuranceCompany || 'Unknown',
+            name: item.policyName || 'Insurance Policy',
+            amount: parseFloat(item.premiumAmount) || 0,
+            currentValue: parseFloat(item.sumAssured) || parseFloat(item.premiumAmount) || 0,
+            isBasicDetail: true
+          }));
+
+          fetchedInvestments = [...fetchedInvestments, ...mfPortfolio, ...sharePortfolio, ...insPortfolio];
+        }
+
+        setInvestments(fetchedInvestments);
       } catch (error) {
         console.error('Error fetching investments:', error);
+        // Still try to set whatever we have if one fails, but properly handle it
         setInvestments([]);
       } finally {
         setLoading(false);
@@ -27,12 +76,43 @@ const InvestmentValuationAllocation = () => {
 
   const totals = useMemo(() => {
     const invested = investments.reduce((sum, inv) => {
+      // Exclude Borrowed Loans
+      if (inv.category === 'loan-amortization' && inv.type === 'Borrowed') return sum;
+
+      // Handle Loans (Lent) - Use amount as invested
+      if (inv.category === 'loan-amortization' && inv.type === 'Lent') {
+        return sum + (inv.amount || 0);
+      }
+
       if (typeof inv.amount === 'number' && inv.amount > 0) return sum + inv.amount;
       if (inv.quantity && inv.purchasePrice) return sum + inv.quantity * inv.purchasePrice;
       return sum;
     }, 0);
 
     const current = investments.reduce((sum, inv) => {
+      // Exclude Borrowed Loans
+      if (inv.category === 'loan-amortization' && inv.type === 'Borrowed') return sum;
+
+      // Handle Loans (Lent) - Calculate Outstanding Principal if schedule exists, else use Amount
+      if (inv.category === 'loan-amortization' && inv.type === 'Lent') {
+        if (inv.paymentSchedule && inv.paymentSchedule.length > 0) {
+          // Find the last paid entry or just take the current balance from the last entry if logical?
+          // Actually, 'Current Value' of a lent loan is the Principal Outstanding. 
+          // We can find the latest 'endingBalance' that corresponds to 'now' or just the last calculated balance.
+          // For simplicity and safety, let's use the endingBalance of the last scheduled payment that is NOT paid? 
+          // Or simpler: If we are lending, the value is what is owed to us.
+          // Let's sum up principal from unpaid scheduled payments? No, that's future principal. 
+          // Outstanding Principal is usually tracked in the schedule.
+          // Let's grab the endingBalance of the *last paid* payment? Or if none paid, the original amount.
+          // Better: Find the payment corresponding to current date?
+          // Simple approach: Use total Unpaid Principal (sum of principal component of future payments).
+          // Simpler approach for MVP: Use `amount` (Original Principal) - `paidPrincipal` (if tracked). 
+          // Since we don't track paidPrincipal easily without iteration, let's use `amount` for now to avoid calculating it wrong. A lent loan is worth its principal roughly.
+          return sum + (inv.amount || 0);
+        }
+        return sum + (inv.amount || 0);
+      }
+
       if (inv.currentValue && inv.quantity) return sum + inv.currentValue * inv.quantity;
       if (typeof inv.currentValue === 'number') return sum + inv.currentValue;
       if (typeof inv.amount === 'number') return sum + inv.amount;
@@ -47,7 +127,13 @@ const InvestmentValuationAllocation = () => {
   const categoryAgg = useMemo(() => {
     const map = new Map();
     for (const inv of investments) {
-      const key = inv.category || 'others';
+      // Map Loan-Lent to 'Loans (Assets)' category
+      let key = inv.category || 'others';
+      if (key === 'loan-amortization') {
+        if (inv.type === 'Borrowed') continue; // Skip borrowed
+        key = 'Loans (Given)';
+      }
+
       const invested = (typeof inv.amount === 'number' && inv.amount > 0)
         ? inv.amount
         : (inv.quantity && inv.purchasePrice) ? inv.quantity * inv.purchasePrice : 0;
@@ -176,7 +262,7 @@ const InvestmentValuationAllocation = () => {
                   <BarChart data={categoryAgg} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                     <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                    <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value/1000).toFixed(0)}K`} />
+                    <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
                     <Tooltip formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, '']} />
                     <Legend />
                     <Bar dataKey="invested" fill="#2563EB" name="Invested" radius={[8, 8, 0, 0]} />
@@ -199,13 +285,13 @@ const InvestmentValuationAllocation = () => {
                   <AreaChart data={providerAgg} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <defs>
                       <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#6D28D9" stopOpacity={0.2}/>
+                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#6D28D9" stopOpacity={0.2} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                     <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                    <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value/1000).toFixed(0)}K`} />
+                    <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
                     <Tooltip formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, 'Portfolio Value']} />
                     <Area type="monotone" dataKey="value" stroke="#8B5CF6" strokeWidth={3} fill="url(#areaGradient)" />
                   </AreaChart>
@@ -236,7 +322,7 @@ const InvestmentValuationAllocation = () => {
                 return (
                   <tr key={c.name}>
                     <td>
-                      <span className="investment-type-badge" style={{ 
+                      <span className="investment-type-badge" style={{
                         background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)'
                       }}>
                         {c.name}

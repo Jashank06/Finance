@@ -5,6 +5,7 @@ import { investmentAPI } from '../../utils/investmentAPI';
 import { staticAPI } from '../../utils/staticAPI';
 import './Investment.css';
 import { syncBillScheduleFromForm } from '../../utils/billScheduleSyncUtil';
+import { syncInvestmentProfileFromForm } from '../../utils/syncInvestmentProfileUtil';
 
 const NpsPpfInvestment = () => {
   const [investments, setInvestments] = useState([]);
@@ -83,6 +84,7 @@ const NpsPpfInvestment = () => {
 
       // Sync bills to Bill Dates/Checklist
       await syncBillScheduleFromForm(formData, 'NpsPpfInvestment');
+      await syncInvestmentProfileFromForm(formData, 'NpsPpfInvestment');
 
       resetForm();
       fetchInvestments();

@@ -10,6 +10,8 @@ import TransactionTable from '../../../components/TransactionTable';
 import './CashCardsBank.css';
 import { syncInventoryFromTransaction } from '../../../utils/inventorySyncUtil';
 import { getBroaderCategories, getMainCategories, getSubCategories } from '../../../utils/categoryData';
+import PayingForDropdown from '../../../components/PayingForDropdown';
+import { syncPaymentToModule } from '../../../utils/payingForSync';
 
 const ModalPortal = ({ children }) => {
   if (typeof document === 'undefined') return null;
@@ -46,7 +48,12 @@ const CashCardsBank = () => {
     date: new Date().toISOString().split('T')[0],
     currency: 'INR',
     transactionType: '',
-    expenseType: ''
+    expenseType: '',
+    payingFor: {
+      module: '',
+      referenceId: '',
+      referenceName: ''
+    }
   });
   const [showBankTransactionForm, setShowBankTransactionForm] = useState(false);
   const [editingBankTransaction, setEditingBankTransaction] = useState(null);
@@ -96,7 +103,12 @@ const CashCardsBank = () => {
     cryptoType: '',
     exchange: '',
     walletAddress: '',
-    notes: ''
+    notes: '',
+    payingFor: {
+      module: '',
+      referenceId: '',
+      referenceName: ''
+    }
   });
 
   const [cardForm, setCardForm] = useState({
@@ -174,7 +186,12 @@ const CashCardsBank = () => {
     date: new Date().toISOString().split('T')[0],
     currency: 'INR',
     transactionType: '',
-    expenseType: ''
+    expenseType: '',
+    payingFor: {
+      module: '',
+      referenceId: '',
+      referenceName: ''
+    }
   });
 
   useEffect(() => {
@@ -422,6 +439,11 @@ const CashCardsBank = () => {
 
         // Sync to Inventory if category is inventory-related
         await syncInventoryFromTransaction(transactionForm, 'card');
+
+        // Sync to target module if payingFor is specified
+        if (transactionForm.payingFor && transactionForm.payingFor.module) {
+          await syncPaymentToModule(newTransaction, transactionForm.payingFor, 'card');
+        }
       }
 
       resetTransactionForm();
@@ -471,6 +493,11 @@ const CashCardsBank = () => {
 
         // Sync to Inventory if category is inventory-related
         await syncInventoryFromTransaction(bankTransactionForm, 'bank');
+
+        // Sync to target module if payingFor is specified
+        if (bankTransactionForm.payingFor && bankTransactionForm.payingFor.module) {
+          await syncPaymentToModule(newTransaction, bankTransactionForm.payingFor, 'bank');
+        }
       }
 
       resetBankTransactionForm();
@@ -1447,6 +1474,20 @@ const CashCardsBank = () => {
                       </div>
                     </div>
 
+                    {/* Paying For Dropdown */}
+                    <PayingForDropdown
+                      value={transactionForm.payingFor}
+                      onChange={(payingFor) => {
+                        const updates = { payingFor };
+                        // Auto-fill amount if provided
+                        if (payingFor.amount) {
+                          updates.amount = payingFor.amount;
+                        }
+                        setTransactionForm({ ...transactionForm, ...updates });
+                      }}
+                      disabled={false}
+                    />
+
                     <div className="form-actions">
                       <button type="button" onClick={() => {
                         setShowTransactionForm(false);
@@ -2203,6 +2244,19 @@ const CashCardsBank = () => {
                         </select>
                       </div>
                     </div>
+
+                    {/* Paying For Dropdown */}
+                    <PayingForDropdown
+                      value={bankTransactionForm.payingFor}
+                      onChange={(payingFor) => {
+                        const updates = { payingFor };
+                        if (payingFor.amount) {
+                          updates.amount = payingFor.amount;
+                        }
+                        setBankTransactionForm({ ...bankTransactionForm, ...updates });
+                      }}
+                      disabled={false}
+                    />
 
                     <div className="form-actions">
                       <button type="button" onClick={() => {

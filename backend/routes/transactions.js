@@ -3,6 +3,7 @@ const router = express.Router();
 const Transaction = require('../models/Transaction');
 const Card = require('../models/Card');
 const authMiddleware = require('../middleware/auth');
+const { syncExpenseToBillDates } = require('../utils/billExpenseSync');
 
 // Get all transactions for a user
 router.get('/', authMiddleware, async (req, res) => {
@@ -62,6 +63,13 @@ router.post('/', authMiddleware, async (req, res) => {
         path: 'cardId',
         select: 'name issuer type'
       });
+    
+    // Auto-sync to Bill Dates if expense is for "jo jo"
+    try {
+      await syncExpenseToBillDates(populatedTransaction.toObject(), req.user.id);
+    } catch (syncError) {
+      console.error('Bill sync error (non-blocking):', syncError);
+    }
     
     res.status(201).json(populatedTransaction);
   } catch (error) {

@@ -41,5 +41,19 @@ export const investmentProfileAPI = {
   getShare: (id) => api.get(`/investment-profile/shares/${id}`),
   createShare: (data) => api.post('/investment-profile/shares', data),
   updateShare: (id, data) => api.put(`/investment-profile/shares/${id}`, data),
-  deleteShare: (id) => api.delete(`/investment-profile/shares/${id}`)
+  deleteShare: (id) => api.delete(`/investment-profile/shares/${id}`),
+
+  // NpsPpf APIs
+  getNpsPpf: () => api.get('/investment-profile/nps-ppf'),
+  getNpsPpfItem: (id) => api.get(`/investment-profile/nps-ppf/${id}`),
+  createNpsPpf: (data) => api.post('/investment-profile/nps-ppf', data),
+  updateNpsPpf: (id, data) => api.put(`/investment-profile/nps-ppf/${id}`, data),
+  deleteNpsPpf: (id) => api.delete(`/investment-profile/nps-ppf/${id}`),
+
+  // GoldBond APIs
+  getGoldBonds: () => api.get('/investment-profile/gold-bonds'),
+  getGoldBondItem: (id) => api.get(`/investment-profile/gold-bonds/${id}`),
+  createGoldBonds: (data) => api.post('/investment-profile/gold-bonds', data),
+  updateGoldBonds: (id, data) => api.put(`/investment-profile/gold-bonds/${id}`, data),
+  deleteGoldBonds: (id) => api.delete(`/investment-profile/gold-bonds/${id}`)
 };

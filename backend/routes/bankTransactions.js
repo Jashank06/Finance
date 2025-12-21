@@ -3,6 +3,7 @@ const router = express.Router();
 const BankTransaction = require('../models/BankTransaction');
 const Bank = require('../models/Bank');
 const auth = require('../middleware/auth');
+const { syncExpenseToBillDates } = require('../utils/billExpenseSync');
 
 // GET all bank transactions for a user
 router.get('/', auth, async (req, res) => {
@@ -47,6 +48,13 @@ router.post('/', auth, async (req, res) => {
     // Return the transaction with populated account details
     const populatedTransaction = await BankTransaction.findById(savedTransaction._id)
       .populate({ path: 'accountId', select: 'name bankName type' });
+    
+    // Auto-sync to Bill Dates if expense is for "jo jo"
+    try {
+      await syncExpenseToBillDates(populatedTransaction.toObject(), req.user.id);
+    } catch (syncError) {
+      console.error('Bill sync error (non-blocking):', syncError);
+    }
     
     res.status(201).json(populatedTransaction);
   } catch (error) {

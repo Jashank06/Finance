@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const auth = require('../middleware/auth');
+const { 
+    syncScheduledExpenseToBillDates, 
+    deleteBillForScheduledExpense 
+} = require('../utils/manageFinanceBillSync');
 
 // Scheduled Expense Schema
 const scheduledExpenseSchema = new mongoose.Schema({
@@ -64,6 +68,14 @@ router.post('/', auth, async (req, res) => {
       updatedAt: new Date()
     });
     const savedExpense = await expense.save();
+    
+    // Auto-sync to Bill Dates
+    try {
+        await syncScheduledExpenseToBillDates(savedExpense, req.user.id);
+    } catch (syncError) {
+        console.error('Bill Dates sync error (non-blocking):', syncError);
+    }
+    
     res.status(201).json(savedExpense);
   } catch (error) {
     console.error('Error creating scheduled expense:', error);
@@ -91,6 +103,14 @@ router.put('/:id', auth, async (req, res) => {
     if (!expense) {
       return res.status(404).json({ message: 'Scheduled expense not found' });
     }
+    
+    // Sync updates to Bill Dates
+    try {
+        await syncScheduledExpenseToBillDates(expense, req.user.id);
+    } catch (syncError) {
+        console.error('Bill Dates sync error (non-blocking):', syncError);
+    }
+    
     res.json(expense);
   } catch (error) {
     console.error('Error updating scheduled expense:', error);
@@ -105,6 +125,14 @@ router.delete('/:id', auth, async (req, res) => {
     if (!expense) {
       return res.status(404).json({ message: 'Scheduled expense not found' });
     }
+    
+    // Delete linked bill from Bill Dates
+    try {
+        await deleteBillForScheduledExpense(req.params.id, req.user.id);
+    } catch (syncError) {
+        console.error('Bill Dates sync error (non-blocking):', syncError);
+    }
+    
     res.json({ message: 'Scheduled expense deleted successfully' });
   } catch (error) {
     console.error('Error deleting scheduled expense:', error);

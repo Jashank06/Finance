@@ -5,6 +5,8 @@ const { BasicDetails } = require('../controllers/staticController');
 const CalendarEvent = require('../models/monitoring/CalendarEvent');
 const Reminder = require('../models/monitoring/Reminder');
 const Notification = require('../models/monitoring/Notification');
+const { syncBillStatusToExpenses, BILL_CATEGORY_KEY } = require('../utils/billExpenseSync');
+const { syncBillPaymentToScheduledExpense } = require('../utils/manageFinanceBillSync');
 
 const router = express.Router();
 
@@ -138,6 +140,16 @@ router.put('/:id', authMiddleware, async (req, res) => {
     
     if (!investment) {
       return res.status(404).json({ message: 'Investment not found' });
+    }
+    
+    // If this is a bill update, sync status back to expenses and scheduled expenses
+    if (investment.category === BILL_CATEGORY_KEY) {
+      try {
+        await syncBillStatusToExpenses(investment);
+        await syncBillPaymentToScheduledExpense(investment);
+      } catch (syncError) {
+        console.error('Bill status sync error (non-blocking):', syncError);
+      }
     }
     
     res.json({

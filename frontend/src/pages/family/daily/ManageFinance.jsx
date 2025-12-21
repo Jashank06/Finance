@@ -63,7 +63,19 @@ const ManageFinance = () => {
     const selectedYear = yearFilter;
     const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
 
-    let filteredExpenses = scheduledExpenses.filter(expense => expense.isActive);
+    let filteredExpenses = scheduledExpenses.filter(expense => {
+      // Filter out paid expenses for current month
+      if (expense.isPaid) {
+        const paidDate = new Date(expense.paidDate);
+        const isSameMonth = paidDate.getMonth() === selectedMonth &&
+          paidDate.getFullYear() === selectedYear;
+        // Hide if paid in selected month
+        if (isSameMonth) return false;
+      }
+
+      // Show active expenses
+      return expense.isActive;
+    });
 
     // Apply bank filter
     if (bankFilter !== 'all') {
