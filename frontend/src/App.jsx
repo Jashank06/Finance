@@ -15,6 +15,8 @@ import ProjectIncomeExpense from './pages/investments/ProjectIncomeExpense';
 import InvestmentProfile from './pages/investments/InvestmentProfile';
 import LoanAmortization from './pages/investments/LoanAmortization';
 import RetirementFinancial from './pages/investments/RetirementFinancial';
+import TradingDetails from './pages/investments/TradingDetails';
+import ProfitLoss from './pages/investments/ProfitLoss';
 import BasicDetails from './pages/family/static/BasicDetails';
 import OnlineAccessDetails from './pages/family/static/OnlineAccessDetails';
 import MobileEmailDetails from './pages/family/static/MobileEmailDetails';
@@ -43,6 +45,19 @@ import ChequeRegister from './pages/family/daily/ChequeRegister';
 import DailyCashRegister from './pages/family/daily/DailyCashRegister';
 import Milestones from './pages/family/monitoring/Milestones';
 import TargetsForLife from './pages/family/monitoring/TargetsForLife';
+
+// Admin Panel Imports
+import AdminLayout from './components/AdminLayout';
+import AdminRedirect from './components/AdminRedirect';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import SubscriberManagement from './pages/admin/SubscriberManagement';
+import SubscriptionPlans from './pages/admin/SubscriptionPlans';
+import SpaceRetailing from './pages/admin/SpaceRetailing';
+import FeaturesAnalytics from './pages/admin/FeaturesAnalytics';
+import BlogsManagement from './pages/admin/BlogsManagement';
+import ContactDeveloper from './pages/admin/ContactDeveloper';
+import FeedbackManagement from './pages/admin/FeedbackManagement';
+
 import './App.css';
 
 function App() {
@@ -217,6 +232,28 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <RetirementFinancial />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/family/investments/trading-details"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TradingDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/family/investments/profit-loss"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProfitLoss />
                 </Layout>
               </ProtectedRoute>
             }
@@ -562,11 +599,100 @@ function App() {
             }
           />
 
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/login" />} />
+          {/* Redirect root based on user role */}
+          <Route path="/" element={<AdminRedirect />} />
+
+          {/* Admin Panel Routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminDashboard />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/subscribers"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SubscriberManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/plans"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SubscriptionPlans />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/space-retailing"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SpaceRetailing />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/analytics"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <FeaturesAnalytics />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/blogs"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <BlogsManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/contact"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ContactDeveloper />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/feedback"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <FeedbackManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      </BrowserRouter >
+    </AuthProvider >
   );
 }
 

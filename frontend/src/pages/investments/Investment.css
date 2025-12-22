@@ -135,8 +135,13 @@
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .chart-card.premium:hover {
@@ -867,6 +872,7 @@
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1184,16 +1190,56 @@
   text-overflow: ellipsis;
 }
 
-.investments-table thead th:nth-child(1) { width: 8%; }  /* Type */
-.investments-table thead th:nth-child(2) { width: 12%; } /* Name */
-.investments-table thead th:nth-child(3) { width: 11%; } /* Account No */
-.investments-table thead th:nth-child(4) { width: 9%; } /* Invested */
-.investments-table thead th:nth-child(5) { width: 9%; } /* Current */
-.investments-table thead th:nth-child(6) { width: 13%; } /* Returns */
-.investments-table thead th:nth-child(7) { width: 7%; }  /* Interest */
-.investments-table thead th:nth-child(8) { width: 9%; } /* Start */
-.investments-table thead th:nth-child(9) { width: 10%; } /* Maturity */
-.investments-table thead th:nth-child(10) { width: 12%; } /* Actions */
+.investments-table thead th:nth-child(1) {
+  width: 8%;
+}
+
+/* Type */
+.investments-table thead th:nth-child(2) {
+  width: 12%;
+}
+
+/* Name */
+.investments-table thead th:nth-child(3) {
+  width: 11%;
+}
+
+/* Account No */
+.investments-table thead th:nth-child(4) {
+  width: 9%;
+}
+
+/* Invested */
+.investments-table thead th:nth-child(5) {
+  width: 9%;
+}
+
+/* Current */
+.investments-table thead th:nth-child(6) {
+  width: 13%;
+}
+
+/* Returns */
+.investments-table thead th:nth-child(7) {
+  width: 7%;
+}
+
+/* Interest */
+.investments-table thead th:nth-child(8) {
+  width: 9%;
+}
+
+/* Start */
+.investments-table thead th:nth-child(9) {
+  width: 10%;
+}
+
+/* Maturity */
+.investments-table thead th:nth-child(10) {
+  width: 12%;
+}
+
+/* Actions */
 
 .investments-table thead th:first-child {
   border-top-left-radius: 20px;
@@ -1229,16 +1275,56 @@
 }
 
 /* Match tbody column widths with thead */
-.investments-table tbody td:nth-child(1) { width: 8%; }  /* Type */
-.investments-table tbody td:nth-child(2) { width: 12%; } /* Name */
-.investments-table tbody td:nth-child(3) { width: 11%; } /* Account No */
-.investments-table tbody td:nth-child(4) { width: 9%; } /* Invested */
-.investments-table tbody td:nth-child(5) { width: 9%; } /* Current */
-.investments-table tbody td:nth-child(6) { width: 13%; } /* Returns */
-.investments-table tbody td:nth-child(7) { width: 7%; }  /* Interest */
-.investments-table tbody td:nth-child(8) { width: 9%; } /* Start */
-.investments-table tbody td:nth-child(9) { width: 10%; } /* Maturity */
-.investments-table tbody td:nth-child(10) { width: 12%; } /* Actions */
+.investments-table tbody td:nth-child(1) {
+  width: 8%;
+}
+
+/* Type */
+.investments-table tbody td:nth-child(2) {
+  width: 12%;
+}
+
+/* Name */
+.investments-table tbody td:nth-child(3) {
+  width: 11%;
+}
+
+/* Account No */
+.investments-table tbody td:nth-child(4) {
+  width: 9%;
+}
+
+/* Invested */
+.investments-table tbody td:nth-child(5) {
+  width: 9%;
+}
+
+/* Current */
+.investments-table tbody td:nth-child(6) {
+  width: 13%;
+}
+
+/* Returns */
+.investments-table tbody td:nth-child(7) {
+  width: 7%;
+}
+
+/* Interest */
+.investments-table tbody td:nth-child(8) {
+  width: 9%;
+}
+
+/* Start */
+.investments-table tbody td:nth-child(9) {
+  width: 10%;
+}
+
+/* Maturity */
+.investments-table tbody td:nth-child(10) {
+  width: 12%;
+}
+
+/* Actions */
 
 .investments-table tbody td strong {
   color: #1a1f3a;
@@ -1743,6 +1829,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1951,22 +2038,22 @@
     margin: 20px 0;
     padding: 16px;
   }
-  
+
   .section-header {
     flex-direction: column;
     gap: 12px;
     align-items: stretch;
   }
-  
+
   .projects-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .project-card {
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .project-actions {
     margin-left: 0;
     justify-content: flex-end;
@@ -2214,7 +2301,8 @@
   justify-content: center;
 }
 
-.edit-btn, .delete-btn {
+.edit-btn,
+.delete-btn {
   background: none;
   border: 1px solid #E2E8F0;
   padding: 8px;
@@ -2270,7 +2358,7 @@
     margin: 0;
     padding: 16px;
   }
-  
+
   .section-header h3 {
     font-size: 16px;
     flex: 1;
@@ -2480,6 +2568,7 @@
     opacity: 0;
     max-height: 0;
   }
+
   to {
     opacity: 1;
     max-height: 2000px;

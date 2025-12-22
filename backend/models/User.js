@@ -2,29 +2,32 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
   email: {
     type: String,
     required: true,
     unique: true,
     lowercase: true,
-    trim: true,
+    trim: true
   },
   password: {
     type: String,
-    required: true,
+    required: true
   },
-  name: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+  isAdmin: {
+    type: Boolean,
+    default: false
+  }
+}, {
+  timestamps: true
 });
 
 // Hash password before saving
-userSchema.pre('save', async function() {
+userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
     return;
   }
@@ -32,7 +35,7 @@ userSchema.pre('save', async function() {
 });
 
 // Method to compare passwords
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

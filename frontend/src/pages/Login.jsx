@@ -17,13 +17,18 @@ const Login = () => {
     setLoading(true);
 
     const result = await login({ email, password });
-    
+
     if (result.success) {
-      navigate('/dashboard');
+      // Redirect based on user role
+      if (result.user?.isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } else {
       setError(result.message);
     }
-    
+
     setLoading(false);
   };
 
@@ -32,9 +37,9 @@ const Login = () => {
       <div className="login-box">
         <h1>Finance Management System</h1>
         <h2>Login</h2>
-        
+
         {error && <div className="error-message">{error}</div>}
-        
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email</label>
@@ -47,7 +52,7 @@ const Login = () => {
               placeholder="Enter your email"
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
@@ -59,12 +64,12 @@ const Login = () => {
               placeholder="Enter your password"
             />
           </div>
-          
+
           <button type="submit" disabled={loading} className="login-button">
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-        
+
         <p className="demo-credentials">
           Demo: email: <strong>demo@example.com</strong>, password: <strong>demo123</strong>
         </p>
