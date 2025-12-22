@@ -5,7 +5,7 @@ import '../investments/Investment.css';
 
 const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5001'
-    : 'https://finance-backend-ywqo.onrender.com';
+    : 'https://finance-qr54.onrender.com';
 
 const ProfitLoss = () => {
     const [plRecords, setPlRecords] = useState([]);

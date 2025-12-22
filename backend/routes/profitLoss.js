@@ -7,15 +7,17 @@ const auth = require('../middleware/auth');
 // Get all P&L records for logged-in user
 router.get('/', auth, async (req, res) => {
     try {
+        console.log('[Profit Loss] Fetching records for user:', req.user.id);
         const profitLossRecords = await ProfitLoss.find({ userId: req.user.id })
             .sort({ dateOfSales: -1 });
 
+        console.log(`[Profit Loss] Found ${profitLossRecords.length} records`);
         res.json({
             success: true,
             data: profitLossRecords
         });
     } catch (error) {
-        console.error('Error fetching P&L records:', error);
+        console.error('[Profit Loss] Error fetching records:', error);
         res.status(500).json({
             success: false,
             message: 'Error fetching P&L records',
@@ -276,6 +278,7 @@ router.delete('/:id', auth, async (req, res) => {
 // Get P&L summary/statistics
 router.get('/stats/summary', auth, async (req, res) => {
     try {
+        console.log('[Profit Loss] Fetching summary for user:', req.user.id);
         const records = await ProfitLoss.find({ userId: req.user.id });
 
         const summary = {
@@ -290,12 +293,13 @@ router.get('/stats/summary', auth, async (req, res) => {
                 : 0
         };
 
+        console.log('[Profit Loss] Summary calculated:', summary);
         res.json({
             success: true,
             data: summary
         });
     } catch (error) {
-        console.error('Error fetching P&L summary:', error);
+        console.error('[Profit Loss] Error fetching summary:', error);
         res.status(500).json({
             success: false,
             message: 'Error fetching P&L summary',

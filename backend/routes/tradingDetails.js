@@ -7,15 +7,17 @@ const { autoGeneratePL } = require('../utils/profitLossSync');
 // Get all trading details for logged-in user
 router.get('/', auth, async (req, res) => {
     try {
+        console.log('[Trading Details] Fetching records for user:', req.user.id);
         const tradingDetails = await TradingDetails.find({ userId: req.user.id })
             .sort({ createdAt: -1 });
 
+        console.log(`[Trading Details] Found ${tradingDetails.length} records`);
         res.json({
             success: true,
             data: tradingDetails
         });
     } catch (error) {
-        console.error('Error fetching trading details:', error);
+        console.error('[Trading Details] Error fetching records:', error);
         res.status(500).json({
             success: false,
             message: 'Error fetching trading details',
