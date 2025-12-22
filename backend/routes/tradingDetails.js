@@ -58,6 +58,9 @@ router.get('/:id', auth, async (req, res) => {
 // Create new trading detail
 router.post('/', auth, async (req, res) => {
     try {
+        console.log('[Trading Details] Creating new record for user:', req.user.id);
+        console.log('[Trading Details] Request body:', JSON.stringify(req.body, null, 2));
+
         const tradingDetailData = {
             ...req.body,
             userId: req.user.id
@@ -66,18 +69,24 @@ router.post('/', auth, async (req, res) => {
         const tradingDetail = new TradingDetails(tradingDetailData);
         await tradingDetail.save();
 
-        // Auto-generate P&L records in background
-        autoGeneratePL(req.user.id).catch(err => {
-            console.error('Background P&L sync error:', err);
-        });
+        console.log('[Trading Details] Record created successfully:', tradingDetail._id);
 
+        // Send response first
         res.status(201).json({
             success: true,
             message: 'Trading detail created successfully',
             data: tradingDetail
         });
+
+        // Auto-generate P&L records in background (after response is sent)
+        setImmediate(() => {
+            autoGeneratePL(req.user.id).catch(err => {
+                console.error('[Trading Details] Background P&L sync error:', err);
+            });
+        });
     } catch (error) {
-        console.error('Error creating trading detail:', error);
+        console.error('[Trading Details] Error creating record:', error);
+        console.error('[Trading Details] Error stack:', error.stack);
         res.status(500).json({
             success: false,
             message: 'Error creating trading detail',
@@ -89,6 +98,8 @@ router.post('/', auth, async (req, res) => {
 // Update trading detail
 router.put('/:id', auth, async (req, res) => {
     try {
+        console.log('[Trading Details] Updating record:', req.params.id, 'for user:', req.user.id);
+
         const tradingDetail = await TradingDetails.findOne({
             _id: req.params.id,
             userId: req.user.id
@@ -109,19 +120,23 @@ router.put('/:id', auth, async (req, res) => {
         });
 
         await tradingDetail.save();
+        console.log('[Trading Details] Record updated successfully');
 
-        // Auto-generate P&L records in background
-        autoGeneratePL(req.user.id).catch(err => {
-            console.error('Background P&L sync error:', err);
-        });
-
+        // Send response first
         res.json({
             success: true,
             message: 'Trading detail updated successfully',
             data: tradingDetail
         });
+
+        // Auto-generate P&L records in background (after response is sent)
+        setImmediate(() => {
+            autoGeneratePL(req.user.id).catch(err => {
+                console.error('[Trading Details] Background P&L sync error:', err);
+            });
+        });
     } catch (error) {
-        console.error('Error updating trading detail:', error);
+        console.error('[Trading Details] Error updating record:', error);
         res.status(500).json({
             success: false,
             message: 'Error updating trading detail',
