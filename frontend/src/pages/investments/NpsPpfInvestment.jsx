@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiTrendingUp, FiDollarSign } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiTrendingUp, FiDollarSign, FiRefreshCw } from 'react-icons/fi';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { investmentAPI } from '../../utils/investmentAPI';
 import { staticAPI } from '../../utils/staticAPI';
+import { fetchNPSNav, fetchPPFRate, fetchPostOfficeRates } from '../../utils/livePricesAPI';
 import './Investment.css';
 import { syncBillScheduleFromForm } from '../../utils/billScheduleSyncUtil';
 import { syncInvestmentProfileFromForm } from '../../utils/syncInvestmentProfileUtil';
@@ -14,6 +15,9 @@ const NpsPpfInvestment = () => {
   const [loading, setLoading] = useState(false);
   const [familyMembers, setFamilyMembers] = useState([]);
   const formRef = useRef(null);
+  const [liveRates, setLiveRates] = useState(null);
+  const [ratesLoading, setRatesLoading] = useState(false);
+  const [lastRateUpdate, setLastRateUpdate] = useState(null);
   const [formData, setFormData] = useState({
     category: 'nps-ppf',
     type: 'NPS',
@@ -32,9 +36,32 @@ const NpsPpfInvestment = () => {
 
   const COLORS = ['#C084FC', '#9333EA', '#7C3AED', '#8B5CF6', '#6366F1'];
 
+  // Fetch live rates
+  const fetchRates = async () => {
+    setRatesLoading(true);
+    try {
+      const [npsNav, ppfRate, postOfficeRates] = await Promise.all([
+        fetchNPSNav(),
+        fetchPPFRate(),
+        fetchPostOfficeRates()
+      ]);
+      setLiveRates({ nps: npsNav, ppf: ppfRate, postOffice: postOfficeRates });
+      setLastRateUpdate(new Date());
+    } catch (error) {
+      console.error('Error fetching live rates:', error);
+    } finally {
+      setRatesLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchInvestments();
     fetchFamilyMembers();
+    fetchRates();
+
+    // Auto-refresh rates every 5 minutes
+    const rateInterval = setInterval(fetchRates, 5 * 60 * 1000);
+    return () => clearInterval(rateInterval);
   }, []);
 
   const fetchFamilyMembers = async () => {
@@ -174,6 +201,96 @@ const NpsPpfInvestment = () => {
         <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
           <FiPlus /> {showForm ? 'Cancel' : 'Add Investment'}
         </button>
+      </div>
+
+      {/* Live Interest Rates */}
+      <div className="live-rates-section" style={{ 
+        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', 
+        borderRadius: '16px', 
+        padding: '20px', 
+        marginBottom: '24px',
+        color: '#fff'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ff88', animation: 'pulse 2s infinite' }}></span>
+            Current Interest Rates (Govt. Schemes)
+          </h3>
+          <button 
+            onClick={fetchRates} 
+            disabled={ratesLoading}
+            style={{ 
+              background: 'rgba(255,255,255,0.1)', 
+              border: 'none', 
+              borderRadius: '8px', 
+              padding: '8px 16px', 
+              color: '#fff', 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <FiRefreshCw className={ratesLoading ? 'spin' : ''} />
+            {ratesLoading ? 'Updating...' : 'Refresh'}
+          </button>
+        </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+          <div style={{ background: 'linear-gradient(135deg, #C084FC 0%, #9333EA 100%)', borderRadius: '12px', padding: '14px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>PPF Rate</p>
+            <h4 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+              {liveRates?.ppf?.currentRate || '--'}%
+            </h4>
+            <small style={{ opacity: 0.8 }}>p.a.</small>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #6366F1 100%)', borderRadius: '12px', padding: '14px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>NPS (Equity)</p>
+            <h4 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+              {liveRates?.nps?.tier1?.avgReturn || '--'}%
+            </h4>
+            <small style={{ opacity: 0.8 }}>avg. return</small>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, #EC4899 0%, #F43F5E 100%)', borderRadius: '12px', padding: '14px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>SSY Rate</p>
+            <h4 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+              {liveRates?.postOffice?.SSY?.rate || '--'}%
+            </h4>
+            <small style={{ opacity: 0.8 }}>p.a.</small>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', borderRadius: '12px', padding: '14px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>NSC Rate</p>
+            <h4 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+              {liveRates?.postOffice?.NSC?.rate || '--'}%
+            </h4>
+            <small style={{ opacity: 0.8 }}>5 years</small>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)', borderRadius: '12px', padding: '14px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>SCSS Rate</p>
+            <h4 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+              {liveRates?.postOffice?.SCSS?.rate || '--'}%
+            </h4>
+            <small style={{ opacity: 0.8 }}>Senior Citizen</small>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', borderRadius: '12px', padding: '14px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>KVP Rate</p>
+            <h4 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+              {liveRates?.postOffice?.KVP?.rate || '--'}%
+            </h4>
+            <small style={{ opacity: 0.8 }}>{liveRates?.postOffice?.KVP?.tenure || '115 months'}</small>
+          </div>
+        </div>
+        
+        {lastRateUpdate && (
+          <p style={{ margin: '12px 0 0', fontSize: '11px', opacity: 0.6, textAlign: 'right' }}>
+            Last updated: {lastRateUpdate.toLocaleTimeString('en-IN')} | Rates as per Govt. notification
+          </p>
+        )}
       </div>
 
       {/* Stats Cards */}

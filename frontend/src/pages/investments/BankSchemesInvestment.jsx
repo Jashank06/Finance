@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiTrendingUp, FiDollarSign, FiActivity, FiBarChart2, FiCreditCard } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiTrendingUp, FiDollarSign, FiActivity, FiBarChart2, FiCreditCard, FiRefreshCw } from 'react-icons/fi';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { investmentAPI } from '../../utils/investmentAPI';
 import { staticAPI } from '../../utils/staticAPI';
+import { fetchBankRates } from '../../utils/livePricesAPI';
 import './Investment.css';
 
 const BankSchemesInvestment = () => {
@@ -12,6 +13,9 @@ const BankSchemesInvestment = () => {
   const [loading, setLoading] = useState(false);
   const [familyMembers, setFamilyMembers] = useState([]);
   const formRef = useRef(null);
+  const [bankRates, setBankRates] = useState(null);
+  const [ratesLoading, setRatesLoading] = useState(false);
+  const [lastRateUpdate, setLastRateUpdate] = useState(null);
   const [formData, setFormData] = useState({
     category: 'bank-schemes',
     type: 'Fixed Deposit',
@@ -31,9 +35,28 @@ const BankSchemesInvestment = () => {
 
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
+  // Fetch live bank FD/RD rates
+  const fetchRates = async () => {
+    setRatesLoading(true);
+    try {
+      const rates = await fetchBankRates();
+      setBankRates(rates);
+      setLastRateUpdate(new Date());
+    } catch (error) {
+      console.error('Error fetching bank rates:', error);
+    } finally {
+      setRatesLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchInvestments();
     fetchFamilyMembers();
+    fetchRates();
+
+    // Auto-refresh rates every 5 minutes
+    const rateInterval = setInterval(fetchRates, 5 * 60 * 1000);
+    return () => clearInterval(rateInterval);
   }, []);
 
   const fetchFamilyMembers = async () => {
@@ -245,6 +268,83 @@ const BankSchemesInvestment = () => {
             <FiPlus /> {showForm ? 'Cancel' : 'Add Investment'}
           </button>
         </div>
+      </div>
+
+      {/* Live Bank FD/RD Rates */}
+      <div className="live-rates-section" style={{ 
+        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', 
+        borderRadius: '16px', 
+        padding: '20px', 
+        marginBottom: '24px',
+        color: '#fff'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ff88', animation: 'pulse 2s infinite' }}></span>
+            Bank FD Rates (1 Year)
+          </h3>
+          <button 
+            onClick={fetchRates} 
+            disabled={ratesLoading}
+            style={{ 
+              background: 'rgba(255,255,255,0.1)', 
+              border: 'none', 
+              borderRadius: '8px', 
+              padding: '8px 16px', 
+              color: '#fff', 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <FiRefreshCw className={ratesLoading ? 'spin' : ''} />
+            {ratesLoading ? 'Updating...' : 'Refresh'}
+          </button>
+        </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px' }}>
+          {bankRates && Object.entries(bankRates).filter(([key]) => key !== 'lastUpdated').map(([bank, rates]) => (
+            <div key={bank} style={{ 
+              background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', 
+              borderRadius: '10px', 
+              padding: '12px',
+              textAlign: 'center'
+            }}>
+              <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9, fontWeight: 600 }}>{bank}</p>
+              <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>
+                {rates.fd1Year}%
+              </h4>
+              <small style={{ opacity: 0.7, fontSize: '10px' }}>FD 1Y</small>
+            </div>
+          ))}
+          {!bankRates && (
+            <>
+              <div style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>SBI</p>
+                <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>6.8%</h4>
+              </div>
+              <div style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>HDFC</p>
+                <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>7.0%</h4>
+              </div>
+              <div style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>ICICI</p>
+                <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>6.9%</h4>
+              </div>
+              <div style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>Kotak</p>
+                <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>7.2%</h4>
+              </div>
+            </>
+          )}
+        </div>
+        
+        {lastRateUpdate && (
+          <p style={{ margin: '12px 0 0', fontSize: '11px', opacity: 0.6, textAlign: 'right' }}>
+            Last updated: {lastRateUpdate.toLocaleTimeString('en-IN')} | Auto-refresh every 5 min
+          </p>
+        )}
       </div>
 
       <div className="stats-grid">

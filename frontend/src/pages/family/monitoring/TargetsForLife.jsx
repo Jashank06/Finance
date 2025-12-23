@@ -15,12 +15,47 @@ const TargetsForLife = () => {
         estimatedCost: '',
         recommendedInvestmentVehicle: '',
         riskTolerance: '',
-        targetDate: ''
+        targetDate: '',
+        monthlyExpenses: '',
+        monthsOfCoverage: ''
     });
 
     useEffect(() => {
         fetchData();
     }, []);
+
+    // Effect to calculate estimated cost for Emergency Fund
+    useEffect(() => {
+        if (targetForm.goalType === 'Emergency Fund') {
+            const expenses = parseFloat(targetForm.monthlyExpenses) || 0;
+            const months = parseFloat(targetForm.monthsOfCoverage) || 0;
+            if (expenses > 0 && months > 0) {
+                setTargetForm(prev => ({
+                    ...prev,
+                    estimatedCost: (expenses * months).toString()
+                }));
+            }
+        }
+    }, [targetForm.monthlyExpenses, targetForm.monthsOfCoverage, targetForm.goalType]);
+
+    const handleGoalTypeChange = (e) => {
+        const type = e.target.value;
+        let updates = { goalType: type };
+
+        if (type === 'Emergency Fund') {
+            updates = {
+                ...updates,
+                specificGoal: 'Emergency Fund',
+                recommendedInvestmentVehicle: 'High Yield Savings Account / Liquid Funds',
+                riskTolerance: 'Very Low'
+            };
+        }
+
+        setTargetForm(prev => ({
+            ...prev,
+            ...updates
+        }));
+    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -42,7 +77,9 @@ const TargetsForLife = () => {
             estimatedCost: '',
             recommendedInvestmentVehicle: '',
             riskTolerance: '',
-            targetDate: ''
+            targetDate: '',
+            monthlyExpenses: '',
+            monthsOfCoverage: ''
         });
         setEditingTarget(null);
     };
@@ -104,7 +141,9 @@ const TargetsForLife = () => {
                 estimatedCost: parseFloat(targetForm.estimatedCost),
                 recommendedInvestmentVehicle: targetForm.recommendedInvestmentVehicle.trim(),
                 riskTolerance: targetForm.riskTolerance,
-                targetDate: targetForm.targetDate
+                targetDate: targetForm.targetDate,
+                monthlyExpenses: targetForm.goalType === 'Emergency Fund' ? parseFloat(targetForm.monthlyExpenses) : undefined,
+                monthsOfCoverage: targetForm.goalType === 'Emergency Fund' ? parseFloat(targetForm.monthsOfCoverage) : undefined
             };
 
             if (editingTarget) {
@@ -225,15 +264,49 @@ const TargetsForLife = () => {
                                     <label>Goal Type <span className="required">*</span></label>
                                     <select
                                         value={targetForm.goalType}
-                                        onChange={(e) => setTargetForm({ ...targetForm, goalType: e.target.value })}
+                                        onChange={handleGoalTypeChange}
                                         className="form-select"
                                     >
                                         <option value="">Select Goal Type</option>
                                         <option value="Short Term">Short Term</option>
                                         <option value="Medium Term">Medium Term</option>
                                         <option value="Long Term">Long Term</option>
+                                        <option value="Emergency Fund">Emergency Fund</option>
                                     </select>
                                 </div>
+
+                                {targetForm.goalType === 'Emergency Fund' && (
+                                    <>
+                                        <div className="form-group-premium">
+                                            <label>Monthly Expenses <span className="required">*</span></label>
+                                            <div className="input-with-prefix">
+                                                <span className="input-prefix">$</span>
+                                                <input
+                                                    type="number"
+                                                    value={targetForm.monthlyExpenses}
+                                                    onChange={(e) => setTargetForm({ ...targetForm, monthlyExpenses: e.target.value })}
+                                                    placeholder="0.00"
+                                                    className="form-input with-prefix"
+                                                    step="0.01"
+                                                    min="0"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group-premium">
+                                            <label>Months of Coverage <span className="required">*</span></label>
+                                            <input
+                                                type="number"
+                                                value={targetForm.monthsOfCoverage}
+                                                onChange={(e) => setTargetForm({ ...targetForm, monthsOfCoverage: e.target.value })}
+                                                placeholder="e.g. 6"
+                                                className="form-input"
+                                                step="1"
+                                                min="1"
+                                            />
+                                        </div>
+                                    </>
+                                )}
 
                                 <div className="form-group-premium">
                                     <label>Specific Goal <span className="required">*</span></label>
@@ -270,6 +343,8 @@ const TargetsForLife = () => {
                                             className="form-input with-prefix"
                                             step="0.01"
                                             min="0"
+                                            readOnly={targetForm.goalType === 'Emergency Fund'}
+                                            style={targetForm.goalType === 'Emergency Fund' ? { backgroundColor: '#f9fafb', cursor: 'not-allowed' } : {}}
                                         />
                                     </div>
                                 </div>

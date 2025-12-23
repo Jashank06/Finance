@@ -499,6 +499,84 @@
   }
 }
 
+/* Section Edit Buttons - Header */
+.btn-section-edit {
+  background: white;
+  color: #667eea;
+  border: 1px solid #e2e8f0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-section-edit:hover {
+  background: #f8fafc;
+  border-color: #667eea;
+  color: #5a67d8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.15);
+}
+
+.btn-section-edit svg {
+  font-size: 16px;
+}
+
+.btn-section-save {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(72, 187, 120, 0.2);
+  font-size: 14px;
+}
+
+.btn-section-save:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+}
+
+.btn-section-cancel {
+  background: white;
+  color: #e53e3e;
+  border: 1px solid #fed7d7;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.btn-section-cancel:hover {
+  background: #fff5f5;
+  border-color: #e53e3e;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(229, 62, 62, 0.1);
+}
+
+/* Ensure section actions are positioned correctly */
+.section-actions {
+  display: flex;
+  align-items: center;
+}
+
 /* Prevent horizontal scrolling */
 .website-form {
   max-width: 100%;

@@ -388,7 +388,10 @@ router.post('/targets-for-life', async (req, res) => {
       estimatedCost: req.body.estimatedCost,
       recommendedInvestmentVehicle: req.body.recommendedInvestmentVehicle,
       riskTolerance: req.body.riskTolerance,
-      targetDate: req.body.targetDate
+      riskTolerance: req.body.riskTolerance,
+      targetDate: req.body.targetDate,
+      monthlyExpenses: req.body.monthlyExpenses,
+      monthsOfCoverage: req.body.monthsOfCoverage
     });
     const savedTarget = await target.save();
     res.status(201).json(savedTarget);
@@ -411,6 +414,8 @@ router.put('/targets-for-life/:id', async (req, res) => {
           recommendedInvestmentVehicle: req.body.recommendedInvestmentVehicle,
           riskTolerance: req.body.riskTolerance,
           targetDate: req.body.targetDate,
+          monthlyExpenses: req.body.monthlyExpenses,
+          monthsOfCoverage: req.body.monthsOfCoverage,
           updatedAt: new Date()
         }
       },

@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiTrendingUp, FiDollarSign, FiPieChart, FiActivity, FiBarChart2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiTrendingUp, FiDollarSign, FiPieChart, FiActivity, FiBarChart2, FiRefreshCw } from 'react-icons/fi';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid, AreaChart, Area, BarChart, Bar } from 'recharts';
 import { investmentAPI } from '../../utils/investmentAPI';
 import { staticAPI } from '../../utils/staticAPI';
+import { fetchLiveMetalPrices, fetchSGBPrice } from '../../utils/livePricesAPI';
 import './Investment.css';
 import { syncContactsFromForm } from '../../utils/contactSyncUtil';
 import { syncBillScheduleFromForm } from '../../utils/billScheduleSyncUtil';
@@ -15,6 +16,9 @@ const GoldSgbInvestment = () => {
   const [loading, setLoading] = useState(false);
   const [familyMembers, setFamilyMembers] = useState([]);
   const formRef = useRef(null);
+  const [livePrices, setLivePrices] = useState(null);
+  const [pricesLoading, setPricesLoading] = useState(false);
+  const [lastPriceUpdate, setLastPriceUpdate] = useState(null);
   const [formData, setFormData] = useState({
     category: 'gold-sgb',
     type: 'Digital Gold',
@@ -35,9 +39,31 @@ const GoldSgbInvestment = () => {
 
   const COLORS = ['#FFD700', '#FFA500', '#C0C0C0', '#4169E1', '#32CD32', '#FF6347'];
 
+  // Fetch live prices
+  const fetchPrices = async () => {
+    setPricesLoading(true);
+    try {
+      const [metalPrices, sgbPrice] = await Promise.all([
+        fetchLiveMetalPrices(),
+        fetchSGBPrice()
+      ]);
+      setLivePrices({ ...metalPrices, sgb: sgbPrice });
+      setLastPriceUpdate(new Date());
+    } catch (error) {
+      console.error('Error fetching live prices:', error);
+    } finally {
+      setPricesLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchInvestments();
     fetchFamilyMembers();
+    fetchPrices();
+
+    // Auto-refresh prices every 5 minutes
+    const priceInterval = setInterval(fetchPrices, 5 * 60 * 1000);
+    return () => clearInterval(priceInterval);
   }, []);
 
   const fetchFamilyMembers = async () => {
@@ -256,6 +282,80 @@ const GoldSgbInvestment = () => {
             <FiPlus /> {showForm ? 'Cancel' : 'Add Investment'}
           </button>
         </div>
+      </div>
+
+      {/* Live Market Prices */}
+      <div className="live-prices-section" style={{ 
+        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', 
+        borderRadius: '16px', 
+        padding: '20px', 
+        marginBottom: '24px',
+        color: '#fff'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ff88', animation: 'pulse 2s infinite' }}></span>
+            Live Market Prices
+          </h3>
+          <button 
+            onClick={fetchPrices} 
+            disabled={pricesLoading}
+            style={{ 
+              background: 'rgba(255,255,255,0.1)', 
+              border: 'none', 
+              borderRadius: '8px', 
+              padding: '8px 16px', 
+              color: '#fff', 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <FiRefreshCw className={pricesLoading ? 'spin' : ''} />
+            {pricesLoading ? 'Updating...' : 'Refresh'}
+          </button>
+        </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+          <div style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', borderRadius: '12px', padding: '16px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '12px', opacity: 0.9 }}>Gold 24K</p>
+            <h4 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>
+              ₹{livePrices?.gold?.price24K?.toLocaleString('en-IN') || '--'}
+            </h4>
+            <small style={{ opacity: 0.8 }}>per gram</small>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, #DAA520 0%, #B8860B 100%)', borderRadius: '12px', padding: '16px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '12px', opacity: 0.9 }}>Gold 22K</p>
+            <h4 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>
+              ₹{livePrices?.gold?.price22K?.toLocaleString('en-IN') || '--'}
+            </h4>
+            <small style={{ opacity: 0.8 }}>per gram</small>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, #C0C0C0 0%, #808080 100%)', borderRadius: '12px', padding: '16px', color: '#1a1a2e' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '12px', opacity: 0.9 }}>Silver</p>
+            <h4 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>
+              ₹{livePrices?.silver?.pricePerKg?.toLocaleString('en-IN') || '--'}
+            </h4>
+            <small style={{ opacity: 0.8 }}>per kg</small>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, #9333EA 0%, #7C3AED 100%)', borderRadius: '12px', padding: '16px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '12px', opacity: 0.9 }}>SGB Issue Price</p>
+            <h4 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>
+              ₹{livePrices?.sgb?.issuePrice?.toLocaleString('en-IN') || '--'}
+            </h4>
+            <small style={{ opacity: 0.8 }}>2.5% p.a. interest</small>
+          </div>
+        </div>
+        
+        {lastPriceUpdate && (
+          <p style={{ margin: '12px 0 0', fontSize: '11px', opacity: 0.6, textAlign: 'right' }}>
+            Last updated: {lastPriceUpdate.toLocaleTimeString('en-IN')} | Auto-refresh every 5 min
+          </p>
+        )}
       </div>
 
       {/* Stats Cards */}

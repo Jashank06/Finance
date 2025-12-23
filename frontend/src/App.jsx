@@ -58,6 +58,9 @@ import BlogsManagement from './pages/admin/BlogsManagement';
 import ContactDeveloper from './pages/admin/ContactDeveloper';
 import FeedbackManagement from './pages/admin/FeedbackManagement';
 
+// Landing Page Import
+import LandingLayout from './landing/components/LandingLayout';
+
 import './App.css';
 
 function App() {
@@ -65,6 +68,9 @@ function App() {
     <AuthProvider>
       <BrowserRouter basename="/Finance">
         <Routes>
+          {/* Landing Page - Public Route */}
+          <Route path="/landing" element={<LandingLayout />} />
+
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
 

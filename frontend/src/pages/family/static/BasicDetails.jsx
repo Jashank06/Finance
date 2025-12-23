@@ -5,6 +5,7 @@ import './Static.css';
 
 const BasicDetails = () => {
   const [editMode, setEditMode] = useState(false);
+  const [editingSection, setEditingSection] = useState(null); // Track which section is being edited
   const [loading, setLoading] = useState(false);
   const [familyMembers, setFamilyMembers] = useState([]);
   const [formData, setFormData] = useState({
@@ -579,7 +580,7 @@ const BasicDetails = () => {
   };
 
   const removeMutualFund = (index) => {
-    setEditMode(true);
+    setEditingSection('mutualFunds');
     setFormData(prev => ({
       ...prev,
       mutualFunds: prev.mutualFunds.filter((_, i) => i !== index)
@@ -587,7 +588,7 @@ const BasicDetails = () => {
   };
 
   const editMutualFund = (index) => {
-    setEditMode(true);
+    setEditingSection('mutualFunds');
     const item = formData.mutualFunds[index];
     setNewMutualFund(item);
     setFormData(prev => ({
@@ -624,7 +625,7 @@ const BasicDetails = () => {
   };
 
   const removeShare = (index) => {
-    setEditMode(true);
+    setEditingSection('shares');
     setFormData(prev => ({
       ...prev,
       shares: prev.shares.filter((_, i) => i !== index)
@@ -632,7 +633,7 @@ const BasicDetails = () => {
   };
 
   const editShare = (index) => {
-    setEditMode(true);
+    setEditingSection('shares');
     const item = formData.shares[index];
     setNewShare(item);
     setFormData(prev => ({
@@ -670,7 +671,7 @@ const BasicDetails = () => {
   };
 
   const removeInsurance = (index) => {
-    setEditMode(true);
+    setEditingSection('insurance');
     setFormData(prev => ({
       ...prev,
       insurance: prev.insurance.filter((_, i) => i !== index)
@@ -678,7 +679,7 @@ const BasicDetails = () => {
   };
 
   const editInsurance = (index) => {
-    setEditMode(true);
+    setEditingSection('insurance');
     const item = formData.insurance[index];
     setNewInsurance(item);
     setFormData(prev => ({
@@ -714,7 +715,7 @@ const BasicDetails = () => {
   };
 
   const removeBank = (index) => {
-    setEditMode(true);
+    setEditingSection('banks');
     setFormData(prev => ({
       ...prev,
       banks: prev.banks.filter((_, i) => i !== index)
@@ -722,7 +723,7 @@ const BasicDetails = () => {
   };
 
   const editBank = (index) => {
-    setEditMode(true);
+    setEditingSection('banks');
     const item = formData.banks[index];
     setNewBank(item);
     setFormData(prev => ({
@@ -753,7 +754,7 @@ const BasicDetails = () => {
   };
 
   const removeMobileBill = (index) => {
-    setEditMode(true);
+    setEditingSection('mobileBills');
     setFormData(prev => ({
       ...prev,
       mobileBills: prev.mobileBills.filter((_, i) => i !== index)
@@ -761,7 +762,7 @@ const BasicDetails = () => {
   };
 
   const editMobileBill = (index) => {
-    setEditMode(true);
+    setEditingSection('mobileBills');
     const item = formData.mobileBills[index];
     setNewMobileBill(item);
     setFormData(prev => ({
@@ -794,7 +795,7 @@ const BasicDetails = () => {
   };
 
   const removeCard = (index) => {
-    setEditMode(true);
+    setEditingSection('cards');
     setFormData(prev => ({
       ...prev,
       cards: prev.cards.filter((_, i) => i !== index)
@@ -802,7 +803,7 @@ const BasicDetails = () => {
   };
 
   const editCard = (index) => {
-    setEditMode(true);
+    setEditingSection('cards');
     const item = formData.cards[index];
     setNewCard(item);
     setFormData(prev => ({
@@ -830,7 +831,7 @@ const BasicDetails = () => {
   };
 
   const removePaymentGateway = (index) => {
-    setEditMode(true);
+    setEditingSection('paymentGateways');
     setFormData(prev => ({
       ...prev,
       paymentGateways: prev.paymentGateways.filter((_, i) => i !== index)
@@ -838,7 +839,7 @@ const BasicDetails = () => {
   };
 
   const editPaymentGateway = (index) => {
-    setEditMode(true);
+    setEditingSection('paymentGateways');
     const item = formData.paymentGateways[index];
     setNewPaymentGateway(item);
     setFormData(prev => ({
@@ -873,7 +874,7 @@ const BasicDetails = () => {
   };
 
   const removeMutualFundPortfolio = (index) => {
-    setEditMode(true);
+    setEditingSection('mutualFundsPortfolio');
     setFormData(prev => ({
       ...prev,
       mutualFundsPortfolio: prev.mutualFundsPortfolio.filter((_, i) => i !== index)
@@ -881,7 +882,7 @@ const BasicDetails = () => {
   };
 
   const editMutualFundPortfolio = (index) => {
-    setEditMode(true);
+    setEditingSection('mutualFundsPortfolio');
     const item = formData.mutualFundsPortfolio[index];
     setNewMutualFundPortfolio(item);
     setFormData(prev => ({
@@ -915,7 +916,7 @@ const BasicDetails = () => {
   };
 
   const removeSharePortfolio = (index) => {
-    setEditMode(true);
+    setEditingSection('sharesPortfolio');
     setFormData(prev => ({
       ...prev,
       sharesPortfolio: prev.sharesPortfolio.filter((_, i) => i !== index)
@@ -923,7 +924,7 @@ const BasicDetails = () => {
   };
 
   const editSharePortfolio = (index) => {
-    setEditMode(true);
+    setEditingSection('sharesPortfolio');
     const item = formData.sharesPortfolio[index];
     setNewSharePortfolio(item);
     setFormData(prev => ({
@@ -958,7 +959,7 @@ const BasicDetails = () => {
   };
 
   const removeInsurancePortfolio = (index) => {
-    setEditMode(true);
+    setEditingSection('insurancePortfolio');
     setFormData(prev => ({
       ...prev,
       insurancePortfolio: prev.insurancePortfolio.filter((_, i) => i !== index)
@@ -966,7 +967,7 @@ const BasicDetails = () => {
   };
 
   const editInsurancePortfolio = (index) => {
-    setEditMode(true);
+    setEditingSection('insurancePortfolio');
     const item = formData.insurancePortfolio[index];
     setNewInsurancePortfolio(item);
     setFormData(prev => ({
@@ -998,7 +999,7 @@ const BasicDetails = () => {
   };
 
   const removeSubBroker = (index) => {
-    setEditMode(true);
+    setEditingSection('subBrokers');
     setFormData(prev => ({
       ...prev,
       subBrokers: prev.subBrokers.filter((_, i) => i !== index)
@@ -1006,13 +1007,52 @@ const BasicDetails = () => {
   };
 
   const editSubBroker = (index) => {
-    setEditMode(true);
+    setEditingSection('subBrokers');
     const item = formData.subBrokers[index];
     setNewSubBroker(item);
     setFormData(prev => ({
       ...prev,
       subBrokers: prev.subBrokers.filter((_, i) => i !== index)
     }));
+  };
+
+  // Section-specific edit handlers
+  const toggleSectionEdit = (sectionName) => {
+    if (editingSection === sectionName) {
+      setEditingSection(null);
+    } else {
+      setEditingSection(sectionName);
+    }
+  };
+
+  const isSectionEditing = (sectionName) => {
+    return editMode || editingSection === sectionName;
+  };
+
+  const handleSectionSave = async (sectionName) => {
+    try {
+      setLoading(true);
+      let response;
+
+      if (formData._id) {
+        response = await staticAPI.updateBasicDetails(formData._id, formData);
+      } else {
+        response = await staticAPI.createBasicDetails(formData);
+      }
+
+      setFormData(response.data);
+      setEditingSection(null);
+    } catch (error) {
+      console.error('Error saving section:', error);
+      alert('Failed to save. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSectionCancel = (sectionName) => {
+    setEditingSection(null);
+    fetchBasicDetails();
   };
 
   const handleSave = async () => {
@@ -1037,6 +1077,7 @@ const BasicDetails = () => {
       console.log('Save response:', response);
       setFormData(response.data);
       setEditMode(false);
+      setEditingSection(null);
       console.log('=== SAVE SUCCESSFUL ===');
     } catch (error) {
       console.error('=== SAVE ERROR ===');
@@ -1049,6 +1090,7 @@ const BasicDetails = () => {
 
   const handleCancel = () => {
     setEditMode(false);
+    setEditingSection(null);
     fetchBasicDetails(); // Reset to original data
   };
 
@@ -1096,9 +1138,27 @@ const BasicDetails = () => {
 
         {/* Mutual Funds Information */}
         <div className="static-section">
-          <div className="section-header">
-            <FiTrendingUp className="section-icon" />
-            <h3>Mutual Funds Information</h3>
+          <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <FiTrendingUp className="section-icon" />
+              <h3>Mutual Funds Information</h3>
+            </div>
+            <div className="section-actions">
+              {!isSectionEditing('mutualFunds') ? (
+                <button className="btn-section-edit" onClick={() => toggleSectionEdit('mutualFunds')} title="Edit this section">
+                  <FiEdit2 /> Edit
+                </button>
+              ) : (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn-section-save" onClick={() => handleSectionSave('mutualFunds')}>
+                    <FiSave /> Save
+                  </button>
+                  <button className="btn-section-cancel" onClick={() => handleSectionCancel('mutualFunds')}>
+                    <FiX /> Cancel
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           <div className="section-content">
             {formData.mutualFunds && formData.mutualFunds.length > 0 ? (
@@ -1173,7 +1233,7 @@ const BasicDetails = () => {
               <p className="no-data">No mutual funds added yet.</p>
             )}
 
-            {editMode && (
+            {isSectionEditing('mutualFunds') && (
               <div className="add-family-member">
                 <h5>Add Mutual Fund</h5>
                 <div className="form-grid">
@@ -1347,9 +1407,27 @@ const BasicDetails = () => {
 
       {/* Shares Information */}
       <div className="static-section">
-        <div className="section-header">
-          <FiTrendingUp className="section-icon" />
-          <h3>Shares Information</h3>
+        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FiTrendingUp className="section-icon" />
+            <h3>Shares Information</h3>
+          </div>
+          <div className="section-actions">
+            {!isSectionEditing('shares') ? (
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('shares')} title="Edit this section">
+                <FiEdit2 /> Edit
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn-section-save" onClick={() => handleSectionSave('shares')}>
+                  <FiSave /> Save
+                </button>
+                <button className="btn-section-cancel" onClick={() => handleSectionCancel('shares')}>
+                  <FiX /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="section-content">
           <div className="records-table">
@@ -1422,7 +1500,7 @@ const BasicDetails = () => {
             )}
           </div>
 
-          {editMode && (
+          {isSectionEditing('shares') && (
             <div className="add-family-member">
               <h5>Add Share</h5>
               <div className="form-grid">
@@ -1588,9 +1666,27 @@ const BasicDetails = () => {
 
       {/* Insurance Information */}
       <div className="static-section">
-        <div className="section-header">
-          <FiHome className="section-icon" />
-          <h3>Insurance Information</h3>
+        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FiHome className="section-icon" />
+            <h3>Insurance Information</h3>
+          </div>
+          <div className="section-actions">
+            {!isSectionEditing('insurance') ? (
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('insurance')} title="Edit this section">
+                <FiEdit2 /> Edit
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn-section-save" onClick={() => handleSectionSave('insurance')}>
+                  <FiSave /> Save
+                </button>
+                <button className="btn-section-cancel" onClick={() => handleSectionCancel('insurance')}>
+                  <FiX /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="section-content">
           <div className="records-table">
@@ -1665,7 +1761,7 @@ const BasicDetails = () => {
             )}
           </div>
 
-          {editMode && (
+          {isSectionEditing('insurance') && (
             <div className="add-family-member">
               <h5>Add Insurance Policy</h5>
               <div className="form-grid">
@@ -1837,9 +1933,27 @@ const BasicDetails = () => {
 
       {/* Bank Information */}
       <div className="static-section">
-        <div className="section-header">
-          <FiBriefcase className="section-icon" />
-          <h3>Bank Accounts Information</h3>
+        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FiBriefcase className="section-icon" />
+            <h3>Bank Accounts Information</h3>
+          </div>
+          <div className="section-actions">
+            {!isSectionEditing('banks') ? (
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('banks')} title="Edit this section">
+                <FiEdit2 /> Edit
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn-section-save" onClick={() => handleSectionSave('banks')}>
+                  <FiSave /> Save
+                </button>
+                <button className="btn-section-cancel" onClick={() => handleSectionCancel('banks')}>
+                  <FiX /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="section-content">
           <div className="records-table">
@@ -1910,7 +2024,7 @@ const BasicDetails = () => {
             )}
           </div>
 
-          {editMode && (
+          {isSectionEditing('banks') && (
             <div className="add-family-member">
               <h5>Add Bank Account</h5>
               <div className="form-grid">
@@ -2067,9 +2181,27 @@ const BasicDetails = () => {
 
       {/* Mobile Bill Information */}
       <div className="static-section">
-        <div className="section-header">
-          <FiPhone className="section-icon" />
-          <h3>Mobile Bill Information</h3>
+        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FiPhone className="section-icon" />
+            <h3>Mobile Bill Information</h3>
+          </div>
+          <div className="section-actions">
+            {!isSectionEditing('mobileBills') ? (
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('mobileBills')} title="Edit this section">
+                <FiEdit2 /> Edit
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn-section-save" onClick={() => handleSectionSave('mobileBills')}>
+                  <FiSave /> Save
+                </button>
+                <button className="btn-section-cancel" onClick={() => handleSectionCancel('mobileBills')}>
+                  <FiX /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="section-content">
           <div className="records-table">
@@ -2130,7 +2262,7 @@ const BasicDetails = () => {
             )}
           </div>
 
-          {editMode && (
+          {isSectionEditing('mobileBills') && (
             <div className="add-family-member">
               <h5>Add Mobile Bill</h5>
               <div className="form-grid">
@@ -2236,9 +2368,27 @@ const BasicDetails = () => {
 
       {/* Card Details */}
       <div className="static-section">
-        <div className="section-header">
-          <FiBriefcase className="section-icon" />
-          <h3>Card Details</h3>
+        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FiBriefcase className="section-icon" />
+            <h3>Card Details</h3>
+          </div>
+          <div className="section-actions">
+            {!isSectionEditing('cards') ? (
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('cards')} title="Edit this section">
+                <FiEdit2 /> Edit
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn-section-save" onClick={() => handleSectionSave('cards')}>
+                  <FiSave /> Save
+                </button>
+                <button className="btn-section-cancel" onClick={() => handleSectionCancel('cards')}>
+                  <FiX /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="section-content">
           <div className="records-table">
@@ -2303,7 +2453,7 @@ const BasicDetails = () => {
             )}
           </div>
 
-          {editMode && (
+          {isSectionEditing('cards') && (
             <div className="add-family-member">
               <h5>Add Card</h5>
               <div className="form-grid">
@@ -2431,9 +2581,27 @@ const BasicDetails = () => {
 
       {/* Payment Gateway */}
       <div className="static-section">
-        <div className="section-header">
-          <FiTrendingUp className="section-icon" />
-          <h3>Payment Gateway</h3>
+        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FiTrendingUp className="section-icon" />
+            <h3>Payment Gateway</h3>
+          </div>
+          <div className="section-actions">
+            {!isSectionEditing('paymentGateways') ? (
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('paymentGateways')} title="Edit this section">
+                <FiEdit2 /> Edit
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn-section-save" onClick={() => handleSectionSave('paymentGateways')}>
+                  <FiSave /> Save
+                </button>
+                <button className="btn-section-cancel" onClick={() => handleSectionCancel('paymentGateways')}>
+                  <FiX /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="section-content">
           <div className="records-table">
@@ -2488,7 +2656,7 @@ const BasicDetails = () => {
             )}
           </div>
 
-          {editMode && (
+          {isSectionEditing('paymentGateways') && (
             <div className="add-family-member">
               <h5>Add Payment Gateway</h5>
               <div className="form-grid">
@@ -2570,9 +2738,27 @@ const BasicDetails = () => {
 
       {/* Portfolio Details - Mutual Funds */}
       <div className="static-section">
-        <div className="section-header">
-          <FiTrendingUp className="section-icon" />
-          <h3>Portfolio Details - Mutual Funds</h3>
+        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FiTrendingUp className="section-icon" />
+            <h3>Portfolio Details - Mutual Funds</h3>
+          </div>
+          <div className="section-actions">
+            {!isSectionEditing('mutualFundsPortfolio') ? (
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('mutualFundsPortfolio')} title="Edit this section">
+                <FiEdit2 /> Edit
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn-section-save" onClick={() => handleSectionSave('mutualFundsPortfolio')}>
+                  <FiSave /> Save
+                </button>
+                <button className="btn-section-cancel" onClick={() => handleSectionCancel('mutualFundsPortfolio')}>
+                  <FiX /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="section-content">
           <div className="records-table">
@@ -2631,7 +2817,7 @@ const BasicDetails = () => {
             )}
           </div>
 
-          {editMode && (
+          {isSectionEditing('mutualFundsPortfolio') && (
             <div className="add-family-member">
               <h5>Add Mutual Fund Portfolio</h5>
               <div className="form-grid">
@@ -2770,9 +2956,27 @@ const BasicDetails = () => {
 
       {/* Portfolio Details - Shares */}
       <div className="static-section">
-        <div className="section-header">
-          <FiTrendingUp className="section-icon" />
-          <h3>Portfolio Details - Shares</h3>
+        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FiTrendingUp className="section-icon" />
+            <h3>Portfolio Details - Shares</h3>
+          </div>
+          <div className="section-actions">
+            {!isSectionEditing('sharesPortfolio') ? (
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('sharesPortfolio')} title="Edit this section">
+                <FiEdit2 /> Edit
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn-section-save" onClick={() => handleSectionSave('sharesPortfolio')}>
+                  <FiSave /> Save
+                </button>
+                <button className="btn-section-cancel" onClick={() => handleSectionCancel('sharesPortfolio')}>
+                  <FiX /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="section-content">
           <div className="records-table">
@@ -2835,7 +3039,7 @@ const BasicDetails = () => {
             )}
           </div>
 
-          {editMode && (
+          {isSectionEditing('sharesPortfolio') && (
             <div className="add-family-member">
               <h5>Add Share Portfolio</h5>
               <div className="form-grid">
@@ -2966,9 +3170,27 @@ const BasicDetails = () => {
 
       {/* Portfolio Details - Insurance */}
       <div className="static-section">
-        <div className="section-header">
-          <FiHome className="section-icon" />
-          <h3>Portfolio Details - Insurance</h3>
+        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FiHome className="section-icon" />
+            <h3>Portfolio Details - Insurance</h3>
+          </div>
+          <div className="section-actions">
+            {!isSectionEditing('insurancePortfolio') ? (
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('insurancePortfolio')} title="Edit this section">
+                <FiEdit2 /> Edit
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn-section-save" onClick={() => handleSectionSave('insurancePortfolio')}>
+                  <FiSave /> Save
+                </button>
+                <button className="btn-section-cancel" onClick={() => handleSectionCancel('insurancePortfolio')}>
+                  <FiX /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="section-content">
           <div className="records-table">
@@ -3035,7 +3257,7 @@ const BasicDetails = () => {
             )}
           </div>
 
-          {editMode && (
+          {isSectionEditing('insurancePortfolio') && (
             <div className="add-family-member">
               <h5>Add Insurance Portfolio</h5>
               <div className="form-grid">
@@ -3170,9 +3392,27 @@ const BasicDetails = () => {
 
       {/* Sub Broker Information */}
       <div className="static-section">
-        <div className="section-header">
-          <FiBriefcase className="section-icon" />
-          <h3>Sub Broker Information</h3>
+        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FiBriefcase className="section-icon" />
+            <h3>Sub Broker Information</h3>
+          </div>
+          <div className="section-actions">
+            {!isSectionEditing('subBrokers') ? (
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('subBrokers')} title="Edit this section">
+                <FiEdit2 /> Edit
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn-section-save" onClick={() => handleSectionSave('subBrokers')}>
+                  <FiSave /> Save
+                </button>
+                <button className="btn-section-cancel" onClick={() => handleSectionCancel('subBrokers')}>
+                  <FiX /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="section-content">
           <div className="records-table">
@@ -3235,7 +3475,7 @@ const BasicDetails = () => {
             )}
           </div>
 
-          {editMode && (
+          {isSectionEditing('subBrokers') && (
             <div className="add-family-member">
               <h5>Add Sub Broker</h5>
               <div className="form-grid">

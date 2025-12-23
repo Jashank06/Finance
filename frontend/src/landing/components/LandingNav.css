@@ -1,0 +1,130 @@
+/* ============================================
+   LANDING NAVIGATION STYLES
+   ============================================ */
+
+.landing-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: var(--smooth-transition);
+}
+
+.nav-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.nav-logo {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.logo-text {
+    color: var(--pure-white);
+    text-decoration: none;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.logo-accent {
+    color: var(--soft-gray);
+    font-weight: 400;
+}
+
+.nav-links {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+}
+
+.nav-link {
+    color: var(--soft-gray);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    transition: var(--fast-transition);
+    position: relative;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--pure-white);
+    transition: var(--fast-transition);
+}
+
+.nav-link:hover {
+    color: var(--pure-white);
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.nav-link-login {
+    color: var(--pure-white);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    transition: var(--fast-transition);
+}
+
+.nav-link-login:hover {
+    color: var(--soft-gray);
+}
+
+.btn-nav-signup {
+    padding: 12px 30px;
+    background: var(--pure-white);
+    color: var(--primary-black);
+    border: 2px solid var(--pure-white);
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    transition: var(--smooth-transition);
+}
+
+.btn-nav-signup:hover {
+    background: transparent;
+    color: var(--pure-white);
+    transform: translateY(-2px);
+}
+
+/* Mobile Menu */
+@media (max-width: 768px) {
+    .nav-container {
+        padding: 15px 20px;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .logo-text {
+        font-size: 20px;
+    }
+
+    .btn-nav-signup {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+}
