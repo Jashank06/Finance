@@ -12,6 +12,8 @@ import './AdditionalSections.css';
 import heroVideo from '../../assets/hero-bg-new.mp4';
 import featuresBgImage from '../assets/features-bg.png';
 import aboutBgImage from '../assets/about-infographic.png';
+import darkFinanceBg from '../../assets/dark finance background images.jpg';
+import trustedBgImage from '../../assets/all dark background aesthic modern images.jpg';
 
 const HomePage = () => {
     const [scrollY, setScrollY] = useState(0);
@@ -87,10 +89,6 @@ const HomePage = () => {
 
                     <div className="hero-cta-buttons">
                         <a href="#pricing" className="btn-primary">Start Free Trial</a>
-                        <a href="#demo" className="btn-secondary">
-                            <FiPlay style={{ marginRight: '8px' }} />
-                            Watch Demo
-                        </a>
                     </div>
 
                     <div className="hero-trust-badges">
@@ -133,7 +131,7 @@ const HomePage = () => {
                                     <div className="node-icon">👨‍👩‍👧‍👦</div>
                                     <div className="node-label">FAMILY MEMBERS</div>
                                 </div>
-                                <div className="arrow-down">↓</div>
+                                <div className="arrow-down" style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '15px 0' }}>↓</div>
                                 <div className="info-row">
                                     <div className="info-node">
                                         <div className="node-icon">💰</div>
@@ -148,12 +146,12 @@ const HomePage = () => {
                                         <div className="node-label">SAVINGS</div>
                                     </div>
                                 </div>
-                                <div className="arrow-down">↓</div>
+                                <div className="arrow-down" style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '15px 0' }}>↓</div>
                                 <div className="info-node">
                                     <div className="node-icon">📈</div>
                                     <div className="node-label">INVESTMENTS</div>
                                 </div>
-                                <div className="arrow-down">↓</div>
+                                <div className="arrow-down" style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '15px 0' }}>↓</div>
                                 <div className="info-node highlight">
                                     <div className="node-icon">🎯</div>
                                     <div className="node-label">FINANCIAL FREEDOM</div>
@@ -351,46 +349,143 @@ const HomePage = () => {
                 </div>
             </section>
 
-            {/* CLIENT LIST SECTION */}
-            <section className="section section-dark client-list-section" style={{
-                backgroundImage: `linear-gradient(rgba(10, 10, 10, 0.70), rgba(10, 10, 10, 0.80)), url(https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920&q=80)`,
+            {/* TRUSTED BY SECTION */}
+            <section className="section section-dark trusted-section" style={{
+                backgroundImage: `linear-gradient(rgba(10, 10, 10, 0.95), rgba(10, 10, 10, 0.98)), url(https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920&q=80)`,
                 backgroundSize: 'cover',
-                backgroundPosition: 'center'
+                backgroundPosition: 'center',
+                backgroundAttachment: 'fixed',
+                margin: 0,
+                padding: 0
             }}>
                 <div className="container">
                     <div className="text-center mb-60">
-                        <span className="section-label">TRUSTED BY</span>
-                        <h2 className="section-title">Join Thousands of Happy Families</h2>
-                        <p className="section-description">
-                            Trusted by individuals, families, and businesses across India
+                        <span className="section-label trusted-label">TRUSTED BY</span>
+                        <h2 className="section-title trusted-title">Join Thousands of Happy Families</h2>
+                        <p className="section-description trusted-desc">
+                            Empowering families, professionals, and businesses to achieve financial clarity
                         </p>
                     </div>
 
-                    <div className="client-logos-grid">
-                        <div className="client-logo-card animate-on-scroll delay-1">
-                            <div className="client-logo-text">HDFC Bank</div>
+                    {/* Stats Counter */}
+                    <div className="trusted-stats-row">
+                        <div className="trusted-stat animate-on-scroll delay-1">
+                            <div className="trusted-stat-number">50K+</div>
+                            <div className="trusted-stat-label">Active Users</div>
                         </div>
-                        <div className="client-logo-card animate-on-scroll delay-2">
-                            <div className="client-logo-text">ICICI</div>
+                        <div className="trusted-stat animate-on-scroll delay-2">
+                            <div className="trusted-stat-number">1M+</div>
+                            <div className="trusted-stat-label">Transactions Tracked</div>
                         </div>
-                        <div className="client-logo-card animate-on-scroll delay-3">
-                            <div className="client-logo-text">SBI</div>
+                        <div className="trusted-stat animate-on-scroll delay-3">
+                            <div className="trusted-stat-number">100+</div>
+                            <div className="trusted-stat-label">Cities Covered</div>
                         </div>
-                        <div className="client-logo-card animate-on-scroll delay-4">
-                            <div className="client-logo-text">Axis Bank</div>
+                        <div className="trusted-stat animate-on-scroll delay-4">
+                            <div className="trusted-stat-number">4.9</div>
+                            <div className="trusted-stat-label">User Rating</div>
                         </div>
-                        <div className="client-logo-card animate-on-scroll delay-5">
-                            <div className="client-logo-text">Kotak</div>
+                    </div>
+
+                    {/* User Categories */}
+                    <div className="trusted-categories-grid">
+                        <div className="trusted-category-card animate-on-scroll delay-1">
+                            <div className="trusted-category-icon">
+                                <FiUsers />
+                            </div>
+                            <div className="trusted-category-content">
+                                <h3>Growing Families</h3>
+                                <p>Managing household finances together</p>
+                            </div>
                         </div>
-                        <div className="client-logo-card animate-on-scroll delay-6">
-                            <div className="client-logo-text">Yes Bank</div>
+                        <div className="trusted-category-card animate-on-scroll delay-2">
+                            <div className="trusted-category-icon">
+                                <FiBriefcase />
+                            </div>
+                            <div className="trusted-category-content">
+                                <h3>Entrepreneurs</h3>
+                                <p>Balancing personal & business finances</p>
+                            </div>
+                        </div>
+                        <div className="trusted-category-card animate-on-scroll delay-3">
+                            <div className="trusted-category-icon">
+                                <FiTrendingUp />
+                            </div>
+                            <div className="trusted-category-content">
+                                <h3>Investors</h3>
+                                <p>Tracking portfolios & wealth growth</p>
+                            </div>
+                        </div>
+                        <div className="trusted-category-card animate-on-scroll delay-4">
+                            <div className="trusted-category-icon">
+                                <FiTarget />
+                            </div>
+                            <div className="trusted-category-content">
+                                <h3>Goal Setters</h3>
+                                <p>Planning for dreams & milestones</p>
+                            </div>
+                        </div>
+                        <div className="trusted-category-card animate-on-scroll delay-5">
+                            <div className="trusted-category-icon">
+                                <FiShield />
+                            </div>
+                            <div className="trusted-category-content">
+                                <h3>Security Conscious</h3>
+                                <p>Protecting family financial data</p>
+                            </div>
+                        </div>
+                        <div className="trusted-category-card animate-on-scroll delay-6">
+                            <div className="trusted-category-icon">
+                                <FiHome />
+                            </div>
+                            <div className="trusted-category-content">
+                                <h3>Homeowners</h3>
+                                <p>Managing property & EMI payments</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Animated Marquee */}
+                    <div className="trusted-marquee-container">
+                        <div className="trusted-marquee">
+                            <div className="marquee-content">
+                                <span className="marquee-item">Financial Freedom</span>
+                                <span className="marquee-separator">*</span>
+                                <span className="marquee-item">Smart Tracking</span>
+                                <span className="marquee-separator">*</span>
+                                <span className="marquee-item">Family Goals</span>
+                                <span className="marquee-separator">*</span>
+                                <span className="marquee-item">Investment Insights</span>
+                                <span className="marquee-separator">*</span>
+                                <span className="marquee-item">Secure Data</span>
+                                <span className="marquee-separator">*</span>
+                                <span className="marquee-item">Peace of Mind</span>
+                                <span className="marquee-separator">*</span>
+                                <span className="marquee-item">Financial Freedom</span>
+                                <span className="marquee-separator">*</span>
+                                <span className="marquee-item">Smart Tracking</span>
+                                <span className="marquee-separator">*</span>
+                                <span className="marquee-item">Family Goals</span>
+                                <span className="marquee-separator">*</span>
+                                <span className="marquee-item">Investment Insights</span>
+                                <span className="marquee-separator">*</span>
+                                <span className="marquee-item">Secure Data</span>
+                                <span className="marquee-separator">*</span>
+                                <span className="marquee-item">Peace of Mind</span>
+                                <span className="marquee-separator">*</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* WHO CAN USE SECTION */}
-            <section className="section section-light who-can-use-section">
+            <section className="section section-light who-can-use-section" style={{
+                backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.95)), url(https://thumbs.dreamstime.com/b/happy-family-autumn-walk-father-daughters-walking-park-enjoying-beautiful-nature-157622146.jpg)`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundAttachment: 'fixed'
+            }}>
                 <div className="container">
                     <div className="text-center mb-60">
                         <span className="section-label">PERFECT FOR</span>
@@ -402,7 +497,9 @@ const HomePage = () => {
 
                     <div className="personas-grid">
                         <div className="persona-card animate-on-scroll delay-1">
-                            <div className="persona-icon">👨‍👩‍👧‍👦</div>
+                            <div className="persona-icon-wrapper">
+                                <FiUsers className="persona-icon-svg" />
+                            </div>
                             <h3 className="persona-title">Growing Families</h3>
                             <p className="persona-desc">
                                 Track household expenses, manage kids' allowances, and plan for your family's future together
@@ -410,7 +507,9 @@ const HomePage = () => {
                         </div>
 
                         <div className="persona-card animate-on-scroll delay-2">
-                            <div className="persona-icon">💼</div>
+                            <div className="persona-icon-wrapper">
+                                <FiBriefcase className="persona-icon-svg" />
+                            </div>
                             <h3 className="persona-title">Entrepreneurs</h3>
                             <p className="persona-desc">
                                 Manage both personal and business finances in one place with clear separation
@@ -418,7 +517,9 @@ const HomePage = () => {
                         </div>
 
                         <div className="persona-card animate-on-scroll delay-3">
-                            <div className="persona-icon">🎓</div>
+                            <div className="persona-icon-wrapper">
+                                <FiTrendingUp className="persona-icon-svg" />
+                            </div>
                             <h3 className="persona-title">Young Professionals</h3>
                             <p className="persona-desc">
                                 Build healthy financial habits early with smart tracking and goal setting
@@ -426,7 +527,9 @@ const HomePage = () => {
                         </div>
 
                         <div className="persona-card animate-on-scroll delay-4">
-                            <div className="persona-icon">👴</div>
+                            <div className="persona-icon-wrapper">
+                                <FiCalendar className="persona-icon-svg" />
+                            </div>
                             <h3 className="persona-title">Retirees</h3>
                             <p className="persona-desc">
                                 Manage retirement funds, track investments, and plan for healthcare expenses
@@ -434,7 +537,9 @@ const HomePage = () => {
                         </div>
 
                         <div className="persona-card animate-on-scroll delay-5">
-                            <div className="persona-icon">🏠</div>
+                            <div className="persona-icon-wrapper">
+                                <FiHome className="persona-icon-svg" />
+                            </div>
                             <h3 className="persona-title">Multi-Gen Households</h3>
                             <p className="persona-desc">
                                 Coordinate finances across generations with privacy controls and shared goals
@@ -442,7 +547,9 @@ const HomePage = () => {
                         </div>
 
                         <div className="persona-card animate-on-scroll delay-6">
-                            <div className="persona-icon">📊</div>
+                            <div className="persona-icon-wrapper">
+                                <FiBarChart2 className="persona-icon-svg" />
+                            </div>
                             <h3 className="persona-title">Finance Enthusiasts</h3>
                             <p className="persona-desc">
                                 Deep analytics, investment tracking, and advanced reporting for power users
@@ -454,7 +561,10 @@ const HomePage = () => {
 
             {/* UNIQUE BLEND SECTION */}
             <section className="section section-dark unique-blend-section" style={{
-                background: 'linear-gradient(180deg, #0A0A0A 0%, #151515 50%, #0A0A0A 100%)'
+                backgroundImage: `linear-gradient(rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.90)), url(${darkFinanceBg})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundAttachment: 'fixed'
             }}>
                 <div className="container">
                     <div className="text-center mb-60">

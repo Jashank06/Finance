@@ -161,10 +161,15 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.arrow-down {
+
+/* High specificity to ensure centering */
+.infographic-container .arrow-down {
+    display: block !important;
+    text-align: center !important;
     font-size: 36px;
     color: var(--accent-gray);
-    margin: 15px 0;
+    margin: 15px auto !important;
+    width: 100% !important;
     animation: bounce 2s infinite;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }

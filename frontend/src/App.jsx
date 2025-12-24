@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import PlaceholderPage from './pages/PlaceholderPage';
 import CompanyProfile from './pages/CompanyProfile';
@@ -69,10 +70,11 @@ function App() {
       <BrowserRouter basename="/Finance">
         <Routes>
           {/* Landing Page - Public Route */}
-          <Route path="/landing" element={<LandingLayout />} />
+          <Route path="/landing/*" element={<LandingLayout />} />
 
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
 
           {/* Protected Routes */}
           <Route
