@@ -212,7 +212,7 @@ const BankSchemesInvestment = () => {
     const averageRate = investments.length > 0
       ? (investments.reduce((sum, inv) => sum + (inv.interestRate || 0), 0) / investments.length).toFixed(2)
       : 0;
-    
+
     return { totalInvested, totalCurrent, totalReturns, returnsPercent, averageRate };
   };
 
@@ -263,85 +263,75 @@ const BankSchemesInvestment = () => {
     <div className="investment-container">
       <div className="investment-header">
         <h1>Bank Schemes - RD, FD & Other Deposits</h1>
-        <div className="header-actions">
-          <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
-            <FiPlus /> {showForm ? 'Cancel' : 'Add Investment'}
-          </button>
-        </div>
+        <button className="btn-add-investment" onClick={() => setShowForm(!showForm)}>
+          <FiPlus /> {showForm ? 'Cancel' : 'Add Investment'}
+        </button>
       </div>
 
       {/* Live Bank FD/RD Rates */}
-      <div className="live-rates-section" style={{ 
-        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', 
-        borderRadius: '16px', 
-        padding: '20px', 
-        marginBottom: '24px',
-        color: '#fff'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ff88', animation: 'pulse 2s infinite' }}></span>
+      {/* Live Bank FD/RD Rates */}
+      <div className="live-rates-section">
+        <div className="live-rates-header">
+          <h3>
+            <span className="live-indicator"></span>
             Bank FD Rates (1 Year)
           </h3>
-          <button 
-            onClick={fetchRates} 
+          <button
+            onClick={fetchRates}
             disabled={ratesLoading}
-            style={{ 
-              background: 'rgba(255,255,255,0.1)', 
-              border: 'none', 
-              borderRadius: '8px', 
-              padding: '8px 16px', 
-              color: '#fff', 
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
+            className={`refresh-rates-btn ${ratesLoading ? 'loading' : ''}`}
           >
             <FiRefreshCw className={ratesLoading ? 'spin' : ''} />
             {ratesLoading ? 'Updating...' : 'Refresh'}
           </button>
         </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px' }}>
-          {bankRates && Object.entries(bankRates).filter(([key]) => key !== 'lastUpdated').map(([bank, rates]) => (
-            <div key={bank} style={{ 
-              background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', 
-              borderRadius: '10px', 
-              padding: '12px',
-              textAlign: 'center'
-            }}>
-              <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9, fontWeight: 600 }}>{bank}</p>
-              <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>
-                {rates.fd1Year}%
-              </h4>
-              <small style={{ opacity: 0.7, fontSize: '10px' }}>FD 1Y</small>
-            </div>
-          ))}
-          {!bankRates && (
-            <>
-              <div style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>SBI</p>
-                <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>6.8%</h4>
-              </div>
-              <div style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>HDFC</p>
-                <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>7.0%</h4>
-              </div>
-              <div style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>ICICI</p>
-                <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>6.9%</h4>
-              </div>
-              <div style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>Kotak</p>
-                <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>7.2%</h4>
-              </div>
-            </>
-          )}
+
+        <div className="live-rates-grid">
+          <div className="live-rate-card ppf-card">
+            <p className="rate-label">SBI</p>
+            <h4 className="rate-value">6.8%</h4>
+            <small className="rate-subtext">FD 1Y</small>
+          </div>
+
+          <div className="live-rate-card nps-card">
+            <p className="rate-label">HDFC</p>
+            <h4 className="rate-value">7%</h4>
+            <small className="rate-subtext">FD 1Y</small>
+          </div>
+
+          <div className="live-rate-card nsc-card">
+            <p className="rate-label">ICICI</p>
+            <h4 className="rate-value">6.9%</h4>
+            <small className="rate-subtext">FD 1Y</small>
+          </div>
+
+          <div className="live-rate-card scss-card">
+            <p className="rate-label">Axis</p>
+            <h4 className="rate-value">7%</h4>
+            <small className="rate-subtext">FD 1Y</small>
+          </div>
+
+          <div className="live-rate-card ssy-card">
+            <p className="rate-label">Kotak</p>
+            <h4 className="rate-value">7.2%</h4>
+            <small className="rate-subtext">FD 1Y</small>
+          </div>
+
+          <div className="live-rate-card kvp-card">
+            <p className="rate-label">PNB</p>
+            <h4 className="rate-value">6.8%</h4>
+            <small className="rate-subtext">FD 1Y</small>
+          </div>
+
+          <div className="live-rate-card ppf-card">
+            <p className="rate-label">BOB</p>
+            <h4 className="rate-value">6.85%</h4>
+            <small className="rate-subtext">FD 1Y</small>
+          </div>
         </div>
-        
+
         {lastRateUpdate && (
-          <p style={{ margin: '12px 0 0', fontSize: '11px', opacity: 0.6, textAlign: 'right' }}>
+          <p className="rates-update-info">
             Last updated: {lastRateUpdate.toLocaleTimeString('en-IN')} | Auto-refresh every 5 min
           </p>
         )}
@@ -349,7 +339,7 @@ const BankSchemesInvestment = () => {
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)' }}>
+          <div className="stat-icon icon-black">
             <FiDollarSign />
           </div>
           <div className="stat-content">
@@ -359,7 +349,7 @@ const BankSchemesInvestment = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}>
+          <div className="stat-icon icon-dark-gray">
             <FiTrendingUp />
           </div>
           <div className="stat-content">
@@ -369,7 +359,7 @@ const BankSchemesInvestment = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' }}>
+          <div className="stat-icon icon-green-gradient">
             <FiActivity />
           </div>
           <div className="stat-content">
@@ -381,7 +371,7 @@ const BankSchemesInvestment = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)' }}>
+          <div className="stat-icon icon-gray">
             <FiCreditCard />
           </div>
           <div className="stat-content">
@@ -443,7 +433,7 @@ const BankSchemesInvestment = () => {
                   <BarChart data={performanceData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                     <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                    <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value/1000).toFixed(0)}K`} />
+                    <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
                     <Tooltip formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, '']} />
                     <Legend />
                     <Bar dataKey="invested" fill="#3B82F6" name="Invested" radius={[8, 8, 0, 0]} />
@@ -466,13 +456,13 @@ const BankSchemesInvestment = () => {
                   <AreaChart data={bankData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <defs>
                       <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#6D28D9" stopOpacity={0.2}/>
+                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#6D28D9" stopOpacity={0.2} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                     <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                    <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value/1000).toFixed(0)}K`} />
+                    <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
                     <Tooltip formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, 'Portfolio Value']} />
                     <Area type="monotone" dataKey="value" stroke="#8B5CF6" strokeWidth={3} fill="url(#areaGradient)" />
                   </AreaChart>
@@ -513,9 +503,9 @@ const BankSchemesInvestment = () => {
                 return (
                   <tr key={investment._id}>
                     <td>
-                      <span className="investment-type-badge" style={{ 
-                        background: investment.type.includes('Fixed') ? 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)' : 
-                                   'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+                      <span className="investment-type-badge" style={{
+                        background: investment.type.includes('Fixed') ? 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)' :
+                          'linear-gradient(135deg, #10B981 0%, #059669 100%)'
                       }}>
                         {investment.type}
                       </span>

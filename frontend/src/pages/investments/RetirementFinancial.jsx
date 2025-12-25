@@ -47,12 +47,12 @@ const RetirementFinancial = () => {
     const retBaseSalary = inputs.annualIncome * Math.pow(1 + inputs.inflation / 100, inputs.retirementAge - inputs.currentAge);
     let need = retBaseSalary * (inputs.incomeReplacement / 100);
     let pension = inputs.pension;
-    
+
     for (let age = startAge; age <= endAge; age++) {
       const startBalance = balance;
       const interest = startBalance * (inputs.investmentReturn / 100);
       let flow = 0;
-      
+
       if (age < inputs.retirementAge) {
         flow = savings;
       } else {
@@ -60,28 +60,28 @@ const RetirementFinancial = () => {
         need = need * (1 + inputs.inflation / 100);
         pension = pension * (1 + inputs.pensionIncrease / 100);
       }
-      
+
       balance = startBalance + interest + flow;
-      rows.push({ 
-        age, 
-        salary: age < inputs.retirementAge ? salary : 0, 
-        startBalance, 
-        interest, 
-        flow, 
-        endBalance: balance 
+      rows.push({
+        age,
+        salary: age < inputs.retirementAge ? salary : 0,
+        startBalance,
+        interest,
+        flow,
+        endBalance: balance
       });
-      
+
       if (age < inputs.retirementAge) {
         salary = salary * (1 + inputs.inflation / 100);
         savings = savings * (1 + inputs.savingsIncrease / 100);
       }
     }
-    
+
     const fundedThrough = rows.reduce((acc, r) => (r.endBalance >= 0 ? r.age : acc), startAge - 1);
     const finalBalance = balance;
     const peakBalance = Math.max(...rows.map(r => r.endBalance));
     const retirementBalance = rows.find(r => r.age === inputs.retirementAge)?.endBalance || 0;
-    
+
     return { rows, fundedThrough, finalBalance, endAge, peakBalance, retirementBalance };
   }, [inputs]);
 
@@ -113,11 +113,11 @@ const RetirementFinancial = () => {
     const headers = ['Age', 'Salary', 'Start Balance', 'Interest', 'Savings/Withdrawals', 'Year End Balance'];
     const csvData = [
       headers.join(','),
-      ...computePlan.rows.map(r => 
+      ...computePlan.rows.map(r =>
         [r.age, r.salary, r.startBalance, r.interest, r.flow, r.endBalance].join(',')
       )
     ].join('\n');
-    
+
     const blob = new Blob([csvData], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -130,11 +130,11 @@ const RetirementFinancial = () => {
   const isFunded = computePlan.fundedThrough >= computePlan.endAge;
 
   return (
-    <div className="retirement-container">
-      <div className="retirement-header">
+    <div className="investment-container">
+      <div className="investment-header">
         <h1>Retirement Planner</h1>
         <div className="header-actions">
-          <button className="btn-secondary-action" onClick={handleReset}>
+          <button className="btn-add-investment" onClick={handleReset} style={{ backgroundColor: '#333' }}>
             <FiRefreshCw /> Reset
           </button>
         </div>
@@ -144,7 +144,7 @@ const RetirementFinancial = () => {
         <h2>Input</h2>
         <div className="retirement-form-grid">
           <div className="form-section">
-            <h3 className="section-title">Now</h3>
+            <h3 className="retirement-card-title">Now</h3>
             <div className="form-fields">
               <div className="form-field"><label>Your current age</label><input type="number" value={inputs.currentAge} onChange={(e) => setInputs({ ...inputs, currentAge: Number(e.target.value) })} /></div>
               <div className="form-field"><label>Annual income (₹)</label><input type="number" value={inputs.annualIncome} onChange={(e) => setInputs({ ...inputs, annualIncome: Number(e.target.value) })} /></div>
@@ -157,7 +157,7 @@ const RetirementFinancial = () => {
           </div>
 
           <div className="form-section">
-            <h3 className="section-title">At Retirement</h3>
+            <h3 className="retirement-card-title">At Retirement</h3>
             <div className="form-fields">
               <div className="form-field"><label>Annual pension benefit (₹)</label><input type="number" value={inputs.pension} onChange={(e) => setInputs({ ...inputs, pension: Number(e.target.value) })} /></div>
               <div className="form-field"><label>Annual pension benefit increases (%)</label><input type="number" step="0.01" value={inputs.pensionIncrease} onChange={(e) => setInputs({ ...inputs, pensionIncrease: Number(e.target.value) })} /></div>
@@ -168,7 +168,7 @@ const RetirementFinancial = () => {
           </div>
 
           <div className="form-section">
-            <h3 className="section-title">Uncertainty (%)</h3>
+            <h3 className="retirement-card-title">Uncertainty (%)</h3>
             <div className="form-fields">
               <div className="form-field"><label>Investment return uncertainty</label><input type="number" step="0.01" value={inputs.retUncertainty} onChange={(e) => setInputs({ ...inputs, retUncertainty: Number(e.target.value) })} /></div>
               <div className="form-field"><label>Annual savings amount uncertainty</label><input type="number" step="0.01" value={inputs.savingsUncertainty} onChange={(e) => setInputs({ ...inputs, savingsUncertainty: Number(e.target.value) })} /></div>
@@ -180,7 +180,7 @@ const RetirementFinancial = () => {
         </div>
 
         <div className="form-submit">
-          <button className="btn-show-plan" onClick={() => setShow(true)}>
+          <button className="btn-add-investment" onClick={() => setShow(true)} style={{ padding: '16px 64px', fontSize: '18px' }}>
             Show My Plan
           </button>
         </div>
@@ -190,8 +190,8 @@ const RetirementFinancial = () => {
         <div className="results-section" ref={formRef}>
           {/* Key Statistics */}
           <div className="stats-grid">
-            <div className="stat-card green">
-              <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' }}>
+            <div className="stat-card">
+              <div className="stat-icon icon-black">
                 <FiTrendingUp />
               </div>
               <div className="stat-content">
@@ -199,8 +199,8 @@ const RetirementFinancial = () => {
                 <h3 className="stat-value">{formatINR(computePlan.peakBalance)}</h3>
               </div>
             </div>
-            <div className="stat-card green">
-              <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' }}>
+            <div className="stat-card">
+              <div className="stat-icon icon-dark-gray">
                 <FiBarChart2 />
               </div>
               <div className="stat-content">
@@ -208,8 +208,8 @@ const RetirementFinancial = () => {
                 <h3 className="stat-value">{formatINR(computePlan.retirementBalance)}</h3>
               </div>
             </div>
-            <div className="stat-card green">
-              <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' }}>
+            <div className="stat-card">
+              <div className="stat-icon icon-green-gradient">
                 <FiBarChart2 />
               </div>
               <div className="stat-content">
@@ -222,8 +222,8 @@ const RetirementFinancial = () => {
           {/* Success Message */}
           <div className={`message-card ${isFunded ? 'success' : 'warning'}`}>
             <h3>
-              {isFunded 
-                ? `Congratulations! Your plan is funded through age ${computePlan.fundedThrough} with an estimated surplus.` 
+              {isFunded
+                ? `Congratulations! Your plan is funded through age ${computePlan.fundedThrough} with an estimated surplus.`
                 : `Warning! Your plan runs out of funds at age ${computePlan.fundedThrough}.`}
             </h3>
             <p className="message-subtitle">
@@ -235,13 +235,13 @@ const RetirementFinancial = () => {
           </div>
 
           {/* Chart */}
-          <div className="chart-card retirement-chart">
+          <div className="chart-card premium">
             <div className="chart-header">
               <div className="chart-title">
-                <FiBarChart2 className="chart-icon" />
+                <FiBarChart2 className="chart-icon" style={{ color: '#059669' }} />
                 <h3>Savings Balance Over Time</h3>
               </div>
-              <button className="btn-export" onClick={handleExport}>
+              <button className="btn-add-investment" onClick={handleExport} style={{ padding: '8px 16px', fontSize: '14px' }}>
                 <FiDownload /> Export Data
               </button>
             </div>
@@ -250,39 +250,39 @@ const RetirementFinancial = () => {
                 <AreaChart data={computePlan.rows} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <defs>
                     <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#16a34a" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.5} />
-                  <XAxis 
-                    dataKey="age" 
+                  <XAxis
+                    dataKey="age"
                     tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }}
                     label={{ value: 'Age', position: 'insideBottom', offset: -10, style: { fontSize: 14, fontWeight: '600', fill: '#334155' } }}
                   />
-                  <YAxis 
-                    tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} 
-                    tickFormatter={(v) => `₹${(v/100000).toFixed(1)}L`}
+                  <YAxis
+                    tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }}
+                    tickFormatter={(v) => `₹${(v / 100000).toFixed(1)}L`}
                     label={{ value: 'Balance', angle: -90, position: 'insideLeft', style: { fontSize: 14, fontWeight: '600', fill: '#334155' } }}
                   />
-                  <Tooltip 
-                    formatter={(v, n) => [`${formatINR(v)}`, n === 'endBalance' ? 'Savings Balance' : n]} 
+                  <Tooltip
+                    formatter={(v, n) => [`${formatINR(v)}`, n === 'endBalance' ? 'Savings Balance' : n]}
                     labelFormatter={(l) => `Age ${l}`}
-                    contentStyle={{ 
-                      background: 'white', 
-                      border: '1px solid #e2e8f0', 
-                      borderRadius: '8px', 
+                    contentStyle={{
+                      background: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
                       padding: '12px',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="endBalance" 
-                    stroke="#16a34a" 
-                    strokeWidth={3} 
-                    fillOpacity={1} 
-                    fill="url(#colorBalance)" 
+                  <Area
+                    type="monotone"
+                    dataKey="endBalance"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorBalance)"
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -290,12 +290,12 @@ const RetirementFinancial = () => {
           </div>
 
           {/* Table */}
-          <div className="retirement-table-card">
-            <div className="table-header">
-              <h2>Chart Details</h2>
+          <div className="investment-section">
+            <div className="section-header">
+              <h3>Chart Details</h3>
             </div>
-            <div className="table-scroll">
-              <table className="retirement-table">
+            <div className="table-container">
+              <table className="investments-table">
                 <thead>
                   <tr>
                     <th>Age</th>
@@ -308,8 +308,8 @@ const RetirementFinancial = () => {
                 </thead>
                 <tbody>
                   {computePlan.rows.map((r, idx) => (
-                    <tr 
-                      key={`row-${idx}`} 
+                    <tr
+                      key={`row-${idx}`}
                       className={r.age === inputs.retirementAge ? 'retirement-row' : ''}
                     >
                       <td><strong>{r.age}</strong></td>

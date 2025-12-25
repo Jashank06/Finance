@@ -302,7 +302,7 @@ const ProjectIncomeExpense = () => {
       <div className="investment-header">
         <h1>Project Wise Income / Expense</h1>
         <div className="header-actions">
-          <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
+          <button className="btn-add-investment" onClick={() => setShowForm(!showForm)}>
             <FiPlus /> {showForm ? 'Cancel' : 'Add Record'}
           </button>
         </div>
@@ -313,7 +313,7 @@ const ProjectIncomeExpense = () => {
         <div className="project-management-section">
           <div className="section-header">
             <h2>Manage Projects</h2>
-            <button className="btn-secondary" onClick={handleAddProject}>
+            <button className="btn-add-investment" onClick={handleAddProject}>
               <FiPlus /> Add New Project
             </button>
           </div>
@@ -345,15 +345,15 @@ const ProjectIncomeExpense = () => {
                   </div>
                 </div>
                 <div className="project-actions">
-                  <button 
-                    className="btn-icon btn-edit" 
+                  <button
+                    className="btn-icon btn-edit"
                     onClick={() => handleEditProject(project)}
                     title="Edit Project"
                   >
                     <FiEdit2 />
                   </button>
-                  <button 
-                    className="btn-icon btn-danger" 
+                  <button
+                    className="btn-icon btn-danger"
                     onClick={() => handleDeleteProject(project._id)}
                     title="Delete Project"
                   >
@@ -368,7 +368,7 @@ const ProjectIncomeExpense = () => {
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}>
+          <div className="stat-icon icon-black">
             <FiDollarSign />
           </div>
           <div className="stat-content">
@@ -378,7 +378,7 @@ const ProjectIncomeExpense = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' }}>
+          <div className="stat-icon icon-dark-gray">
             <FiActivity />
           </div>
           <div className="stat-content">
@@ -388,7 +388,7 @@ const ProjectIncomeExpense = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}>
+          <div className="stat-icon icon-green-gradient">
             <FiTrendingUp />
           </div>
           <div className="stat-content">
@@ -398,7 +398,7 @@ const ProjectIncomeExpense = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)' }}>
+          <div className="stat-icon icon-gray">
             <FiFolder />
           </div>
           <div className="stat-content">
@@ -452,7 +452,7 @@ const ProjectIncomeExpense = () => {
                   <BarChart data={projectAgg} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                     <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                    <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value/1000).toFixed(0)}K`} />
+                    <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
                     <Tooltip formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, '']} />
                     <Legend />
                     <Bar dataKey="income" fill="#2563EB" name="Income" radius={[8, 8, 0, 0]} />
@@ -464,7 +464,7 @@ const ProjectIncomeExpense = () => {
 
             <div className="chart-card premium full-width">
               <div className="chart-header">
-            <div className="chart-title">
+                <div className="chart-title">
                   <FiActivity className="chart-icon" />
                   <h3>Source Distribution</h3>
                 </div>
@@ -475,13 +475,13 @@ const ProjectIncomeExpense = () => {
                   <AreaChart data={providerAgg} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <defs>
                       <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#6D28D9" stopOpacity={0.2}/>
+                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#6D28D9" stopOpacity={0.2} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                     <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} />
-                    <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value/1000).toFixed(0)}K`} />
+                    <YAxis tick={{ fontSize: 12, fontWeight: '500', fill: '#64748b' }} tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
                     <Tooltip formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, 'Total']} />
                     <Area type="monotone" dataKey="value" stroke="#8B5CF6" strokeWidth={3} fill="url(#areaGradient)" />
                   </AreaChart>
@@ -500,10 +500,10 @@ const ProjectIncomeExpense = () => {
             {projectAgg.map((proj) => {
               const projectEntries = entries.filter(e => e.name === proj.name);
               const isExpanded = expandedProject === proj.name;
-              
+
               return (
                 <div key={proj.name} className="project-summary-card">
-                  <div 
+                  <div
                     className="project-summary-header"
                     onClick={() => setExpandedProject(isExpanded ? null : proj.name)}
                     style={{ cursor: 'pointer' }}
@@ -526,8 +526,8 @@ const ProjectIncomeExpense = () => {
                       </div>
                       <div className="project-stat net">
                         <span className="stat-label">Net</span>
-                        <span className="stat-amount" style={{ 
-                          color: proj.net >= 0 ? '#10B981' : '#EF4444' 
+                        <span className="stat-amount" style={{
+                          color: proj.net >= 0 ? '#10B981' : '#EF4444'
                         }}>
                           ₹{proj.net.toLocaleString('en-IN')}
                         </span>
@@ -557,7 +557,7 @@ const ProjectIncomeExpense = () => {
                           {projectEntries.map((e) => (
                             <tr key={e._id}>
                               <td>
-                                <span className="investment-type-badge" style={{ 
+                                <span className="investment-type-badge" style={{
                                   background: e.type === 'Income' ? 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
                                 }}>
                                   {e.type}

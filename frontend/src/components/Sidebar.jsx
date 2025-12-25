@@ -134,7 +134,8 @@ const Sidebar = () => {
         </div>
 
         {/* Business Section */}
-        <div className="nav-section">
+        {/* Business Section */}
+        {/* <div className="nav-section">
           <div
             className={`nav-item nav-header ${businessOpen ? 'active' : ''}`}
             onClick={() => setBusinessOpen(!businessOpen)}
@@ -171,7 +172,7 @@ const Sidebar = () => {
               <Link to="/business/files" className="submenu-item">Files & Folders</Link>
             </div>
           )}
-        </div>
+        </div> */}
 
         <Link to="/libraries" className="nav-item">Libraries</Link>
         <Link to="/subscription" className="nav-item">Subscription Plan</Link>

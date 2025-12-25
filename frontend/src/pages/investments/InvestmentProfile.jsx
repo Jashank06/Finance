@@ -168,7 +168,7 @@ const InvestmentProfile = () => {
           <h3>Bank Details</h3>
           <p className="section-subtitle">Manage your bank account information</p>
         </div>
-        <button className="add-button" onClick={() => openModal('bankAccount')}>
+        <button className="btn-add-investment" onClick={() => openModal('bankAccount')}>
           <FiPlus /> Add Bank Account
         </button>
       </div>
@@ -250,7 +250,7 @@ const InvestmentProfile = () => {
           <h3>Card Details</h3>
           <p className="section-subtitle">Manage your credit and debit card information</p>
         </div>
-        <button className="add-button" onClick={() => openModal('cardDetail')}>
+        <button className="btn-add-investment" onClick={() => openModal('cardDetail')}>
           <FiPlus /> Add Card
         </button>
       </div>
@@ -322,7 +322,7 @@ const InvestmentProfile = () => {
           <h3>Payment Gateway</h3>
           <p className="section-subtitle">Manage your payment gateway credentials</p>
         </div>
-        <button className="add-button" onClick={() => openModal('paymentGateway')}>
+        <button className="btn-add-investment" onClick={() => openModal('paymentGateway')}>
           <FiPlus /> Add Payment Gateway
         </button>
       </div>
@@ -380,7 +380,7 @@ const InvestmentProfile = () => {
           <h3>Insurance</h3>
           <p className="section-subtitle">Manage your insurance policy details</p>
         </div>
-        <button className="add-button" onClick={() => openModal('insurance')}>
+        <button className="btn-add-investment" onClick={() => openModal('insurance')}>
           <FiPlus /> Add Insurance
         </button>
       </div>
@@ -452,7 +452,7 @@ const InvestmentProfile = () => {
           <h3>Mutual Fund</h3>
           <p className="section-subtitle">Manage your mutual fund account access</p>
         </div>
-        <button className="add-button" onClick={() => openModal('mutualFund')}>
+        <button className="btn-add-investment" onClick={() => openModal('mutualFund')}>
           <FiPlus /> Add Mutual Fund
         </button>
       </div>
@@ -514,7 +514,7 @@ const InvestmentProfile = () => {
           <h3>Shares</h3>
           <p className="section-subtitle">Manage your share trading account access</p>
         </div>
-        <button className="add-button" onClick={() => openModal('share')}>
+        <button className="btn-add-investment" onClick={() => openModal('share')}>
           <FiPlus /> Add Share
         </button>
       </div>
@@ -574,7 +574,7 @@ const InvestmentProfile = () => {
           <h3>NPS & PPF Details</h3>
           <p className="section-subtitle">Manage your NPS, PPF, and Post Office account access</p>
         </div>
-        <button className="add-button" onClick={() => openModal('npsPpf')}>
+        <button className="btn-add-investment" onClick={() => openModal('npsPpf')}>
           <FiPlus /> Add NPS/PPF
         </button>
       </div>
@@ -642,7 +642,7 @@ const InvestmentProfile = () => {
           <h3>Gold & Bonds Details</h3>
           <p className="section-subtitle">Manage your Digital Gold, SGB, and Bond account access</p>
         </div>
-        <button className="add-button" onClick={() => openModal('goldBond')}>
+        <button className="btn-add-investment" onClick={() => openModal('goldBond')}>
           <FiPlus /> Add Gold/Bond
         </button>
       </div>

@@ -277,82 +277,65 @@ const GoldSgbInvestment = () => {
     <div className="investment-container">
       <div className="investment-header">
         <h1>Gold / SGB / Silver / Bonds Investments</h1>
-        <div className="header-actions">
-          <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
-            <FiPlus /> {showForm ? 'Cancel' : 'Add Investment'}
-          </button>
-        </div>
+        <button className="btn-add-investment" onClick={() => setShowForm(!showForm)}>
+          <FiPlus /> {showForm ? 'Cancel' : 'Add Investment'}
+        </button>
       </div>
 
       {/* Live Market Prices */}
-      <div className="live-prices-section" style={{ 
-        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', 
-        borderRadius: '16px', 
-        padding: '20px', 
-        marginBottom: '24px',
-        color: '#fff'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ff88', animation: 'pulse 2s infinite' }}></span>
+      {/* Live Market Prices */}
+      <div className="live-rates-section">
+        <div className="live-rates-header">
+          <h3>
+            <span className="live-indicator"></span>
             Live Market Prices
           </h3>
-          <button 
-            onClick={fetchPrices} 
+          <button
+            onClick={fetchPrices}
             disabled={pricesLoading}
-            style={{ 
-              background: 'rgba(255,255,255,0.1)', 
-              border: 'none', 
-              borderRadius: '8px', 
-              padding: '8px 16px', 
-              color: '#fff', 
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
+            className={`refresh-rates-btn ${pricesLoading ? 'loading' : ''}`}
           >
             <FiRefreshCw className={pricesLoading ? 'spin' : ''} />
             {pricesLoading ? 'Updating...' : 'Refresh'}
           </button>
         </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
-          <div style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', borderRadius: '12px', padding: '16px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '12px', opacity: 0.9 }}>Gold 24K</p>
-            <h4 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>
+
+        <div className="live-rates-grid">
+          <div className="live-rate-card nsc-card">
+            <p className="rate-label">Gold 24K</p>
+            <h4 className="rate-value">
               ₹{livePrices?.gold?.price24K?.toLocaleString('en-IN') || '--'}
             </h4>
-            <small style={{ opacity: 0.8 }}>per gram</small>
+            <small className="rate-subtext">per gram</small>
           </div>
-          
-          <div style={{ background: 'linear-gradient(135deg, #DAA520 0%, #B8860B 100%)', borderRadius: '12px', padding: '16px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '12px', opacity: 0.9 }}>Gold 22K</p>
-            <h4 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>
+
+          <div className="live-rate-card ppf-card">
+            <p className="rate-label">Gold 22K</p>
+            <h4 className="rate-value">
               ₹{livePrices?.gold?.price22K?.toLocaleString('en-IN') || '--'}
             </h4>
-            <small style={{ opacity: 0.8 }}>per gram</small>
+            <small className="rate-subtext">per gram</small>
           </div>
-          
-          <div style={{ background: 'linear-gradient(135deg, #C0C0C0 0%, #808080 100%)', borderRadius: '12px', padding: '16px', color: '#1a1a2e' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '12px', opacity: 0.9 }}>Silver</p>
-            <h4 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>
+
+          <div className="live-rate-card scss-card">
+            <p className="rate-label">Silver</p>
+            <h4 className="rate-value">
               ₹{livePrices?.silver?.pricePerKg?.toLocaleString('en-IN') || '--'}
             </h4>
-            <small style={{ opacity: 0.8 }}>per kg</small>
+            <small className="rate-subtext">per kg</small>
           </div>
-          
-          <div style={{ background: 'linear-gradient(135deg, #9333EA 0%, #7C3AED 100%)', borderRadius: '12px', padding: '16px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '12px', opacity: 0.9 }}>SGB Issue Price</p>
-            <h4 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>
+
+          <div className="live-rate-card nps-card">
+            <p className="rate-label">SGB Issue Price</p>
+            <h4 className="rate-value">
               ₹{livePrices?.sgb?.issuePrice?.toLocaleString('en-IN') || '--'}
             </h4>
-            <small style={{ opacity: 0.8 }}>2.5% p.a. interest</small>
+            <small className="rate-subtext">2.5% p.a. interest</small>
           </div>
         </div>
-        
+
         {lastPriceUpdate && (
-          <p style={{ margin: '12px 0 0', fontSize: '11px', opacity: 0.6, textAlign: 'right' }}>
+          <p className="rates-update-info">
             Last updated: {lastPriceUpdate.toLocaleTimeString('en-IN')} | Auto-refresh every 5 min
           </p>
         )}
@@ -361,7 +344,7 @@ const GoldSgbInvestment = () => {
       {/* Stats Cards */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' }}>
+          <div className="stat-icon icon-black">
             <FiDollarSign />
           </div>
           <div className="stat-content">
@@ -371,7 +354,7 @@ const GoldSgbInvestment = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #C0C0C0 0%, #4169E1 100%)' }}>
+          <div className="stat-icon icon-dark-gray">
             <FiTrendingUp />
           </div>
           <div className="stat-content">
@@ -381,19 +364,19 @@ const GoldSgbInvestment = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #32CD32 0%, #228B22 100%)' }}>
+          <div className="stat-icon icon-green-gradient">
             <FiTrendingUp />
           </div>
           <div className="stat-content">
             <p className="stat-label">Total Returns</p>
-            <h3 className="stat-value" style={{ color: totals.totalReturns >= 0 ? '#32CD32' : '#FF6347' }}>
+            <h3 className="stat-value" style={{ color: totals.totalReturns >= 0 ? '#10B981' : '#ff6b6b' }}>
               ₹{totals.totalReturns.toLocaleString('en-IN')} ({totals.returnsPercent}%)
             </h3>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #FF6347 0%, #DC143C 100%)' }}>
+          <div className="stat-icon icon-gray">
             <FiActivity />
           </div>
           <div className="stat-content">
@@ -555,8 +538,8 @@ const GoldSgbInvestment = () => {
                   >
                     <defs>
                       <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#C084FC" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#9333EA" stopOpacity={0.2} />
+                        <stop offset="5%" stopColor="#0A0A0A" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#404040" stopOpacity={0.2} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
@@ -584,7 +567,7 @@ const GoldSgbInvestment = () => {
                     <Area
                       type="monotone"
                       dataKey="value"
-                      stroke="#C084FC"
+                      stroke="#0A0A0A"
                       strokeWidth={3}
                       fill="url(#areaGradient)"
                       animationDuration={2000}
@@ -629,7 +612,7 @@ const GoldSgbInvestment = () => {
                       <span className="investment-type-badge" style={{
                         background: investment.type.includes('Gold') ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' :
                           investment.type.includes('Silver') ? 'linear-gradient(135deg, #C0C0C0 0%, #4169E1 100%)' :
-                            'linear-gradient(135deg, #C084FC 0%, #9333EA 100%)'
+                            '#0A0A0A'
                       }}>
                         {investment.type}
                       </span>

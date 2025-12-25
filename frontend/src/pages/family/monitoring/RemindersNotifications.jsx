@@ -157,7 +157,7 @@ const RemindersNotifications = () => {
   return (
     <div className="reminders-page">
       {/* Header Section */}
-      <div className="page-header">
+      <div className="reminders-header">
         <div className="header-left">
           <div className="header-icon">
             <FiBell />

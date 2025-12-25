@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiPlus, FiEdit, FiTrash2, FiTrendingUp } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiTrendingUp, FiPieChart, FiBarChart2, FiClock, FiActivity } from 'react-icons/fi';
 import axios from 'axios';
 import './Investment.css';
 
@@ -106,9 +106,11 @@ const TradingDetails = () => {
         }));
     };
 
-    // Get available purchase records for auto-fill
+    // Get available purchase records for auto-fill (not yet sold)
     const getAvailablePurchases = () => {
-        return tradingRecords.filter(record => record.typeOfTransaction === 'Purchase');
+        return tradingRecords.filter(record =>
+            record.typeOfTransaction === 'Purchase' && !completedRecordIds.has(record._id)
+        );
     };
 
     // Auto-fill from selected purchase record
@@ -281,75 +283,71 @@ const TradingDetails = () => {
         return new Date(date).toLocaleDateString('en-IN');
     };
 
+    const TabButton = ({ id, label, icon: Icon, isActive, onClick }) => (
+        <button
+            className={`tab-button ${isActive ? 'active' : ''}`}
+            onClick={() => onClick(id)}
+        >
+            <Icon /> {label}
+        </button>
+    );
+
     return (
         <div className="investment-container">
             <div className="investment-header">
-                <h1>Trading Details</h1>
-                <p>Track your trading transactions - purchases and sales</p>
+                <div>
+                    <h1>Trading Details</h1>
+                    <p>Track your trading transactions - purchases and sales</p>
+                </div>
+                <div className="header-actions">
+                    <button
+                        className="btn-add-investment"
+                        onClick={() => setShowForm(!showForm)}
+                    >
+                        <FiPlus /> {showForm ? 'Hide Form' : 'Add Trading Record'}
+                    </button>
+                </div>
+            </div>
 
-                {error && (
-                    <div className="error-message">
-                        <p>{error}</p>
-                        <button onClick={fetchTradingRecords} className="retry-btn">
-                            Retry
-                        </button>
-                    </div>
-                )}
+            {error && (
+                <div className="error-message" style={{ marginBottom: '20px' }}>
+                    <p>{error}</p>
+                    <button onClick={fetchTradingRecords} className="retry-btn">
+                        Retry
+                    </button>
+                </div>
+            )}
+
+            <div className="tabs-container">
+                <div className="tabs">
+                    <TabButton
+                        id="active"
+                        label="Active Holdings"
+                        icon={FiActivity}
+                        isActive={viewMode === 'active'}
+                        onClick={setViewMode}
+                    />
+                    <TabButton
+                        id="completed"
+                        label="History"
+                        icon={FiClock}
+                        isActive={viewMode === 'completed'}
+                        onClick={setViewMode}
+                    />
+                </div>
             </div>
 
             <div className="investment-section">
                 <div className="section-header">
                     <div>
-                        <h3>Trading Records</h3>
+                        <h3>
+                            {viewMode === 'active' ? 'Current Portfolio' : 'Transaction History'}
+                        </h3>
                         <p className="section-subtitle">
                             {viewMode === 'active'
-                                ? 'Active Holdings - Stocks you currently own'
-                                : 'Completed Transactions - Stocks you have sold'}
+                                ? 'Stocks you currently own and their valuations'
+                                : 'Complete record of your closed trading positions'}
                         </p>
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        {/* View Toggle */}
-                        <div style={{ display: 'flex', gap: '0.5rem', background: '#f3f4f6', padding: '0.25rem', borderRadius: '8px' }}>
-                            <button
-                                onClick={() => setViewMode('active')}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    background: viewMode === 'active' ? '#10b981' : 'transparent',
-                                    color: viewMode === 'active' ? 'white' : '#374151',
-                                    cursor: 'pointer',
-                                    fontWeight: '500',
-                                    fontSize: '0.9rem',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                📊 Active Holdings
-                            </button>
-                            <button
-                                onClick={() => setViewMode('completed')}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    background: viewMode === 'completed' ? '#667eea' : 'transparent',
-                                    color: viewMode === 'completed' ? 'white' : '#374151',
-                                    cursor: 'pointer',
-                                    fontWeight: '500',
-                                    fontSize: '0.9rem',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                📜 History
-                            </button>
-                        </div>
-
-                        <button
-                            className="add-button"
-                            onClick={() => setShowForm(!showForm)}
-                        >
-                            <FiPlus /> {showForm ? 'Hide Form' : 'Add Trading Record'}
-                        </button>
                     </div>
                 </div>
 
@@ -357,22 +355,32 @@ const TradingDetails = () => {
                     <div className="investment-form-card">
                         <h2>{editingId ? 'Edit Trading Record' : 'Add New Trading Record'}</h2>
 
-                        {/* Dynamic instruction based on type */}
+                        {/* Instruction based on type */}
                         <div style={{
                             background: formData.typeOfTransaction === 'Purchase'
-                                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                                : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                            color: 'white',
-                            padding: '0.75rem 1rem',
-                            borderRadius: '6px',
-                            marginBottom: '1rem',
+                                ? '#ecfdf5'
+                                : '#fef2f2',
+                            color: formData.typeOfTransaction === 'Purchase' ? '#065f46' : '#991b1b',
+                            padding: '12px 16px',
+                            borderRadius: '12px',
+                            marginBottom: '24px',
                             fontSize: '0.9rem',
-                            fontWeight: '500'
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            border: `1px solid ${formData.typeOfTransaction === 'Purchase' ? '#a7f3d0' : '#fecaca'}`
                         }}>
                             {formData.typeOfTransaction === 'Purchase' ? (
-                                <span>📥 Adding Purchase Record - This is when you BUY stocks</span>
+                                <>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></div>
+                                    <span>Incoming Position: You are recording a NEW PURCHASE</span>
+                                </>
                             ) : (
-                                <span>📤 Adding Sale Record - This is when you SELL stocks</span>
+                                <>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }}></div>
+                                    <span>Closing Position: You are recording a SALE</span>
+                                </>
                             )}
                         </div>
 
@@ -622,11 +630,11 @@ const TradingDetails = () => {
                                 </div>
                             </div>
 
-                            <div className="form-actions">
-                                <button type="submit" className="btn-primary" disabled={loading}>
-                                    {loading ? 'Saving...' : (editingId ? 'Update Record' : 'Add Record')}
+                            <div className="form-actions" style={{ marginTop: '24px' }}>
+                                <button type="submit" className="btn-add-investment" disabled={loading}>
+                                    {loading ? 'Saving...' : (editingId ? 'Update Record' : 'Save Record')}
                                 </button>
-                                <button type="button" className="btn-secondary" onClick={resetForm}>
+                                <button type="button" className="btn-secondary" onClick={resetForm} style={{ padding: '12px 24px' }}>
                                     Cancel
                                 </button>
                             </div>
@@ -712,16 +720,16 @@ const TradingDetails = () => {
                                             )}
                                             {viewMode === 'active' && (
                                                 <td>
-                                                    <div className="investment-actions">
+                                                    <div className="action-buttons">
                                                         <button
-                                                            className="btn-icon"
+                                                            className="edit-btn"
                                                             onClick={() => handleEdit(record)}
                                                             title="Edit"
                                                         >
                                                             <FiEdit />
                                                         </button>
                                                         <button
-                                                            className="btn-icon btn-danger"
+                                                            className="delete-btn"
                                                             onClick={() => handleDelete(record._id)}
                                                             title="Delete"
                                                         >

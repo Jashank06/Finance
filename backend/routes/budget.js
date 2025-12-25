@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Target = require('../models/Target');
+const BudgetPlan = require('../models/BudgetPlan');
+const BudgetAnalysisService = require('../services/budgetAnalysisService');
+const auth = require('../middleware/auth');
 
 // Cheque Register Schema
 const chequeRegisterSchema = new mongoose.Schema({
@@ -441,6 +444,138 @@ router.delete('/targets-for-life/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting target:', error);
     res.status(500).json({ message: 'Error deleting target', error: error.message });
+  }
+});
+
+// BUDGET PLAN ROUTES
+
+// POST - Create or update user's budget plan
+router.post('/budget-plan', auth, async (req, res) => {
+  try {
+    const { selectedPlan, monthlyIncome } = req.body;
+
+    if (!selectedPlan || !monthlyIncome) {
+      return res.status(400).json({ message: 'Selected plan and monthly income are required' });
+    }
+
+    if (monthlyIncome <= 0) {
+      return res.status(400).json({ message: 'Monthly income must be greater than 0' });
+    }
+
+    const planDetails = BudgetPlan.getPlanDetails(selectedPlan);
+    if (!planDetails) {
+      return res.status(400).json({ message: 'Invalid plan selected' });
+    }
+
+    const userId = req.user.id;
+
+    let budgetPlan = await BudgetPlan.findOne({ userId });
+
+    if (budgetPlan) {
+      budgetPlan.selectedPlan = selectedPlan;
+      budgetPlan.monthlyIncome = monthlyIncome;
+      budgetPlan.planDetails = planDetails;
+      budgetPlan.updatedAt = new Date();
+      await budgetPlan.save();
+    } else {
+      budgetPlan = new BudgetPlan({
+        userId,
+        selectedPlan,
+        monthlyIncome,
+        planDetails
+      });
+      await budgetPlan.save();
+    }
+
+    res.status(200).json({
+      message: 'Budget plan saved successfully',
+      budgetPlan
+    });
+  } catch (error) {
+    console.error('Error saving budget plan:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// GET - Get user's current budget plan
+router.get('/budget-plan', auth, async (req, res) => {
+  try {
+    const budgetPlan = await BudgetPlan.findOne({ userId: req.user.id });
+
+    if (!budgetPlan) {
+      return res.status(404).json({ message: 'No budget plan found. Please create one first.' });
+    }
+
+    res.status(200).json(budgetPlan);
+  } catch (error) {
+    console.error('Error fetching budget plan:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// GET - Get budget analysis with expense breakdown
+router.get('/budget-plan/analysis', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const budgetPlan = await BudgetPlan.findOne({ userId });
+
+    if (!budgetPlan) {
+      return res.status(404).json({
+        message: 'No budget plan found. Please create a budget plan first.'
+      });
+    }
+
+    const analysisResult = await BudgetAnalysisService.performCompleteAnalysis(
+      userId,
+      budgetPlan
+    );
+
+    res.status(200).json({
+      budgetPlan: {
+        selectedPlan: budgetPlan.selectedPlan,
+        planName: budgetPlan.planDetails.name,
+        monthlyIncome: budgetPlan.monthlyIncome,
+        allocations: budgetPlan.planDetails.allocations
+      },
+      ...analysisResult
+    });
+  } catch (error) {
+    console.error('Error performing budget analysis:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// GET - Get all available budget plans
+router.get('/budget-plan/plans', async (req, res) => {
+  try {
+    const plans = [
+      { id: 'bare_minimum', ...BudgetPlan.getPlanDetails('bare_minimum') },
+      { id: 'most_popular', ...BudgetPlan.getPlanDetails('most_popular') },
+      { id: 'standard', ...BudgetPlan.getPlanDetails('standard') },
+      { id: 'stable', ...BudgetPlan.getPlanDetails('stable') },
+      { id: 'good', ...BudgetPlan.getPlanDetails('good') }
+    ];
+
+    res.status(200).json(plans);
+  } catch (error) {
+    console.error('Error fetching budget plans:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// DELETE - Delete user's budget plan
+router.delete('/budget-plan', auth, async (req, res) => {
+  try {
+    const result = await BudgetPlan.findOneAndDelete({ userId: req.user.id });
+
+    if (!result) {
+      return res.status(404).json({ message: 'No budget plan found to delete' });
+    }
+
+    res.status(200).json({ message: 'Budget plan deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting budget plan:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

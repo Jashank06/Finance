@@ -12,18 +12,27 @@
 /* Header Section */
 .income-expenses-header {
   margin-bottom: 1.5rem;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 24px 32px;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .income-expenses-header h1 {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 0.5rem;
+  font-size: 26px;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
 }
 
 .income-expenses-header p {
-  color: #6b7280;
-  font-size: 0.875rem;
+  color: #64748b;
+  font-size: 14px;
+  margin: 0;
 }
 
 /* Summary Cards Grid */
@@ -42,12 +51,14 @@
 
 /* Summary Card Styles */
 .summary-card {
-  border-radius: 0.5rem;
-  padding: 1rem;
-  border: 1px solid;
+  border-radius: 20px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
 }
 
 .summary-card::before {
@@ -57,36 +68,32 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, currentColor, transparent);
+  background: linear-gradient(90deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
 }
 
 .summary-card.income-card {
-  background-color: #f0fdf4;
-  border-color: #bbf7d0;
-  color: #16a34a;
+  --gradient-start: #10b981;
+  --gradient-end: #059669;
 }
 
 .summary-card.expense-card {
-  background-color: #fef2f2;
-  border-color: #fecaca;
-  color: #dc2626;
+  --gradient-start: #ef4444;
+  --gradient-end: #dc2626;
 }
 
 .summary-card.balance-card.positive {
-  background-color: #eff6ff;
-  border-color: #bfdbfe;
-  color: #2563eb;
+  --gradient-start: #0A0A0A;
+  --gradient-end: #252525;
 }
 
 .summary-card.balance-card.negative {
-  background-color: #fff7ed;
-  border-color: #fed7aa;
-  color: #ea580c;
+  --gradient-start: #f59e0b;
+  --gradient-end: #d97706;
 }
 
 .summary-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .summary-card-content {
@@ -189,21 +196,22 @@
 .btn-primary {
   display: flex;
   align-items: center;
-  padding: 0.5rem 1rem;
-  background-color: #3b82f6;
+  padding: 12px 24px;
+  background: #0A0A0A;
   color: white;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
   border: none;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover {
-  background-color: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background: #252525;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary:active {
@@ -248,18 +256,18 @@
 }
 
 .records-table thead {
-  background-color: #f9fafb;
+  background: #0A0A0A;
 }
 
 .records-table th {
-  padding: 0.75rem 1rem;
+  padding: 18px 16px;
   text-align: left;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFFFFF;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid #e5e7eb;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #333;
 }
 
 .records-table tbody tr {
@@ -268,7 +276,9 @@
 }
 
 .records-table tbody tr:hover {
-  background-color: #f9fafb;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  transform: scale(1.01);
+  transition: all 0.2s ease;
 }
 
 .records-table tbody tr:last-child {
@@ -564,19 +574,22 @@
 }
 
 .btn-submit {
-  padding: 0.5rem 1rem;
-  background-color: #3b82f6;
+  padding: 12px 24px;
+  background: #0A0A0A;
   color: white;
   border: none;
-  border-radius: 0.375rem;
-  font-weight: 500;
+  border-radius: 12px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .btn-submit:hover {
-  background-color: #2563eb;
+  background: #252525;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 /* Responsive Design */
@@ -584,42 +597,42 @@
   .income-expenses-container {
     padding: 1rem;
   }
-  
+
   .summary-cards-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .filters-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .actions-bar {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .table-wrapper {
     margin: 0 -1rem;
     padding: 0 1rem;
   }
-  
+
   .records-table {
     font-size: 0.75rem;
   }
-  
+
   .records-table th,
   .records-table td {
     padding: 0.5rem;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-overlay {
     padding: 0.5rem;
   }
-  
+
   .modal-container {
     max-height: 95vh;
   }
@@ -631,6 +644,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

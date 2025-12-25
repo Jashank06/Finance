@@ -1,181 +1,291 @@
+/* Modern 3D Sidebar Design */
 .sidebar {
-  width: 250px;
+  width: 280px;
   height: 100vh;
-  background: #f8f9fa;
-  border-right: 1px solid #ddd;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   position: fixed;
   left: 0;
   top: 0;
   overflow-y: auto;
+  box-shadow: 5px 0 25px rgba(0, 0, 0, 0.03);
+  z-index: 1000;
+  transition: all 0.4s cubic-bezier(0.17, 0.84, 0.44, 1);
 }
 
 .sidebar-header {
-  padding: 20px;
-  background: #C084FC;
-  color: white;
+  padding: 30px 20px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   text-align: center;
+  position: relative;
+  box-shadow:
+    0 10px 30px -5px rgba(0, 0, 0, 0.05),
+    0 5px 15px -3px rgba(0, 0, 0, 0.02),
+    inset 0 0 0 1px rgba(255, 255, 255, 1);
+  z-index: 10;
+  margin: 15px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+}
+
+/* 3D Shine Effect */
+.sidebar-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 50%);
+  opacity: 0.5;
+  transform: rotate(30deg);
+  pointer-events: none;
 }
 
 .sidebar-header h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.7px;
+  background: linear-gradient(135deg, #1a202c 0%, #475569 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 15px rgba(0, 0, 0, 0.1));
+  position: relative;
+  z-index: 2;
+  text-transform: uppercase;
 }
 
 .sidebar-nav {
   flex: 1;
-  padding: 10px 0;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
+/* Base Navigation Item */
 .nav-item {
-  display: block;
-  padding: 12px 20px;
-  color: #333;
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  color: #64748b;
   text-decoration: none;
-  border: 1px solid transparent;
-  border-left: 3px solid transparent;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   font-size: 14px;
+  font-weight: 500;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.02);
+  position: relative;
+  overflow: hidden;
 }
 
+/* Hover Effect - 3D Lift */
 .nav-item:hover {
-  background: #e9ecef;
-  border-left-color: #C084FC;
+  background: white;
+  color: #0A0A0A;
+  transform: translateY(-2px) translateX(4px);
+  box-shadow:
+    0 10px 20px -5px rgba(0, 0, 0, 0.05),
+    0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.05);
 }
 
+/* Active State - Premium Black Card */
 .nav-item.active {
-  background: linear-gradient(135deg, #C084FC 0%, #9333EA 100%);
-  border-left-color: #9333EA;
+  background: #0A0A0A;
   color: white;
   font-weight: 600;
-}
-
-.nav-header {
-  font-weight: 600;
-  background: linear-gradient(135deg, #C084FC 0%, #9333EA 100%);
-  color: white;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  margin: 0 10px;
-}
-
-.nav-header:hover {
-  background: linear-gradient(135deg, #9333EA 0%, #C084FC 100%);
-}
-
-.nav-header.active {
-  background: linear-gradient(135deg, #9333EA 0%, #C084FC 100%);
-}
-
-.submenu {
-  background: #f1f3f5;
-}
-
-.nav-subsection {
-  margin: 5px 0;
-}
-
-.nav-subsection .nav-header {
-  background: rgba(192, 132, 252, 0.2);
-  color: #9333EA;
-  border-radius: 6px;
-  margin: 0 10px;
-  border: 1px solid rgba(192, 132, 252, 0.3);
-}
-
-.nav-subsection .nav-header:hover {
-  background: rgba(192, 132, 252, 0.3);
-  color: #7C3AED;
-}
-
-.nav-subsection .nav-header.active {
-  background: linear-gradient(135deg, #C084FC 0%, #9333EA 100%);
-  color: white;
+  transform: translateY(-2px);
+  box-shadow:
+    0 15px 30px -5px rgba(0, 0, 0, 0.25),
+    0 8px 10px -2px rgba(0, 0, 0, 0.1);
   border: none;
 }
 
+.nav-item.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+/* Collapsible Nav Header */
+.nav-header {
+  font-weight: 600;
+  background: #f8fafc;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+}
+
+.nav-header:hover {
+  background: #f1f5f9;
+  color: #0A0A0A;
+}
+
+.nav-header.active {
+  background: #0A0A0A;
+  color: white;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  border-color: #0A0A0A;
+}
+
+/* Submenu Container */
+.submenu {
+  margin: 5px 0 15px 0;
+  padding: 5px 0 5px 12px;
+  position: relative;
+}
+
+.submenu::before {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.05) 100%);
+  border-radius: 2px;
+}
+
+.nav-subsection {
+  margin: 8px 0;
+}
+
+/* Submenu Items */
 .submenu-item {
   display: block;
-  padding: 10px 20px 10px 40px;
-  color: #555;
+  padding: 10px 15px 10px 30px;
+  color: #64748b;
   text-decoration: none;
-  font-size: 13px;
-  transition: all 0.2s;
+  font-size: 13.5px;
+  transition: all 0.2s ease;
+  margin: 2px 0 2px 10px;
+  border-radius: 8px;
+  position: relative;
 }
 
 .submenu-item:hover {
-  background: #e9ecef;
-  color: #C084FC;
+  color: #0A0A0A;
+  background: rgba(0, 0, 0, 0.03);
+  transform: translateX(3px);
+  padding-left: 35px;
+}
+
+.submenu-item:hover::before {
+  opacity: 1;
+}
+
+.submenu-item::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: #0A0A0A;
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 0.2s ease;
 }
 
 .submenu-item.active {
-  background: rgba(192, 132, 252, 0.15);
-  color: #9333EA;
+  color: #0A0A0A;
   font-weight: 600;
-  border-left: 3px solid #9333EA;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
+.submenu-item.active::before {
+  opacity: 1;
+  background: #0A0A0A;
+}
+
+/* Nested Submenu */
 .nested-submenu {
-  background: rgba(0, 0, 0, 0.05);
-  margin: 6px 8px;
-  border-radius: 8px;
-  padding: 4px 0;
-  border-left: 3px solid #C084FC;
+  margin: 5px 0 5px 25px;
+  padding-left: 10px;
+  border-left: 2px solid rgba(0, 0, 0, 0.05);
 }
 
 .nested-submenu-item {
   display: block;
-  padding: 8px 20px 8px 50px;
-  color: #666;
+  padding: 8px 12px;
+  color: #94a3b8;
   text-decoration: none;
-  font-size: 12px;
+  font-size: 13px;
   transition: all 0.3s ease;
   border-radius: 6px;
-  margin: 2px 6px;
+  margin: 2px 0;
+  position: relative;
 }
 
 .nested-submenu-item:hover {
-  background: rgba(192, 132, 252, 0.1);
-  color: #C084FC;
-  transform: translateX(6px);
-  font-weight: 600;
+  color: #0A0A0A;
+  background: rgba(255, 255, 255, 0.8);
+  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .nested-submenu-item.active {
-  background: rgba(147, 51, 234, 0.15);
-  color: #9333EA;
-  font-weight: 700;
-  border-left: 3px solid #9333EA;
-  transform: translateX(8px);
+  color: #0A0A0A;
+  font-weight: 600;
+  background: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+  transform: translateX(5px);
 }
 
+/* Special Styles */
 .logout {
-  color: #c33;
-  font-weight: 500;
-  margin-top: 10px;
+  color: #ef4444 !important;
+  font-weight: 600;
+  margin-top: auto;
+  margin-bottom: 20px;
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.05);
 }
 
 .logout:hover {
-  background: #fee;
-  border-left-color: #c33;
+  background: #ef4444 !important;
+  color: white !important;
+  border-color: #ef4444;
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.25);
+  transform: translateY(-2px);
 }
 
 /* Scrollbar styling */
 .sidebar::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .sidebar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
+  background: transparent;
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #C084FC 0%, #9333EA 100%);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 10px;
 }
 
 .sidebar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #9333EA 0%, #C084FC 100%);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Nav Section Grouping */
+.nav-section {
+  margin-bottom: 5px;
 }

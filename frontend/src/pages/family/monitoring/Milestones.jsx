@@ -137,58 +137,9 @@ const Milestones = () => {
         const currentIndex = getCurrentMilestone();
         const overallProgress = getOverallProgress();
 
-        // Canvas settings
-        // Canvas settings - Vertical Sine Wave Layout
-        const rowHeight = 180;
-        const canvasWidth = 1400; // Much wider canvas
-        const centerX = canvasWidth / 2;
-        const amplitude = 500; // Much wider curve
-
-        // Calculate total canvas size
-        const canvasHeight = Math.max(600, (sortedMilestones.length * rowHeight) + 200);
-
-        const generatePath = () => {
-            let pathString = '';
-            const points = [];
-
-            sortedMilestones.forEach((milestone, index) => {
-                // Alternating Left/Right Pattern
-                // Even -> Left, Odd -> Right
-                const isLeft = index % 2 === 0;
-
-                // Use amplitude to decide offset from center
-                // If isLeft (-amplitude), if Right (+amplitude)
-                const xOffset = isLeft ? -amplitude : amplitude;
-
-                const x = centerX + xOffset;
-                const y = 100 + (index * rowHeight);
-
-                points.push({ x, y, milestone, index });
-            });
-
-            if (points.length > 0) {
-                pathString = `M ${points[0].x} ${points[0].y}`;
-                for (let i = 1; i < points.length; i++) {
-                    const prev = points[i - 1];
-                    const curr = points[i];
-                    const midY = (prev.y + curr.y) / 2;
-                    pathString += ` C ${prev.x} ${midY}, ${curr.x} ${midY}, ${curr.x} ${curr.y}`;
-                }
-            }
-            // Continue path a bit after last point
-            if (points.length > 0) {
-                const last = points[points.length - 1];
-                pathString += ` C ${last.x} ${last.y + 100}, ${last.x} ${last.y + 100}, ${last.x} ${last.y + 150}`;
-            }
-
-            return { pathString, points };
-        };
-
-        const { pathString, points } = generatePath();
-
         return (
-            <div className="roadmap-map-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                <div className="journey-header" style={{ width: '100%', maxWidth: '1400px' }}>
+            <div className="roadmap-map-container">
+                <div className="journey-header">
                     <div className="journey-stats">
                         <div className="stat-item">
                             <div className="stat-icon total">
@@ -241,129 +192,47 @@ const Milestones = () => {
                     </div>
                 </div>
 
-                <div className="map-canvas" style={{ width: '100%', height: `${canvasHeight}px`, position: 'relative', background: 'transparent', boxShadow: 'none' }}>
-                    <svg
-                        className="journey-path"
-                        width="100%"
-                        height="100%"
-                        viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
-                        preserveAspectRatio="xMidYMin meet"
-                        style={{ overflow: 'visible' }}
-                    >
-                        <defs>
-                            <linearGradient id="roadGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#e0e0e0" />
-                                <stop offset="100%" stopColor="#bdbdbd" />
-                            </linearGradient>
-                            <linearGradient id="completedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#4caf50" />
-                                <stop offset="50%" stopColor="#45a049" />
-                                <stop offset="100%" stopColor="#66bb6a" />
-                            </linearGradient>
-                            <filter id="roadShadow">
-                                <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.3" />
-                            </filter>
-                        </defs>
+                <div className="map-canvas">
+                    {/* Horizontal Timeline Track */}
+                    <div className="timeline-track">
+                        <div 
+                            className="timeline-progress" 
+                            style={{ width: `${overallProgress}%` }}
+                        ></div>
+                    </div>
 
-                        {/* Base Road */}
-                        <path
-                            d={pathString}
-                            fill="none"
-                            stroke="#e0e0e0"
-                            strokeWidth="40"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            filter="url(#roadShadow)"
-                        />
-
-                        {/* Dashed Center Line */}
-                        <path
-                            d={pathString}
-                            fill="none"
-                            stroke="#fff"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeDasharray="15, 20"
-                            opacity="0.6"
-                        />
-
-                        {/* Progress Path (Green) */}
-                        <path
-                            d={pathString}
-                            fill="none"
-                            stroke="#4caf50"
-                            strokeWidth="32"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeDasharray="1 0"
-                            pathLength="100"
-                            style={{
-                                strokeDasharray: `${overallProgress} 100`,
-                                transition: 'stroke-dasharray 1.5s ease-out'
-                            }}
-                        />
-                    </svg>
-
-                    {points.map(({ x, y, milestone, index }) => {
+                    {/* Milestone Nodes */}
+                    {sortedMilestones.map((milestone, index) => {
                         const isCompleted = milestone.status === 'completed';
                         const isCurrent = index === currentIndex;
                         const isPending = !isCompleted && !isCurrent;
-
-                        // Smart Tooltip Positioning
-                        const isRightSide = x > centerX;
-                        const tooltipStyle = isRightSide
-                            ? { right: '100%', left: 'auto', marginRight: '20px', transformOrigin: 'right center' }
-                            : { left: '100%', right: 'auto', marginLeft: '20px', transformOrigin: 'left center' };
-
-                        const leftPos = (x / canvasWidth) * 100;
-                        const topPos = (y / canvasHeight) * 100;
+                        
+                        // Calculate horizontal position (evenly spaced)
+                        const totalMilestones = sortedMilestones.length;
+                        const leftPosition = ((index + 1) / (totalMilestones + 1)) * 100;
 
                         return (
                             <div
                                 key={milestone._id}
                                 className={`map-milestone ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isPending ? 'pending' : ''}`}
-                                style={{
-                                    left: `${leftPos}%`,
-                                    top: `${topPos}%`,
-                                    '--milestone-color': getStatusColor(milestone.status)
-                                }}
+                                style={{ left: `${leftPosition}%` }}
                             >
                                 <div className="milestone-pin">
-                                    <svg width="60" height="70" viewBox="0 0 50 60">
-                                        <defs>
-                                            <filter id={`pin-shadow-${index}`}>
-                                                <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.4" />
-                                            </filter>
-                                        </defs>
-                                        <path
-                                            d="M25 5 C15 5 10 10 10 20 C10 35 25 50 25 50 S40 35 40 20 C40 10 35 5 25 5 Z"
-                                            fill={getStatusColor(milestone.status)}
-                                            stroke="#fff"
-                                            strokeWidth="3"
-                                            filter={`url(#pin-shadow-${index})`}
-                                        />
-                                        <circle cx="25" cy="20" r="8" fill="#fff" />
-                                        {isCompleted && (
-                                            <text x="25" y="25" textAnchor="middle" fill={getStatusColor(milestone.status)} fontSize="14" fontWeight="bold">✓</text>
-                                        )}
-                                        {isCurrent && (
-                                            <text x="25" y="26" textAnchor="middle" fill={getStatusColor(milestone.status)} fontSize="12" fontWeight="bold">•</text>
-                                        )}
-                                        {!isCompleted && !isCurrent && (
-                                            <text x="25" y="25" textAnchor="middle" fill={getStatusColor(milestone.status)} fontSize="12" fontWeight="bold">{index + 1}</text>
-                                        )}
-                                    </svg>
+                                    <div className="milestone-pin-inner">
+                                        {isCompleted && '✓'}
+                                        {isCurrent && '●'}
+                                        {isPending && (index + 1)}
+                                    </div>
                                     {isCurrent && (
                                         <div className="current-pulse"></div>
                                     )}
                                 </div>
 
-                                <div className={`milestone-label ${isRightSide ? 'right' : 'left'}`}>
+                                <div className="milestone-label">
                                     {milestone.title}
                                 </div>
 
-                                <div className="milestone-tooltip" style={tooltipStyle}>
+                                <div className="milestone-tooltip">
                                     <div className="tooltip-header">
                                         <h4>{milestone.title}</h4>
                                         <span className={`mini-badge ${milestone.status}`}>

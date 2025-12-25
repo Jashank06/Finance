@@ -1,0 +1,489 @@
+/* Budget Plan Setup Section */
+.budget-plan-setup {
+    padding: 2rem;
+}
+
+.setup-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.setup-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #0A0A0A 0%, #333 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.setup-header p {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+/* Budget Plans Grid */
+.budget-plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.budget-plan-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 2px solid transparent;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.budget-plan-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.budget-plan-card.selected {
+    border-color: #0A0A0A;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.plan-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0A0A0A;
+}
+
+.check-icon {
+    background: #10b981;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.plan-allocations {
+    margin-bottom: 1rem;
+}
+
+.allocation-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.allocation-label {
+    color: #555;
+}
+
+.allocation-value {
+    font-weight: 600;
+    color: #0A0A0A;
+}
+
+.plan-categories {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f0f0f0;
+}
+
+.plan-categories small {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #888;
+}
+
+.category-group {
+    margin: 0.5rem 0;
+}
+
+.category-group strong {
+    text-transform: capitalize;
+    color: #0A0A0A;
+}
+
+.category-group ul {
+    margin: 0.25rem 0 0 1rem;
+    list-style: disc;
+}
+
+.category-group li {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Income Form Section */
+.income-form-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 2rem;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.income-form-section h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #0A0A0A;
+}
+
+.income-input-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.input-prefix {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #0A0A0A;
+}
+
+.income-input {
+    width: 300px;
+    max-width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    background: white !important;
+    color: #0A0A0A !important;
+    transition: all 0.3s ease;
+}
+
+.income-input:focus {
+    outline: none;
+    border-color: #0A0A0A;
+    box-shadow: 0 0 0 3px rgba(10, 10, 10, 0.1);
+}
+
+.save-budget-btn {
+    background: linear-gradient(135deg, #0A0A0A 0%, #333 100%);
+    color: white;
+    padding: 0.875rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.save-budget-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.save-budget-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Budget Analysis Dashboard */
+.budget-analysis-dashboard {
+    padding: 2rem;
+}
+
+.budget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.budget-header-left h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #0A0A0A;
+    margin-bottom: 0.25rem;
+}
+
+.income-display {
+    font-size: 1.1rem;
+    color: #666;
+}
+
+.change-plan-btn {
+    padding: 0.625rem 1.5rem;
+    background: white;
+    color: #0A0A0A;
+    border: 2px solid #0A0A0A;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.change-plan-btn:hover {
+    background: #0A0A0A;
+    color: white;
+}
+
+/* Budget Summary Cards */
+.budget-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.card-icon {
+    font-size: 2.5rem;
+}
+
+.card-content h4 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #0A0A0A;
+}
+
+.card-value.positive {
+    color: #10b981;
+}
+
+.card-value.negative {
+    color: #ef4444;
+}
+
+/* Category Breakdown */
+.category-breakdown {
+    margin-bottom: 3rem;
+}
+
+.category-breakdown h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #0A0A0A;
+}
+
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.category-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.category-header h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0A0A0A;
+}
+
+.category-status {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.category-amounts {
+    margin-bottom: 1rem;
+}
+
+.amount-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.amount-row span {
+    color: #666;
+}
+
+.amount-row strong {
+    color: #0A0A0A;
+}
+
+.amount-row strong.positive {
+    color: #10b981;
+}
+
+.amount-row strong.negative {
+    color: #ef4444;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.progress-label {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 600;
+}
+
+/* Suggestions Panel */
+.suggestions-panel {
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+}
+
+.suggestions-panel h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #0A0A0A;
+}
+
+.suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.suggestion-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 2px solid transparent;
+}
+
+.suggestion-item.warning {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+
+.suggestion-item.caution {
+    background: #fffbeb;
+    border-color: #f59e0b;
+}
+
+.suggestion-item.success {
+    background: #f0fdf4;
+    border-color: #10b981;
+}
+
+.suggestion-item.alert {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+
+.suggestion-icon {
+    font-size: 1.5rem;
+}
+
+.suggestion-content {
+    flex: 1;
+}
+
+.suggestion-message {
+    font-weight: 600;
+    color: #0A0A0A;
+    margin-bottom: 0.5rem;
+}
+
+.suggestion-recommendation {
+    font-size: 0.95rem;
+    color: #666;
+}
+
+/* Expense Summary */
+.expense-summary {
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.expense-summary h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #0A0A0A;
+}
+
+.summary-stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stat-item span {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.stat-item strong {
+    font-size: 1.5rem;
+    color: #0A0A0A;
+}

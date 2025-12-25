@@ -141,7 +141,8 @@ const BasicDetails = () => {
     rmMobile: '',
     rmEmail: '',
     branchAddress: '',
-    goalPurpose: ''
+    goalPurpose: '',
+    subBrokerName: ''
   });
 
   const [newShare, setNewShare] = useState({
@@ -150,6 +151,7 @@ const BasicDetails = () => {
     holdingType: '',
     investorName: '',
     tradingId: '',
+    dpId: '',
     scriptName: '',
     registeredMobile: '',
     registeredBank: '',
@@ -161,7 +163,8 @@ const BasicDetails = () => {
     rmMobile: '',
     rmEmail: '',
     branchAddress: '',
-    goalPurpose: ''
+    goalPurpose: '',
+    subBrokerName: ''
   });
 
   const [newInsurance, setNewInsurance] = useState({
@@ -182,7 +185,8 @@ const BasicDetails = () => {
     rmMobile: '',
     rmEmail: '',
     branchAddress: '',
-    goalPurpose: ''
+    goalPurpose: '',
+    subBrokerName: ''
   });
 
   const [newBank, setNewBank] = useState({
@@ -258,8 +262,10 @@ const BasicDetails = () => {
     purchaseValue: '',
     currentNAV: '',
     currentValuation: '',
+    currentValuation: '',
     difference: '',
-    percentDifference: ''
+    percentDifference: '',
+    subBrokerName: ''
   });
 
   const [newSharePortfolio, setNewSharePortfolio] = useState({
@@ -274,8 +280,10 @@ const BasicDetails = () => {
     purchaseValue: '',
     currentNAV: '',
     currentValuation: '',
+    currentValuation: '',
     difference: '',
-    percentDifference: ''
+    percentDifference: '',
+    subBrokerName: ''
   });
 
   const [newInsurancePortfolio, setNewInsurancePortfolio] = useState({
@@ -292,7 +300,9 @@ const BasicDetails = () => {
     lastPremiumPayingDate: '',
     maturityDate: '',
     sumAssured: '',
-    nominee: ''
+    sumAssured: '',
+    nominee: '',
+    subBrokerName: ''
   });
 
   const [newSubBroker, setNewSubBroker] = useState({
@@ -330,7 +340,15 @@ const BasicDetails = () => {
       setLoading(true);
       const response = await staticAPI.getBasicDetails();
       if (response.data && response.data.length > 0) {
-        setFormData(response.data[0]);
+        const data = response.data[0];
+        setFormData(prev => ({
+          ...prev,
+          ...data,
+          subBrokers: data.subBrokers || [],
+          mutualFundsPortfolio: data.mutualFundsPortfolio || [],
+          sharesPortfolio: data.sharesPortfolio || [],
+          insurancePortfolio: data.insurancePortfolio || []
+        }));
       } else {
         // Set demo data if no records exist
         setFormData({
@@ -609,6 +627,7 @@ const BasicDetails = () => {
         holdingType: '',
         investorName: '',
         tradingId: '',
+        dpId: '',
         scriptName: '',
         registeredMobile: '',
         registeredBank: '',
@@ -977,11 +996,17 @@ const BasicDetails = () => {
   };
 
   const addSubBroker = () => {
+    console.log('Attempting to add Sub Broker:', newSubBroker);
     if (newSubBroker.nameOfCompany && newSubBroker.contactNumber) {
-      setFormData(prev => ({
-        ...prev,
-        subBrokers: [...prev.subBrokers, { ...newSubBroker }]
-      }));
+      console.log('Validation passed. Adding to list.');
+      setFormData(prev => {
+        const updated = {
+          ...prev,
+          subBrokers: [...(prev.subBrokers || []), { ...newSubBroker }]
+        };
+        console.log('Updated formData:', updated);
+        return updated;
+      });
       setNewSubBroker({
         nameOfCompany: '',
         website: '',
@@ -995,6 +1020,9 @@ const BasicDetails = () => {
         customerCareNumber: '',
         customerCareEmailId: ''
       });
+    } else {
+      console.warn('Validation failed: Name of Company and Contact Number are required.');
+      alert('Please fill Name of Company and Contact Number');
     }
   };
 
@@ -1040,7 +1068,15 @@ const BasicDetails = () => {
         response = await staticAPI.createBasicDetails(formData);
       }
 
-      setFormData(response.data);
+      const data = response.data;
+      setFormData(prev => ({
+        ...prev,
+        ...data,
+        subBrokers: data.subBrokers || prev.subBrokers || [],
+        mutualFundsPortfolio: data.mutualFundsPortfolio || prev.mutualFundsPortfolio || [],
+        sharesPortfolio: data.sharesPortfolio || prev.sharesPortfolio || [],
+        insurancePortfolio: data.insurancePortfolio || prev.insurancePortfolio || []
+      }));
       setEditingSection(null);
     } catch (error) {
       console.error('Error saving section:', error);
@@ -1168,6 +1204,7 @@ const BasicDetails = () => {
                     <tr>
                       <th>Fund Name</th>
                       <th>Fund House</th>
+                      <th>Sub Broker Name</th>
                       <th>Folio No.</th>
                       <th>Mode of Holding</th>
                       <th>Holding Type</th>
@@ -1191,6 +1228,7 @@ const BasicDetails = () => {
                       <tr key={index}>
                         <td>{fund.mfName || '-'}</td>
                         <td>{fund.fundHouse || '-'}</td>
+                        <td>{fund.subBrokerName || '-'}</td>
                         <td>{fund.folioNo || '-'}</td>
                         <td>{fund.modeOfHolding || '-'}</td>
                         <td>{fund.holdingType || '-'}</td>
@@ -1287,6 +1325,18 @@ const BasicDetails = () => {
                       value={newMutualFund.ucc}
                       onChange={(e) => setNewMutualFund({ ...newMutualFund, ucc: e.target.value })}
                     />
+                  </div>
+                  <div className="form-group">
+                    <label>Sub Broker Name</label>
+                    <select
+                      value={newMutualFund.subBrokerName}
+                      onChange={(e) => setNewMutualFund({ ...newMutualFund, subBrokerName: e.target.value })}
+                    >
+                      <option value="">Select Sub Broker</option>
+                      {formData.subBrokers && formData.subBrokers.map((sb, index) => (
+                        <option key={index} value={sb.nameOfCompany}>{sb.nameOfCompany}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-group">
                     <label>Name of MF *</label>
@@ -1437,7 +1487,9 @@ const BasicDetails = () => {
                   <tr>
                     <th>Script Name</th>
                     <th>Demat Company</th>
+                    <th>Sub Broker Name</th>
                     <th>Trading ID</th>
+                    <th>DP ID</th>
                     <th>Mode of Holding</th>
                     <th>Holding Type</th>
                     <th>Investor Name</th>
@@ -1459,7 +1511,9 @@ const BasicDetails = () => {
                     <tr key={index}>
                       <td>{share.scriptName || '-'}</td>
                       <td>{share.dematCompany || '-'}</td>
+                      <td>{share.subBrokerName || '-'}</td>
                       <td>{share.tradingId || '-'}</td>
+                      <td>{share.dpId || '-'}</td>
                       <td>{share.modeOfHolding || '-'}</td>
                       <td>{share.holdingType || '-'}</td>
                       <td>{share.investorName || '-'}</td>
@@ -1548,11 +1602,31 @@ const BasicDetails = () => {
                   </select>
                 </div>
                 <div className="form-group">
+                  <label>Sub Broker Name</label>
+                  <select
+                    value={newShare.subBrokerName}
+                    onChange={(e) => setNewShare({ ...newShare, subBrokerName: e.target.value })}
+                  >
+                    <option value="">Select Sub Broker</option>
+                    {formData.subBrokers && formData.subBrokers.map((sb, index) => (
+                      <option key={index} value={sb.nameOfCompany}>{sb.nameOfCompany}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
                   <label>Trading Id</label>
                   <input
                     type="text"
                     value={newShare.tradingId}
                     onChange={(e) => setNewShare({ ...newShare, tradingId: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>DP ID</label>
+                  <input
+                    type="text"
+                    value={newShare.dpId}
+                    onChange={(e) => setNewShare({ ...newShare, dpId: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
@@ -1696,6 +1770,7 @@ const BasicDetails = () => {
                   <tr>
                     <th>Policy Name</th>
                     <th>Insurance Company</th>
+                    <th>Sub Broker Name</th>
                     <th>Policy Number</th>
                     <th>Type</th>
                     <th>Sub Type</th>
@@ -1719,6 +1794,7 @@ const BasicDetails = () => {
                     <tr key={index}>
                       <td>{policy.policyName || '-'}</td>
                       <td>{policy.insuranceCompany || '-'}</td>
+                      <td>{policy.subBrokerName || '-'}</td>
                       <td>{policy.policyNumber || '-'}</td>
                       <td>{policy.insuranceType || '-'}</td>
                       <td>{policy.insuranceSubType || '-'}</td>
@@ -1797,6 +1873,18 @@ const BasicDetails = () => {
                     onChange={(e) => setNewInsurance({ ...newInsurance, insuranceSubType: e.target.value })}
                     placeholder="e.g., Term, Endowment, ULIP"
                   />
+                </div>
+                <div className="form-group">
+                  <label>Sub Broker Name</label>
+                  <select
+                    value={newInsurance.subBrokerName}
+                    onChange={(e) => setNewInsurance({ ...newInsurance, subBrokerName: e.target.value })}
+                  >
+                    <option value="">Select Sub Broker</option>
+                    {formData.subBrokers && formData.subBrokers.map((sb, index) => (
+                      <option key={index} value={sb.nameOfCompany}>{sb.nameOfCompany}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label>Purpose of Policy</label>
@@ -2769,6 +2857,7 @@ const BasicDetails = () => {
                     <th>Sr. No.</th>
                     <th>Fund Name</th>
                     <th>Fund House</th>
+                    <th>Sub Broker Name</th>
                     <th>Folio Number</th>
                     <th>Purchase Date</th>
                     <th>NAV</th>
@@ -2784,6 +2873,7 @@ const BasicDetails = () => {
                       <td>{fund.srNo || '-'}</td>
                       <td>{fund.fundName || '-'}</td>
                       <td>{fund.fundHouse || '-'}</td>
+                      <td>{fund.subBrokerName || '-'}</td>
                       <td>{fund.folioNumber || '-'}</td>
                       <td>{fund.dateOfPurchase || '-'}</td>
                       <td>{fund.purchaseNAV || '-'}</td>
@@ -2846,6 +2936,30 @@ const BasicDetails = () => {
                     <option value="">Select family member...</option>
                     {familyMembers && familyMembers.map((member, index) => (
                       <option key={index} value={member.name}>{member.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Sub Broker Name</label>
+                  <select
+                    value={newMutualFundPortfolio.subBrokerName}
+                    onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, subBrokerName: e.target.value })}
+                  >
+                    <option value="">Select Sub Broker</option>
+                    {formData.subBrokers && formData.subBrokers.map((sb, index) => (
+                      <option key={index} value={sb.nameOfCompany}>{sb.nameOfCompany}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Sub Broker Name</label>
+                  <select
+                    value={newMutualFundPortfolio.subBrokerName}
+                    onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, subBrokerName: e.target.value })}
+                  >
+                    <option value="">Select Sub Broker</option>
+                    {formData.subBrokers && formData.subBrokers.map((sb, index) => (
+                      <option key={index} value={sb.nameOfCompany}>{sb.nameOfCompany}</option>
                     ))}
                   </select>
                 </div>
@@ -2987,6 +3101,7 @@ const BasicDetails = () => {
                     <th>Sr. No.</th>
                     <th>Script Name</th>
                     <th>Demat Company</th>
+                    <th>Sub Broker Name</th>
                     <th>Date of Purchase</th>
                     <th>Purchase NAV</th>
                     <th>Purchase Value</th>
@@ -3004,6 +3119,7 @@ const BasicDetails = () => {
                       <td>{share.srNo || '-'}</td>
                       <td>{share.scriptName || '-'}</td>
                       <td>{share.dematCompany || '-'}</td>
+                      <td>{share.subBrokerName || '-'}</td>
                       <td>{share.dateOfPurchase || '-'}</td>
                       <td>{share.purchaseNAV || '-'}</td>
                       <td>{share.purchaseValue || '-'}</td>
@@ -3068,6 +3184,18 @@ const BasicDetails = () => {
                     <option value="">Select family member...</option>
                     {familyMembers && familyMembers.map((member, index) => (
                       <option key={index} value={member.name}>{member.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Sub Broker Name</label>
+                  <select
+                    value={newSharePortfolio.subBrokerName}
+                    onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, subBrokerName: e.target.value })}
+                  >
+                    <option value="">Select Sub Broker</option>
+                    {formData.subBrokers && formData.subBrokers.map((sb, index) => (
+                      <option key={index} value={sb.nameOfCompany}>{sb.nameOfCompany}</option>
                     ))}
                   </select>
                 </div>
@@ -3200,6 +3328,7 @@ const BasicDetails = () => {
                   <tr>
                     <th>Sr. No.</th>
                     <th>Insurance Company</th>
+                    <th>Sub Broker Name</th>
                     <th>Insurer Name</th>
                     <th>Type of Policy</th>
                     <th>Goal/Purpose</th>
@@ -3219,6 +3348,7 @@ const BasicDetails = () => {
                     <tr key={index}>
                       <td>{policy.srNo || '-'}</td>
                       <td>{policy.insuranceCompany || '-'}</td>
+                      <td>{policy.subBrokerName || '-'}</td>
                       <td>{policy.insurerName || '-'}</td>
                       <td>{policy.policyType || '-'}</td>
                       <td>{policy.goalPurpose || '-'}</td>
@@ -3284,6 +3414,18 @@ const BasicDetails = () => {
                     value={newInsurancePortfolio.insurerName}
                     onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, insurerName: e.target.value })}
                   />
+                </div>
+                <div className="form-group">
+                  <label>Sub Broker Name</label>
+                  <select
+                    value={newInsurancePortfolio.subBrokerName}
+                    onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, subBrokerName: e.target.value })}
+                  >
+                    <option value="">Select Sub Broker</option>
+                    {formData.subBrokers && formData.subBrokers.map((sb, index) => (
+                      <option key={index} value={sb.nameOfCompany}>{sb.nameOfCompany}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label>Type of Policy</label>

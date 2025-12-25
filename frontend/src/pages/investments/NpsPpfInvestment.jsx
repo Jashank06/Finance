@@ -34,7 +34,8 @@ const NpsPpfInvestment = () => {
     notes: '',
   });
 
-  const COLORS = ['#C084FC', '#9333EA', '#7C3AED', '#8B5CF6', '#6366F1'];
+  /* Professional, vibrant palette for chart distinction */
+  const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4'];
 
   // Fetch live rates
   const fetchRates = async () => {
@@ -198,96 +199,80 @@ const NpsPpfInvestment = () => {
     <div className="investment-container">
       <div className="investment-header">
         <h1>NPS / Post Office / PPF Investments</h1>
-        <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
+        <button className="btn-add-investment" onClick={() => setShowForm(!showForm)}>
           <FiPlus /> {showForm ? 'Cancel' : 'Add Investment'}
         </button>
       </div>
 
       {/* Live Interest Rates */}
-      <div className="live-rates-section" style={{ 
-        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', 
-        borderRadius: '16px', 
-        padding: '20px', 
-        marginBottom: '24px',
-        color: '#fff'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ff88', animation: 'pulse 2s infinite' }}></span>
+      <div className="live-rates-section">
+        <div className="live-rates-header">
+          <h3>
+            <span className="live-indicator"></span>
             Current Interest Rates (Govt. Schemes)
           </h3>
-          <button 
-            onClick={fetchRates} 
+          <button
+            onClick={fetchRates}
             disabled={ratesLoading}
-            style={{ 
-              background: 'rgba(255,255,255,0.1)', 
-              border: 'none', 
-              borderRadius: '8px', 
-              padding: '8px 16px', 
-              color: '#fff', 
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
+            className={`refresh-rates-btn ${ratesLoading ? 'loading' : ''}`}
           >
             <FiRefreshCw className={ratesLoading ? 'spin' : ''} />
             {ratesLoading ? 'Updating...' : 'Refresh'}
           </button>
         </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-          <div style={{ background: 'linear-gradient(135deg, #C084FC 0%, #9333EA 100%)', borderRadius: '12px', padding: '14px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>PPF Rate</p>
-            <h4 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+
+        <div className="live-rates-grid">
+          <div className="live-rate-card ppf-card">
+            <p className="rate-label">PPF Rate</p>
+            <h4 className="rate-value">
               {liveRates?.ppf?.currentRate || '--'}%
             </h4>
-            <small style={{ opacity: 0.8 }}>p.a.</small>
+            <small className="rate-subtext">p.a.</small>
           </div>
-          
-          <div style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #6366F1 100%)', borderRadius: '12px', padding: '14px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>NPS (Equity)</p>
-            <h4 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+
+          <div className="live-rate-card nps-card">
+            <p className="rate-label">NPS (Equity)</p>
+            <h4 className="rate-value">
               {liveRates?.nps?.tier1?.avgReturn || '--'}%
             </h4>
-            <small style={{ opacity: 0.8 }}>avg. return</small>
+            <small className="rate-subtext">avg. return</small>
           </div>
-          
-          <div style={{ background: 'linear-gradient(135deg, #EC4899 0%, #F43F5E 100%)', borderRadius: '12px', padding: '14px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>SSY Rate</p>
-            <h4 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+
+          <div className="live-rate-card ssy-card">
+            <p className="rate-label">SSY Rate</p>
+            <h4 className="rate-value">
               {liveRates?.postOffice?.SSY?.rate || '--'}%
             </h4>
-            <small style={{ opacity: 0.8 }}>p.a.</small>
+            <small className="rate-subtext">p.a.</small>
           </div>
-          
-          <div style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', borderRadius: '12px', padding: '14px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>NSC Rate</p>
-            <h4 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+
+          <div className="live-rate-card nsc-card">
+            <p className="rate-label">NSC Rate</p>
+            <h4 className="rate-value">
               {liveRates?.postOffice?.NSC?.rate || '--'}%
             </h4>
-            <small style={{ opacity: 0.8 }}>5 years</small>
+            <small className="rate-subtext">5 years</small>
           </div>
-          
-          <div style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)', borderRadius: '12px', padding: '14px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>SCSS Rate</p>
-            <h4 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+
+          <div className="live-rate-card scss-card">
+            <p className="rate-label">SCSS Rate</p>
+            <h4 className="rate-value">
               {liveRates?.postOffice?.SCSS?.rate || '--'}%
             </h4>
-            <small style={{ opacity: 0.8 }}>Senior Citizen</small>
+            <small className="rate-subtext">Senior Citizen</small>
           </div>
-          
-          <div style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', borderRadius: '12px', padding: '14px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '11px', opacity: 0.9 }}>KVP Rate</p>
-            <h4 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+
+          <div className="live-rate-card kvp-card">
+            <p className="rate-label">KVP Rate</p>
+            <h4 className="rate-value">
               {liveRates?.postOffice?.KVP?.rate || '--'}%
             </h4>
-            <small style={{ opacity: 0.8 }}>{liveRates?.postOffice?.KVP?.tenure || '115 months'}</small>
+            <small className="rate-subtext">{liveRates?.postOffice?.KVP?.tenure || '115 months'}</small>
           </div>
         </div>
-        
+
         {lastRateUpdate && (
-          <p style={{ margin: '12px 0 0', fontSize: '11px', opacity: 0.6, textAlign: 'right' }}>
+          <p className="rates-update-info">
             Last updated: {lastRateUpdate.toLocaleTimeString('en-IN')} | Rates as per Govt. notification
           </p>
         )}
@@ -296,7 +281,7 @@ const NpsPpfInvestment = () => {
       {/* Stats Cards */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #C084FC 0%, #9333EA 100%)' }}>
+          <div className="stat-icon icon-black">
             <FiDollarSign />
           </div>
           <div className="stat-content">
@@ -306,7 +291,7 @@ const NpsPpfInvestment = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #F87171 100%)' }}>
+          <div className="stat-icon icon-dark-gray">
             <FiTrendingUp />
           </div>
           <div className="stat-content">
@@ -316,7 +301,7 @@ const NpsPpfInvestment = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)' }}>
+          <div className="stat-icon icon-gray">
             <FiTrendingUp />
           </div>
           <div className="stat-content">
@@ -328,7 +313,7 @@ const NpsPpfInvestment = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)' }}>
+          <div className="stat-icon icon-green-gradient">
             <FiDollarSign />
           </div>
           <div className="stat-content">
@@ -341,7 +326,7 @@ const NpsPpfInvestment = () => {
       {/* Charts */}
       {investments.length > 0 && (
         <div className="charts-grid">
-          <div className="chart-card">
+          <div className="chart-card premium">
             <h3>Investment Distribution by Type</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>

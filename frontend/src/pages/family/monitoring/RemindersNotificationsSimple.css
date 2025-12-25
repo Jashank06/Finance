@@ -8,7 +8,7 @@
 }
 
 .page-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0A0A0A 0%, #252525 100%);
   color: white;
   padding: 30px;
   border-radius: 16px;
@@ -41,7 +41,8 @@
   gap: 12px;
 }
 
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
   padding: 12px 20px;
   border-radius: 8px;
   font-weight: 600;
@@ -112,7 +113,7 @@
 
 .search-box input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #0A0A0A;
 }
 
 .filter-dropdown {
@@ -164,7 +165,7 @@
 }
 
 .tab.active {
-  color: #667eea;
+  color: #0A0A0A;
   background: #f0f4ff;
 }
 
@@ -175,7 +176,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: #667eea;
+  background: #0A0A0A;
 }
 
 .tab-content {
@@ -195,8 +196,13 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .table-container {
@@ -205,13 +211,15 @@
   overflow-x: auto;
 }
 
-.reminders-table, .notifications-table {
+.reminders-table,
+.notifications-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
 }
 
-.reminders-table th, .notifications-table th {
+.reminders-table th,
+.notifications-table th {
   background: #f8fafc;
   padding: 12px;
   text-align: left;
@@ -223,13 +231,15 @@
   letter-spacing: 0.5px;
 }
 
-.reminders-table td, .notifications-table td {
+.reminders-table td,
+.notifications-table td {
   padding: 12px;
   border-bottom: 1px solid #f3f4f6;
   vertical-align: middle;
 }
 
-.reminders-table tr:hover, .notifications-table tr:hover {
+.reminders-table tr:hover,
+.notifications-table tr:hover {
   background: #f9fafb;
 }
 
@@ -240,14 +250,16 @@
   font-size: 14px;
 }
 
-.description-cell p, .message-cell p {
+.description-cell p,
+.message-cell p {
   margin: 0;
   color: #6b7280;
   font-size: 13px;
   line-height: 1.4;
 }
 
-.date-cell, .time-cell {
+.date-cell,
+.time-cell {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -337,7 +349,8 @@
   gap: 8px;
 }
 
-.status-btn, .delete-btn {
+.status-btn,
+.delete-btn {
   width: 32px;
   height: 32px;
   border-radius: 6px;
@@ -526,7 +539,7 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #0A0A0A;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -539,42 +552,44 @@
   .reminders-notifications {
     padding: 15px;
   }
-  
+
   .header-content {
     flex-direction: column;
     gap: 20px;
     text-align: center;
   }
-  
+
   .header-actions {
     flex-direction: column;
     width: 100%;
   }
-  
-  .btn-primary, .btn-secondary {
+
+  .btn-primary,
+  .btn-secondary {
     width: 100%;
     justify-content: center;
   }
-  
+
   .search-filter-bar {
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal {
     margin: 10px;
     max-height: calc(100vh - 20px);
   }
-  
+
   .modal-footer {
     flex-direction: column;
   }
-  
-  .btn-primary, .btn-secondary {
+
+  .btn-primary,
+  .btn-secondary {
     width: 100%;
   }
 }

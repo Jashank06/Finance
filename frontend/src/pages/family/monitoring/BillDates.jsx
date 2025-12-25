@@ -470,7 +470,7 @@ const BillDates = () => {
             className="btn-primary"
             onClick={() => setShowForm(!showForm)}
             style={{
-              background: 'linear-gradient(135deg, #9333EA 0%, #C084FC 100%)',
+              background: '#0A0A0A',
               color: 'white',
               border: 'none',
               padding: '12px 24px',
@@ -508,7 +508,7 @@ const BillDates = () => {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)' }}>
+          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #0A0A0A 0%, #252525 100%)' }}>
             <FiCalendar />
           </div>
           <div className="stat-content">

@@ -89,6 +89,7 @@ const BasicDetailsSchema = new mongoose.Schema({
   },
   mutualFunds: [{
     fundHouse: String,
+    subBrokerName: String,
     modeOfHolding: String,
     holdingType: String,
     investorName: String,
@@ -109,10 +110,12 @@ const BasicDetailsSchema = new mongoose.Schema({
   }],
   shares: [{
     dematCompany: String,
+    subBrokerName: String,
     modeOfHolding: String,
     holdingType: String,
     investorName: String,
     tradingId: String,
+    dpId: String,
     scriptName: String,
     registeredMobile: String,
     registeredBank: String,
@@ -128,6 +131,7 @@ const BasicDetailsSchema = new mongoose.Schema({
   }],
   insurance: [{
     insuranceCompany: String,
+    subBrokerName: String,
     insuranceType: String,
     insuranceSubType: String,
     policyPurpose: String,
@@ -205,6 +209,7 @@ const BasicDetailsSchema = new mongoose.Schema({
   mutualFundsPortfolio: [{
     srNo: String,
     fundHouse: String,
+    subBrokerName: String,
     investorName: String,
     fundName: String,
     goalPurpose: String,
@@ -221,6 +226,7 @@ const BasicDetailsSchema = new mongoose.Schema({
   sharesPortfolio: [{
     srNo: String,
     dematCompany: String,
+    subBrokerName: String,
     investorName: String,
     scriptName: String,
     goalPurpose: String,
@@ -236,6 +242,7 @@ const BasicDetailsSchema = new mongoose.Schema({
   insurancePortfolio: [{
     srNo: String,
     insuranceCompany: String,
+    subBrokerName: String,
     insurerName: String,
     policyType: String,
     goalPurpose: String,
@@ -248,6 +255,19 @@ const BasicDetailsSchema = new mongoose.Schema({
     maturityDate: String,
     sumAssured: String,
     nominee: String
+  }],
+  subBrokers: [{
+    nameOfCompany: String,
+    website: String,
+    contactNumber: String,
+    emailId: String,
+    typeOfInvestment: String,
+    address: String,
+    city: String,
+    state: String,
+    pinCode: String,
+    customerCareNumber: String,
+    customerCareEmailId: String
   }]
 }, { timestamps: true });
 
@@ -409,12 +429,12 @@ const OnlineAccessDetailsSchema = new mongoose.Schema({
 
 const DigitalAssetsSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  
+
   // Basic Information
   projectName: { type: String, required: true },
   purpose: String,
   projectType: { type: String, default: 'business' },
-  
+
   // Domain Information
   domain: {
     domainName: String,
@@ -427,7 +447,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     sslStatus: { type: String, default: 'active' },
     sslExpiry: String
   },
-  
+
   // Admin Section
   admin: {
     adminUrl: String,
@@ -437,7 +457,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     backupCodes: String,
     recoveryEmail: String
   },
-  
+
   // Hosting Server Section
   hosting: {
     serverHosting: { type: String, default: 'shared' },
@@ -455,7 +475,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     ipAddresses: [String],
     serverLocation: String
   },
-  
+
   // GitHub Details
   github: {
     repoName: String,
@@ -466,7 +486,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     collaborators: [String],
     repoVisibility: { type: String, default: 'private' }
   },
-  
+
   // Database
   database: {
     type: { type: String, default: 'mongodb' },
@@ -480,7 +500,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     backupFrequency: { type: String, default: 'daily' },
     lastBackupDate: String
   },
-  
+
   // Technology Stack
   technology: {
     frontend: [String],
@@ -491,7 +511,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     versionControl: { type: String, default: 'git' },
     packageManager: { type: String, default: 'npm' }
   },
-  
+
   // Project Documentation
   documentation: {
     projectDocs: String,
@@ -501,7 +521,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     architectureDiagrams: String,
     changeLog: String
   },
-  
+
   // Environment & Configuration
   environment: {
     envFile: String,
@@ -510,7 +530,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     testingUrl: String,
     developmentNotes: String
   },
-  
+
   // Landing Pages & Frontend
   frontend: {
     landingPages: [String],
@@ -520,7 +540,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     buildTools: [String],
     bundler: { type: String, default: 'webpack' }
   },
-  
+
   // Backend Services
   backend: {
     apis: [String],
@@ -530,7 +550,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     rateLimiting: { type: Boolean, default: true },
     corsEnabled: { type: Boolean, default: true }
   },
-  
+
   // Security & Monitoring
   security: {
     sslCertificate: { type: Boolean, default: true },
@@ -541,7 +561,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     uptimeMonitoring: String,
     securityHeaders: { type: Boolean, default: true }
   },
-  
+
   // Maintenance & Support
   maintenance: {
     lastUpdateDate: String,
@@ -551,7 +571,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     maintenanceWindow: String,
     downtimeHistory: [String]
   },
-  
+
   // Development Information
   development: {
     developerName: String,
@@ -560,7 +580,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     developmentDurationUnit: { type: String, default: 'months' },
     totalMonths: String
   },
-  
+
   // Monitoring Information
   monitoring: {
     monitoringProvider: String,
@@ -569,7 +589,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
     monitoringDurationUnit: { type: String, default: 'months' },
     totalMonths: String
   },
-  
+
   // Additional fields
   notes: String,
   tags: [String],
@@ -956,6 +976,10 @@ const createStaticController = (Model) => {
     // Create new record
     create: async (req, res) => {
       try {
+        if (Model.modelName === 'BasicDetails') {
+          console.log('--- Creating BasicDetails ---');
+          console.log('Incoming subBrokers:', JSON.stringify(req.body.subBrokers, null, 2));
+        }
         const record = new Model({
           ...req.body,
           userId: req.userId
@@ -971,6 +995,11 @@ const createStaticController = (Model) => {
     // Update record
     update: async (req, res) => {
       try {
+        if (Model.modelName === 'BasicDetails') {
+          console.log('--- Updating BasicDetails ---');
+          console.log('Incoming subBrokers:', JSON.stringify(req.body.subBrokers, null, 2));
+        }
+
         const record = await Model.findOneAndUpdate(
           { _id: req.params.id, userId: req.userId },
           req.body,
@@ -979,6 +1008,11 @@ const createStaticController = (Model) => {
         if (!record) {
           return res.status(404).json({ message: 'Record not found' });
         }
+
+        if (Model.modelName === 'BasicDetails') {
+          console.log('Saved Record subBrokers:', JSON.stringify(record.subBrokers, null, 2));
+        }
+
         res.json(record);
       } catch (error) {
         console.error(`Error updating ${Model.modelName}:`, error);
@@ -1032,18 +1066,18 @@ const DigitalAssetsController = {
   create: async (req, res) => {
     try {
       const { projectName, ...rest } = req.body;
-      
+
       // Validate required fields
       if (!projectName || projectName.trim() === '') {
         return res.status(400).json({ message: 'Project Name is required' });
       }
-      
-      const recordData = { 
+
+      const recordData = {
         projectName: projectName.trim(),
         ...rest,
-        userId: req.userId 
+        userId: req.userId
       };
-      
+
       const record = new DigitalAssets(recordData);
       await record.save();
       res.status(201).json(record);
@@ -1057,27 +1091,27 @@ const DigitalAssetsController = {
   update: async (req, res) => {
     try {
       const { projectName, ...rest } = req.body;
-      
+
       // Validate required fields
       if (!projectName || projectName.trim() === '') {
         return res.status(400).json({ message: 'Project Name is required' });
       }
-      
+
       const updateData = {
         projectName: projectName.trim(),
         ...rest
       };
-      
+
       const record = await DigitalAssets.findOneAndUpdate(
         { _id: req.params.id, userId: req.userId },
         updateData,
         { new: true, runValidators: true }
       );
-      
+
       if (!record) {
         return res.status(404).json({ message: 'Record not found' });
       }
-      
+
       res.json(record);
     } catch (error) {
       console.error('Error updating DigitalAssets:', error);
@@ -1114,7 +1148,7 @@ module.exports = {
   LandRecordsController: createStaticController(LandRecords),
   MembershipListController: createStaticController(MembershipList),
   FamilyTasksController: createStaticController(FamilyTasks),
-  
+
   // Export models for use in routes
   BasicDetails,
   CompanyRecords,

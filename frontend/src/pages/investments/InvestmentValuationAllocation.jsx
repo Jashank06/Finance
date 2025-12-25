@@ -172,11 +172,14 @@ const InvestmentValuationAllocation = () => {
     <div className="investment-container">
       <div className="investment-header">
         <h1>Investment Valuation & Sectoral Allocation</h1>
+        <button className="btn-add-investment" style={{ width: 'auto', padding: '12px 24px' }} onClick={() => window.location.reload()}>
+          <FiActivity /> Refresh Analysis
+        </button>
       </div>
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}>
+          <div className="stat-icon icon-black">
             <FiDollarSign />
           </div>
           <div className="stat-content">
@@ -186,7 +189,7 @@ const InvestmentValuationAllocation = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}>
+          <div className="stat-icon icon-dark-gray">
             <FiTrendingUp />
           </div>
           <div className="stat-content">
@@ -196,19 +199,19 @@ const InvestmentValuationAllocation = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' }}>
+          <div className="stat-icon icon-green-gradient">
             <FiActivity />
           </div>
           <div className="stat-content">
             <p className="stat-label">Total Returns</p>
-            <h3 className="stat-value" style={{ color: totals.returns >= 0 ? '#10B981' : '#EF4444' }}>
+            <h3 className="stat-value" style={{ color: totals.returns >= 0 ? '#10B981' : '#ff6b6b' }}>
               ₹{totals.returns.toLocaleString('en-IN')} ({totals.returnsPercent}%)
             </h3>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)' }}>
+          <div className="stat-icon icon-gray">
             <FiPieChart />
           </div>
           <div className="stat-content">

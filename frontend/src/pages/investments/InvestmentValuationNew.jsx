@@ -305,7 +305,7 @@ const InvestmentValuationNew = () => {
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}>
+          <div className="stat-icon icon-black">
             <FiDollarSign />
           </div>
           <div className="stat-content">
@@ -315,7 +315,7 @@ const InvestmentValuationNew = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}>
+          <div className="stat-icon icon-dark-gray">
             <FiTrendingUp />
           </div>
           <div className="stat-content">
@@ -325,7 +325,7 @@ const InvestmentValuationNew = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' }}>
+          <div className="stat-icon icon-gray">
             <FiActivity />
           </div>
           <div className="stat-content">
@@ -335,7 +335,7 @@ const InvestmentValuationNew = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)' }}>
+          <div className="stat-icon icon-green-gradient">
             <FiPieChart />
           </div>
           <div className="stat-content">
@@ -385,7 +385,7 @@ const InvestmentValuationNew = () => {
     <div className="investment-section">
       <div className="section-header">
         <h3>Mutual Fund Lumpsum</h3>
-        <button className="add-button" onClick={() => openModal('mutualFund', null, 'lumpsum')}>
+        <button className="btn-add-investment" onClick={() => openModal('mutualFund', null, 'lumpsum')}>
           <FiPlus /> Add New
         </button>
       </div>
@@ -468,7 +468,7 @@ const InvestmentValuationNew = () => {
     <div className="investment-section">
       <div className="section-header">
         <h3>Mutual Fund SIP</h3>
-        <button className="add-button" onClick={() => openModal('mutualFund', null, 'sip')}>
+        <button className="btn-add-investment" onClick={() => openModal('mutualFund', null, 'sip')}>
           <FiPlus /> Add New
         </button>
       </div>
@@ -545,7 +545,7 @@ const InvestmentValuationNew = () => {
     <div className="investment-section">
       <div className="section-header">
         <h3>Shares</h3>
-        <button className="add-button" onClick={() => openModal('share')}>
+        <button className="btn-add-investment" onClick={() => openModal('share')}>
           <FiPlus /> Add New
         </button>
       </div>
@@ -632,7 +632,7 @@ const InvestmentValuationNew = () => {
     <div className="investment-section">
       <div className="section-header">
         <h3>Life Insurance</h3>
-        <button className="add-button" onClick={() => openModal('insurance', null, 'life')}>
+        <button className="btn-add-investment" onClick={() => openModal('insurance', null, 'life')}>
           <FiPlus /> Add New
         </button>
       </div>
@@ -697,7 +697,7 @@ const InvestmentValuationNew = () => {
     <div className="investment-section">
       <div className="section-header">
         <h3>Health Insurance</h3>
-        <button className="add-button" onClick={() => openModal('insurance', null, 'health')}>
+        <button className="btn-add-investment" onClick={() => openModal('insurance', null, 'health')}>
           <FiPlus /> Add New
         </button>
       </div>
@@ -754,7 +754,7 @@ const InvestmentValuationNew = () => {
     <div className="investment-section">
       <div className="section-header">
         <h3>Loans</h3>
-        <button className="add-button" onClick={() => openModal('loan')}>
+        <button className="btn-add-investment" onClick={() => openModal('loan')}>
           <FiPlus /> Add New
         </button>
       </div>
