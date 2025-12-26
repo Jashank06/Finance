@@ -1,0 +1,31 @@
+/* ============================================
+   ADMIN LAYOUT - LIGHT PROFESSIONAL THEME
+   ============================================ */
+
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #F9FAFB;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.admin-main-content {
+  flex: 1;
+  margin-left: 280px;
+  padding: 0;
+  background: #F9FAFB;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-main-content {
+    margin-left: 0;
+    padding: 20px;
+  }
+}

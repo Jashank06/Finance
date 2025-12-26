@@ -131,7 +131,7 @@ const HomePage = () => {
                                     <div className="node-icon">👨‍👩‍👧‍👦</div>
                                     <div className="node-label">FAMILY MEMBERS</div>
                                 </div>
-                                <div className="arrow-down" style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '15px 0' }}>↓</div>
+                                <div className="arrow-down">↓</div>
                                 <div className="info-row">
                                     <div className="info-node">
                                         <div className="node-icon">💰</div>
@@ -146,12 +146,12 @@ const HomePage = () => {
                                         <div className="node-label">SAVINGS</div>
                                     </div>
                                 </div>
-                                <div className="arrow-down" style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '15px 0' }}>↓</div>
+                                <div className="arrow-down">↓</div>
                                 <div className="info-node">
                                     <div className="node-icon">📈</div>
                                     <div className="node-label">INVESTMENTS</div>
                                 </div>
-                                <div className="arrow-down" style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '15px 0' }}>↓</div>
+                                <div className="arrow-down">↓</div>
                                 <div className="info-node highlight">
                                     <div className="node-icon">🎯</div>
                                     <div className="node-label">FINANCIAL FREEDOM</div>

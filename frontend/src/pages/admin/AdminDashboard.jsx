@@ -1,4 +1,6 @@
 import { FiUsers, FiCreditCard, FiTrendingUp, FiActivity } from 'react-icons/fi';
+import './AdminPages.css';
+
 import '../investments/Investment.css';
 
 const AdminDashboard = () => {

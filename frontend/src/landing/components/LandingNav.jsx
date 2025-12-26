@@ -77,6 +77,27 @@ const LandingNav = () => {
                         <span>About</span>
                     </Link>
                     <Link
+                        to="/landing/blogs"
+                        className={`nav-link ${isActive('/landing/blogs') ? 'active' : ''}`}
+                        onClick={scrollToTop}
+                    >
+                        <span>Blogs</span>
+                    </Link>
+                    <Link
+                        to="/landing/success-stories"
+                        className={`nav-link ${isActive('/landing/success-stories') ? 'active' : ''}`}
+                        onClick={scrollToTop}
+                    >
+                        <span>Success Stories</span>
+                    </Link>
+                    <Link
+                        to="/landing/careers"
+                        className={`nav-link ${isActive('/landing/careers') ? 'active' : ''}`}
+                        onClick={scrollToTop}
+                    >
+                        <span>Careers</span>
+                    </Link>
+                    <Link
                         to="/landing/contact"
                         className={`nav-link ${isActive('/landing/contact') ? 'active' : ''}`}
                         onClick={scrollToTop}
@@ -129,6 +150,27 @@ const LandingNav = () => {
                         onClick={handleNavigation}
                     >
                         About
+                    </Link>
+                    <Link
+                        to="/landing/blogs"
+                        className={`mobile-nav-link ${isActive('/landing/blogs') ? 'active' : ''}`}
+                        onClick={handleNavigation}
+                    >
+                        Blogs
+                    </Link>
+                    <Link
+                        to="/landing/success-stories"
+                        className={`mobile-nav-link ${isActive('/landing/success-stories') ? 'active' : ''}`}
+                        onClick={handleNavigation}
+                    >
+                        Success Stories
+                    </Link>
+                    <Link
+                        to="/landing/careers"
+                        className={`mobile-nav-link ${isActive('/landing/careers') ? 'active' : ''}`}
+                        onClick={handleNavigation}
+                    >
+                        Careers
                     </Link>
                     <Link
                         to="/landing/contact"

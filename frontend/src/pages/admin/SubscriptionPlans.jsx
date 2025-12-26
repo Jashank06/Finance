@@ -1,4 +1,6 @@
 import { FiCheck, FiPlus } from 'react-icons/fi';
+import './AdminPages.css';
+
 import '../investments/Investment.css';
 
 const SubscriptionPlans = () => {

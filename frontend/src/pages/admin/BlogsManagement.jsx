@@ -1,16 +1,426 @@
+import { useState, useEffect } from 'react';
+import './AdminPages.css';
+
+import axios from 'axios';
+import { FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff } from 'react-icons/fi';
+import ImageUpload from '../../components/ImageUpload';
 import '../investments/Investment.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+
 const BlogsManagement = () => {
+    const [blogs, setBlogs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showForm, setShowForm] = useState(false);
+    const [editingBlog, setEditingBlog] = useState(null);
+    const [formData, setFormData] = useState({
+        title: '',
+        slug: '',
+        author: '',
+        category: 'Other',
+        excerpt: '',
+        content: '',
+        featuredImage: '',
+        tags: '',
+        published: false,
+        metaTitle: '',
+        metaDescription: ''
+    });
+
+    const categories = ['Finance Tips', 'Investment', 'Tax Planning', 'Personal Finance', 'Technology', 'News', 'Other'];
+
+    useEffect(() => {
+        fetchBlogs();
+    }, []);
+
+    const fetchBlogs = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${API_URL}/blogs`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setBlogs(response.data);
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching blogs:', error);
+            setLoading(false);
+        }
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData({
+            ...formData,
+            [name]: type === 'checkbox' ? checked : value
+        });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            const blogData = {
+                ...formData,
+                tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : []
+            };
+
+            if (editingBlog) {
+                await axios.put(`${API_URL}/blogs/${editingBlog._id}`, blogData, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            } else {
+                await axios.post(`${API_URL}/blogs`, blogData, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            }
+
+            fetchBlogs();
+            resetForm();
+        } catch (error) {
+            console.error('Error saving blog:', error);
+            console.error('Error details:', error.response?.data);
+            alert('Error saving blog: ' + (error.response?.data?.message || error.message));
+        }
+    };
+
+    const handleEdit = (blog) => {
+        setEditingBlog(blog);
+        setFormData({
+            title: blog.title,
+            slug: blog.slug,
+            author: blog.author,
+            category: blog.category,
+            excerpt: blog.excerpt,
+            content: blog.content,
+            featuredImage: blog.featuredImage || '',
+            tags: blog.tags?.join(', ') || '',
+            published: blog.published,
+            metaTitle: blog.metaTitle || '',
+            metaDescription: blog.metaDescription || ''
+        });
+        setShowForm(true);
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this blog?')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`${API_URL}/blogs/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchBlogs();
+        } catch (error) {
+            console.error('Error deleting blog:', error);
+        }
+    };
+
+    const togglePublish = async (id) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.patch(`${API_URL}/blogs/${id}/publish`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchBlogs();
+        } catch (error) {
+            console.error('Error toggling publish status:', error);
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            title: '',
+            slug: '',
+            author: '',
+            category: 'Other',
+            excerpt: '',
+            content: '',
+            featuredImage: '',
+            tags: '',
+            published: false,
+            metaTitle: '',
+            metaDescription: ''
+        });
+        setEditingBlog(null);
+        setShowForm(false);
+    };
+
+    if (loading) return <div className="investment-container">Loading...</div>;
+
     return (
         <div className="investment-container">
             <div className="investment-header">
                 <h1>Blogs Management</h1>
                 <p>Create and manage platform blogs</p>
+                <button
+                    onClick={() => setShowForm(!showForm)}
+                    style={{
+                        marginTop: '1rem',
+                        padding: '0.75rem 1.5rem',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}
+                >
+                    <FiPlus /> {showForm ? 'Cancel' : 'Add New Blog'}
+                </button>
             </div>
 
+            {showForm && (
+                <div className="investment-section" style={{ marginBottom: '2rem' }}>
+                    <h3>{editingBlog ? 'Edit Blog' : 'Create New Blog'}</h3>
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div>
+                                <label>Title *</label>
+                                <input
+                                    type="text"
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleInputChange}
+                                    required
+                                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                                />
+                            </div>
+                            <div>
+                                <label>Slug *</label>
+                                <input
+                                    type="text"
+                                    name="slug"
+                                    value={formData.slug}
+                                    onChange={handleInputChange}
+                                    required
+                                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div>
+                                <label>Author *</label>
+                                <input
+                                    type="text"
+                                    name="author"
+                                    value={formData.author}
+                                    onChange={handleInputChange}
+                                    required
+                                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                                />
+                            </div>
+                            <div>
+                                <label>Category *</label>
+                                <select
+                                    name="category"
+                                    value={formData.category}
+                                    onChange={handleInputChange}
+                                    required
+                                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                                >
+                                    {categories.map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label>Excerpt * (Max 300 characters)</label>
+                            <textarea
+                                name="excerpt"
+                                value={formData.excerpt}
+                                onChange={handleInputChange}
+                                required
+                                maxLength={300}
+                                rows={3}
+                                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                            />
+                        </div>
+
+                        <div>
+                            <label>Content *</label>
+                            <textarea
+                                name="content"
+                                value={formData.content}
+                                onChange={handleInputChange}
+                                required
+                                rows={10}
+                                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                            />
+                        </div>
+
+                        <ImageUpload
+                            label="Featured Image"
+                            name="featuredImage"
+                            value={formData.featuredImage}
+                            onChange={handleInputChange}
+                        />
+
+                        <div>
+                            <label>Tags (comma-separated)</label>
+                            <input
+                                type="text"
+                                name="tags"
+                                value={formData.tags}
+                                onChange={handleInputChange}
+                                placeholder="finance, investment, tips"
+                                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div>
+                                <label>Meta Title</label>
+                                <input
+                                    type="text"
+                                    name="metaTitle"
+                                    value={formData.metaTitle}
+                                    onChange={handleInputChange}
+                                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                                />
+                            </div>
+                            <div>
+                                <label>Meta Description</label>
+                                <input
+                                    type="text"
+                                    name="metaDescription"
+                                    value={formData.metaDescription}
+                                    onChange={handleInputChange}
+                                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <input
+                                type="checkbox"
+                                name="published"
+                                checked={formData.published}
+                                onChange={handleInputChange}
+                            />
+                            <label>Publish immediately</label>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button
+                                type="submit"
+                                style={{
+                                    padding: '0.75rem 2rem',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {editingBlog ? 'Update Blog' : 'Create Blog'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={resetForm}
+                                style={{
+                                    padding: '0.75rem 2rem',
+                                    background: '#6b7280',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
             <div className="investment-section">
-                <h3>Blog Posts</h3>
-                <p>Coming soon - Create, edit, and publish blogs</p>
+                <h3>All Blogs ({blogs.length})</h3>
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                            <tr style={{ background: '#f3f4f6' }}>
+                                <th style={{ padding: '1rem', textAlign: 'left' }}>Title</th>
+                                <th style={{ padding: '1rem', textAlign: 'left' }}>Author</th>
+                                <th style={{ padding: '1rem', textAlign: 'left' }}>Category</th>
+                                <th style={{ padding: '1rem', textAlign: 'center' }}>Status</th>
+                                <th style={{ padding: '1rem', textAlign: 'center' }}>Views</th>
+                                <th style={{ padding: '1rem', textAlign: 'center' }}>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {blogs.map(blog => (
+                                <tr key={blog._id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                    <td style={{ padding: '1rem' }}>{blog.title}</td>
+                                    <td style={{ padding: '1rem' }}>{blog.author}</td>
+                                    <td style={{ padding: '1rem' }}>{blog.category}</td>
+                                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                        <span style={{
+                                            padding: '0.25rem 0.75rem',
+                                            borderRadius: '12px',
+                                            background: blog.published ? '#10b98120' : '#ef444420',
+                                            color: blog.published ? '#10b981' : '#ef4444',
+                                            fontSize: '0.875rem'
+                                        }}>
+                                            {blog.published ? 'Published' : 'Draft'}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: '1rem', textAlign: 'center' }}>{blog.views || 0}</td>
+                                    <td style={{ padding: '1rem' }}>
+                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                            <button
+                                                onClick={() => togglePublish(blog._id)}
+                                                style={{
+                                                    padding: '0.5rem',
+                                                    background: blog.published ? '#f59e0b' : '#10b981',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer'
+                                                }}
+                                                title={blog.published ? 'Unpublish' : 'Publish'}
+                                            >
+                                                {blog.published ? <FiEyeOff /> : <FiEye />}
+                                            </button>
+                                            <button
+                                                onClick={() => handleEdit(blog)}
+                                                style={{
+                                                    padding: '0.5rem',
+                                                    background: '#3b82f6',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer'
+                                                }}
+                                                title="Edit"
+                                            >
+                                                <FiEdit2 />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(blog._id)}
+                                                style={{
+                                                    padding: '0.5rem',
+                                                    background: '#ef4444',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer'
+                                                }}
+                                                title="Delete"
+                                            >
+                                                <FiTrash2 />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

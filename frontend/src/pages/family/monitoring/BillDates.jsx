@@ -64,6 +64,8 @@ const BillDates = () => {
       setInputs({ ...inputs, dueDate: convertDayToDate(dayValue, cycle) });
     } else if (field === 'payableDate') {
       setInputs({ ...inputs, payableDate: convertDayToDate(dayValue, cycle) });
+    } else if (field === 'paymentDate') {
+      setInputs({ ...inputs, paymentDate: convertDayToDate(dayValue, cycle) });
     }
   };
 
@@ -73,6 +75,8 @@ const BillDates = () => {
     provider: '',
     accountNumber: '',
     cycle: 'monthly',
+    billingCycle: '',
+    billGenerationDate: '',
     amount: 1000,
     dueDate: '',
     payableDate: '',
@@ -137,6 +141,9 @@ const BillDates = () => {
       amount: inv.amount || notes.amount || 0,
       dueDate: inv.maturityDate?.slice(0, 10) || notes.dueDate || '',
       payableDate: inv.payableDate?.slice(0, 10) || notes.payableDate || '',
+      paymentDate: inv.paymentDate?.slice(0, 10) || notes.paymentDate || '',
+      billingCycle: notes.billingCycle || '',
+      billGenerationDate: notes.billGenerationDate || '',
       autoDebit: notes.autoDebit || false,
       status: notes.status || 'pending',
       startDate: inv.startDate?.slice(0, 10) || notes.startDate || '',
@@ -378,6 +385,7 @@ const BillDates = () => {
     startDate: data.startDate || new Date().toISOString().slice(0, 10),
     maturityDate: data.dueDate || undefined,
     payableDate: data.payableDate || undefined,
+    paymentDate: data.paymentDate || undefined,
     frequency: data.cycle || 'monthly',
     notes: JSON.stringify({ ...data }),
   });
@@ -593,7 +601,7 @@ const BillDates = () => {
               }));
               await fetchEntries();
               await fetchReferenceBills();
-              setInputs({ billType: 'Electricity', billName: '', provider: '', accountNumber: '', cycle: 'monthly', amount: 1000, dueDate: '', autoDebit: false, paymentMethod: 'UPI', status: 'pending', reminderDays: 3, notes: '', startDate: new Date().toISOString().slice(0, 10), additional1: '', additional2: '' });
+              setInputs({ billType: 'Electricity', billName: '', provider: '', accountNumber: '', cycle: 'monthly', billingCycle: '', billGenerationDate: '', amount: 1000, dueDate: '', autoDebit: false, paymentMethod: 'UPI', status: 'pending', reminderDays: 3, notes: '', startDate: new Date().toISOString().slice(0, 10), additional1: '', additional2: '' });
               setEditingBill(null);
               setShowForm(false);
             } catch (error) {
@@ -708,6 +716,32 @@ const BillDates = () => {
                 </select>
               </div>
               <div className="form-field">
+                <label>Billing Cycle</label>
+                <input 
+                  type="text" 
+                  value={inputs.billingCycle} 
+                  onChange={(e) => setInputs({ ...inputs, billingCycle: e.target.value })} 
+                  placeholder="e.g., 15-20"
+                  style={{ textTransform: 'lowercase' }}
+                />
+                <small style={{ color: '#666', fontSize: '12px' }}>
+                  Enter billing cycle range (e.g., 15-20 for 15th to 20th of each month)
+                </small>
+              </div>
+              <div className="form-field">
+                <label>Bill Generation Date</label>
+                <input 
+                  type="text" 
+                  value={inputs.billGenerationDate} 
+                  onChange={(e) => setInputs({ ...inputs, billGenerationDate: e.target.value })} 
+                  placeholder="e.g., 1"
+                  maxLength={2}
+                />
+                <small style={{ color: '#666', fontSize: '12px' }}>
+                  Enter day of month when bill is generated (e.g., 1 for 1st of each month)
+                </small>
+              </div>
+              <div className="form-field">
                 <label>Amount (₹) *</label>
                 <input type="number" value={inputs.amount} onChange={(e) => setInputs({ ...inputs, amount: Number(e.target.value) })} required />
               </div>
@@ -762,7 +796,13 @@ const BillDates = () => {
               <div className="form-row">
                 <div className="form-field">
                   <label>Payment Date</label>
-                  <input type="date" value={inputs.paymentDate} onChange={(e) => setInputs({ ...inputs, paymentDate: e.target.value })} />
+                  <input 
+                    type="text" 
+                    value={extractDayFromDate(inputs.paymentDate)} 
+                    onChange={(e) => handleDayChange('paymentDate', e.target.value)} 
+                    placeholder="Day (1-31)" 
+                    maxLength={2}
+                  />
                 </div>
                 <div className="form-field">
                   <label>Description</label>
@@ -926,7 +966,7 @@ const BillDates = () => {
                   className="btn-secondary"
                   onClick={() => {
                     setEditingBill(null);
-                    setInputs({ billType: 'Electricity', billName: '', provider: '', accountNumber: '', cycle: 'monthly', amount: 1000, dueDate: '', autoDebit: false, paymentMethod: 'UPI', status: 'pending', reminderDays: 3, notes: '', startDate: new Date().toISOString().slice(0, 10), additional1: '', additional2: '' });
+                    setInputs({ billType: 'Electricity', billName: '', provider: '', accountNumber: '', cycle: 'monthly', billingCycle: '', billGenerationDate: '', amount: 1000, dueDate: '', autoDebit: false, paymentMethod: 'UPI', status: 'pending', reminderDays: 3, notes: '', startDate: new Date().toISOString().slice(0, 10), additional1: '', additional2: '' });
                     setShowForm(false);
                   }}
                 >

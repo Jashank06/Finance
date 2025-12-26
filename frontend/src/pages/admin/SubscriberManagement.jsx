@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import './AdminPages.css';
+
 import { FiPlus, FiEdit, FiTrash2, FiSearch } from 'react-icons/fi';
 import '../investments/Investment.css';
 

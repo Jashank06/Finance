@@ -70,7 +70,7 @@ const Sidebar = () => {
                     <Link to="/family/monitoring/milestones" className="nested-submenu-item">Milestone & Task Timeline</Link>
                     <Link to="/family/monitoring/targets-for-life" className="nested-submenu-item">Targets for Life</Link>
                     <Link to="/family/monitoring/bill-dates" className="nested-submenu-item">Bill Dates</Link>
-                    <Link to="/family/daily/bill-paying" className="nested-submenu-item">Bill Paying Checklist</Link>
+                    {/* <Link to="/family/daily/bill-paying" className="nested-submenu-item">Bill Paying Checklist</Link> */}
                     <Link to="/family/monitoring/multiple-calendars" className="nested-submenu-item">Multiple Calendars</Link>
                     <Link to="/family/monitoring/reminders-notifications" className="nested-submenu-item">Reminders, Notifications</Link>
                     <Link to="/family/monitoring/yearly-calendar" className="nested-submenu-item">Yearly Calendar</Link>

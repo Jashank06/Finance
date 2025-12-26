@@ -56,11 +56,19 @@ import SubscriptionPlans from './pages/admin/SubscriptionPlans';
 import SpaceRetailing from './pages/admin/SpaceRetailing';
 import FeaturesAnalytics from './pages/admin/FeaturesAnalytics';
 import BlogsManagement from './pages/admin/BlogsManagement';
+import SuccessStoriesManagement from './pages/admin/SuccessStoriesManagement';
+import CareerManagement from './pages/admin/CareerManagement';
 import ContactDeveloper from './pages/admin/ContactDeveloper';
 import FeedbackManagement from './pages/admin/FeedbackManagement';
 
 // Landing Page Import
 import LandingLayout from './landing/components/LandingLayout';
+import BlogsPage from './landing/components/BlogsPage';
+import BlogDetailPage from './landing/components/BlogDetailPage';
+import SuccessStoriesPage from './landing/components/SuccessStoriesPage';
+import SuccessStoryDetailPage from './landing/components/SuccessStoryDetailPage';
+import CareersPage from './landing/components/CareersPage';
+import CareerDetailPage from './landing/components/CareerDetailPage';
 
 import './App.css';
 
@@ -672,6 +680,28 @@ function App() {
               <ProtectedRoute>
                 <AdminLayout>
                   <BlogsManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/success-stories"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SuccessStoriesManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/careers"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <CareerManagement />
                 </AdminLayout>
               </ProtectedRoute>
             }

@@ -11,7 +11,7 @@ import {
     FiLogOut,
     FiShield
 } from 'react-icons/fi';
-import './Sidebar.css';
+import './AdminSidebar.css';
 
 const AdminSidebar = () => {
     const { logout } = useAuth();
@@ -28,48 +28,34 @@ const AdminSidebar = () => {
         { path: '/admin/space-retailing', icon: FiDatabase, label: 'Space Retailing' },
         { path: '/admin/analytics', icon: FiBarChart2, label: 'Features Usage Analytics' },
         { path: '/admin/blogs', icon: FiFileText, label: 'Blogs' },
+        { path: '/admin/success-stories', icon: FiMessageSquare, label: 'Success Stories' },
+        { path: '/admin/careers', icon: FiUsers, label: 'Career Openings' },
         { path: '/admin/contact', icon: FiMail, label: 'Contact Developer' },
         { path: '/admin/feedback', icon: FiMessageSquare, label: 'Feedback' },
     ];
 
     return (
-        <div className="sidebar" style={{ background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)' }}>
-            <div className="sidebar-header" style={{ borderBottom: '2px solid #334155' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <FiShield size={24} color="#10b981" />
-                    <h2 style={{ color: '#10b981' }}>Admin Panel</h2>
+        <div className="admin-sidebar">
+            <div className="admin-sidebar-header">
+                <div className="admin-header-content">
+                    <div className="admin-header-icon-wrapper">
+                        <div className="admin-header-icon">
+                            <FiShield size={24} color="#FFFFFF" />
+                        </div>
+                    </div>
+                    <h2>Admin Panel</h2>
+                    <p className="admin-sidebar-subtitle">Finance App Management</p>
                 </div>
-                <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.25rem' }}>
-                    Finance App Management
-                </p>
             </div>
 
-            <nav className="sidebar-nav">
+            <nav className="admin-sidebar-nav">
                 {menuItems.map((item) => {
                     const Icon = item.icon;
                     return (
                         <div
                             key={item.path}
-                            className="nav-item"
+                            className="admin-nav-item"
                             onClick={() => navigate(item.path)}
-                            style={{
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.75rem',
-                                padding: '1rem',
-                                color: '#e2e8f0',
-                                transition: 'all 0.2s',
-                                borderLeft: '3px solid transparent'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = '#334155';
-                                e.currentTarget.style.borderLeftColor = '#10b981';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.borderLeftColor = 'transparent';
-                            }}
                         >
                             <Icon size={20} />
                             <span>{item.label}</span>
@@ -78,25 +64,8 @@ const AdminSidebar = () => {
                 })}
 
                 <div
-                    className="nav-item logout"
+                    className="admin-nav-item logout"
                     onClick={handleLogout}
-                    style={{
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        padding: '1rem',
-                        marginTop: '2rem',
-                        color: '#ef4444',
-                        transition: 'all 0.2s',
-                        borderTop: '1px solid #334155'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#7f1d1d';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                    }}
                 >
                     <FiLogOut size={20} />
                     <span>Logout</span>

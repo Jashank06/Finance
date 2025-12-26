@@ -1,0 +1,284 @@
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import axios from 'axios';
+import { FiStar, FiMapPin, FiArrowLeft, FiEye, FiAward } from 'react-icons/fi';
+import './LandingNav.css';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+
+const SuccessStoryDetailPage = () => {
+    const { slug } = useParams();
+    const [story, setStory] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchStory();
+    }, [slug]);
+
+    const fetchStory = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/success-stories/public/${slug}`);
+            setStory(response.data);
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching story:', error);
+            setLoading(false);
+        }
+    };
+
+    const renderStars = (rating) => {
+        return [...Array(5)].map((_, i) => (
+            <FiStar
+                key={i}
+                size={24}
+                fill={i < rating ? '#f59e0b' : 'transparent'}
+                color={i < rating ? '#f59e0b' : '#d1d5db'}
+            />
+        ));
+    };
+
+    if (loading) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p style={{ fontSize: '1.2rem', color: '#6b7280' }}>Loading success story...</p>
+            </div>
+        );
+    }
+
+    if (!story) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem' }}>
+                <p style={{ fontSize: '1.5rem', color: '#6b7280' }}>Success story not found</p>
+                <Link to="/landing/success-stories" style={{ color: '#10b981', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <FiArrowLeft /> Back to Success Stories
+                </Link>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
+            {/* Header */}
+            <div style={{
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: 'white',
+                padding: '3rem 2rem'
+            }}>
+                <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+                    <Link
+                        to="/landing/success-stories"
+                        style={{
+                            color: 'white',
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            marginBottom: '2rem',
+                            opacity: 0.9
+                        }}
+                    >
+                        <FiArrowLeft /> Back to Success Stories
+                    </Link>
+                    <div style={{ marginTop: '2rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                            <span style={{
+                                padding: '0.5rem 1rem',
+                                background: 'rgba(255,255,255,0.2)',
+                                borderRadius: '20px',
+                                fontSize: '0.875rem'
+                            }}>
+                                {story.category}
+                            </span>
+                            {story.featured && (
+                                <span style={{
+                                    padding: '0.5rem 1rem',
+                                    background: '#f59e0b',
+                                    borderRadius: '20px',
+                                    fontSize: '0.875rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}>
+                                    <FiStar size={14} fill="white" />
+                                    Featured Story
+                                </span>
+                            )}
+                        </div>
+                        <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', fontWeight: 'bold' }}>
+                            {story.title}
+                        </h1>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                            {renderStars(story.rating)}
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.95rem', opacity: 0.9 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <FiEye />
+                                <span>{story.views} views</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Content */}
+            <div style={{ maxWidth: '900px', margin: '0 auto', padding: '3rem 2rem' }}>
+                {/* Customer Profile Card */}
+                <div style={{
+                    background: 'white',
+                    padding: '2rem',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    marginBottom: '2rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2rem'
+                }}>
+                    {story.customerImage ? (
+                        <img
+                            src={story.customerImage}
+                            alt={story.customerName}
+                            style={{
+                                width: '100px',
+                                height: '100px',
+                                borderRadius: '50%',
+                                objectFit: 'cover'
+                            }}
+                        />
+                    ) : (
+                        <div style={{
+                            width: '100px',
+                            height: '100px',
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '3rem',
+                            fontWeight: 'bold'
+                        }}>
+                            {story.customerName.charAt(0)}
+                        </div>
+                    )}
+                    <div>
+                        <h2 style={{ margin: '0 0 0.5rem 0', color: '#1f2937', fontSize: '2rem' }}>
+                            {story.customerName}
+                        </h2>
+                        {story.customerRole && (
+                            <p style={{ margin: '0.25rem 0', fontSize: '1.125rem', color: '#6b7280' }}>
+                                {story.customerRole}
+                            </p>
+                        )}
+                        {story.customerLocation && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', color: '#6b7280', marginTop: '0.5rem' }}>
+                                <FiMapPin size={16} />
+                                {story.customerLocation}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Featured Image */}
+                {story.featuredImage && (
+                    <div style={{ marginBottom: '2rem' }}>
+                        <img
+                            src={story.featuredImage}
+                            alt={story.title}
+                            style={{
+                                width: '100%',
+                                borderRadius: '12px',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                            }}
+                        />
+                    </div>
+                )}
+
+                {/* Story Content */}
+                <article style={{
+                    background: 'white',
+                    padding: '3rem',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    marginBottom: '2rem'
+                }}>
+                    <h3 style={{ fontSize: '1.5rem', color: '#1f2937', marginBottom: '1rem' }}>The Story</h3>
+                    <div style={{
+                        fontSize: '1.125rem',
+                        lineHeight: '1.8',
+                        color: '#374151',
+                        whiteSpace: 'pre-wrap',
+                        marginBottom: '2rem'
+                    }}>
+                        {story.story}
+                    </div>
+
+                    {story.results && (
+                        <>
+                            <h3 style={{ fontSize: '1.5rem', color: '#1f2937', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <FiAward color="#10b981" /> Results Achieved
+                            </h3>
+                            <div style={{
+                                fontSize: '1.125rem',
+                                lineHeight: '1.8',
+                                color: '#374151',
+                                whiteSpace: 'pre-wrap',
+                                padding: '1.5rem',
+                                background: '#10b98110',
+                                borderRadius: '8px',
+                                borderLeft: '4px solid #10b981',
+                                marginBottom: '2rem'
+                            }}>
+                                {story.results}
+                            </div>
+                        </>
+                    )}
+
+                    {story.testimonial && (
+                        <>
+                            <h3 style={{ fontSize: '1.5rem', color: '#1f2937', marginBottom: '1rem' }}>Testimonial</h3>
+                            <blockquote style={{
+                                fontSize: '1.25rem',
+                                lineHeight: '1.8',
+                                color: '#374151',
+                                fontStyle: 'italic',
+                                padding: '1.5rem',
+                                background: '#f9fafb',
+                                borderRadius: '8px',
+                                borderLeft: '4px solid #10b981',
+                                margin: 0
+                            }}>
+                                "{story.testimonial}"
+                                <footer style={{ marginTop: '1rem', fontSize: '1rem', fontStyle: 'normal', color: '#6b7280' }}>
+                                    — {story.customerName}
+                                </footer>
+                            </blockquote>
+                        </>
+                    )}
+                </article>
+
+                {/* Back Button */}
+                <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+                    <Link
+                        to="/landing/success-stories"
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '1rem 2rem',
+                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            color: 'white',
+                            textDecoration: 'none',
+                            borderRadius: '8px',
+                            fontSize: '1rem',
+                            fontWeight: '500'
+                        }}
+                    >
+                        <FiArrowLeft /> Back to All Success Stories
+                    </Link>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default SuccessStoryDetailPage;

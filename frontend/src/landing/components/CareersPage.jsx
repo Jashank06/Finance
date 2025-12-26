@@ -1,0 +1,197 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { FiMapPin, FiBriefcase, FiClock, FiTrendingUp, FiArrowRight, FiStar } from 'react-icons/fi';
+import './CareersPage.css';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+
+const CareersPage = () => {
+    const [careers, setCareers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [filters, setFilters] = useState({
+        department: '',
+        jobType: '',
+        experienceLevel: ''
+    });
+
+    const departments = ['Engineering', 'Product', 'Design', 'Marketing', 'Sales', 'Customer Support', 'Finance', 'HR', 'Operations', 'Other'];
+    const jobTypes = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Remote'];
+    const experienceLevels = ['Entry Level', 'Mid Level', 'Senior Level', 'Lead', 'Manager', 'Director'];
+
+    useEffect(() => {
+        fetchCareers();
+    }, [filters]);
+
+    const fetchCareers = async () => {
+        try {
+            const params = new URLSearchParams();
+            if (filters.department) params.append('department', filters.department);
+            if (filters.jobType) params.append('jobType', filters.jobType);
+            if (filters.experienceLevel) params.append('experienceLevel', filters.experienceLevel);
+            params.append('limit', '20');
+
+            const response = await axios.get(`${API_URL}/careers/public?${params}`);
+            setCareers(response.data.careers);
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching careers:', error);
+            setLoading(false);
+        }
+    };
+
+    const handleFilterChange = (filterName, value) => {
+        setFilters({ ...filters, [filterName]: value });
+    };
+
+    const handleCareerClick = (slug) => {
+        window.location.href = `/landing/careers/${slug}`;
+    };
+
+    const formatSalary = (salaryRange) => {
+        if (!salaryRange || (!salaryRange.min && !salaryRange.max)) return 'Competitive';
+        if (salaryRange.min && salaryRange.max) {
+            return `₹${(salaryRange.min / 100000).toFixed(1)}L - ₹${(salaryRange.max / 100000).toFixed(1)}L`;
+        }
+        if (salaryRange.min) return `₹${(salaryRange.min / 100000).toFixed(1)}L+`;
+        return 'Competitive';
+    };
+
+    return (
+        <div className="careers-page">
+            {/* Hero Section */}
+            <div className="careers-hero">
+                <h1 className="careers-hero-title">
+                    Join Our Team
+                </h1>
+                <p className="careers-hero-subtitle">
+                    Build the future of financial management. Explore exciting career opportunities at FinanceMaster
+                </p>
+            </div>
+
+            {/* Filter Section */}
+            <div className="careers-filter-section">
+                <div className="careers-filter-card">
+                    <h3>Filter Jobs</h3>
+                    <div className="careers-filter-grid">
+                        <div className="filter-group">
+                            <label>Department</label>
+                            <select
+                                className="filter-select"
+                                value={filters.department}
+                                onChange={(e) => handleFilterChange('department', e.target.value)}
+                            >
+                                <option value="">All Departments</option>
+                                {departments.map(dept => (
+                                    <option key={dept} value={dept}>{dept}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="filter-group">
+                            <label>Job Type</label>
+                            <select
+                                className="filter-select"
+                                value={filters.jobType}
+                                onChange={(e) => handleFilterChange('jobType', e.target.value)}
+                            >
+                                <option value="">All Types</option>
+                                {jobTypes.map(type => (
+                                    <option key={type} value={type}>{type}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="filter-group">
+                            <label>Experience Level</label>
+                            <select
+                                className="filter-select"
+                                value={filters.experienceLevel}
+                                onChange={(e) => handleFilterChange('experienceLevel', e.target.value)}
+                            >
+                                <option value="">All Levels</option>
+                                {experienceLevels.map(level => (
+                                    <option key={level} value={level}>{level}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Jobs List */}
+            <div className="careers-container">
+                {loading ? (
+                    <div className="blogs-loading">
+                        <p>Loading career opportunities...</p>
+                    </div>
+                ) : careers.length === 0 ? (
+                    <div className="blogs-empty">
+                        <p>No job openings found. Try adjusting your filters.</p>
+                    </div>
+                ) : (
+                    <div className="careers-list">
+                        {careers.map(career => (
+                            <div
+                                key={career._id}
+                                className="career-card"
+                                onClick={() => handleCareerClick(career.slug)}
+                            >
+                                {career.featured && (
+                                    <div className="featured-badge">
+                                        <FiStar size={12} fill="white" />
+                                        Featured
+                                    </div>
+                                )}
+                                
+                                <div className="career-card-content">
+                                    <div className="career-info">
+                                        <h3 className="career-title">{career.title}</h3>
+                                        <div className="career-meta-row">
+                                            <div className="career-meta-item">
+                                                <FiBriefcase size={16} />
+                                                <span>{career.department}</span>
+                                            </div>
+                                            <div className="career-meta-item">
+                                                <FiMapPin size={16} />
+                                                <span>{career.location}</span>
+                                            </div>
+                                            <div className="career-meta-item">
+                                                <FiClock size={16} />
+                                                <span>{career.jobType}</span>
+                                            </div>
+                                            <div className="career-meta-item">
+                                                <FiTrendingUp size={16} />
+                                                <span>{career.experienceLevel}</span>
+                                            </div>
+                                        </div>
+                                        <p className="career-description">
+                                            {career.description.substring(0, 200)}...
+                                        </p>
+                                        {career.skills && career.skills.length > 0 && (
+                                            <div className="career-skills">
+                                                {career.skills.slice(0, 5).map((skill, idx) => (
+                                                    <span key={idx} className="career-skill-tag">
+                                                        {skill}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="career-sidebar">
+                                        <div className="career-salary">
+                                            {formatSalary(career.salaryRange)}
+                                        </div>
+                                        <div className="career-apply-btn">
+                                            Apply Now
+                                            <FiArrowRight size={14} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default CareersPage;

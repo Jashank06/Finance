@@ -65,6 +65,10 @@ const investmentSchema = new mongoose.Schema({
   },
   maturityDate: Date,
   payableDate: Date,
+  paymentDate: Date,
+  billingCycleFrom: Date,
+  billingCycleTo: Date,
+  billGenerationDate: Date,
   interestRate: Number,
   frequency: {
     type: String,

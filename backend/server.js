@@ -30,6 +30,10 @@ const cashflowAnalysisRoutes = require('./routes/cashflow-analysis');
 const transactionCategoriesRoutes = require('./routes/transactionCategories');
 const tradingDetailsRoutes = require('./routes/tradingDetails');
 const profitLossRoutes = require('./routes/profitLoss');
+const blogsRoutes = require('./routes/blogs');
+const successStoriesRoutes = require('./routes/successStories');
+const careersRoutes = require('./routes/careers');
+const uploadRoutes = require('./routes/upload');
 
 const app = express();
 
@@ -92,6 +96,10 @@ app.use('/api/cashflow', cashflowAnalysisRoutes);
 app.use('/api/transaction-categories', transactionCategoriesRoutes);
 app.use('/api/trading-details', tradingDetailsRoutes);
 app.use('/api/profit-loss', profitLossRoutes);
+app.use('/api/blogs', blogsRoutes);
+app.use('/api/success-stories', successStoriesRoutes);
+app.use('/api/careers', careersRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

@@ -1,0 +1,298 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { FiMapPin, FiBriefcase, FiClock, FiTrendingUp, FiArrowRight, FiStar } from 'react-icons/fi';
+import './LandingNav.css';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+
+const CareersPage = () => {
+    const [careers, setCareers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [filters, setFilters] = useState({
+        department: '',
+        jobType: '',
+        experienceLevel: ''
+    });
+
+    const departments = ['Engineering', 'Product', 'Design', 'Marketing', 'Sales', 'Customer Support', 'Finance', 'HR', 'Operations', 'Other'];
+    const jobTypes = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Remote'];
+    const experienceLevels = ['Entry Level', 'Mid Level', 'Senior Level', 'Lead', 'Manager', 'Director'];
+
+    useEffect(() => {
+        fetchCareers();
+    }, [filters]);
+
+    const fetchCareers = async () => {
+        try {
+            const params = new URLSearchParams();
+            if (filters.department) params.append('department', filters.department);
+            if (filters.jobType) params.append('jobType', filters.jobType);
+            if (filters.experienceLevel) params.append('experienceLevel', filters.experienceLevel);
+            params.append('limit', '20');
+
+            const response = await axios.get(`${API_URL}/api/careers/public?${params}`);
+            setCareers(response.data.careers);
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching careers:', error);
+            setLoading(false);
+        }
+    };
+
+    const handleFilterChange = (filterName, value) => {
+        setFilters({ ...filters, [filterName]: value });
+    };
+
+    const handleCareerClick = (slug) => {
+        window.location.href = `/landing/careers/${slug}`;
+    };
+
+    const formatSalary = (salaryRange) => {
+        if (!salaryRange || (!salaryRange.min && !salaryRange.max)) return 'Competitive';
+        if (salaryRange.min && salaryRange.max) {
+            return `₹${(salaryRange.min / 100000).toFixed(1)}L - ₹${(salaryRange.max / 100000).toFixed(1)}L`;
+        }
+        if (salaryRange.min) return `₹${(salaryRange.min / 100000).toFixed(1)}L+`;
+        return 'Competitive';
+    };
+
+    return (
+        <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
+            {/* Hero Section */}
+            <div style={{
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                color: 'white',
+                padding: '5rem 2rem',
+                textAlign: 'center'
+            }}>
+                <h1 style={{ fontSize: '3rem', marginBottom: '1rem', fontWeight: 'bold' }}>
+                    Join Our Team
+                </h1>
+                <p style={{ fontSize: '1.25rem', maxWidth: '600px', margin: '0 auto', opacity: 0.9 }}>
+                    Build the future of financial management. Explore exciting career opportunities at FinanceMaster
+                </p>
+            </div>
+
+            {/* Filter Section */}
+            <div style={{
+                maxWidth: '1200px',
+                margin: '0 auto',
+                padding: '2rem',
+            }}>
+                <div style={{
+                    background: 'white',
+                    padding: '2rem',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    marginBottom: '2rem'
+                }}>
+                    <h3 style={{ marginBottom: '1rem' }}>Filter Jobs</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                Department
+                            </label>
+                            <select
+                                value={filters.department}
+                                onChange={(e) => handleFilterChange('department', e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    fontSize: '1rem'
+                                }}
+                            >
+                                <option value="">All Departments</option>
+                                {departments.map(dept => (
+                                    <option key={dept} value={dept}>{dept}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                Job Type
+                            </label>
+                            <select
+                                value={filters.jobType}
+                                onChange={(e) => handleFilterChange('jobType', e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    fontSize: '1rem'
+                                }}
+                            >
+                                <option value="">All Types</option>
+                                {jobTypes.map(type => (
+                                    <option key={type} value={type}>{type}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                Experience Level
+                            </label>
+                            <select
+                                value={filters.experienceLevel}
+                                onChange={(e) => handleFilterChange('experienceLevel', e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    fontSize: '1rem'
+                                }}
+                            >
+                                <option value="">All Levels</option>
+                                {experienceLevels.map(level => (
+                                    <option key={level} value={level}>{level}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Jobs List */}
+                {loading ? (
+                    <div style={{ textAlign: 'center', padding: '3rem' }}>
+                        <p style={{ fontSize: '1.2rem', color: '#6b7280' }}>Loading career opportunities...</p>
+                    </div>
+                ) : careers.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '3rem', background: 'white', borderRadius: '12px' }}>
+                        <p style={{ fontSize: '1.2rem', color: '#6b7280' }}>No job openings found. Try adjusting your filters.</p>
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        {careers.map(career => (
+                            <div
+                                key={career._id}
+                                onClick={() => handleCareerClick(career.slug)}
+                                style={{
+                                    background: 'white',
+                                    borderRadius: '12px',
+                                    padding: '2rem',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.2s, box-shadow 0.2s',
+                                    position: 'relative'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.15)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                                }}
+                            >
+                                {career.featured && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '1.5rem',
+                                        right: '1.5rem',
+                                        background: '#f59e0b',
+                                        color: 'white',
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '20px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 'bold',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem'
+                                    }}>
+                                        <FiStar size={12} fill="white" />
+                                        Featured
+                                    </div>
+                                )}
+                                
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
+                                    <div style={{ flex: 1, paddingRight: '2rem' }}>
+                                        <h3 style={{
+                                            fontSize: '1.75rem',
+                                            marginBottom: '0.5rem',
+                                            color: '#1f2937',
+                                            fontWeight: 'bold'
+                                        }}>
+                                            {career.title}
+                                        </h3>
+                                        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280' }}>
+                                                <FiBriefcase size={16} />
+                                                <span>{career.department}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280' }}>
+                                                <FiMapPin size={16} />
+                                                <span>{career.location}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280' }}>
+                                                <FiClock size={16} />
+                                                <span>{career.jobType}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280' }}>
+                                                <FiTrendingUp size={16} />
+                                                <span>{career.experienceLevel}</span>
+                                            </div>
+                                        </div>
+                                        <p style={{
+                                            color: '#6b7280',
+                                            lineHeight: '1.6',
+                                            marginBottom: '1rem'
+                                        }}>
+                                            {career.description.substring(0, 200)}...
+                                        </p>
+                                        {career.skills && career.skills.length > 0 && (
+                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                {career.skills.slice(0, 5).map((skill, idx) => (
+                                                    <span
+                                                        key={idx}
+                                                        style={{
+                                                            padding: '0.25rem 0.75rem',
+                                                            background: '#3b82f620',
+                                                            color: '#3b82f6',
+                                                            borderRadius: '12px',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        {skill}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div style={{ textAlign: 'right', minWidth: '150px' }}>
+                                        <div style={{
+                                            fontSize: '1.25rem',
+                                            fontWeight: 'bold',
+                                            color: '#3b82f6',
+                                            marginBottom: '0.5rem'
+                                        }}>
+                                            {formatSalary(career.salaryRange)}
+                                        </div>
+                                        <div style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            padding: '0.5rem 1rem',
+                                            background: '#3b82f6',
+                                            color: 'white',
+                                            borderRadius: '8px',
+                                            fontSize: '0.875rem',
+                                            fontWeight: '500'
+                                        }}>
+                                            Apply Now
+                                            <FiArrowRight size={14} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default CareersPage;

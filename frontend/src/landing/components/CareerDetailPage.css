@@ -1,0 +1,222 @@
+/* ============================================
+   CAREER DETAIL PAGE - BLACK & WHITE PROFESSIONAL
+   ============================================ */
+
+.career-detail-page {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #0A0A0A 0%, #1A1A1A 100%);
+}
+
+/* Hero Header */
+.career-detail-header {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    padding: 150px 2rem 80px;
+    position: relative;
+    overflow: hidden;
+}
+
+.career-detail-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.career-detail-header-content {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+}
+
+.career-detail-title {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: #FFFFFF;
+    line-height: 1.2;
+    letter-spacing: -1px;
+}
+
+.career-detail-meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.career-detail-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Content Section */
+.career-detail-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+}
+
+.career-apply-section {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    padding: 2rem;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.career-apply-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    color: #FFFFFF;
+}
+
+.career-deadline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(229, 229, 229, 0.7);
+    font-size: 14px;
+}
+
+.career-apply-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.apply-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: #3b82f6;
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.apply-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+}
+
+.apply-btn.secondary {
+    background: #10b981;
+}
+
+.career-article {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    padding: 3rem;
+    border-radius: 24px;
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    margin-bottom: 2rem;
+}
+
+.career-article h3 {
+    font-size: 1.5rem;
+    color: #FFFFFF;
+    margin-bottom: 1rem;
+    margin-top: 2rem;
+}
+
+.career-article h3:first-child {
+    margin-top: 0;
+}
+
+.career-description-text {
+    font-size: 18px;
+    line-height: 1.8;
+    color: rgba(229, 229, 229, 0.9);
+    white-space: pre-wrap;
+    margin-bottom: 2rem;
+}
+
+.career-list {
+    list-style: none;
+    padding: 0;
+}
+
+.career-list li {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 18px;
+    line-height: 1.6;
+    color: rgba(229, 229, 229, 0.9);
+}
+
+.career-list li svg {
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+}
+
+.career-skills-grid {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.career-skill-badge {
+    padding: 0.5rem 1.25rem;
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .career-detail-header {
+        padding: 120px 1.5rem 60px;
+    }
+    
+    .career-detail-title {
+        font-size: 32px;
+    }
+    
+    .career-apply-section {
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: center;
+    }
+    
+    .career-apply-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .apply-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .career-article {
+        padding: 2rem 1.5rem;
+    }
+    
+    .career-description-text,
+    .career-list li {
+        font-size: 16px;
+    }
+}

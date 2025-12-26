@@ -1,4 +1,6 @@
 import '../investments/Investment.css';
+import './AdminPages.css';
+
 
 const FeaturesAnalytics = () => {
     return (
