@@ -47,7 +47,8 @@ const TransactionTable = ({
               transaction.type === 'purchase' ||
               transaction.type === 'payment' ||
               transaction.type === 'fee' ||
-              transaction.type === 'expense';
+              transaction.type === 'expense' ||
+              transaction.type === 'transfer';
 
             const isCredit = transaction.type === 'deposit' ||
               transaction.type === 'refund' ||

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import * as XLSX from 'xlsx';
+import CashTemplate from '../assets/Cash.xlsx';
 import './CashMemberManagement.css';
 import { syncInventoryFromTransaction } from '../utils/inventorySyncUtil';
 import { getBroaderCategories, getMainCategories, getSubCategories } from '../utils/categoryData';
@@ -663,7 +664,7 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
                 Spent: {selectedMember.currency} {calculateSpent(selectedMember).toLocaleString('en-IN')}
               </p>
             </div>
-            <div className="header-buttons" style={{ display: 'flex', gap: '10px' }}>
+            <div className="header-buttons" style={{ display: 'flex', gap: '10px', flexWrap: 'nowrap', alignItems: 'center' }}>
               <input
                 type="file"
                 ref={fileInputRef}
@@ -688,6 +689,22 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
               >
                 {uploading ? 'Uploading...' : '📄 Upload Excel'}
               </button>
+              <a
+                href={CashTemplate}
+                download="Cash_Template.xlsx"
+                className="add-btn"
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                ⬇️ Template
+              </a>
               <button
                 className="add-btn"
                 onClick={() => setShowColumnsModal(true)}

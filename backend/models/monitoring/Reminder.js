@@ -29,6 +29,10 @@ const reminderSchema = new mongoose.Schema({
     enum: ['daily', 'weekly', 'monthly', 'yearly'],
     default: 'daily'
   },
+  leadDays: {
+    type: Number,
+    default: 7
+  },
   priority: {
     type: String,
     enum: ['low', 'medium', 'high'],
@@ -38,6 +42,14 @@ const reminderSchema = new mongoose.Schema({
     type: String,
     enum: ['personal', 'bills', 'health', 'work', 'family'],
     default: 'personal'
+  },
+  referenceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    index: true,
+  },
+  referenceType: {
+    type: String,
+    index: true,
   },
   method: {
     type: String,

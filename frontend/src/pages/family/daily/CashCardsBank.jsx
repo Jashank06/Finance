@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
+import CardTemplate from '../../../assets/Card.xlsx';
+import BankTemplate from '../../../assets/Bank.xlsx';
 import api from '../../../utils/api';
 import { staticAPI } from '../../../utils/staticAPI';
 import FinancialOverviewChart from '../../../components/FinancialOverviewChart';
@@ -62,7 +64,7 @@ const CashCardsBank = () => {
   const [showBankForm, setShowBankForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showChart, setShowChart] = useState(true);
+  const [showChart, setShowChart] = useState(false);
   const [selectedBankFilter, setSelectedBankFilter] = useState('all');
   const [familyMembers, setFamilyMembers] = useState([]);
   const [selectedCardFilter, setSelectedCardFilter] = useState('all');
@@ -372,7 +374,18 @@ const CashCardsBank = () => {
     e.preventDefault();
     try {
       if (editingItem) {
-        await api.put(`/cards/${editingItem._id}`, cardForm);
+        // Create a copy to avoid mutating state directly and to filter fields
+        const updateData = { ...cardForm };
+
+        // Remove masked fields if they haven't been changed
+        if (updateData.cardNumber && updateData.cardNumber.includes('*')) {
+          delete updateData.cardNumber;
+        }
+        if (updateData.cvv && updateData.cvv.includes('*')) {
+          delete updateData.cvv;
+        }
+
+        await api.put(`/cards/${editingItem._id}`, updateData);
       } else {
         await api.post('/cards', cardForm);
       }
@@ -1044,6 +1057,20 @@ const CashCardsBank = () => {
               >
                 {uploadingCard ? 'Uploading...' : '📄 Upload Excel'}
               </button>
+              <a
+                href={CardTemplate}
+                download="Card_Template.xlsx"
+                className="add-btn"
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ⬇️ Template
+              </a>
               <button
                 className="add-btn"
                 onClick={() => setShowCardColumnsModal(true)}
@@ -1075,17 +1102,13 @@ const CashCardsBank = () => {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Name:</label>
-                        <select
+                        <label>Card Name:</label>
+                        <input
+                          type="text"
                           value={cardForm.name}
                           onChange={(e) => setCardForm({ ...cardForm, name: e.target.value })}
                           required
-                        >
-                          <option value="">Select family member...</option>
-                          {familyMembers.map((member, index) => (
-                            <option key={index} value={member.name}>{member.name}</option>
-                          ))}
-                        </select>
+                        />
                       </div>
                       <div className="form-group">
                         <label>Issuer:</label>
@@ -1111,12 +1134,16 @@ const CashCardsBank = () => {
                       </div>
                       <div className="form-group">
                         <label>Cardholder Name:</label>
-                        <input
-                          type="text"
+                        <select
                           value={cardForm.cardholderName}
                           onChange={(e) => setCardForm({ ...cardForm, cardholderName: e.target.value })}
                           required
-                        />
+                        >
+                          <option value="">Select cardholder...</option>
+                          {familyMembers.map((member, index) => (
+                            <option key={index} value={member.name}>{member.name}</option>
+                          ))}
+                        </select>
                       </div>
                       <div className="form-group">
                         <label>Expiry Date (MM/YY):</label>
@@ -1738,6 +1765,20 @@ const CashCardsBank = () => {
               >
                 {uploadingBank ? 'Uploading...' : '📄 Upload Excel'}
               </button>
+              <a
+                href={BankTemplate}
+                download="Bank_Template.xlsx"
+                className="add-btn"
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ⬇️ Template
+              </a>
               <button
                 className="add-btn"
                 onClick={() => setShowBankColumnsModal(true)}

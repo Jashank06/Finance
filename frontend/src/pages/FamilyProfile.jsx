@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FiUsers, FiEdit2, FiSave, FiX, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { staticAPI } from '../utils/staticAPI';
 import { syncMobileEmailFromFamilyProfile } from '../utils/mobileEmailSyncUtil';
+import { syncPersonalRecordsFromFamilyProfile } from '../utils/personalRecordsSyncUtil';
 import './family/static/Static.css';
 import '../components/Modal.css';
 
@@ -106,6 +107,7 @@ const FamilyProfile = () => {
       panNumber: '',
       passportNumber: '',
       drivingLicense: '',
+      documents: [],
       additionalInfo: {
         nickname: '',
         nationality: 'Indian',
@@ -137,6 +139,7 @@ const FamilyProfile = () => {
     setEditingMemberIndex(index);
     setMemberFormData({
       ...member,
+      documents: member.documents || [],
       additionalInfo: member.additionalInfo || {
         nickname: '',
         nationality: 'Indian',
@@ -166,16 +169,16 @@ const FamilyProfile = () => {
 
   const calculateAgeFromDateOfBirth = (dateOfBirth) => {
     if (!dateOfBirth) return '';
-    
+
     const birthDate = new Date(dateOfBirth);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    
+
     return age > 0 ? age.toString() : '';
   };
 
@@ -185,12 +188,12 @@ const FamilyProfile = () => {
         ...prev,
         [field]: value
       };
-      
+
       // Auto-calculate age when dateOfBirth changes
       if (field === 'dateOfBirth') {
         updatedData.age = calculateAgeFromDateOfBirth(value);
       }
-      
+
       return updatedData;
     });
   };
@@ -212,6 +215,41 @@ const FamilyProfile = () => {
       : [...currentLanguages, language];
 
     handleAdditionalInfoChange('languagesKnown', updatedLanguages);
+  };
+
+  const handleDocumentChange = (index, field, value) => {
+    setMemberFormData(prev => {
+      const updatedDocuments = [...(prev.documents || [])];
+      updatedDocuments[index] = {
+        ...updatedDocuments[index],
+        [field]: value
+      };
+      return {
+        ...prev,
+        documents: updatedDocuments
+      };
+    });
+  };
+
+  const addDocument = () => {
+    setMemberFormData(prev => ({
+      ...prev,
+      documents: [
+        ...(prev.documents || []),
+        { documentType: '', idNumber: '', issuingAuthority: '', issueDate: '', expiryDate: '' }
+      ]
+    }));
+  };
+
+  const removeDocument = (index) => {
+    setMemberFormData(prev => {
+      const updatedDocuments = [...(prev.documents || [])];
+      updatedDocuments.splice(index, 1);
+      return {
+        ...prev,
+        documents: updatedDocuments
+      };
+    });
   };
 
   const saveMemberForm = async () => {
@@ -244,6 +282,12 @@ const FamilyProfile = () => {
       // Auto-sync mobile and email to Mobile & Email Details
       await syncMobileEmailFromFamilyProfile(memberFormData);
 
+      // Auto-sync documents to Personal Records
+      await syncPersonalRecordsFromFamilyProfile(memberFormData);
+
+      // Refresh data from server to ensure consistency
+      await fetchFamilyProfile();
+
       setShowMemberForm(false);
       setEditingMemberIndex(null);
     } catch (error) {
@@ -268,6 +312,9 @@ const FamilyProfile = () => {
         if (response.data && response.data.length > 0) {
           await staticAPI.updateFamilyProfile(response.data[0]._id, profileData);
         }
+
+        // Refresh data from server to ensure consistency
+        await fetchFamilyProfile();
       } catch (error) {
         console.error('Error deleting member:', error);
       }
@@ -589,246 +636,284 @@ const FamilyProfile = () => {
                           placeholder="Regular medications"
                         />
                       </div>
-                      <div className="form-group">
-                        <label>Aadhaar Number</label>
-                        <input
-                          type="text"
-                          value={memberFormData.aadhaarNumber}
-                          onChange={(e) => handleMemberFormChange('aadhaarNumber', e.target.value)}
-                          placeholder="XXXX XXXX XXXX"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>PAN Number</label>
-                        <input
-                          type="text"
-                          value={memberFormData.panNumber}
-                          onChange={(e) => handleMemberFormChange('panNumber', e.target.value)}
-                          placeholder="ABCDE1234F"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Passport Number</label>
-                        <input
-                          type="text"
-                          value={memberFormData.passportNumber}
-                          onChange={(e) => handleMemberFormChange('passportNumber', e.target.value)}
-                          placeholder="P1234567"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Driving License</label>
-                        <input
-                          type="text"
-                          value={memberFormData.drivingLicense}
-                          onChange={(e) => handleMemberFormChange('drivingLicense', e.target.value)}
-                          placeholder="DL Number"
-                        />
-                      </div>
                     </div>
                   </div>
 
                   <div className="form-section">
-                    <h4>Cultural & Personal Details</h4>
+                    <h4>Document Information</h4>
                     <div className="form-grid">
-                      <div className="form-group">
-                        <label>Nickname</label>
-                        <input
-                          type="text"
-                          value={memberFormData.additionalInfo?.nickname || ''}
-                          onChange={(e) => handleAdditionalInfoChange('nickname', e.target.value)}
-                          placeholder="Nickname"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Nationality</label>
-                        <input
-                          type="text"
-                          value={memberFormData.additionalInfo?.nationality || 'Indian'}
-                          onChange={(e) => handleAdditionalInfoChange('nationality', e.target.value)}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Religion</label>
-                        <input
-                          type="text"
-                          value={memberFormData.additionalInfo?.religion || ''}
-                          onChange={(e) => handleAdditionalInfoChange('religion', e.target.value)}
-                          placeholder="Religion"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Caste</label>
-                        <input
-                          type="text"
-                          value={memberFormData.additionalInfo?.caste || ''}
-                          onChange={(e) => handleAdditionalInfoChange('caste', e.target.value)}
-                          placeholder="Caste"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Mother Tongue</label>
-                        <input
-                          type="text"
-                          value={memberFormData.additionalInfo?.motherTongue || ''}
-                          onChange={(e) => handleAdditionalInfoChange('motherTongue', e.target.value)}
-                          placeholder="Mother Tongue"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Voter ID</label>
-                        <input
-                          type="text"
-                          value={memberFormData.additionalInfo?.voterID || ''}
-                          onChange={(e) => handleAdditionalInfoChange('voterID', e.target.value)}
-                          placeholder="Voter ID Number"
-                        />
-                      </div>
                       <div className="form-group full-width">
-                        <label>Languages Known</label>
-                        <div className="language-checkboxes">
-                          {languageOptions.map(lang => (
-                            <label key={lang} className="checkbox-label">
+                        {memberFormData.documents && memberFormData.documents.map((doc, index) => (
+                          <div key={index} className="document-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '10px', padding: '10px', background: '#f5f5f5', borderRadius: '4px' }}>
+                            <div className="form-group">
+                              <label>Document Type</label>
+                              <select
+                                value={doc.documentType}
+                                onChange={(e) => handleDocumentChange(index, 'documentType', e.target.value)}
+                              >
+                                <option value="">Select Type</option>
+                                <option value="Aadhaar">Aadhaar</option>
+                                <option value="PAN">PAN</option>
+                                <option value="Passport">Passport</option>
+                                <option value="Driving License">Driving License</option>
+                                <option value="Voter ID">Voter ID</option>
+                                <option value="Birth Certificate">Birth Certificate</option>
+                                <option value="Other">Other</option>
+                              </select>
+                            </div>
+                            <div className="form-group">
+                              <label>ID Number</label>
                               <input
-                                type="checkbox"
-                                checked={(memberFormData.additionalInfo?.languagesKnown || []).includes(lang)}
-                                onChange={() => handleLanguageToggle(lang)}
+                                type="text"
+                                value={doc.idNumber}
+                                onChange={(e) => handleDocumentChange(index, 'idNumber', e.target.value)}
+                                placeholder="ID Number"
                               />
-                              {lang}
-                            </label>
-                          ))}
+                            </div>
+                            <div className="form-group">
+                              <label>Issuing Authority</label>
+                              <input
+                                type="text"
+                                value={doc.issuingAuthority}
+                                onChange={(e) => handleDocumentChange(index, 'issuingAuthority', e.target.value)}
+                                placeholder="Authority"
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Issue Date</label>
+                              <input
+                                type="date"
+                                value={doc.issueDate}
+                                onChange={(e) => handleDocumentChange(index, 'issueDate', e.target.value)}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Expiry Date</label>
+                              <input
+                                type="date"
+                                value={doc.expiryDate}
+                                onChange={(e) => handleDocumentChange(index, 'expiryDate', e.target.value)}
+                              />
+                            </div>
+                            <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                              <button
+                                className="btn-icon btn-danger"
+                                onClick={() => removeDocument(index)}
+                                title="Remove Document"
+                              >
+                                <FiTrash2 />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        <button className="btn-secondary" onClick={addDocument} style={{ marginTop: '10px' }}>
+                          <FiPlus /> Add Document
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="form-section">
+                      <h4>Cultural & Personal Details</h4>
+                      <div className="form-grid">
+                        <div className="form-group">
+                          <label>Nickname</label>
+                          <input
+                            type="text"
+                            value={memberFormData.additionalInfo?.nickname || ''}
+                            onChange={(e) => handleAdditionalInfoChange('nickname', e.target.value)}
+                            placeholder="Nickname"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Nationality</label>
+                          <input
+                            type="text"
+                            value={memberFormData.additionalInfo?.nationality || 'Indian'}
+                            onChange={(e) => handleAdditionalInfoChange('nationality', e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Religion</label>
+                          <input
+                            type="text"
+                            value={memberFormData.additionalInfo?.religion || ''}
+                            onChange={(e) => handleAdditionalInfoChange('religion', e.target.value)}
+                            placeholder="Religion"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Caste</label>
+                          <input
+                            type="text"
+                            value={memberFormData.additionalInfo?.caste || ''}
+                            onChange={(e) => handleAdditionalInfoChange('caste', e.target.value)}
+                            placeholder="Caste"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Mother Tongue</label>
+                          <input
+                            type="text"
+                            value={memberFormData.additionalInfo?.motherTongue || ''}
+                            onChange={(e) => handleAdditionalInfoChange('motherTongue', e.target.value)}
+                            placeholder="Mother Tongue"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Voter ID</label>
+                          <input
+                            type="text"
+                            value={memberFormData.additionalInfo?.voterID || ''}
+                            onChange={(e) => handleAdditionalInfoChange('voterID', e.target.value)}
+                            placeholder="Voter ID Number"
+                          />
+                        </div>
+                        <div className="form-group full-width">
+                          <label>Languages Known</label>
+                          <div className="language-checkboxes">
+                            {languageOptions.map(lang => (
+                              <label key={lang} className="checkbox-label">
+                                <input
+                                  type="checkbox"
+                                  checked={(memberFormData.additionalInfo?.languagesKnown || []).includes(lang)}
+                                  onChange={() => handleLanguageToggle(lang)}
+                                />
+                                {lang}
+                              </label>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="form-section">
-                    <h4>Address Information</h4>
-                    <div className="form-grid">
-                      <div className="form-group full-width">
-                        <label>Residential Address</label>
-                        <textarea
-                          value={memberFormData.additionalInfo?.residentialAddress || ''}
-                          onChange={(e) => handleAdditionalInfoChange('residentialAddress', e.target.value)}
-                          placeholder="Home/Residential Address"
-                          rows="3"
-                        />
-                      </div>
-                      <div className="form-group full-width">
-                        <label>Work Address</label>
-                        <textarea
-                          value={memberFormData.additionalInfo?.workAddress || ''}
-                          onChange={(e) => handleAdditionalInfoChange('workAddress', e.target.value)}
-                          placeholder="Office Address"
-                          rows="2"
-                        />
+                    <div className="form-section">
+                      <h4>Address Information</h4>
+                      <div className="form-grid">
+                        <div className="form-group full-width">
+                          <label>Residential Address</label>
+                          <textarea
+                            value={memberFormData.additionalInfo?.residentialAddress || ''}
+                            onChange={(e) => handleAdditionalInfoChange('residentialAddress', e.target.value)}
+                            placeholder="Home/Residential Address"
+                            rows="3"
+                          />
+                        </div>
+                        <div className="form-group full-width">
+                          <label>Work Address</label>
+                          <textarea
+                            value={memberFormData.additionalInfo?.workAddress || ''}
+                            onChange={(e) => handleAdditionalInfoChange('workAddress', e.target.value)}
+                            placeholder="Office Address"
+                            rows="2"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="form-section">
-                    <h4>Emergency Contact & Other Details</h4>
-                    <div className="form-grid">
-                      <div className="form-group">
-                        <label>Emergency Contact Name</label>
-                        <input
-                          type="text"
-                          value={memberFormData.additionalInfo?.emergencyContactName || ''}
-                          onChange={(e) => handleAdditionalInfoChange('emergencyContactName', e.target.value)}
-                          placeholder="Contact Person Name"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Emergency Contact Relation</label>
-                        <input
-                          type="text"
-                          value={memberFormData.additionalInfo?.emergencyContactRelation || ''}
-                          onChange={(e) => handleAdditionalInfoChange('emergencyContactRelation', e.target.value)}
-                          placeholder="Relation"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Emergency Contact Mobile</label>
-                        <input
-                          type="tel"
-                          value={memberFormData.additionalInfo?.emergencyContactMobile || ''}
-                          onChange={(e) => handleAdditionalInfoChange('emergencyContactMobile', e.target.value)}
-                          placeholder="+91 98765 43210"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Alternate Phone</label>
-                        <input
-                          type="tel"
-                          value={memberFormData.additionalInfo?.alternatePhone || ''}
-                          onChange={(e) => handleAdditionalInfoChange('alternatePhone', e.target.value)}
-                          placeholder="Alternate Number"
-                        />
-                      </div>
-                      <div className="form-group full-width">
-                        <label>Emergency Contact Address</label>
-                        <textarea
-                          value={memberFormData.additionalInfo?.emergencyContactAddress || ''}
-                          onChange={(e) => handleAdditionalInfoChange('emergencyContactAddress', e.target.value)}
-                          placeholder="Full Address"
-                          rows="2"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Social Media Profile 1</label>
-                        <input
-                          type="text"
-                          value={memberFormData.additionalInfo?.socialMediaProfile1 || ''}
-                          onChange={(e) => handleAdditionalInfoChange('socialMediaProfile1', e.target.value)}
-                          placeholder="Social media profile 1"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Social Media Profile 2</label>
-                        <input
-                          type="text"
-                          value={memberFormData.additionalInfo?.socialMediaProfile2 || ''}
-                          onChange={(e) => handleAdditionalInfoChange('socialMediaProfile2', e.target.value)}
-                          placeholder="Social media profile 2"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Social Media Profile 3</label>
-                        <input
-                          type="text"
-                          value={memberFormData.additionalInfo?.socialMediaProfile3 || ''}
-                          onChange={(e) => handleAdditionalInfoChange('socialMediaProfile3', e.target.value)}
-                          placeholder="Social media profile 3"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Social Media Profile 4</label>
-                        <input
-                          type="text"
-                          value={memberFormData.additionalInfo?.socialMediaProfile4 || ''}
-                          onChange={(e) => handleAdditionalInfoChange('socialMediaProfile4', e.target.value)}
-                          placeholder="Social media profile 4"
-                        />
-                      </div>
-                      <div className="form-group full-width">
-                        <label>Special Notes</label>
-                        <textarea
-                          value={memberFormData.additionalInfo?.specialNotes || ''}
-                          onChange={(e) => handleAdditionalInfoChange('specialNotes', e.target.value)}
-                          placeholder="Any other important information"
-                          rows="3"
-                        />
+                    <div className="form-section">
+                      <h4>Emergency Contact & Other Details</h4>
+                      <div className="form-grid">
+                        <div className="form-group">
+                          <label>Emergency Contact Name</label>
+                          <input
+                            type="text"
+                            value={memberFormData.additionalInfo?.emergencyContactName || ''}
+                            onChange={(e) => handleAdditionalInfoChange('emergencyContactName', e.target.value)}
+                            placeholder="Contact Person Name"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Emergency Contact Relation</label>
+                          <input
+                            type="text"
+                            value={memberFormData.additionalInfo?.emergencyContactRelation || ''}
+                            onChange={(e) => handleAdditionalInfoChange('emergencyContactRelation', e.target.value)}
+                            placeholder="Relation"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Emergency Contact Mobile</label>
+                          <input
+                            type="tel"
+                            value={memberFormData.additionalInfo?.emergencyContactMobile || ''}
+                            onChange={(e) => handleAdditionalInfoChange('emergencyContactMobile', e.target.value)}
+                            placeholder="+91 98765 43210"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Alternate Phone</label>
+                          <input
+                            type="tel"
+                            value={memberFormData.additionalInfo?.alternatePhone || ''}
+                            onChange={(e) => handleAdditionalInfoChange('alternatePhone', e.target.value)}
+                            placeholder="Alternate Number"
+                          />
+                        </div>
+                        <div className="form-group full-width">
+                          <label>Emergency Contact Address</label>
+                          <textarea
+                            value={memberFormData.additionalInfo?.emergencyContactAddress || ''}
+                            onChange={(e) => handleAdditionalInfoChange('emergencyContactAddress', e.target.value)}
+                            placeholder="Full Address"
+                            rows="2"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Social Media Profile 1</label>
+                          <input
+                            type="text"
+                            value={memberFormData.additionalInfo?.socialMediaProfile1 || ''}
+                            onChange={(e) => handleAdditionalInfoChange('socialMediaProfile1', e.target.value)}
+                            placeholder="Social media profile 1"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Social Media Profile 2</label>
+                          <input
+                            type="text"
+                            value={memberFormData.additionalInfo?.socialMediaProfile2 || ''}
+                            onChange={(e) => handleAdditionalInfoChange('socialMediaProfile2', e.target.value)}
+                            placeholder="Social media profile 2"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Social Media Profile 3</label>
+                          <input
+                            type="text"
+                            value={memberFormData.additionalInfo?.socialMediaProfile3 || ''}
+                            onChange={(e) => handleAdditionalInfoChange('socialMediaProfile3', e.target.value)}
+                            placeholder="Social media profile 3"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Social Media Profile 4</label>
+                          <input
+                            type="text"
+                            value={memberFormData.additionalInfo?.socialMediaProfile4 || ''}
+                            onChange={(e) => handleAdditionalInfoChange('socialMediaProfile4', e.target.value)}
+                            placeholder="Social media profile 4"
+                          />
+                        </div>
+                        <div className="form-group full-width">
+                          <label>Special Notes</label>
+                          <textarea
+                            value={memberFormData.additionalInfo?.specialNotes || ''}
+                            onChange={(e) => handleAdditionalInfoChange('specialNotes', e.target.value)}
+                            placeholder="Any other important information"
+                            rows="3"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="modal-footer">
-                    <button className="btn-secondary" onClick={cancelMemberForm}>
-                      <FiX /> Cancel
-                    </button>
-                    <button className="save-btn" onClick={saveMemberForm}>
-                      <FiSave /> Save Member
-                    </button>
+                    <div className="modal-footer">
+                      <button className="btn-secondary" onClick={cancelMemberForm}>
+                        <FiX /> Cancel
+                      </button>
+                      <button className="save-btn" onClick={saveMemberForm}>
+                        <FiSave /> Save Member
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

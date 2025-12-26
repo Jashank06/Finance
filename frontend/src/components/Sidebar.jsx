@@ -127,7 +127,7 @@ const Sidebar = () => {
               <Link to="/family/analytics" className="submenu-item">Analytics</Link>
               <Link to="/family/tasks" className="submenu-item">Tasks to Do</Link>
               <Link to="/family/daily/telephone-conversation" className="submenu-item">Telephone Conversation</Link>
-              {/* <Link to="/family/static/contact-management" className="submenu-item">Contact Management</Link> */}
+              <Link to="/family/static/contact-management" className="submenu-item">Contact Management</Link>
               <Link to="/family/files" className="submenu-item">Files & Folders</Link>
             </div>
           )}

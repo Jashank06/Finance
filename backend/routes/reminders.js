@@ -6,49 +6,76 @@ const auth = require('../middleware/auth');
 // Get all reminders for a user
 router.get('/', auth, async (req, res) => {
   try {
-    const { 
-      startDate, 
-      endDate, 
-      category, 
+    const {
+      startDate,
+      endDate,
+      category,
       status,
       priority,
-      page = 1, 
-      limit = 50 
+      showPassed,
+      page = 1,
+      limit = 50
     } = req.query;
-    
-    const query = { userId: req.user.id };
-    
-    // Filter by date range
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let query = { userId: req.user.id };
+    let sort = { dateTime: 1 };
+
+    if (showPassed === 'true') {
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+
+      query.dateTime = { $lt: today, $gte: thirtyDaysAgo };
+      sort = { dateTime: -1 }; // Show most recent past reminders first
+    } else {
+      // Default: Upcoming with visibility logic
+      query.dateTime = { $gte: today };
+      query.status = 'active';
+
+      // Visibility threshold logic: today >= (dateTime - leadDays)
+      const visibilityQuery = {
+        $expr: {
+          $lte: [
+            "$dateTime",
+            { $add: [today, { $multiply: ["$leadDays", 86400000] }] }
+          ]
+        }
+      };
+
+      // Combine into $and
+      query = { $and: [query, visibilityQuery] };
+    }
+
+    // Filter by date range (if provided, overrides above auto-logic for search)
     if (startDate || endDate) {
+      if (query.$and) delete query.$and;
       query.dateTime = {};
       if (startDate) query.dateTime.$gte = new Date(startDate);
       if (endDate) query.dateTime.$lte = new Date(endDate);
+      sort = { dateTime: 1 };
     }
-    
+
     // Filter by category
     if (category && category !== 'all') {
       query.category = category;
     }
-    
-    // Filter by status
-    if (status && status !== 'all') {
-      query.status = status;
-    }
-    
+
     // Filter by priority
     if (priority && priority !== 'all') {
       query.priority = priority;
     }
-    
+
     const skip = (page - 1) * limit;
-    
+
     const reminders = await Reminder.find(query)
-      .sort({ dateTime: 1 })
+      .sort(sort)
       .skip(skip)
       .limit(parseInt(limit));
-    
+
     const total = await Reminder.countDocuments(query);
-    
+
     res.json({
       reminders,
       pagination: {
@@ -68,28 +95,30 @@ router.get('/', auth, async (req, res) => {
 router.get('/upcoming', auth, async (req, res) => {
   try {
     const { days = 30, category } = req.query;
-    
+
     const startDate = new Date();
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + parseInt(days));
-    
+    startDate.setHours(0, 0, 0, 0);
+
     const query = {
       userId: req.user.id,
-      dateTime: {
-        $gte: startDate,
-        $lte: endDate
-      },
-      status: 'active'
+      status: 'active',
+      dateTime: { $gte: startDate },
+      $expr: {
+        $lte: [
+          "$dateTime",
+          { $add: [startDate, { $multiply: ["$leadDays", 86400000] }] }
+        ]
+      }
     };
-    
+
     if (category && category !== 'all') {
       query.category = category;
     }
-    
+
     const reminders = await Reminder.find(query)
       .sort({ dateTime: 1 })
       .limit(20);
-    
+
     res.json({ reminders });
   } catch (error) {
     console.error('Get upcoming reminders error:', error);
@@ -104,16 +133,16 @@ router.post('/', auth, async (req, res) => {
       ...req.body,
       userId: req.user.id
     };
-    
+
     const reminder = new Reminder(reminderData);
     await reminder.save();
-    
+
     res.status(201).json({ reminder });
   } catch (error) {
     console.error('Create reminder error:', error);
-    res.status(400).json({ 
+    res.status(400).json({
       error: 'Failed to create reminder',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -126,17 +155,17 @@ router.put('/:id', auth, async (req, res) => {
       { ...req.body, updatedAt: new Date() },
       { new: true, runValidators: true }
     );
-    
+
     if (!reminder) {
       return res.status(404).json({ error: 'Reminder not found' });
     }
-    
+
     res.json({ reminder });
   } catch (error) {
     console.error('Update reminder error:', error);
-    res.status(400).json({ 
+    res.status(400).json({
       error: 'Failed to update reminder',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -148,11 +177,11 @@ router.delete('/:id', auth, async (req, res) => {
       _id: req.params.id,
       userId: req.user.id
     });
-    
+
     if (!reminder) {
       return res.status(404).json({ error: 'Reminder not found' });
     }
-    
+
     res.json({ message: 'Reminder deleted successfully' });
   } catch (error) {
     console.error('Delete reminder error:', error);
@@ -167,15 +196,15 @@ router.patch('/:id/toggle-status', auth, async (req, res) => {
       _id: req.params.id,
       userId: req.user.id
     });
-    
+
     if (!reminder) {
       return res.status(404).json({ error: 'Reminder not found' });
     }
-    
+
     reminder.status = reminder.status === 'active' ? 'paused' : 'active';
     reminder.updatedAt = new Date();
     await reminder.save();
-    
+
     res.json({ reminder });
   } catch (error) {
     console.error('Toggle reminder status error:', error);
@@ -187,10 +216,10 @@ router.patch('/:id/toggle-status', auth, async (req, res) => {
 router.get('/analytics', auth, async (req, res) => {
   try {
     const { year = new Date().getFullYear() } = req.query;
-    
+
     const startDate = new Date(year, 0, 1);
     const endDate = new Date(year, 11, 31);
-    
+
     // Reminders by category
     const remindersByCategory = await Reminder.aggregate([
       {
@@ -206,7 +235,7 @@ router.get('/analytics', auth, async (req, res) => {
         }
       }
     ]);
-    
+
     // Reminders by priority
     const remindersByPriority = await Reminder.aggregate([
       {
@@ -222,7 +251,7 @@ router.get('/analytics', auth, async (req, res) => {
         }
       }
     ]);
-    
+
     // Status counts
     const statusCounts = await Reminder.aggregate([
       {
@@ -237,20 +266,20 @@ router.get('/analytics', auth, async (req, res) => {
         }
       }
     ]);
-    
+
     // Upcoming count
     const upcomingCount = await Reminder.countDocuments({
       userId: req.user.id,
       dateTime: { $gte: new Date() },
       status: 'active'
     });
-    
+
     // Total this year
     const totalThisYear = await Reminder.countDocuments({
       userId: req.user.id,
       dateTime: { $gte: startDate, $lte: endDate }
     });
-    
+
     res.json({
       remindersByCategory: remindersByCategory.map(item => ({
         category: item._id,

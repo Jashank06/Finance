@@ -12,43 +12,12 @@ const REMINDERS_CATEGORY = 'reminders-notifications';
  * @returns {Promise<Object>} Result of the sync operation
  */
 export const syncRemindersFromForm = async (formData, formType) => {
-    try {
-        const reminders = extractRemindersFromForm(formData, formType);
-
-        if (reminders.length === 0) {
-            console.log('No reminders to sync from', formType);
-            return { success: true, message: 'No reminders to sync', count: 0 };
-        }
-
-        // Create reminders in backend
-        const results = [];
-        for (const reminder of reminders) {
-            try {
-                await createReminder(reminder);
-                results.push({ success: true, title: reminder.title });
-            } catch (error) {
-                console.error(`Error creating reminder: ${reminder.title}`, error);
-                results.push({ success: false, title: reminder.title });
-            }
-        }
-
-        console.log(`✅ Created ${results.length} reminder(s) from ${formType}:`, results);
-
-        return {
-            success: true,
-            message: `Created ${results.length} reminder(s)`,
-            count: results.length,
-            reminders: results
-        };
-    } catch (error) {
-        console.error('Error in syncRemindersFromForm:', error);
-        return {
-            success: false,
-            message: error.message,
-            count: 0
-        };
-    }
+    // Backend now handles synchronization triggers automatically via staticController and investment routes.
+    // Disabling frontend sync to prevent duplicates.
+    console.log('Frontend sync skipped - handled by backend.');
+    return { success: true, message: 'Handled by backend', count: 0 };
 };
+
 
 /**
  * Extract reminder/date information from form data based on form type

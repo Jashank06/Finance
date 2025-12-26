@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiBell, FiClock, FiCalendar, FiRepeat, FiPlus, FiTrash2, FiCheck, FiX, FiAlertCircle } from 'react-icons/fi';
 import './RemindersNotifications.css';
-import { getRemindersFromStorage, createReminder, deleteReminderFromStorage, updateReminderStatus } from '../../../utils/remindersSyncUtil';
+import reminderAPI from '../../../utils/reminderAPI';
 
 const RemindersNotifications = () => {
   const [reminders, setReminders] = useState([]);
@@ -10,6 +10,7 @@ const RemindersNotifications = () => {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [activeTab, setActiveTab] = useState('reminders');
   const [filter, setFilter] = useState('all');
+  const [viewType, setViewType] = useState('upcoming'); // 'upcoming' or 'passed'
 
   const [newReminder, setNewReminder] = useState({
     title: '',
@@ -34,11 +35,15 @@ const RemindersNotifications = () => {
   // Load reminders from backend on mount
   useEffect(() => {
     const loadReminders = async () => {
-      const loadedReminders = await getRemindersFromStorage();
-      setReminders(loadedReminders);
+      try {
+        const response = await reminderAPI.getAll(viewType === 'passed' ? '?showPassed=true' : '');
+        setReminders(response.data.reminders || []);
+      } catch (error) {
+        console.error('Error loading reminders:', error);
+      }
     };
     loadReminders();
-  }, []);
+  }, [viewType]);
 
   // Keep notifications as demo data for now
   useEffect(() => {
@@ -64,12 +69,16 @@ const RemindersNotifications = () => {
       };
 
       // Save to backend
-      const success = await createReminder(reminder);
+      // Save to backend
+      try {
+        await reminderAPI.create(reminder);
 
-      if (success) {
         // Reload reminders from backend
-        const updated = await getRemindersFromStorage();
-        setReminders(updated);
+        const response = await reminderAPI.getAll();
+        setReminders(response.data || []);
+
+      } catch (error) {
+        console.error('Error creating reminder:', error);
       }
 
       setNewReminder({
@@ -108,9 +117,13 @@ const RemindersNotifications = () => {
   };
 
   const deleteReminder = async (id) => {
-    await deleteReminderFromStorage(id);
-    const updated = await getRemindersFromStorage();
-    setReminders(updated);
+    try {
+      await reminderAPI.delete(id);
+      const response = await reminderAPI.getAll();
+      setReminders(response.data.reminders || []);
+    } catch (error) {
+      console.error('Error deleting reminder:', error);
+    }
   };
 
   const deleteNotification = (id) => {
@@ -118,11 +131,19 @@ const RemindersNotifications = () => {
   };
 
   const toggleReminderStatus = async (id) => {
-    const reminder = reminders.find(r => r.id === id);
-    const newStatus = reminder.status === 'active' ? 'paused' : 'active';
-    await updateReminderStatus(id, newStatus);
-    const updated = await getRemindersFromStorage();
-    setReminders(updated);
+    try {
+      const reminder = reminders.find(r => r._id === id || r.id === id); // Handle both id formats if migrating
+      if (!reminder) return;
+
+      const newStatus = reminder.status === 'active' ? 'paused' : 'active';
+      // Note: Backend Reminder model expects PUT to update fields
+      await reminderAPI.update(reminder._id || reminder.id, { status: newStatus });
+
+      const response = await reminderAPI.getAll();
+      setReminders(response.data.reminders || []);
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
   };
 
   const markNotificationAsRead = (id) => {
@@ -171,9 +192,9 @@ const RemindersNotifications = () => {
           <button className="btn btn-primary" onClick={() => setShowReminderModal(true)}>
             <FiPlus /> Add Reminder
           </button>
-          <button className="btn btn-outline" onClick={() => setShowNotificationModal(true)}>
+          {/* <button className="btn btn-outline" onClick={() => setShowNotificationModal(true)}>
             <FiPlus /> Send Notification
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -186,16 +207,30 @@ const RemindersNotifications = () => {
           >
             <FiClock /> Reminders ({reminders.length})
           </button>
-          <button
+          {/* <button
             className={`tab ${activeTab === 'notifications' ? 'active' : ''} `}
             onClick={() => setActiveTab('notifications')}
           >
             <FiBell /> Notifications ({notifications.length})
-          </button>
+          </button> */}
         </div>
 
         {activeTab === 'reminders' && (
           <div className="filter-section">
+            <div className="view-toggle">
+              <button
+                className={`btn-toggle ${viewType === 'upcoming' ? 'active' : ''}`}
+                onClick={() => setViewType('upcoming')}
+              >
+                Upcoming
+              </button>
+              <button
+                className={`btn-toggle ${viewType === 'passed' ? 'active' : ''}`}
+                onClick={() => setViewType('passed')}
+              >
+                Passed (30d)
+              </button>
+            </div>
             <label>Filter:</label>
             <select value={filter} onChange={(e) => setFilter(e.target.value)}>
               <option value="all">All Categories</option>
@@ -235,8 +270,11 @@ const RemindersNotifications = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredReminders.map(reminder => (
-                    <tr key={reminder.id}>
+                  {filteredReminders.map((reminder, idx) => (
+                    <tr
+                      key={reminder._id || reminder.id}
+                      className={idx === 0 && filter === 'all' && viewType === 'upcoming' ? 'highlighted-row' : ''}
+                    >
                       <td><strong>{reminder.title}</strong></td>
                       <td className="description">{reminder.description}</td>
                       <td>
@@ -283,14 +321,14 @@ const RemindersNotifications = () => {
                         <div className="action-buttons">
                           <button
                             className={`icon - btn ${reminder.status} `}
-                            onClick={() => toggleReminderStatus(reminder.id)}
+                            onClick={() => toggleReminderStatus(reminder._id || reminder.id)}
                             title={reminder.status === 'active' ? 'Pause' : 'Activate'}
                           >
                             {reminder.status === 'active' ? <FiX /> : <FiCheck />}
                           </button>
                           <button
                             className="icon-btn delete"
-                            onClick={() => deleteReminder(reminder.id)}
+                            onClick={() => deleteReminder(reminder._id || reminder.id)}
                             title="Delete"
                           >
                             <FiTrash2 />

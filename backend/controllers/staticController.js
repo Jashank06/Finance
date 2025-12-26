@@ -1,4 +1,12 @@
 const mongoose = require('mongoose');
+const {
+  syncInventoryToReminders,
+  syncDigitalAssetToReminders,
+  syncPersonalRecordToReminders,
+  syncFamilyProfileToReminders,
+  syncMembershipToReminders,
+  syncBasicDetailsToReminders
+} = require('../utils/reminderSyncUtil');
 
 // Define schemas for static data
 const BasicDetailsSchema = new mongoose.Schema({
@@ -809,6 +817,13 @@ const FamilyProfileSchema = new mongoose.Schema({
     panNumber: String,
     passportNumber: String,
     drivingLicense: String,
+    documents: [{
+      documentType: String,
+      idNumber: String,
+      issuingAuthority: String,
+      issueDate: String,
+      expiryDate: String
+    }],
     additionalInfo: {
       nickname: String,
       nationality: { type: String, default: 'Indian' },
@@ -946,7 +961,7 @@ const FamilyTasks = mongoose.model('FamilyTasks', FamilyTasksSchema);
 
 // Custom DigitalAssets controller with proper validation
 // Generic controller factory function
-const createStaticController = (Model) => {
+const createStaticController = (Model, syncCallback = null) => {
   return {
     // Get all records for a user
     getAll: async (req, res) => {
@@ -985,6 +1000,15 @@ const createStaticController = (Model) => {
           userId: req.userId
         });
         await record.save();
+
+        if (syncCallback) {
+          try {
+            await syncCallback(record);
+          } catch (syncError) {
+            console.error(`Error syncing reminders for ${Model.modelName}:`, syncError);
+          }
+        }
+
         res.status(201).json(record);
       } catch (error) {
         console.error(`Error creating ${Model.modelName}:`, error);
@@ -1011,6 +1035,18 @@ const createStaticController = (Model) => {
 
         if (Model.modelName === 'BasicDetails') {
           console.log('Saved Record subBrokers:', JSON.stringify(record.subBrokers, null, 2));
+        }
+
+        if (Model.modelName === 'BasicDetails') {
+          console.log('Saved Record subBrokers:', JSON.stringify(record.subBrokers, null, 2));
+        }
+
+        if (syncCallback) {
+          try {
+            await syncCallback(record);
+          } catch (syncError) {
+            console.error(`Error syncing reminders for ${Model.modelName}:`, syncError);
+          }
         }
 
         res.json(record);
@@ -1080,6 +1116,13 @@ const DigitalAssetsController = {
 
       const record = new DigitalAssets(recordData);
       await record.save();
+
+      try {
+        await syncDigitalAssetToReminders(record);
+      } catch (syncError) {
+        console.error('Error syncing DigitalAsset reminders:', syncError);
+      }
+
       res.status(201).json(record);
     } catch (error) {
       console.error('Error creating DigitalAssets:', error);
@@ -1113,6 +1156,12 @@ const DigitalAssetsController = {
       }
 
       res.json(record);
+
+      try {
+        await syncDigitalAssetToReminders(record);
+      } catch (syncError) {
+        console.error('Error syncing DigitalAsset reminders:', syncError);
+      }
     } catch (error) {
       console.error('Error updating DigitalAssets:', error);
       res.status(500).json({ message: 'Failed to update record', error: error.message });
@@ -1135,18 +1184,18 @@ const DigitalAssetsController = {
 };
 
 module.exports = {
-  BasicDetailsController: createStaticController(BasicDetails),
+  BasicDetailsController: createStaticController(BasicDetails, syncBasicDetailsToReminders),
   CompanyRecordsController: createStaticController(CompanyRecords),
   MobileEmailDetailsController: createStaticController(MobileEmailDetails),
-  PersonalRecordsController: createStaticController(PersonalRecords),
+  PersonalRecordsController: createStaticController(PersonalRecords, syncPersonalRecordToReminders),
   OnlineAccessDetailsController: createStaticController(OnlineAccessDetails),
-  InventoryRecordController: createStaticController(InventoryRecord),
+  InventoryRecordController: createStaticController(InventoryRecord, syncInventoryToReminders),
   ContactManagementController: createStaticController(ContactManagement),
   DigitalAssetsController: DigitalAssetsController,
   CustomerSupportController: createStaticController(CustomerSupport),
-  FamilyProfileController: createStaticController(FamilyProfile),
+  FamilyProfileController: createStaticController(FamilyProfile, syncFamilyProfileToReminders),
   LandRecordsController: createStaticController(LandRecords),
-  MembershipListController: createStaticController(MembershipList),
+  MembershipListController: createStaticController(MembershipList, syncMembershipToReminders),
   FamilyTasksController: createStaticController(FamilyTasks),
 
   // Export models for use in routes

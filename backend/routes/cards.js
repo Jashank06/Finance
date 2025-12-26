@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Card = require('../models/Card');
+const { BasicDetails } = require('../controllers/staticController');
 const auth = require('../middleware/auth');
 
 // Get all cards for a user
@@ -101,14 +102,35 @@ router.post('/', auth, async (req, res) => {
     });
 
     const savedCard = await card.save();
-    
+
+    // Sync with Basic Details
+    try {
+      const basicDetails = await BasicDetails.findOne({ userId: req.user.id });
+      if (basicDetails) {
+        basicDetails.cards.push({
+          bankName: savedCard.issuer || savedCard.bankName,
+          cardHolderName: savedCard.cardholderName,
+          cardNumber: savedCard.cardNumber,
+          expiryDate: savedCard.expiryDate,
+          cvv: savedCard.cvv,
+          cardType: savedCard.type,
+          customerCareNumber: '', // Not in Card model
+          customerCareEmail: '', // Not in Card model
+          goalPurpose: '' // Not in Card model
+        });
+        await basicDetails.save();
+      }
+    } catch (syncError) {
+      console.error('Error syncing card to Basic Details:', syncError);
+    }
+
     // Return safe version without sensitive data
     const safeCard = {
       ...savedCard.toObject(),
       cvv: '***',
       cardNumber: `****-****-****-${savedCard.cardNumber.slice(-4)}`
     };
-    
+
     res.status(201).json(safeCard);
   } catch (error) {
     console.error('Error creating card:', error);
@@ -123,17 +145,66 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const updates = req.body;
-    
+
     // Remove spaces from card number if provided
     if (updates.cardNumber) {
       updates.cardNumber = updates.cardNumber.replace(/\s/g, '');
     }
-    
+
     const card = await Card.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
       updates,
       { new: true, runValidators: true }
     );
+
+    // Sync updates with Basic Details
+    if (card) {
+      try {
+        const basicDetails = await BasicDetails.findOne({ userId: req.user.id });
+        if (basicDetails) {
+          // Try to find the card in Basic Details by matching card number (if not masked in update)
+          // or by some other heuristic. Since we don't have a shared ID, we'll try to match by exact card number
+          // This is imperfect but best effort.
+          // Better approach: If we had a shared ID. 
+          // Alternative: Match by 'cardNumber' if it's in the updates and unmasked.
+          // But updates might not have unmasked card number.
+
+          // Strategy: Match by card number relative to the *old* card number? 
+          // We can't easily do that here without fetching old card first.
+          // Simplified Update: Only sync if we can confidently identify the card. 
+          // Actually, matching by cardNumber is the only way in BasicDetails schema.
+
+          // Implementation: 
+          // 1. If cardNumber was updated, we might lose the link.
+          // 2. We will search for a card in basicDetails that matches the *current* saved card's number.
+
+          const cardIndex = basicDetails.cards.findIndex(c => c.cardNumber === card.cardNumber);
+          if (cardIndex !== -1) {
+            // Update fields
+            basicDetails.cards[cardIndex].bankName = card.issuer || card.bankName;
+            basicDetails.cards[cardIndex].cardHolderName = card.cardholderName;
+            basicDetails.cards[cardIndex].expiryDate = card.expiryDate;
+            basicDetails.cards[cardIndex].cvv = card.cvv;
+            basicDetails.cards[cardIndex].cardType = card.type;
+            await basicDetails.save();
+          } else {
+            // If not found, maybe push it? Or ignore?
+            // Optional: push if not found.
+            basicDetails.cards.push({
+              bankName: card.issuer || card.bankName,
+              cardHolderName: card.cardholderName,
+              cardNumber: card.cardNumber,
+              expiryDate: card.expiryDate,
+              cvv: card.cvv,
+              cardType: card.type
+            });
+            await basicDetails.save();
+          }
+        }
+      } catch (syncError) {
+        console.error('Error syncing card update to Basic Details:', syncError);
+      }
+    }
 
     if (!card) {
       return res.status(404).json({ message: 'Card not found' });
@@ -160,7 +231,7 @@ router.put('/:id', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
   try {
     const card = await Card.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
-    
+
     if (!card) {
       return res.status(404).json({ message: 'Card not found' });
     }
@@ -176,7 +247,7 @@ router.delete('/:id', auth, async (req, res) => {
 router.patch('/:id/block', auth, async (req, res) => {
   try {
     const { isBlocked } = req.body;
-    
+
     const card = await Card.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
       { isBlocked },
@@ -208,7 +279,7 @@ router.get('/summary/type', auth, async (req, res) => {
         }
       }
     ]);
-    
+
     res.json(summary);
   } catch (error) {
     console.error('Error fetching cards summary:', error);
@@ -219,18 +290,18 @@ router.get('/summary/type', auth, async (req, res) => {
 // Get cards by issuer
 router.get('/by-issuer/:issuer', auth, async (req, res) => {
   try {
-    const cards = await Card.find({ 
-      userId: req.user.id, 
+    const cards = await Card.find({
+      userId: req.user.id,
       issuer: new RegExp(req.params.issuer, 'i'),
-      isActive: true 
+      isActive: true
     }).sort({ createdAt: -1 });
-    
+
     const safeCards = cards.map(card => ({
       ...card.toObject(),
       cvv: '***',
       cardNumber: card.cardNumber ? `****-****-****-${card.cardNumber.slice(-4)}` : ''
     }));
-    
+
     res.json(safeCards);
   } catch (error) {
     console.error('Error fetching cards by issuer:', error);

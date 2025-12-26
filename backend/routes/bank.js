@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Bank = require('../models/Bank');
+const { BasicDetails } = require('../controllers/staticController');
 const auth = require('../middleware/auth');
 
 // Get all bank accounts for a user
@@ -121,6 +122,35 @@ router.post('/', auth, async (req, res) => {
     });
 
     const savedAccount = await bankAccount.save();
+
+    // Sync with Basic Details
+    try {
+      const basicDetails = await BasicDetails.findOne({ userId: req.user.id });
+      if (basicDetails) {
+        basicDetails.banks.push({
+          bankName: savedAccount.bankName,
+          accountType: savedAccount.type,
+          holdingType: '', // Not in Bank model explicitly
+          accountHolderName: savedAccount.accountHolderName,
+          customerId: '', // Not in Bank model
+          accountNumber: savedAccount.accountNumber,
+          ifscCode: savedAccount.ifscCode,
+          branchAddress: savedAccount.branchAddress,
+          registeredMobile: '', // Not in Bank model
+          registeredAddress: '', // Not in Bank model
+          nominee: savedAccount.nomineeName,
+          registeredEmail: '', // Not in Bank model
+          rmName: '', // Not in Bank model
+          rmMobile: '', // Not in Bank model
+          rmEmail: '', // Not in Bank model
+          goalPurpose: '' // Not in Bank model
+        });
+        await basicDetails.save();
+      }
+    } catch (syncError) {
+      console.error('Error syncing bank account to Basic Details:', syncError);
+    }
+
     res.status(201).json(savedAccount);
   } catch (error) {
     console.error('Error creating bank account:', error);
@@ -135,12 +165,12 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const updates = req.body;
-    
+
     // Convert IFSC code to uppercase if provided
     if (updates.ifscCode) {
       updates.ifscCode = updates.ifscCode.toUpperCase();
     }
-    
+
     const bankAccount = await Bank.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
       updates,
@@ -149,6 +179,41 @@ router.put('/:id', auth, async (req, res) => {
 
     if (!bankAccount) {
       return res.status(404).json({ message: 'Bank account not found' });
+    }
+
+    // Sync updates with Basic Details
+    try {
+      const basicDetails = await BasicDetails.findOne({ userId: req.user.id });
+      if (basicDetails) {
+        // Find by account number
+        const accountIndex = basicDetails.banks.findIndex(b => b.accountNumber === bankAccount.accountNumber);
+
+        if (accountIndex !== -1) {
+          // Update fields
+          basicDetails.banks[accountIndex].bankName = bankAccount.bankName;
+          basicDetails.banks[accountIndex].accountType = bankAccount.type;
+          basicDetails.banks[accountIndex].accountHolderName = bankAccount.accountHolderName;
+          basicDetails.banks[accountIndex].ifscCode = bankAccount.ifscCode;
+          basicDetails.banks[accountIndex].branchAddress = bankAccount.branchAddress;
+          basicDetails.banks[accountIndex].nominee = bankAccount.nomineeName;
+
+          await basicDetails.save();
+        } else {
+          // If not found, add it
+          basicDetails.banks.push({
+            bankName: bankAccount.bankName,
+            accountType: bankAccount.type,
+            accountHolderName: bankAccount.accountHolderName,
+            accountNumber: bankAccount.accountNumber,
+            ifscCode: bankAccount.ifscCode,
+            branchAddress: bankAccount.branchAddress,
+            nominee: bankAccount.nomineeName
+          });
+          await basicDetails.save();
+        }
+      }
+    } catch (syncError) {
+      console.error('Error syncing bank update to Basic Details:', syncError);
     }
 
     res.json(bankAccount);
@@ -165,7 +230,7 @@ router.put('/:id', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
   try {
     const bankAccount = await Bank.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
-    
+
     if (!bankAccount) {
       return res.status(404).json({ message: 'Bank account not found' });
     }
@@ -181,10 +246,10 @@ router.delete('/:id', auth, async (req, res) => {
 router.patch('/:id/balance', auth, async (req, res) => {
   try {
     const { balance, lastTransactionDate } = req.body;
-    
+
     const bankAccount = await Bank.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
-      { 
+      {
         balance,
         lastTransactionDate: lastTransactionDate || new Date()
       },
@@ -206,7 +271,7 @@ router.patch('/:id/balance', auth, async (req, res) => {
 router.patch('/:id/status', auth, async (req, res) => {
   try {
     const { isDormant } = req.body;
-    
+
     const bankAccount = await Bank.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
       { isDormant },
@@ -238,7 +303,7 @@ router.get('/summary/type', auth, async (req, res) => {
         }
       }
     ]);
-    
+
     res.json(summary);
   } catch (error) {
     console.error('Error fetching bank summary:', error);
@@ -249,12 +314,12 @@ router.get('/summary/type', auth, async (req, res) => {
 // Get bank accounts by bank name
 router.get('/by-bank/:bankName', auth, async (req, res) => {
   try {
-    const bankAccounts = await Bank.find({ 
-      userId: req.user.id, 
+    const bankAccounts = await Bank.find({
+      userId: req.user.id,
       bankName: new RegExp(req.params.bankName, 'i'),
-      isActive: true 
+      isActive: true
     }).sort({ createdAt: -1 });
-    
+
     res.json(bankAccounts);
   } catch (error) {
     console.error('Error fetching bank accounts by bank:', error);
@@ -275,7 +340,7 @@ router.get('/summary/total', auth, async (req, res) => {
         }
       }
     ]);
-    
+
     res.json(summary);
   } catch (error) {
     console.error('Error fetching total balance:', error);

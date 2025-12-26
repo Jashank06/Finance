@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { BasicDetailsController, CompanyRecordsController, MobileEmailDetailsController, PersonalRecordsController, OnlineAccessDetailsController, InventoryRecordController, ContactManagementController, DigitalAssetsController, CustomerSupportController, FamilyProfileController, LandRecordsController, MembershipListController, FamilyTasksController } = require('../controllers/staticController');
+const { syncInventoryToReminders, syncDigitalAssetToReminders, syncPersonalRecordToReminders, syncFamilyProfileToReminders, syncMembershipToReminders } = require('../utils/reminderSyncUtil');
 const auth = require('../middleware/auth');
 
 // Middleware to protect all routes
@@ -102,19 +103,19 @@ const createPlaceholderRoutes = (routeName) => {
   router.get(`/${routeName}`, (req, res) => {
     res.status(501).json({ message: `${routeName} endpoints not yet implemented` });
   });
-  
+
   router.get(`/${routeName}/:id`, (req, res) => {
     res.status(501).json({ message: `${routeName} endpoints not yet implemented` });
   });
-  
+
   router.post(`/${routeName}`, (req, res) => {
     res.status(501).json({ message: `${routeName} endpoints not yet implemented` });
   });
-  
+
   router.put(`/${routeName}/:id`, (req, res) => {
     res.status(501).json({ message: `${routeName} endpoints not yet implemented` });
   });
-  
+
   router.delete(`/${routeName}/:id`, (req, res) => {
     res.status(501).json({ message: `${routeName} endpoints not yet implemented` });
   });

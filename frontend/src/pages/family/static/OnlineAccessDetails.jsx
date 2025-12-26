@@ -25,9 +25,18 @@ const OnlineAccessDetails = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  
+
 
   const CATEGORY_KEY = 'static-online-access';
+  const DEFAULT_CATEGORIES = [
+    'Banking',
+    'Trading / Investment',
+    'Utilities',
+    'Government / Tax',
+    'Email',
+    'Social',
+    'Work / SaaS'
+  ];
 
   const toPayload = (data) => ({
     category: CATEGORY_KEY,
@@ -169,19 +178,39 @@ const OnlineAccessDetails = () => {
                 <div className="form-group">
                   <label>Category</label>
                   <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    value={DEFAULT_CATEGORIES.includes(formData.category) ? formData.category : 'Other'}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === 'Other') {
+                        // If switching to Other, we can keep the current value if it was already custom, or clear it if it was a default
+                        if (DEFAULT_CATEGORIES.includes(formData.category)) {
+                          setFormData({ ...formData, category: '' });
+                        }
+                        // If it was already custom, do nothing (keep it)
+                      } else {
+                        setFormData({ ...formData, category: value });
+                      }
+                    }}
                   >
-                    <option>Banking</option>
-                    <option>Trading / Investment</option>
-                    <option>Utilities</option>
-                    <option>Government / Tax</option>
-                    <option>Email</option>
-                    <option>Social</option>
-                    <option>Work / SaaS</option>
-                    <option>Other</option>
+                    {DEFAULT_CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                    <option value="Other">Other</option>
                   </select>
                 </div>
+
+                {!DEFAULT_CATEGORIES.includes(formData.category) && (
+                  <div className="form-group">
+                    <label>Specify Category</label>
+                    <input
+                      type="text"
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      placeholder="Enter custom category"
+                      autoFocus
+                    />
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label>Service Name</label>

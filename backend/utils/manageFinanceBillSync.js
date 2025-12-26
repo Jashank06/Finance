@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Investment = require('../models/Investment');
+const { syncInvestmentToReminders } = require('./reminderSyncUtil');
 
 /**
  * Sync between Manage Finance (Scheduled Expenses) and Bill Dates
@@ -37,7 +38,7 @@ const syncScheduledExpenseToBillDates = async (scheduledExpense, userId) => {
             } catch (e) {
                 notes = {};
             }
-            
+
             // Check if bill is linked to this scheduled expense
             return notes.scheduledExpenseId === scheduledExpense._id.toString();
         });
@@ -61,7 +62,7 @@ const syncScheduledExpenseToBillDates = async (scheduledExpense, userId) => {
 const createBillFromScheduledExpense = async (scheduledExpense, userId) => {
     try {
         const billType = mapCategoryToBillType(scheduledExpense.category);
-        
+
         const billData = {
             userId: userId,
             category: BILL_CATEGORY_KEY,
@@ -93,7 +94,13 @@ const createBillFromScheduledExpense = async (scheduledExpense, userId) => {
 
         const bill = new Investment(billData);
         await bill.save();
-        
+
+        try {
+            await syncInvestmentToReminders(bill);
+        } catch (syncError) {
+            console.error('Error syncing bill reminder:', syncError);
+        }
+
         console.log('Created bill in Bill Dates from scheduled expense:', bill._id);
         return bill;
     } catch (error) {
@@ -134,6 +141,12 @@ const updateBillFromScheduledExpense = async (bill, scheduledExpense) => {
         bill.notes = JSON.stringify(notes);
         await bill.save();
 
+        try {
+            await syncInvestmentToReminders(bill);
+        } catch (syncError) {
+            console.error('Error syncing bill reminder:', syncError);
+        }
+
         console.log('Updated bill in Bill Dates from scheduled expense:', bill._id);
         return bill;
     } catch (error) {
@@ -158,7 +171,7 @@ const mapCategoryToBillType = (category) => {
         'education': 'School Fees',
         'other': 'Other'
     };
-    
+
     return categoryMap[category] || 'Other';
 };
 

@@ -21,6 +21,52 @@ const BillDates = () => {
   const [showBillOptions, setShowBillOptions] = useState(null);
   const [referenceBills, setReferenceBills] = useState([]);
   const [showReferencePanel, setShowReferencePanel] = useState(true);
+
+  // Helper function to convert day input to full date based on cycle
+  const convertDayToDate = (day, cycle, baseDate = new Date()) => {
+    const dayNum = parseInt(day);
+    if (!dayNum || dayNum < 1 || dayNum > 31) return '';
+    
+    const date = new Date(baseDate);
+    
+    if (cycle === 'monthly') {
+      // For monthly, use current month and year
+      date.setDate(dayNum);
+    } else if (cycle === 'quarterly') {
+      // For quarterly, use current quarter
+      const month = Math.floor(date.getMonth() / 3) * 3;
+      date.setMonth(month);
+      date.setDate(dayNum);
+    } else if (cycle === 'yearly') {
+      // For yearly, use current year
+      date.setDate(dayNum);
+    } else {
+      // For one-time, use current date
+      date.setDate(dayNum);
+    }
+    
+    return date.toISOString().slice(0, 10);
+  };
+
+  // Helper function to extract day from full date
+  const extractDayFromDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.getDate().toString();
+  };
+
+  // Handle day input changes
+  const handleDayChange = (field, value) => {
+    const dayValue = value.replace(/\D/g, '').slice(0, 2); // Only allow numbers, max 2 digits
+    const cycle = inputs.cycle || 'monthly';
+    
+    if (field === 'dueDate') {
+      setInputs({ ...inputs, dueDate: convertDayToDate(dayValue, cycle) });
+    } else if (field === 'payableDate') {
+      setInputs({ ...inputs, payableDate: convertDayToDate(dayValue, cycle) });
+    }
+  };
+
   const [inputs, setInputs] = useState({
     billType: 'Electricity',
     billName: '',
@@ -90,6 +136,7 @@ const BillDates = () => {
       cycle: inv.frequency || notes.cycle || 'monthly',
       amount: inv.amount || notes.amount || 0,
       dueDate: inv.maturityDate?.slice(0, 10) || notes.dueDate || '',
+      payableDate: inv.payableDate?.slice(0, 10) || notes.payableDate || '',
       autoDebit: notes.autoDebit || false,
       status: notes.status || 'pending',
       startDate: inv.startDate?.slice(0, 10) || notes.startDate || '',
@@ -330,6 +377,7 @@ const BillDates = () => {
     amount: Number(data.amount) || 0,
     startDate: data.startDate || new Date().toISOString().slice(0, 10),
     maturityDate: data.dueDate || undefined,
+    payableDate: data.payableDate || undefined,
     frequency: data.cycle || 'monthly',
     notes: JSON.stringify({ ...data }),
   });
@@ -399,8 +447,10 @@ const BillDates = () => {
     }, {});
 
     for (const e of Object.values(uniqueBills)) {
-      if (!e.dueDate) continue;
-      const d = new Date(e.dueDate);
+      // Use payableDate if available, otherwise fall back to dueDate
+      const dateToUse = e.payableDate || e.dueDate;
+      if (!dateToUse) continue;
+      const d = new Date(dateToUse);
       if (d.getFullYear() !== selectedYear) continue;
       const bucket = byMonth[d.getMonth()];
       bucket.items.push({
@@ -414,6 +464,7 @@ const BillDates = () => {
         amount: Number(e.amount) || 0,
         accountNumber: e.accountNumber,
         dueDate: e.dueDate,
+        payableDate: e.payableDate,
         autoDebit: e.autoDebit,
         status: e.status,
         startDate: e.startDate,
@@ -638,7 +689,18 @@ const BillDates = () => {
             <div className="form-row">
               <div className="form-field">
                 <label>Cycle *</label>
-                <select value={inputs.cycle} onChange={(e) => setInputs({ ...inputs, cycle: e.target.value })} required>
+                <select value={inputs.cycle} onChange={(e) => {
+                  const newCycle = e.target.value;
+                  const currentDueDay = extractDayFromDate(inputs.dueDate);
+                  const currentPayableDay = extractDayFromDate(inputs.payableDate);
+                  
+                  setInputs({ 
+                    ...inputs, 
+                    cycle: newCycle,
+                    dueDate: currentDueDay ? convertDayToDate(currentDueDay, newCycle) : '',
+                    payableDate: currentPayableDay ? convertDayToDate(currentPayableDay, newCycle) : ''
+                  });
+                }} required>
                   <option>monthly</option>
                   <option>quarterly</option>
                   <option>yearly</option>
@@ -651,11 +713,30 @@ const BillDates = () => {
               </div>
               <div className="form-field">
                 <label>Due Date *</label>
-                <input type="date" value={inputs.dueDate} onChange={(e) => setInputs({ ...inputs, dueDate: e.target.value })} required />
+                <input 
+                  type="text" 
+                  value={extractDayFromDate(inputs.dueDate)} 
+                  onChange={(e) => handleDayChange('dueDate', e.target.value)} 
+                  placeholder="Day (1-31)" 
+                  maxLength={2}
+                  required 
+                />
+                <small style={{ color: '#666', fontSize: '12px' }}>
+                  Enter day only (e.g., 15). {inputs.cycle === 'monthly' ? 'Monthly cycle applies' : inputs.cycle === 'yearly' ? 'Yearly cycle applies' : inputs.cycle === 'quarterly' ? 'Quarterly cycle applies' : 'One-time'}
+                </small>
               </div>
               <div className="form-field">
                 <label>Payable Date</label>
-                <input type="date" value={inputs.payableDate} onChange={(e) => setInputs({ ...inputs, payableDate: e.target.value })} />
+                <input 
+                  type="text" 
+                  value={extractDayFromDate(inputs.payableDate)} 
+                  onChange={(e) => handleDayChange('payableDate', e.target.value)} 
+                  placeholder="Day (1-31)" 
+                  maxLength={2}
+                />
+                <small style={{ color: '#666', fontSize: '12px' }}>
+                  Enter day only (e.g., 10). {inputs.cycle === 'monthly' ? 'Monthly cycle applies' : inputs.cycle === 'yearly' ? 'Yearly cycle applies' : inputs.cycle === 'quarterly' ? 'Quarterly cycle applies' : 'One-time'}
+                </small>
               </div>
             </div>
 

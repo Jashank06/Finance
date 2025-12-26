@@ -20,7 +20,7 @@ const CompanyProfile = () => {
     tanNumber: '',
     gstNumber: '',
     cinNumber: '',
-    
+
     // Contact Information
     registeredOffice: {
       address: '',
@@ -42,27 +42,27 @@ const CompanyProfile = () => {
       email: ''
     },
     sameAsRegistered: true,
-    
+
     // Management Information
     directors: [],
     shareholders: [],
     authorizedSignatories: [],
-    
+
     // Business Information
     businessActivities: [],
     turnover: '',
     employeeCount: '',
     branches: [],
-    
+
     // Bank Information
     bankAccounts: [],
-    
+
     // Compliance Information
     complianceStatus: '',
     lastAuditDate: '',
     nextAuditDue: '',
     taxStatus: '',
-    
+
     // Documents
     documents: {
       incorporationCertificate: '',
@@ -143,26 +143,26 @@ const CompanyProfile = () => {
     setFormData(prev => ({
       ...prev,
       sameAsRegistered: checked,
-      corporateOffice: checked 
-        ? { ...prev.registeredOffice } 
+      corporateOffice: checked
+        ? { ...prev.registeredOffice }
         : prev.corporateOffice || {
-            address: '',
-            city: '',
-            state: '',
-            pincode: '',
-            country: 'India',
-            phone: '',
-            email: ''
-          }
+          address: '',
+          city: '',
+          state: '',
+          pincode: '',
+          country: 'India',
+          phone: '',
+          email: ''
+        }
     }));
   };
 
   const addDirector = () => {
     setFormData(prev => ({
       ...prev,
-      directors: [...prev.directors, { 
-        name: '', 
-        din: '', 
+      directors: [...prev.directors, {
+        name: '',
+        din: '',
         appointmentDate: '',
         mcaMobileNumber: '',
         mcaEmailId: '',
@@ -178,7 +178,7 @@ const CompanyProfile = () => {
   const updateDirector = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
-      directors: prev.directors.map((director, i) => 
+      directors: prev.directors.map((director, i) =>
         i === index ? { ...director, [field]: value } : director
       )
     }));
@@ -194,12 +194,12 @@ const CompanyProfile = () => {
   const addBankAccount = () => {
     setFormData(prev => ({
       ...prev,
-      bankAccounts: [...prev.bankAccounts, { 
-        bankName: '', 
-        accountNumber: '', 
-        accountType: '', 
-        ifscCode: '', 
-        branch: '' 
+      bankAccounts: [...prev.bankAccounts, {
+        bankName: '',
+        accountNumber: '',
+        accountType: '',
+        ifscCode: '',
+        branch: ''
       }]
     }));
   };
@@ -207,7 +207,7 @@ const CompanyProfile = () => {
   const updateBankAccount = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
-      bankAccounts: prev.bankAccounts.map((account, i) => 
+      bankAccounts: prev.bankAccounts.map((account, i) =>
         i === index ? { ...account, [field]: value } : account
       )
     }));
@@ -223,14 +223,14 @@ const CompanyProfile = () => {
   const handleSave = async () => {
     try {
       setLoading(true);
-      
+
       let response;
       if (editingCompany) {
         // Update existing company
         const companyId = editingCompany._id || editingCompany.id;
         response = await staticAPI.updateCompanyRecord(companyId, formData);
-        setCompanies(prev => prev.map(company => 
-          (company._id || company.id) === companyId 
+        setCompanies(prev => prev.map(company =>
+          (company._id || company.id) === companyId
             ? { ...formData, _id: companyId }
             : company
         ));
@@ -240,7 +240,7 @@ const CompanyProfile = () => {
         const newCompany = { ...formData, _id: response.data?._id || response.data?.id };
         setCompanies(prev => [...prev, newCompany]);
       }
-      
+
       setShowForm(false);
       setEditingCompany(null);
       setEditMode(false);
@@ -514,6 +514,24 @@ const CompanyProfile = () => {
                       type="text"
                       value={formData.cinNumber}
                       onChange={(e) => handleInputChange('cinNumber', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>City</label>
+                    <input
+                      type="text"
+                      value={formData.registeredOffice?.city || ''}
+                      onChange={(e) => handleAddressChange('registeredOffice', 'city', e.target.value)}
+                      placeholder="e.g. Mumbai"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>State</label>
+                    <input
+                      type="text"
+                      value={formData.registeredOffice?.state || ''}
+                      onChange={(e) => handleAddressChange('registeredOffice', 'state', e.target.value)}
+                      placeholder="e.g. Maharashtra"
                     />
                   </div>
                 </div>

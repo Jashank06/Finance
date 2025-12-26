@@ -7,6 +7,7 @@ const Reminder = require('../models/monitoring/Reminder');
 const Notification = require('../models/monitoring/Notification');
 const { syncBillStatusToExpenses, BILL_CATEGORY_KEY } = require('../utils/billExpenseSync');
 const { syncBillPaymentToScheduledExpense } = require('../utils/manageFinanceBillSync');
+const { syncInsuranceToReminders, syncLoanToReminders, syncInvestmentToReminders } = require('../utils/reminderSyncUtil');
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ router.get('/', authMiddleware, async (req, res) => {
   try {
     const { category } = req.query;
     const query = { userId: req.userId };
-    
+
     if (category) {
       query.category = category;
     }
@@ -34,11 +35,11 @@ router.get('/:id', authMiddleware, async (req, res) => {
       _id: req.params.id,
       userId: req.userId,
     });
-    
+
     if (!investment) {
       return res.status(404).json({ message: 'Investment not found' });
     }
-    
+
     res.json({ investment });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching investment', error: error.message });
@@ -50,7 +51,7 @@ router.post('/', authMiddleware, async (req, res) => {
   try {
     console.log('Creating investment with data:', req.body);
     console.log('User ID:', req.userId);
-    
+
     // Normalize incoming fields across categories
     const investmentData = {
       ...req.body,
@@ -62,7 +63,7 @@ router.post('/', authMiddleware, async (req, res) => {
       investmentData.startDate = investmentData.purchaseDate;
       delete investmentData.purchaseDate;
     }
-    
+
     // Map bankName to provider for bank-schemes
     if (investmentData.bankName && !investmentData.provider) {
       investmentData.provider = investmentData.bankName;
@@ -84,10 +85,23 @@ router.post('/', authMiddleware, async (req, res) => {
         investmentData.returnsPercentage = investmentData.amount > 0 ? (investmentData.returns / investmentData.amount * 100) : 0;
       }
     }
-    
+
     const investment = new Investment(investmentData);
     await investment.save();
-    
+
+    // Sync Reminders
+    try {
+      if (investment.category === 'insurance' || investment.type === 'Insurance') {
+        await syncInsuranceToReminders(investment);
+      } else if (investment.category === 'loan' || investment.category === 'daily-loan-ledger') {
+        await syncLoanToReminders(investment);
+      } else {
+        await syncInvestmentToReminders(investment);
+      }
+    } catch (syncError) {
+      console.error('Error syncing investment reminders:', syncError);
+    }
+
     res.status(201).json({
       message: 'Investment created successfully',
       investment,
@@ -103,23 +117,23 @@ router.put('/:id', authMiddleware, async (req, res) => {
   try {
     // Normalize incoming fields across categories
     const updateData = { ...req.body };
-    
+
     // Map purchaseDate to startDate for consistency
     if (updateData.purchaseDate) {
       updateData.startDate = updateData.purchaseDate;
       delete updateData.purchaseDate;
     }
-    
+
     // Map bankName to provider for bank-schemes
     if (updateData.bankName && !updateData.provider) {
       updateData.provider = updateData.bankName;
     }
-    
+
     // Calculate amount if quantity and purchasePrice are provided
     if (updateData.quantity && updateData.purchasePrice) {
       updateData.amount = updateData.quantity * updateData.purchasePrice;
     }
-    
+
     // Calculate returns for quantity-based and amount-based investments
     if (updateData.currentValue) {
       if (updateData.quantity && updateData.amount) {
@@ -131,17 +145,17 @@ router.put('/:id', authMiddleware, async (req, res) => {
         updateData.returnsPercentage = updateData.amount > 0 ? (updateData.returns / updateData.amount * 100) : 0;
       }
     }
-    
+
     const investment = await Investment.findOneAndUpdate(
       { _id: req.params.id, userId: req.userId },
       updateData,
       { new: true }
     );
-    
+
     if (!investment) {
       return res.status(404).json({ message: 'Investment not found' });
     }
-    
+
     // If this is a bill update, sync status back to expenses and scheduled expenses
     if (investment.category === BILL_CATEGORY_KEY) {
       try {
@@ -151,7 +165,20 @@ router.put('/:id', authMiddleware, async (req, res) => {
         console.error('Bill status sync error (non-blocking):', syncError);
       }
     }
-    
+
+    // Sync Reminders
+    try {
+      if (investment.category === 'insurance' || investment.type === 'Insurance') {
+        await syncInsuranceToReminders(investment);
+      } else if (investment.category === 'loan' || investment.category === 'daily-loan-ledger') {
+        await syncLoanToReminders(investment);
+      } else {
+        await syncInvestmentToReminders(investment);
+      }
+    } catch (syncError) {
+      console.error('Error syncing investment reminders:', syncError);
+    }
+
     res.json({
       message: 'Investment updated successfully',
       investment,
@@ -168,11 +195,11 @@ router.delete('/:id', authMiddleware, async (req, res) => {
       _id: req.params.id,
       userId: req.userId,
     });
-    
+
     if (!investment) {
       return res.status(404).json({ message: 'Investment not found' });
     }
-    
+
     res.json({ message: 'Investment deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting investment', error: error.message });
@@ -183,11 +210,11 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 router.get('/stats/summary', authMiddleware, async (req, res) => {
   try {
     const investments = await Investment.find({ userId: req.userId });
-    
+
     const totalInvestment = investments.reduce((sum, inv) => sum + inv.amount, 0);
     const totalCurrentValue = investments.reduce((sum, inv) => sum + (inv.currentValue || inv.amount), 0);
     const totalReturns = totalCurrentValue - totalInvestment;
-    
+
     const categoryWise = investments.reduce((acc, inv) => {
       if (!acc[inv.category]) {
         acc[inv.category] = { count: 0, amount: 0 };
@@ -196,7 +223,7 @@ router.get('/stats/summary', authMiddleware, async (req, res) => {
       acc[inv.category].amount += inv.amount;
       return acc;
     }, {});
-    
+
     res.json({
       totalInvestment,
       totalCurrentValue,
@@ -222,7 +249,7 @@ router.get('/gold-sgb/prices', authMiddleware, async (req, res) => {
       'SGB': { price: 5900, change: +100, changePercent: 1.72 },
       'Silver': { price: 72000, change: +500, changePercent: 0.70 },
     };
-    
+
     res.json({ prices, lastUpdated: new Date() });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching gold prices', error: error.message });
@@ -232,16 +259,16 @@ router.get('/gold-sgb/prices', authMiddleware, async (req, res) => {
 // Get gold/sgb investment analytics
 router.get('/gold-sgb/analytics', authMiddleware, async (req, res) => {
   try {
-    const investments = await Investment.find({ 
-      userId: req.userId, 
-      category: 'gold-sgb' 
+    const investments = await Investment.find({
+      userId: req.userId,
+      category: 'gold-sgb'
     });
-    
+
     // Calculate analytics
     const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
     const totalCurrent = investments.reduce((sum, inv) => sum + (inv.currentValue * inv.quantity || inv.amount), 0);
     const totalReturns = totalCurrent - totalInvested;
-    
+
     // Type-wise distribution
     const typeDistribution = investments.reduce((acc, inv) => {
       if (!acc[inv.type]) {
@@ -253,7 +280,7 @@ router.get('/gold-sgb/analytics', authMiddleware, async (req, res) => {
       acc[inv.type].quantity += inv.quantity || 0;
       return acc;
     }, {});
-    
+
     // Provider-wise distribution
     const providerDistribution = investments.reduce((acc, inv) => {
       if (!acc[inv.provider]) {
@@ -265,7 +292,7 @@ router.get('/gold-sgb/analytics', authMiddleware, async (req, res) => {
       acc[inv.provider].quantity += inv.quantity || 0;
       return acc;
     }, {});
-    
+
     // Storage type distribution
     const storageDistribution = investments.reduce((acc, inv) => {
       if (!acc[inv.storageType]) {
@@ -276,7 +303,7 @@ router.get('/gold-sgb/analytics', authMiddleware, async (req, res) => {
       acc[inv.storageType].quantity += inv.quantity || 0;
       return acc;
     }, {});
-    
+
     // Performance data
     const performanceData = investments.map(inv => ({
       name: inv.name,
@@ -290,7 +317,7 @@ router.get('/gold-sgb/analytics', authMiddleware, async (req, res) => {
       quantity: inv.quantity,
       purity: inv.purity,
     }));
-    
+
     res.json({
       summary: {
         totalInvested,
@@ -313,11 +340,11 @@ router.get('/gold-sgb/analytics', authMiddleware, async (req, res) => {
 // Update current market prices for all gold/sgb investments
 router.put('/gold-sgb/update-prices', authMiddleware, async (req, res) => {
   try {
-    const investments = await Investment.find({ 
-      userId: req.userId, 
-      category: 'gold-sgb' 
+    const investments = await Investment.find({
+      userId: req.userId,
+      category: 'gold-sgb'
     });
-    
+
     // Mock price updates - in real app, fetch from market API
     const priceUpdates = {
       'Digital Gold': 5800,
@@ -325,9 +352,9 @@ router.put('/gold-sgb/update-prices', authMiddleware, async (req, res) => {
       'SGB': 5900,
       'Silver': 72000,
     };
-    
+
     const updatedInvestments = [];
-    
+
     for (const investment of investments) {
       const newPrice = priceUpdates[investment.type];
       if (newPrice) {
@@ -336,7 +363,7 @@ router.put('/gold-sgb/update-prices', authMiddleware, async (req, res) => {
         updatedInvestments.push(investment);
       }
     }
-    
+
     res.json({
       message: 'Prices updated successfully',
       updatedCount: updatedInvestments.length,
@@ -350,20 +377,20 @@ router.put('/gold-sgb/update-prices', authMiddleware, async (req, res) => {
 // Get SGB maturity alerts
 router.get('/gold-sgb/maturity-alerts', authMiddleware, async (req, res) => {
   try {
-    const investments = await Investment.find({ 
-      userId: req.userId, 
+    const investments = await Investment.find({
+      userId: req.userId,
       category: 'gold-sgb',
       type: 'SGB',
       maturityDate: { $exists: true }
     });
-    
+
     const currentDate = new Date();
     const alerts = [];
-    
+
     for (const investment of investments) {
       const maturityDate = new Date(investment.maturityDate);
       const daysToMaturity = Math.ceil((maturityDate - currentDate) / (1000 * 60 * 60 * 24));
-      
+
       if (daysToMaturity <= 365 && daysToMaturity > 0) { // Within 1 year
         alerts.push({
           investmentId: investment._id,
@@ -374,7 +401,7 @@ router.get('/gold-sgb/maturity-alerts', authMiddleware, async (req, res) => {
         });
       }
     }
-    
+
     res.json({ alerts });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching maturity alerts', error: error.message });
@@ -403,6 +430,7 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
         cycle: inv.frequency || notes.cycle || 'monthly',
         amount: inv.amount || notes.amount || 0,
         dueDate: inv.maturityDate || (notes.dueDate ? new Date(notes.dueDate) : null),
+        payableDate: inv.payableDate || (notes.payableDate ? new Date(notes.payableDate) : null),
         startDate: inv.startDate || (notes.startDate ? new Date(notes.startDate) : null),
         status: notes.status || 'pending',
       };
@@ -451,8 +479,10 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
       total: 0,
     }));
     for (const e of entries) {
-      if (!e.dueDate) continue;
-      const d = new Date(e.dueDate);
+      // Use payableDate if available, otherwise fall back to dueDate
+      const dateToUse = e.payableDate || e.dueDate;
+      if (!dateToUse) continue;
+      const d = new Date(dateToUse);
       if (d.getFullYear() !== currentYear) continue;
       const bucket = byMonth[d.getMonth()];
       bucket.items.push({ day: d.getDate(), provider: e.billName || e.provider || e.billType, billType: e.billType, cycle: e.cycle, amount: Number(e.amount) || 0 });
@@ -465,10 +495,12 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
     end.setDate(end.getDate() + horizonDays);
     const upcoming = [];
     for (const e of entries) {
-      if (!e.dueDate) continue;
-      const d = new Date(e.dueDate);
+      // Use payableDate if available, otherwise fall back to dueDate
+      const dateToUse = e.payableDate || e.dueDate;
+      if (!dateToUse) continue;
+      const d = new Date(dateToUse);
       if (d >= now && d <= end) {
-        upcoming.push({ date: d.toISOString().slice(0,10), provider: e.billName || e.provider || e.billType, billType: e.billType, amount: Number(e.amount) || 0, cycle: e.cycle });
+        upcoming.push({ date: d.toISOString().slice(0, 10), provider: e.billName || e.provider || e.billType, billType: e.billType, amount: Number(e.amount) || 0, cycle: e.cycle });
       }
     }
     upcoming.sort((a, b) => (a.date > b.date ? 1 : -1));
@@ -502,11 +534,11 @@ router.get('/appointments/weekly', authMiddleware, async (req, res) => {
     const mondayOffset = (day === 0 ? -6 : 1 - day); // shift to Monday
     const defaultStart = new Date(now);
     defaultStart.setDate(now.getDate() + mondayOffset);
-    defaultStart.setHours(0,0,0,0);
+    defaultStart.setHours(0, 0, 0, 0);
     const weekStart = weekStartParam && !isNaN(weekStartParam) ? new Date(weekStartParam) : defaultStart;
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
-    weekEnd.setHours(23,59,59,999);
+    weekEnd.setHours(23, 59, 59, 999);
 
     const investments = await Investment.find({
       userId: req.userId,
@@ -569,14 +601,14 @@ router.get('/appointments/weekly', authMiddleware, async (req, res) => {
     };
 
     const entries = investments.map(normalize);
-    const weekdays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const counts = Array.from({ length: 7 }, (_, i) => ({ name: weekdays[i], count: 0 }));
     const statusMap = new Map();
     const upcoming = [];
     const scheduleDays = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(weekStart);
       d.setDate(weekStart.getDate() + i);
-      const label = `${d.getMonth()+1}/${d.getDate()}`;
+      const label = `${d.getMonth() + 1}/${d.getDate()}`;
       const name = d.toLocaleString('en-US', { weekday: 'long' }).toUpperCase();
       return { date: d, label, name };
     });
@@ -612,7 +644,7 @@ router.get('/appointments/weekly', authMiddleware, async (req, res) => {
         const index = (d.getDay() + 6) % 7; // convert Sun(0) to 6
         counts[index].count += 1;
         upcoming.push({
-          date: d.toISOString().slice(0,16).replace('T',' '),
+          date: d.toISOString().slice(0, 16).replace('T', ' '),
           contactName: e.contactName || e.phoneNumber,
           callType: e.callType,
           status: e.status,
@@ -700,10 +732,10 @@ router.get('/appointments/weekly', authMiddleware, async (req, res) => {
       weekEnd: weekEnd,
     };
 
-    res.json({ 
-      summary, 
-      weekdayCounts: counts, 
-      statusDistribution: Array.from(statusMap.values()), 
+    res.json({
+      summary,
+      weekdayCounts: counts,
+      statusDistribution: Array.from(statusMap.values()),
       upcoming,
       schedule: {
         weekStart,
@@ -895,25 +927,25 @@ router.get('/calendar/yearly', authMiddleware, async (req, res) => {
 router.patch('/:id/payment/:paymentNumber', authMiddleware, async (req, res) => {
   try {
     const { isPaid, paidDate, paidAmount, extraPayment } = req.body;
-    
+
     const investment = await Investment.findOne({
       _id: req.params.id,
       userId: req.userId,
       category: 'loan-amortization'
     });
-    
+
     if (!investment) {
       return res.status(404).json({ message: 'Loan not found' });
     }
-    
+
     const paymentIndex = investment.paymentSchedule.findIndex(
       p => p.paymentNumber === parseInt(req.params.paymentNumber)
     );
-    
+
     if (paymentIndex === -1) {
       return res.status(404).json({ message: 'Payment not found' });
     }
-    
+
     // Update payment status
     investment.paymentSchedule[paymentIndex].isPaid = isPaid;
     if (isPaid) {
@@ -926,10 +958,10 @@ router.patch('/:id/payment/:paymentNumber', authMiddleware, async (req, res) => 
       investment.paymentSchedule[paymentIndex].paidDate = null;
       investment.paymentSchedule[paymentIndex].paidAmount = null;
     }
-    
+
     investment.updatedAt = Date.now();
     await investment.save();
-    
+
     res.json({
       message: 'Payment status updated successfully',
       payment: investment.paymentSchedule[paymentIndex]
@@ -946,23 +978,23 @@ router.get('/loans/list', authMiddleware, async (req, res) => {
       userId: req.userId,
       category: 'loan-amortization'
     }).sort({ createdAt: -1 });
-    
+
     // Calculate summary for each loan
     const loansWithSummary = loans.map(loan => {
       const totalPayments = loan.paymentSchedule?.length || 0;
       const paidPayments = loan.paymentSchedule?.filter(p => p.isPaid).length || 0;
       const remainingPayments = totalPayments - paidPayments;
-      
+
       const totalAmount = loan.amount || 0;
       const paidAmount = loan.paymentSchedule?.filter(p => p.isPaid)
         .reduce((sum, p) => sum + (p.paidAmount || 0), 0) || 0;
       const remainingAmount = loan.paymentSchedule?.filter(p => !p.isPaid)
         .reduce((sum, p) => sum + p.endingBalance, 0) || 0;
-      
+
       // Get current EMI: first unpaid payment's EMI, or first payment if all paid
       const firstUnpaid = loan.paymentSchedule?.find(p => !p.isPaid);
       const currentEmi = firstUnpaid?.payment || loan.paymentSchedule?.[0]?.payment || 0;
-      
+
       return {
         _id: loan._id,
         name: loan.name,
@@ -980,7 +1012,7 @@ router.get('/loans/list', authMiddleware, async (req, res) => {
         createdAt: loan.createdAt
       };
     });
-    
+
     res.json({ loans: loansWithSummary });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching loans', error: error.message });

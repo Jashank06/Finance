@@ -21,8 +21,8 @@ router.get('/', auth, async (req, res) => {
 // POST a new bank transaction
 router.post('/', auth, async (req, res) => {
   try {
-    const { accountId, type, amount, merchant, category, description, date, currency, transactionType, expenseType } = req.body;
-    
+    const { accountId, type, amount, merchant, category, broaderCategory, mainCategory, subCategory, customSubCategory, description, date, currency, transactionType, expenseType, payingFor } = req.body;
+
     // Validate that the account belongs to the user
     const account = await Bank.findOne({ _id: accountId, userId: req.user.id });
     if (!account) {
@@ -35,27 +35,32 @@ router.post('/', auth, async (req, res) => {
       amount,
       merchant,
       category,
+      broaderCategory,
+      mainCategory,
+      subCategory,
+      customSubCategory,
       description,
       date,
       currency,
       transactionType,
       expenseType,
+      payingFor, // Include payingFor for cross-module sync
       user: req.user.id
     });
 
     const savedTransaction = await newTransaction.save();
-    
+
     // Return the transaction with populated account details
     const populatedTransaction = await BankTransaction.findById(savedTransaction._id)
       .populate({ path: 'accountId', select: 'name bankName type' });
-    
+
     // Auto-sync to Bill Dates if expense is for "jo jo"
     try {
       await syncExpenseToBillDates(populatedTransaction.toObject(), req.user.id);
     } catch (syncError) {
       console.error('Bill sync error (non-blocking):', syncError);
     }
-    
+
     res.status(201).json(populatedTransaction);
   } catch (error) {
     console.error('Error creating bank transaction:', error);
@@ -66,8 +71,8 @@ router.post('/', auth, async (req, res) => {
 // PUT update a bank transaction
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { accountId, type, amount, merchant, category, description, date, currency, transactionType, expenseType } = req.body;
-    
+    const { accountId, type, amount, merchant, category, broaderCategory, mainCategory, subCategory, customSubCategory, description, date, currency, transactionType, expenseType, payingFor } = req.body;
+
     // Find the transaction and verify ownership
     const transaction = await BankTransaction.findOne({ _id: req.params.id, user: req.user.id });
     if (!transaction) {
@@ -85,7 +90,7 @@ router.put('/:id', auth, async (req, res) => {
     // Update the transaction
     const updatedTransaction = await BankTransaction.findByIdAndUpdate(
       req.params.id,
-      { accountId, type, amount, merchant, category, description, date, currency, transactionType, expenseType },
+      { accountId, type, amount, merchant, category, broaderCategory, mainCategory, subCategory, customSubCategory, description, date, currency, transactionType, expenseType, payingFor },
       { new: true }
     ).populate({ path: 'accountId', select: 'name bankName type' });
 
@@ -116,20 +121,20 @@ router.delete('/:id', auth, async (req, res) => {
 router.get('/account/:accountId', auth, async (req, res) => {
   try {
     const { accountId } = req.params;
-    
+
     // Verify the account belongs to the user
     const account = await Bank.findOne({ _id: accountId, userId: req.user.id });
     if (!account) {
       return res.status(404).json({ message: 'Bank account not found' });
     }
 
-    const transactions = await BankTransaction.find({ 
-      accountId, 
-      user: req.user.id 
+    const transactions = await BankTransaction.find({
+      accountId,
+      user: req.user.id
     })
       .populate({ path: 'accountId', select: 'name bankName type' })
       .sort({ date: -1 });
-    
+
     res.json(transactions);
   } catch (error) {
     console.error('Error fetching bank transactions for account:', error);
@@ -142,8 +147,8 @@ router.get('/summary/period', auth, async (req, res) => {
   try {
     const { period = 'monthly' } = req.query;
     let groupBy;
-    
-    switch(period) {
+
+    switch (period) {
       case 'daily':
         groupBy = { $dateToString: { format: "%Y-%m-%d", date: "$date" } };
         break;
