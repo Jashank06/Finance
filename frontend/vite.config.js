@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   assetsInclude: ['**/*.xlsx'],
-  base: '/Finance/',
+  base: '/',  // ✅ Changed from '/Finance/' to '/'
   server: {
     proxy: {
       '/api': {
