@@ -16,7 +16,7 @@ const ProfitLoss = () => {
     const [filterType, setFilterType] = useState('all'); // all, profit, loss
 
     useEffect(() => {
-    trackFeatureUsage('/family/investments/profit-loss', 'view');
+        trackFeatureUsage('/family/investments/profit-loss', 'view');
         fetchPLRecords();
         fetchSummary();
     }, []);
@@ -26,7 +26,7 @@ const ProfitLoss = () => {
             setLoading(true);
             setError(null);
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/profit-loss`, {
+            const response = await axios.get(`${API_URL}/profit-loss`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPlRecords(response.data.data || []);
@@ -41,7 +41,7 @@ const ProfitLoss = () => {
     const fetchSummary = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/profit-loss/stats/summary`, {
+            const response = await axios.get(`${API_URL}/profit-loss/stats/summary`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSummary(response.data.data);
@@ -59,7 +59,7 @@ const ProfitLoss = () => {
             setLoading(true);
             setError(null);
             const token = localStorage.getItem('token');
-            const response = await axios.post(`${API_URL}/api/profit-loss/auto-generate`, {}, {
+            const response = await axios.post(`${API_URL}/profit-loss/auto-generate`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -105,7 +105,7 @@ const ProfitLoss = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            await axios.delete(`${API_URL}/api/profit-loss/${id}`, {
+            await axios.delete(`${API_URL}/profit-loss/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             await fetchPLRecords();

@@ -41,7 +41,7 @@ const TradingDetails = () => {
     });
 
     useEffect(() => {
-    trackFeatureUsage('/family/investments/trading-details', 'view');
+        trackFeatureUsage('/family/investments/trading-details', 'view');
         fetchTradingRecords();
         fetchCompletedRecordIds();
     }, []);
@@ -50,7 +50,7 @@ const TradingDetails = () => {
     const fetchCompletedRecordIds = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/profit-loss`, {
+            const response = await axios.get(`${API_URL}/profit-loss`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const plRecords = response.data.data || [];
@@ -73,7 +73,7 @@ const TradingDetails = () => {
             setLoading(true);
             setError(null);
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/trading-details`, {
+            const response = await axios.get(`${API_URL}/trading-details`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTradingRecords(response.data.data || []);
@@ -181,11 +181,11 @@ const TradingDetails = () => {
             }
 
             if (editingId) {
-                await axios.put(`${API_URL}/api/trading-details/${editingId}`, submitData, {
+                await axios.put(`${API_URL}/trading-details/${editingId}`, submitData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } else {
-                await axios.post(`${API_URL}/api/trading-details`, submitData, {
+                await axios.post(`${API_URL}/trading-details`, submitData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             }
@@ -233,7 +233,7 @@ const TradingDetails = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            await axios.delete(`${API_URL}/api/trading-details/${id}`, {
+            await axios.delete(`${API_URL}/trading-details/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             await fetchTradingRecords();
