@@ -80,7 +80,7 @@ import './App.css';
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename="/Finance">
+      <BrowserRouter basename="/">
         <Routes>
           {/* Root redirect to landing page */}
           <Route path="/" element={<Navigate to="/landing" replace />} />
