@@ -76,12 +76,14 @@ const corsOptions = {
     }
   },
   credentials: true,
+  exposedHeaders: ['Content-Length', 'Content-Range', 'X-Total-Count'],
   optionsSuccessStatus: 200
 };
 
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)

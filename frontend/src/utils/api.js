@@ -1,8 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.PROD 
-  ? 'https://finance-qr54.onrender.com/api'
-  : '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -28,7 +26,7 @@ export const authAPI = {
   getCurrentUser: async () => {
     const response = await api.get('/auth/me');
     const userData = response.data.user;
-    
+
     // Fetch subscription plan details if exists
     if (userData.subscriptionPlan) {
       try {
@@ -38,7 +36,7 @@ export const authAPI = {
         console.error('Error fetching subscription plan:', err);
       }
     }
-    
+
     return { ...response, data: { user: userData } };
   },
 };
