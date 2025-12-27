@@ -82,6 +82,9 @@ function App() {
     <AuthProvider>
       <BrowserRouter basename="/Finance">
         <Routes>
+          {/* Root redirect to landing page */}
+          <Route path="/" element={<Navigate to="/landing" replace />} />
+          
           {/* Landing Page - Public Route */}
           <Route path="/landing/*" element={<LandingLayout />} />
 
