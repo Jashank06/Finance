@@ -3,6 +3,8 @@ import api from '../../../utils/api';
 import './MonitoringPages.css';
 import './Roadmap.css';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const Milestones = () => {
     const [loading, setLoading] = useState(false);
     const [milestones, setMilestones] = useState([]);
@@ -22,6 +24,7 @@ const Milestones = () => {
     });
 
     useEffect(() => {
+    trackFeatureUsage('/family/monitoring/milestones', 'view');
         fetchData();
     }, []);
 

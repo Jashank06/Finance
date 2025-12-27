@@ -8,6 +8,7 @@ import './Investment.css';
 import { syncContactsFromForm } from '../../utils/contactSyncUtil';
 import { syncBillScheduleFromForm } from '../../utils/billScheduleSyncUtil';
 import { syncInvestmentProfileFromForm } from '../../utils/syncInvestmentProfileUtil';
+import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
 
 const GoldSgbInvestment = () => {
   const [investments, setInvestments] = useState([]);
@@ -57,6 +58,7 @@ const GoldSgbInvestment = () => {
   };
 
   useEffect(() => {
+    trackFeatureUsage('/family/investments/gold-sgb', 'view');
     fetchInvestments();
     fetchFamilyMembers();
     fetchPrices();

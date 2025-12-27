@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     FiUsers, FiTrendingUp, FiShield, FiCheck, FiHome,
     FiBriefcase, FiTarget, FiLock, FiCalendar, FiDollarSign,
     FiBarChart2, FiPlay, FiStar, FiArrowDown, FiBell,
     FiPhone, FiMail, FiMapPin, FiClock
 } from 'react-icons/fi';
+import axios from 'axios';
+import PaymentModal from '../../components/PaymentModal';
 import '../styles/Landing.css';
 import './HomePage.css';
 import './NewSections.css';
@@ -15,8 +18,15 @@ import aboutBgImage from '../assets/about-infographic.png';
 import darkFinanceBg from '../../assets/dark finance background images.jpg';
 import trustedBgImage from '../../assets/all dark background aesthic modern images.jpg';
 
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
 const HomePage = () => {
+    const navigate = useNavigate();
     const [scrollY, setScrollY] = useState(0);
+    const [pricingPlans, setPricingPlans] = useState([]);
+    const [loadingPlans, setLoadingPlans] = useState(true);
+    const [selectedPlan, setSelectedPlan] = useState(null);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -25,6 +35,11 @@ const HomePage = () => {
 
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // Fetch pricing plans
+    useEffect(() => {
+        fetchPricingPlans();
     }, []);
 
     // Intersection Observer for scroll animations
@@ -47,6 +62,29 @@ const HomePage = () => {
 
         return () => observer.disconnect();
     }, []);
+
+    const fetchPricingPlans = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/subscription-plans/public`);
+            setPricingPlans(response.data);
+            setLoadingPlans(false);
+        } catch (error) {
+            console.error('Error fetching pricing plans:', error);
+            setLoadingPlans(false);
+        }
+    };
+
+    const handlePlanSelect = (plan) => {
+        setSelectedPlan(plan);
+        setShowPaymentModal(true);
+    };
+
+    const handlePaymentSuccess = (user) => {
+        setShowPaymentModal(false);
+        setSelectedPlan(null);
+        // Navigate to success page
+        navigate('/payment-success');
+    };
 
     return (
         <div className="landing-page">
@@ -701,56 +739,60 @@ const HomePage = () => {
                     </div>
 
                     <div className="pricing-grid">
-                        <div className="pricing-card animate-on-scroll delay-1">
-                            <div className="pricing-tag">STARTER</div>
-                            <div className="pricing-amount">
-                                <span className="currency">₹</span>
-                                <span className="price">499</span>
-                                <span className="period">/month</span>
+                        {loadingPlans ? (
+                            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'rgba(255,255,255,0.7)' }}>
+                                Loading pricing plans...
                             </div>
-                            <ul className="pricing-features">
-                                <li><FiCheck className="check-icon" /> Up to 3 family members</li>
-                                <li><FiCheck className="check-icon" /> Basic transaction tracking</li>
-                                <li><FiCheck className="check-icon" /> Monthly reports</li>
-                                <li><FiCheck className="check-icon" /> Email support</li>
-                            </ul>
-                            <button className="pricing-btn">Get Started</button>
-                        </div>
-
-                        <div className="pricing-card featured animate-on-scroll delay-2">
-                            <div className="pricing-badge">MOST POPULAR</div>
-                            <div className="pricing-tag">FAMILY</div>
-                            <div className="pricing-amount">
-                                <span className="currency">₹</span>
-                                <span className="price">999</span>
-                                <span className="period">/month</span>
+                        ) : pricingPlans.length === 0 ? (
+                            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'rgba(255,255,255,0.7)' }}>
+                                No pricing plans available
                             </div>
-                            <ul className="pricing-features">
-                                <li><FiCheck className="check-icon" /> Up to 8 family members</li>
-                                <li><FiCheck className="check-icon" /> Advanced analytics</li>
-                                <li><FiCheck className="check-icon" /> Investment tracking</li>
-                                <li><FiCheck className="check-icon" /> Priority support</li>
-                                <li><FiCheck className="check-icon" /> Custom reports</li>
-                            </ul>
-                            <button className="pricing-btn featured-btn">Get Started</button>
-                        </div>
-
-                        <div className="pricing-card animate-on-scroll delay-3">
-                            <div className="pricing-tag">PREMIUM</div>
-                            <div className="pricing-amount">
-                                <span className="currency">₹</span>
-                                <span className="price">1,999</span>
-                                <span className="period">/month</span>
-                            </div>
-                            <ul className="pricing-features">
-                                <li><FiCheck className="check-icon" /> Unlimited members</li>
-                                <li><FiCheck className="check-icon" /> AI-powered insights</li>
-                                <li><FiCheck className="check-icon" /> Business features</li>
-                                <li><FiCheck className="check-icon" /> Dedicated support</li>
-                                <li><FiCheck className="check-icon" /> Custom integrations</li>
-                            </ul>
-                            <button className="pricing-btn">Get Started</button>
-                        </div>
+                        ) : (
+                            pricingPlans.map((plan, index) => (
+                                <div 
+                                    key={plan._id} 
+                                    className={`pricing-card ${plan.isPopular ? 'featured' : ''} animate-on-scroll delay-${index + 1}`}
+                                >
+                                    {plan.isPopular && <div className="pricing-badge">MOST POPULAR</div>}
+                                    <div className="pricing-tag">{plan.tagline || plan.name}</div>
+                                    <div className="pricing-amount">
+                                        <span className="currency">{plan.currency}</span>
+                                        <span className="price">{plan.price}</span>
+                                        <span className="period">/{plan.period}</span>
+                                    </div>
+                                    <ul className="pricing-features">
+                                        {plan.features.map((feature, idx) => (
+                                            <li key={idx}><FiCheck className="check-icon" /> {feature}</li>
+                                        ))}
+                                        {plan.featureCategories && plan.featureCategories.length > 0 && (
+                                            <>
+                                                {plan.featureCategories.map((catId, idx) => {
+                                                    const categoryNames = {
+                                                        'daily_finance': 'Daily Finance Management',
+                                                        'monitoring': 'Monitoring & Planning',
+                                                        'investments': 'Investment Management',
+                                                        'static_data': 'Static Data & Records',
+                                                        'reports_analytics': 'Reports & Analytics',
+                                                        'family_management': 'Family Management'
+                                                    };
+                                                    return (
+                                                        <li key={`cat-${idx}`}>
+                                                            <FiCheck className="check-icon" /> {categoryNames[catId]}
+                                                        </li>
+                                                    );
+                                                })}
+                                            </>
+                                        )}
+                                    </ul>
+                                    <button 
+                                        className={`pricing-btn ${plan.isPopular ? 'featured-btn' : ''}`}
+                                        onClick={() => handlePlanSelect(plan)}
+                                    >
+                                        {plan.buttonText}
+                                    </button>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </section>
@@ -928,6 +970,18 @@ const HomePage = () => {
                     </div>
                 </div>
             </footer>
+
+            {/* Payment Modal */}
+            {showPaymentModal && selectedPlan && (
+                <PaymentModal
+                    plan={selectedPlan}
+                    onClose={() => {
+                        setShowPaymentModal(false);
+                        setSelectedPlan(null);
+                    }}
+                    onSuccess={handlePaymentSuccess}
+                />
+            )}
         </div>
     );
 };

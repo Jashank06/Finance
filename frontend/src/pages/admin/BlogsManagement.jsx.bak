@@ -65,11 +65,11 @@ const BlogsManagement = () => {
             };
 
             if (editingBlog) {
-                await axios.put(`${API_URL}/api/blogs/${editingBlog._id}`, blogData, {
+                await axios.put(`${API_URL}/blogs/${editingBlog._id}`, blogData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } else {
-                await axios.post(`${API_URL}/api/blogs`, blogData, {
+                await axios.post(`${API_URL}/blogs`, blogData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             }
@@ -78,6 +78,7 @@ const BlogsManagement = () => {
             resetForm();
         } catch (error) {
             console.error('Error saving blog:', error);
+            console.error('Error details:', error.response?.data);
             alert('Error saving blog: ' + (error.response?.data?.message || error.message));
         }
     };
@@ -105,7 +106,7 @@ const BlogsManagement = () => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`${API_URL}/api/blogs/${id}`, {
+            await axios.delete(`${API_URL}/blogs/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchBlogs();
@@ -117,7 +118,7 @@ const BlogsManagement = () => {
     const togglePublish = async (id) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`${API_URL}/api/blogs/${id}/publish`, {}, {
+            await axios.patch(`${API_URL}/blogs/${id}/publish`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchBlogs();

@@ -4,6 +4,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Ba
 import { investmentAPI } from '../../../utils/investmentAPI';
 import './BillChecklistNew.css';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const BillChecklistNew = () => {
   const [bills, setBills] = useState([]);
   const [categories, setCategories] = useState([
@@ -159,6 +161,7 @@ const BillChecklistNew = () => {
   const COLORS = ['#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899'];
 
   useEffect(() => {
+    trackFeatureUsage('/family/daily/bill-checklist', 'view');
     fetchBills();
     fetchCategories();
   }, []);

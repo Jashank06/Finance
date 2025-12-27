@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FiUser, FiPhone, FiMail, FiMapPin, FiCalendar, FiEdit2, FiSave, FiX, FiUsers, FiHome, FiBriefcase, FiGlobe, FiPlus, FiTrendingUp } from 'react-icons/fi';
 import { staticAPI } from '../../../utils/staticAPI';
 import './Static.css';
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
 const BasicDetails = () => {
   const [editMode, setEditMode] = useState(false);
@@ -320,6 +321,7 @@ const BasicDetails = () => {
   });
 
   useEffect(() => {
+    trackFeatureUsage('/family/static/basic-details', 'view');
     fetchBasicDetails();
     fetchFamilyMembers();
   }, []);

@@ -3,6 +3,8 @@ import { FiUsers, FiEdit2, FiTrash2, FiPlus, FiMapPin, FiPhone, FiMail } from 'r
 import './Static.css';
 import { investmentAPI } from '../../../utils/investmentAPI';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const defaultEntry = {
   nameOfPerson: '',
   reference: '',
@@ -60,6 +62,7 @@ const ContactManagement = () => {
   };
 
   useEffect(() => {
+    trackFeatureUsage('/family/static/contact-management', 'view');
     (async () => {
       try {
         const res = await investmentAPI.getAll(CATEGORY_KEY);

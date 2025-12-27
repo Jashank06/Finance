@@ -6,6 +6,8 @@ import { syncPersonalRecordsFromFamilyProfile } from '../utils/personalRecordsSy
 import './family/static/Static.css';
 import '../components/Modal.css';
 
+import { trackFeatureUsage, trackAction } from '../utils/featureTracking';
+
 const FamilyProfile = () => {
   const [loading, setLoading] = useState(false);
   const [showMemberForm, setShowMemberForm] = useState(false);
@@ -64,6 +66,7 @@ const FamilyProfile = () => {
   });
 
   useEffect(() => {
+    trackFeatureUsage('/family-profile', 'view');
     fetchFamilyProfile();
   }, []);
 

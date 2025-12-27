@@ -8,6 +8,8 @@ import './Investment.css';
 import { syncBillScheduleFromForm } from '../../utils/billScheduleSyncUtil';
 import { syncInvestmentProfileFromForm } from '../../utils/syncInvestmentProfileUtil';
 
+import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
+
 const NpsPpfInvestment = () => {
   const [investments, setInvestments] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -56,6 +58,7 @@ const NpsPpfInvestment = () => {
   };
 
   useEffect(() => {
+    trackFeatureUsage('/family/investments/nps-ppf', 'view');
     fetchInvestments();
     fetchFamilyMembers();
     fetchRates();

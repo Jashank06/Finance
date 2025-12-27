@@ -40,7 +40,7 @@ const SuccessStoriesManagement = () => {
     const fetchStories = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/success-stories`, {
+            const response = await axios.get(`${API_URL}/success-stories`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStories(response.data);
@@ -53,9 +53,16 @@ const SuccessStoriesManagement = () => {
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
+        let newValue = type === 'checkbox' ? checked : value;
+        
+        // Convert rating to number
+        if (name === 'rating') {
+            newValue = parseInt(value);
+        }
+        
         setFormData({
             ...formData,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: newValue
         });
     };
 
@@ -65,11 +72,11 @@ const SuccessStoriesManagement = () => {
             const token = localStorage.getItem('token');
 
             if (editingStory) {
-                await axios.put(`${API_URL}/api/success-stories/${editingStory._id}`, formData, {
+                await axios.put(`${API_URL}/success-stories/${editingStory._id}`, formData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } else {
-                await axios.post(`${API_URL}/api/success-stories`, formData, {
+                await axios.post(`${API_URL}/success-stories`, formData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             }
@@ -78,7 +85,9 @@ const SuccessStoriesManagement = () => {
             resetForm();
         } catch (error) {
             console.error('Error saving story:', error);
-            alert('Error saving story: ' + (error.response?.data?.message || error.message));
+            console.error('Error details:', error.response?.data);
+            const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
+            alert('Error saving story: ' + errorMessage);
         }
     };
 
@@ -109,7 +118,7 @@ const SuccessStoriesManagement = () => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`${API_URL}/api/success-stories/${id}`, {
+            await axios.delete(`${API_URL}/success-stories/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchStories();
@@ -121,7 +130,7 @@ const SuccessStoriesManagement = () => {
     const togglePublish = async (id) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`${API_URL}/api/success-stories/${id}/publish`, {}, {
+            await axios.patch(`${API_URL}/success-stories/${id}/publish`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchStories();
@@ -133,7 +142,7 @@ const SuccessStoriesManagement = () => {
     const toggleFeatured = async (id) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`${API_URL}/api/success-stories/${id}/featured`, {}, {
+            await axios.patch(`${API_URL}/success-stories/${id}/featured`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchStories();

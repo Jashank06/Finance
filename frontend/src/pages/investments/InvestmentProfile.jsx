@@ -10,6 +10,7 @@ import ShareProfileModal from '../../components/ShareProfileModal';
 import NpsPpfProfileModal from '../../components/NpsPpfProfileModal';
 import GoldBondProfileModal from '../../components/GoldBondProfileModal';
 import './Investment.css';
+import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
 
 const InvestmentProfile = () => {
   const [bankAccounts, setBankAccounts] = useState([]);
@@ -36,6 +37,7 @@ const InvestmentProfile = () => {
   });
 
   useEffect(() => {
+    trackFeatureUsage('/family/investments/investment-profile', 'view');
     fetchAllData();
   }, []);
 

@@ -13,7 +13,7 @@
     -webkit-backdrop-filter: none;
     border-bottom: 1px solid transparent;
     transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    overflow: hidden;
+    overflow: visible !important;
     transform: translateY(0);
 }
 
@@ -80,6 +80,7 @@
     position: relative;
     z-index: 2;
     transform: translateY(0);
+    overflow: visible !important;
 }
 
 .landing-nav.scrolled .nav-container {
@@ -286,6 +287,8 @@
     display: flex;
     gap: 45px;
     align-items: center;
+    position: relative;
+    z-index: 100;
 }
 
 .nav-link {
@@ -667,3 +670,180 @@
     outline-offset: 4px;
     border-radius: 4px;
 }
+/* ============================================
+   MORE INFO DROPDOWN - 3D ANIMATION
+   ============================================ */
+
+.nav-dropdown {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    z-index: 1000;
+}
+
+.dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.dropdown-icon {
+    font-size: 16px;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform-origin: center;
+}
+
+.dropdown-icon.open {
+    transform: rotate(90deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px) rotateX(-15deg);
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-radius: 16px;
+    padding: 12px 8px;
+    min-width: 220px;
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    z-index: 9999 !important;
+}
+
+/* Add invisible padding area to catch hover between trigger and menu */
+.dropdown-menu::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -20px;
+    right: -20px;
+    height: 15px;
+    background: transparent;
+    z-index: -1;
+}
+
+.dropdown-menu::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 12px;
+    height: 12px;
+    background: rgba(10, 10, 10, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 1;
+}
+
+.dropdown-menu.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+    transform: translateX(-50%) translateY(0) rotateX(0deg);
+}
+
+.dropdown-item {
+    display: block;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform-style: preserve-3d;
+    overflow: hidden;
+}
+
+.dropdown-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 10px;
+}
+
+.dropdown-item:hover::before {
+    opacity: 1;
+}
+
+.dropdown-item:hover {
+    color: #ffffff;
+    transform: translateX(8px) scale(1.02);
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.dropdown-item.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-item span {
+    position: relative;
+    z-index: 1;
+}
+
+/* Staggered animation for dropdown items */
+.dropdown-menu.open .dropdown-item:nth-child(1) {
+    animation: dropdownItemSlide 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.1s both;
+}
+
+.dropdown-menu.open .dropdown-item:nth-child(2) {
+    animation: dropdownItemSlide 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.15s both;
+}
+
+.dropdown-menu.open .dropdown-item:nth-child(3) {
+    animation: dropdownItemSlide 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.2s both;
+}
+
+@keyframes dropdownItemSlide {
+    0% {
+        opacity: 0;
+        transform: translateX(-20px) rotateY(-15deg);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) rotateY(0deg);
+    }
+}
+
+/* Hover effect on dropdown trigger when menu is open */
+.nav-dropdown:hover .dropdown-trigger {
+    color: #ffffff;
+}
+
+/* Enhanced scrolled state */
+.landing-nav.scrolled .dropdown-menu {
+    background: rgba(10, 10, 10, 0.98);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+}
+
+.landing-nav.scrolled .dropdown-menu::before {
+    background: rgba(10, 10, 10, 0.98);
+}
+

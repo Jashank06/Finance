@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../../utils/api';
 import './Budget.css';
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
 const Budget = () => {
   const [activeTab, setActiveTab] = useState('cheque-register');
@@ -72,6 +73,7 @@ const Budget = () => {
   });
 
   useEffect(() => {
+    trackFeatureUsage('/family/monitoring/budget', 'view');
     fetchData();
   }, []);
 

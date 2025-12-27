@@ -4,6 +4,8 @@ import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Toolti
 import { investmentAPI } from '../../../utils/investmentAPI';
 import '../../investments/Investment.css';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const WeeklyAppointments = () => {
   const [loading, setLoading] = useState(false);
   const [weekdayCounts, setWeekdayCounts] = useState([]);
@@ -44,7 +46,8 @@ const WeeklyAppointments = () => {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    trackFeatureUsage('/family/monitoring/weekly-appointments', 'view'); fetchData(); }, []);
 
   const buildSchedule = (weekISO, startHour = 8, endHour = 20, stepMin = 30) => {
     const base = new Date(weekISO || new Date().toISOString().slice(0,10));

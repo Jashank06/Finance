@@ -6,6 +6,8 @@ import projectAPI from '../../utils/projectAPI';
 import ProjectModal from '../../components/ProjectModal';
 import './Investment.css';
 
+import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
+
 const ProjectIncomeExpense = () => {
   const [entries, setEntries] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -31,6 +33,7 @@ const ProjectIncomeExpense = () => {
   const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
 
   useEffect(() => {
+    trackFeatureUsage('/family/investments/project-income-expense', 'view');
     fetchEntries();
     fetchProjects();
   }, []);

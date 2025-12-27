@@ -6,7 +6,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff } from 'react-icons/fi';
 import ImageUpload from '../../components/ImageUpload';
 import '../investments/Investment.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const BlogsManagement = () => {
     const [blogs, setBlogs] = useState([]);

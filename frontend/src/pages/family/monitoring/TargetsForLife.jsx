@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../../utils/api';
 import BudgetPlanTab from './BudgetPlanTab';
 import './TargetsForLife.css';
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
 const TargetsForLife = () => {
     const [loading, setLoading] = useState(false);
@@ -29,6 +30,7 @@ const TargetsForLife = () => {
     });
 
     useEffect(() => {
+    trackFeatureUsage('/family/monitoring/targets-for-life', 'view');
         fetchData();
     }, []);
 

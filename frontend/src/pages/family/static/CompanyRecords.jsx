@@ -4,6 +4,8 @@ import { staticAPI } from '../../../utils/staticAPI';
 import './Static.css';
 import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const CompanyRecords = () => {
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -80,6 +82,7 @@ const CompanyRecords = () => {
   const industries = ['IT Services', 'Manufacturing', 'Trading', 'Consulting', 'Healthcare', 'Education', 'Real Estate', 'Finance', 'Other'];
 
   useEffect(() => {
+    trackFeatureUsage('/family/static/company-records', 'view');
     fetchCompanyRecords();
   }, []);
 

@@ -4,6 +4,7 @@ import { staticAPI } from '../../../utils/staticAPI';
 import './Static.css';
 import '../../../components/Modal.css';
 import { syncMobileEmailFromFamilyProfile } from '../../../utils/mobileEmailSyncUtil';
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
 const FamilyProfile = () => {
   const [loading, setLoading] = useState(false);
@@ -32,6 +33,7 @@ const FamilyProfile = () => {
   });
 
   useEffect(() => {
+    trackFeatureUsage('/family/static/family-profile', 'view');
     fetchFamilyProfile();
   }, []);
 

@@ -44,7 +44,7 @@ const CareerManagement = () => {
     const fetchCareers = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/careers`, {
+            const response = await axios.get(`${API_URL}/careers`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCareers(response.data);
@@ -81,11 +81,11 @@ const CareerManagement = () => {
             };
 
             if (editingCareer) {
-                await axios.put(`${API_URL}/api/careers/${editingCareer._id}`, careerData, {
+                await axios.put(`${API_URL}/careers/${editingCareer._id}`, careerData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } else {
-                await axios.post(`${API_URL}/api/careers`, careerData, {
+                await axios.post(`${API_URL}/careers`, careerData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             }
@@ -128,7 +128,7 @@ const CareerManagement = () => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`${API_URL}/api/careers/${id}`, {
+            await axios.delete(`${API_URL}/careers/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchCareers();
@@ -140,7 +140,7 @@ const CareerManagement = () => {
     const togglePublish = async (id) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`${API_URL}/api/careers/${id}/publish`, {}, {
+            await axios.patch(`${API_URL}/careers/${id}/publish`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchCareers();
@@ -152,7 +152,7 @@ const CareerManagement = () => {
     const toggleFeatured = async (id) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`${API_URL}/api/careers/${id}/featured`, {}, {
+            await axios.patch(`${API_URL}/careers/${id}/featured`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchCareers();

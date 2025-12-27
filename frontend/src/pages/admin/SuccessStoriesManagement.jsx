@@ -6,7 +6,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff, FiStar } from 'react-icons/
 import ImageUpload from '../../components/ImageUpload';
 import '../investments/Investment.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const SuccessStoriesManagement = () => {
     const [stories, setStories] = useState([]);
@@ -53,9 +53,16 @@ const SuccessStoriesManagement = () => {
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
+        let newValue = type === 'checkbox' ? checked : value;
+        
+        // Convert rating to number
+        if (name === 'rating') {
+            newValue = parseInt(value);
+        }
+        
         setFormData({
             ...formData,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: newValue
         });
     };
 
@@ -78,7 +85,9 @@ const SuccessStoriesManagement = () => {
             resetForm();
         } catch (error) {
             console.error('Error saving story:', error);
-            alert('Error saving story: ' + (error.response?.data?.message || error.message));
+            console.error('Error details:', error.response?.data);
+            const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
+            alert('Error saving story: ' + errorMessage);
         }
     };
 

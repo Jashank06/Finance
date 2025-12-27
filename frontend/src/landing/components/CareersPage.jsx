@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FiMapPin, FiBriefcase, FiClock, FiTrendingUp, FiArrowRight, FiStar } from 'react-icons/fi';
 import './CareersPage.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const CareersPage = () => {
+    const navigate = useNavigate();
     const [careers, setCareers] = useState([]);
+    const [allCareers, setAllCareers] = useState([]);
+    const [latestCareers, setLatestCareers] = useState([]);
+    const [popularCareers, setPopularCareers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
         department: '',
@@ -20,6 +25,7 @@ const CareersPage = () => {
 
     useEffect(() => {
         fetchCareers();
+        fetchSidebarCareers();
     }, [filters]);
 
     const fetchCareers = async () => {
@@ -39,12 +45,30 @@ const CareersPage = () => {
         }
     };
 
+    const fetchSidebarCareers = async () => {
+        try {
+            // Fetch all careers for sidebar
+            const allResponse = await axios.get(`${API_URL}/careers/public?limit=100`);
+            setAllCareers(allResponse.data.careers);
+
+            // Fetch latest careers (sorted by date)
+            const latestResponse = await axios.get(`${API_URL}/careers/public?limit=5&sort=date`);
+            setLatestCareers(latestResponse.data.careers);
+
+            // Fetch popular careers (sorted by views)
+            const popularResponse = await axios.get(`${API_URL}/careers/public?limit=5&sort=views`);
+            setPopularCareers(popularResponse.data.careers);
+        } catch (error) {
+            console.error('Error fetching sidebar careers:', error);
+        }
+    };
+
     const handleFilterChange = (filterName, value) => {
         setFilters({ ...filters, [filterName]: value });
     };
 
     const handleCareerClick = (slug) => {
-        window.location.href = `/landing/careers/${slug}`;
+        navigate(`/landing/careers/${slug}`);
     };
 
     const formatSalary = (salaryRange) => {
@@ -116,79 +140,135 @@ const CareersPage = () => {
                 </div>
             </div>
 
-            {/* Jobs List */}
+            {/* Main Content with Sidebar */}
             <div className="careers-container">
-                {loading ? (
-                    <div className="blogs-loading">
-                        <p>Loading career opportunities...</p>
-                    </div>
-                ) : careers.length === 0 ? (
-                    <div className="blogs-empty">
-                        <p>No job openings found. Try adjusting your filters.</p>
-                    </div>
-                ) : (
-                    <div className="careers-list">
-                        {careers.map(career => (
-                            <div
-                                key={career._id}
-                                className="career-card"
-                                onClick={() => handleCareerClick(career.slug)}
-                            >
-                                {career.featured && (
-                                    <div className="featured-badge">
-                                        <FiStar size={12} fill="white" />
-                                        Featured
-                                    </div>
-                                )}
-                                
-                                <div className="career-card-content">
-                                    <div className="career-info">
-                                        <h3 className="career-title">{career.title}</h3>
-                                        <div className="career-meta-row">
-                                            <div className="career-meta-item">
-                                                <FiBriefcase size={16} />
-                                                <span>{career.department}</span>
-                                            </div>
-                                            <div className="career-meta-item">
-                                                <FiMapPin size={16} />
-                                                <span>{career.location}</span>
-                                            </div>
-                                            <div className="career-meta-item">
-                                                <FiClock size={16} />
-                                                <span>{career.jobType}</span>
-                                            </div>
-                                            <div className="career-meta-item">
-                                                <FiTrendingUp size={16} />
-                                                <span>{career.experienceLevel}</span>
-                                            </div>
-                                        </div>
-                                        <p className="career-description">
-                                            {career.description.substring(0, 200)}...
-                                        </p>
-                                        {career.skills && career.skills.length > 0 && (
-                                            <div className="career-skills">
-                                                {career.skills.slice(0, 5).map((skill, idx) => (
-                                                    <span key={idx} className="career-skill-tag">
-                                                        {skill}
-                                                    </span>
-                                                ))}
+                <div className="careers-layout">
+                    {/* Jobs List */}
+                    <div className="careers-main-content">
+                        {loading ? (
+                            <div className="blogs-loading">
+                                <p>Loading career opportunities...</p>
+                            </div>
+                        ) : careers.length === 0 ? (
+                            <div className="blogs-empty">
+                                <p>No job openings found. Try adjusting your filters.</p>
+                            </div>
+                        ) : (
+                            <div className="careers-list">
+                                {careers.map(career => (
+                                    <div
+                                        key={career._id}
+                                        className="career-card"
+                                        onClick={() => handleCareerClick(career.slug)}
+                                    >
+                                        {career.featured && (
+                                            <div className="featured-badge">
+                                                <FiStar size={12} fill="white" />
+                                                Featured
                                             </div>
                                         )}
-                                    </div>
-                                    <div className="career-sidebar">
-                                        <div className="career-salary">
-                                            {formatSalary(career.salaryRange)}
+                                        
+                                        <div className="career-card-content">
+                                            <div className="career-info">
+                                                <h3 className="career-title">{career.title}</h3>
+                                                <div className="career-meta-row">
+                                                    <div className="career-meta-item">
+                                                        <FiBriefcase size={16} />
+                                                        <span>{career.department}</span>
+                                                    </div>
+                                                    <div className="career-meta-item">
+                                                        <FiMapPin size={16} />
+                                                        <span>{career.location}</span>
+                                                    </div>
+                                                    <div className="career-meta-item">
+                                                        <FiClock size={16} />
+                                                        <span>{career.jobType}</span>
+                                                    </div>
+                                                    <div className="career-meta-item">
+                                                        <FiTrendingUp size={16} />
+                                                        <span>{career.experienceLevel}</span>
+                                                    </div>
+                                                </div>
+                                                <p className="career-description">
+                                                    {career.description.substring(0, 200)}...
+                                                </p>
+                                                {career.skills && career.skills.length > 0 && (
+                                                    <div className="career-skills">
+                                                        {career.skills.slice(0, 5).map((skill, idx) => (
+                                                            <span key={idx} className="career-skill-tag">
+                                                                {skill}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="career-sidebar">
+                                                <div className="career-salary">
+                                                    {formatSalary(career.salaryRange)}
+                                                </div>
+                                                <div className="career-apply-btn">
+                                                    Apply Now
+                                                    <FiArrowRight size={14} />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="career-apply-btn">
-                                            Apply Now
-                                            <FiArrowRight size={14} />
-                                        </div>
                                     </div>
-                                </div>
+                                ))}
                             </div>
-                        ))}
+                        )}
                     </div>
-                )}
+
+                    {/* Sidebar */}
+                    <aside className="careers-sidebar-right">
+                        {/* View All Careers */}
+                        <div className="sidebar-section">
+                            <h3 className="sidebar-title">View All Jobs</h3>
+                            <ul className="sidebar-list">
+                                {allCareers.slice(0, 10).map(career => (
+                                    <li 
+                                        key={career._id} 
+                                        className="sidebar-item"
+                                        onClick={() => handleCareerClick(career.slug)}
+                                    >
+                                        {career.title}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* Latest Careers */}
+                        <div className="sidebar-section">
+                            <h3 className="sidebar-title">Latest Jobs</h3>
+                            <ul className="sidebar-list">
+                                {latestCareers.map(career => (
+                                    <li 
+                                        key={career._id} 
+                                        className="sidebar-item"
+                                        onClick={() => handleCareerClick(career.slug)}
+                                    >
+                                        {career.title}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* Most Popular Careers */}
+                        <div className="sidebar-section">
+                            <h3 className="sidebar-title">Most Popular Jobs</h3>
+                            <ul className="sidebar-list">
+                                {popularCareers.map(career => (
+                                    <li 
+                                        key={career._id} 
+                                        className="sidebar-item"
+                                        onClick={() => handleCareerClick(career.slug)}
+                                    >
+                                        {career.title}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </aside>
+                </div>
             </div>
         </div>
     );

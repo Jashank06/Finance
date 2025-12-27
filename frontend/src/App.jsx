@@ -58,6 +58,7 @@ import FeaturesAnalytics from './pages/admin/FeaturesAnalytics';
 import BlogsManagement from './pages/admin/BlogsManagement';
 import SuccessStoriesManagement from './pages/admin/SuccessStoriesManagement';
 import CareerManagement from './pages/admin/CareerManagement';
+import ContactMessages from './pages/admin/ContactMessages';
 import ContactDeveloper from './pages/admin/ContactDeveloper';
 import FeedbackManagement from './pages/admin/FeedbackManagement';
 
@@ -69,6 +70,10 @@ import SuccessStoriesPage from './landing/components/SuccessStoriesPage';
 import SuccessStoryDetailPage from './landing/components/SuccessStoryDetailPage';
 import CareersPage from './landing/components/CareersPage';
 import CareerDetailPage from './landing/components/CareerDetailPage';
+
+// Payment Pages
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailure from './pages/PaymentFailure';
 
 import './App.css';
 
@@ -83,6 +88,8 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-failure" element={<PaymentFailure />} />
 
           {/* Protected Routes */}
           <Route
@@ -702,6 +709,16 @@ function App() {
               <ProtectedRoute>
                 <AdminLayout>
                   <CareerManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/contact-messages"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ContactMessages />
                 </AdminLayout>
               </ProtectedRoute>
             }

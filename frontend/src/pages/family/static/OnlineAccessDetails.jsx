@@ -3,6 +3,8 @@ import { FiGlobe, FiShield, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import './Static.css';
 import { investmentAPI } from '../../../utils/investmentAPI';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const defaultEntry = {
   category: 'Banking',
   serviceName: '',
@@ -90,6 +92,7 @@ const OnlineAccessDetails = () => {
   };
 
   useEffect(() => {
+    trackFeatureUsage('/family/static/online-access-details', 'view');
     (async () => {
       try {
         const res = await investmentAPI.getAll(CATEGORY_KEY);

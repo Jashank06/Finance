@@ -1,6 +1,12 @@
+import { useEffect } from 'react';
 import { FiPieChart, FiShield } from 'react-icons/fi';
+import { trackFeatureUsage } from '../../utils/featureTracking';
 
 const MfInsuranceSharesInvestment = () => {
+  useEffect(() => {
+    trackFeatureUsage('/family/investments/mf-insurance-shares', 'view');
+  }, []);
+
   return (
     <div className="investment-container">
       <div className="investment-header">

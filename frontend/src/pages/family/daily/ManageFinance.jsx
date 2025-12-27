@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../../utils/api';
 import './ManageFinance.css';
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
 const ManageFinance = () => {
   const [loading, setLoading] = useState(false);

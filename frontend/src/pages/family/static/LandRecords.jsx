@@ -3,6 +3,8 @@ import { FiMap, FiHome, FiEdit2, FiTrash2, FiPlus, FiFileText, FiDollarSign, FiM
 import { staticAPI } from '../../../utils/staticAPI';
 import './Static.css';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const defaultEntry = {
   propertyType: 'Agricultural',
   surveyNumber: '',
@@ -179,6 +181,7 @@ const LandRecords = () => {
   };
 
   useEffect(() => {
+    trackFeatureUsage('/family/static/land-records', 'view');
     fetchEntries();
   }, []);
 

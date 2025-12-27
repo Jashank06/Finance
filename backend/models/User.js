@@ -21,6 +21,20 @@ const userSchema = new mongoose.Schema({
   isAdmin: {
     type: Boolean,
     default: false
+  },
+  subscriptionPlan: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'SubscriptionPlan',
+    default: null
+  },
+  subscriptionStatus: {
+    type: String,
+    enum: ['trial', 'active', 'expired', 'cancelled'],
+    default: 'trial'
+  },
+  subscriptionExpiry: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

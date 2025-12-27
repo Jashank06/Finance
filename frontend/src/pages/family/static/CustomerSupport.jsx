@@ -3,6 +3,8 @@ import { FiPhone, FiMail, FiMessageSquare, FiEdit2, FiTrash2, FiPlus, FiCalendar
 import { staticAPI } from '../../../utils/staticAPI';
 import './Static.css';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const defaultEntry = {
   type: 'Customer Service',
   companyName: '',
@@ -24,6 +26,7 @@ const CustomerSupport = () => {
   const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
+    trackFeatureUsage('/family/static/customer-support', 'view');
     fetchEntries();
   }, []);
 

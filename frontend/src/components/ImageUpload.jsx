@@ -2,7 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { FiUpload, FiX, FiImage } from 'react-icons/fi';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const ImageUpload = ({ label, value, onChange, name }) => {
     const [uploading, setUploading] = useState(false);

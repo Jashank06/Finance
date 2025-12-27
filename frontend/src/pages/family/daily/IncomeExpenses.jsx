@@ -3,6 +3,7 @@ import { incomeExpenseAPI } from '../../../utils/incomeExpenseAPI';
 import api from '../../../utils/api';
 import { FiPlus, FiEdit2, FiTrash2, FiFilter, FiDownload, FiTrendingUp, FiTrendingDown, FiCalendar, FiDollarSign, FiTag, FiRepeat } from 'react-icons/fi';
 import './IncomeExpenses.css';
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
 const IncomeExpenses = () => {
   const [records, setRecords] = useState([]);
@@ -96,6 +97,10 @@ const IncomeExpenses = () => {
   useEffect(() => {
     fetchRecords();
     fetchSummary();
+    // Track page view on first load
+    if (filters.page === 1) {
+      trackFeatureUsage('/family/daily/income-expenses', 'view');
+    }
   }, [filters]);
 
   useEffect(() => {
@@ -202,8 +207,10 @@ const IncomeExpenses = () => {
       let savedRecord;
       if (editingRecord) {
         savedRecord = await incomeExpenseAPI.updateRecord(editingRecord._id, dataToSubmit);
+        trackAction.update('/family/daily/income-expenses', { type: formData.type });
       } else {
         savedRecord = await incomeExpenseAPI.createRecord(dataToSubmit);
+        trackAction.create('/family/daily/income-expenses', { type: formData.type });
       }
 
       // Add connectivity logic - create records in cash/cards/bank if paidFrom is selected
@@ -303,6 +310,7 @@ const IncomeExpenses = () => {
     if (window.confirm('Are you sure you want to delete this record?')) {
       try {
         await incomeExpenseAPI.deleteRecord(id);
+        trackAction.delete('/family/daily/income-expenses');
         fetchRecords();
         fetchSummary();
       } catch (error) {

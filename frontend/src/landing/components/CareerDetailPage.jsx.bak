@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { FiMapPin, FiBriefcase, FiClock, FiTrendingUp, FiArrowLeft, FiCheck, FiMail, FiExternalLink, FiCalendar, FiDollarSign } from 'react-icons/fi';
-import './LandingNav.css';
+import './CareerDetailPage.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
 
@@ -17,7 +17,7 @@ const CareerDetailPage = () => {
 
     const fetchCareer = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/careers/public/${slug}`);
+            const response = await axios.get(`${API_URL}/careers/public/${slug}`);
             setCareer(response.data);
             setLoading(false);
         } catch (error) {
@@ -55,7 +55,7 @@ const CareerDetailPage = () => {
         return (
             <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem' }}>
                 <p style={{ fontSize: '1.5rem', color: '#6b7280' }}>Job opening not found</p>
-                <Link to="/landing/careers" style={{ color: '#3b82f6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Link to="/landing/careers" style={{ color: '#9ca3af', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <FiArrowLeft /> Back to Careers
                 </Link>
             </div>
@@ -66,9 +66,10 @@ const CareerDetailPage = () => {
         <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
             {/* Header */}
             <div style={{
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                background: 'linear-gradient(135deg, #1f2937 0%, #111827 100%)',
                 color: 'white',
-                padding: '3rem 2rem'
+                padding: '8rem 2rem 3rem',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
             }}>
                 <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                     <Link
@@ -140,46 +141,26 @@ const CareerDetailPage = () => {
                         )}
                     </div>
                     <div style={{ display: 'flex', gap: '1rem' }}>
-                        {career.applicationEmail && (
-                            <a
-                                href={`mailto:${career.applicationEmail}`}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    padding: '0.75rem 1.5rem',
-                                    background: '#3b82f6',
-                                    color: 'white',
-                                    textDecoration: 'none',
-                                    borderRadius: '8px',
-                                    fontWeight: '500'
-                                }}
-                            >
-                                <FiMail />
-                                Apply via Email
-                            </a>
-                        )}
-                        {career.applicationUrl && (
-                            <a
-                                href={career.applicationUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    padding: '0.75rem 1.5rem',
-                                    background: '#10b981',
-                                    color: 'white',
-                                    textDecoration: 'none',
-                                    borderRadius: '8px',
-                                    fontWeight: '500'
-                                }}
-                            >
-                                <FiExternalLink />
-                                Apply Online
-                            </a>
-                        )}
+                        <a
+                            href="https://shivengroup.com/register"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.75rem 1.5rem',
+                                background: 'linear-gradient(135deg, #374151 0%, #1f2937 100%)',
+                                color: 'white',
+                                textDecoration: 'none',
+                                borderRadius: '8px',
+                                fontWeight: '500',
+                                border: '1px solid rgba(255, 255, 255, 0.1)'
+                            }}
+                        >
+                            <FiExternalLink />
+                            Apply Now
+                        </a>
                     </div>
                 </div>
 
@@ -218,7 +199,7 @@ const CareerDetailPage = () => {
                                         fontSize: '1.125rem',
                                         lineHeight: '1.6'
                                     }}>
-                                        <FiCheck color="#10b981" size={20} style={{ flexShrink: 0, marginTop: '0.25rem' }} />
+                                        <FiCheck color="#6b7280" size={20} style={{ flexShrink: 0, marginTop: '0.25rem' }} />
                                         <span>{responsibility}</span>
                                     </li>
                                 ))}
@@ -240,7 +221,7 @@ const CareerDetailPage = () => {
                                         fontSize: '1.125rem',
                                         lineHeight: '1.6'
                                     }}>
-                                        <FiCheck color="#3b82f6" size={20} style={{ flexShrink: 0, marginTop: '0.25rem' }} />
+                                        <FiCheck color="#6b7280" size={20} style={{ flexShrink: 0, marginTop: '0.25rem' }} />
                                         <span>{requirement}</span>
                                     </li>
                                 ))}
@@ -262,7 +243,7 @@ const CareerDetailPage = () => {
                                         fontSize: '1.125rem',
                                         lineHeight: '1.6'
                                     }}>
-                                        <FiCheck color="#f59e0b" size={20} style={{ flexShrink: 0, marginTop: '0.25rem' }} />
+                                        <FiCheck color="#6b7280" size={20} style={{ flexShrink: 0, marginTop: '0.25rem' }} />
                                         <span>{benefit}</span>
                                     </li>
                                 ))}
@@ -281,11 +262,12 @@ const CareerDetailPage = () => {
                                         key={idx}
                                         style={{
                                             padding: '0.5rem 1rem',
-                                            background: '#3b82f620',
-                                            color: '#3b82f6',
+                                            background: 'rgba(255, 255, 255, 0.08)',
+                                            color: '#e5e7eb',
                                             borderRadius: '20px',
                                             fontSize: '0.875rem',
-                                            fontWeight: '500'
+                                            fontWeight: '500',
+                                            border: '1px solid rgba(255, 255, 255, 0.15)'
                                         }}
                                     >
                                         {skill}
@@ -305,12 +287,13 @@ const CareerDetailPage = () => {
                             alignItems: 'center',
                             gap: '0.5rem',
                             padding: '1rem 2rem',
-                            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                            background: 'linear-gradient(135deg, #374151 0%, #1f2937 100%)',
                             color: 'white',
                             textDecoration: 'none',
                             borderRadius: '8px',
                             fontSize: '1rem',
-                            fontWeight: '500'
+                            fontWeight: '500',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
                         }}
                     >
                         <FiArrowLeft /> Back to All Careers

@@ -308,6 +308,16 @@ body {
   font-size: 14px;
 }
 
+.success-message {
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
 .demo-credentials {
   margin-top: 40px;
   padding: 16px;
@@ -322,6 +332,60 @@ body {
 .demo-credentials strong {
   color: #a3a3a3;
   font-weight: 500;
+}
+
+/* OTP Specific Styles */
+.otp-input {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 8px;
+  font-family: 'Courier New', monospace;
+}
+
+.otp-helper-text {
+  font-size: 13px;
+  color: var(--auth-text-gray);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.otp-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.resend-otp-button,
+.back-to-login-button {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--auth-text-white);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.resend-otp-button:hover:not(:disabled),
+.back-to-login-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.resend-otp-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Responsive Styles */

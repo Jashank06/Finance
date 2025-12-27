@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import api from '../../../utils/api';
 import './DailyTransactions.css';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const ChequeRegister = () => {
     const [loading, setLoading] = useState(false);
     const [chequeRecords, setChequeRecords] = useState([]);
@@ -25,6 +27,7 @@ const ChequeRegister = () => {
     });
 
     useEffect(() => {
+    trackFeatureUsage('/family/daily/cheque-register', 'view');
         fetchData();
     }, []);
 

@@ -6,6 +6,8 @@ import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
 import { syncCustomerSupportFromForm } from '../../../utils/customerSupportSyncUtil';
 import { syncRemindersFromForm } from '../../../utils/remindersSyncUtil';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const defaultEntry = {
   itemName: '',
   category: 'Electronics',
@@ -76,6 +78,7 @@ const InventoryRecord = () => {
   };
 
   useEffect(() => {
+    trackFeatureUsage('/family/static/inventory-record', 'view');
     (async () => {
       try {
         const res = await investmentAPI.getAll(CATEGORY_KEY);

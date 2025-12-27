@@ -101,7 +101,7 @@ const careerSchema = new mongoose.Schema({
 });
 
 // Auto-generate slug from title if not provided
-careerSchema.pre('save', function(next) {
+careerSchema.pre('save', function() {
   if (!this.slug && this.title) {
     this.slug = this.title
       .toLowerCase()
@@ -113,8 +113,6 @@ careerSchema.pre('save', function(next) {
   if (this.published && !this.publishedDate) {
     this.publishedDate = new Date();
   }
-  
-  if (next) next();
 });
 
 module.exports = mongoose.model('Career', careerSchema);

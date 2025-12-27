@@ -3,6 +3,7 @@ import { FiCalendar, FiClock, FiPlus, FiX, FiEdit2, FiTrash2, FiChevronLeft, FiC
 import calendarAPI from '../../../api/calendar';
 import calendarTypesAPI from '../../../api/calendarTypes';
 import './MultipleCalendars.css';
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
 const MultipleCalendars = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -186,6 +187,7 @@ const MultipleCalendars = () => {
 
   // Load calendar types and events when component mounts
   useEffect(() => {
+    trackFeatureUsage('/family/monitoring/multiple-calendars', 'view');
     loadCalendarTypes();
   }, []);
 

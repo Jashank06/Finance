@@ -83,13 +83,24 @@
     gap: 1.5rem;
 }
 
-/* Jobs List */
+/* Jobs Container & Layout */
 .careers-container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 0 2rem 5rem;
     position: relative;
     z-index: 2;
+}
+
+.careers-layout {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 3rem;
+    align-items: start;
+}
+
+.careers-main-content {
+    min-width: 0;
 }
 
 .careers-list {
@@ -221,7 +232,101 @@
     box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
 }
 
+/* Sidebar */
+.careers-sidebar-right {
+    position: sticky;
+    top: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-top: 2rem;
+    align-self: start;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+}
+
+.sidebar-section {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    padding: 1.5rem;
+    border-radius: 20px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s;
+}
+
+.sidebar-section:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.sidebar-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+}
+
+.sidebar-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.sidebar-item {
+    color: rgba(229, 229, 229, 0.8);
+    font-size: 14px;
+    line-height: 1.4;
+    cursor: pointer;
+    padding: 0.75rem;
+    border-radius: 10px;
+    transition: all 0.3s;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.sidebar-item::before {
+    content: '•';
+    position: absolute;
+    left: 0.5rem;
+    color: rgba(59, 130, 246, 0.5);
+    font-size: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.sidebar-item:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: #FFFFFF;
+    padding-left: 1.75rem;
+}
+
+.sidebar-item:hover::before {
+    color: #3b82f6;
+}
+
 /* Responsive */
+@media (max-width: 1024px) {
+    .careers-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .careers-sidebar-right {
+        position: relative;
+        top: 0;
+        order: -1;
+    }
+    
+    .sidebar-section {
+        margin-bottom: 1rem;
+    }
+}
+
 @media (max-width: 768px) {
     .careers-hero-title {
         font-size: 42px;
@@ -242,5 +347,11 @@
     
     .career-sidebar {
         text-align: left;
+    }
+    
+    .careers-sidebar-right {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
     }
 }

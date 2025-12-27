@@ -3,6 +3,8 @@ import { FiPlus, FiEdit2, FiTrash2, FiDollarSign, FiTrendingUp, FiActivity, FiUs
 import { investmentAPI } from '../../../utils/investmentAPI';
 import '../../investments/Investment.css';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const LoanLedger = () => {
   const [showForm, setShowForm] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -62,6 +64,7 @@ const LoanLedger = () => {
   });
 
   useEffect(() => {
+    trackFeatureUsage('/family/daily/loan-ledger', 'view');
     if ((showForm || showPaymentForm || showOnBehalfForm || showOnBehalfPaymentForm) && formRef.current) {
       setTimeout(() => {
         formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });

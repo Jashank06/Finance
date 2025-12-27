@@ -5,6 +5,8 @@ import { investmentAPI } from '../../../utils/investmentAPI';
 import { staticAPI } from '../../../utils/staticAPI';
 import '../../investments/Investment.css';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const TelephoneConversation = () => {
   const [showForm, setShowForm] = useState(false);
   const formRef = useRef(null);
@@ -43,6 +45,7 @@ const TelephoneConversation = () => {
   const [onlineAccess, setOnlineAccess] = useState([]);
 
   useEffect(() => {
+    trackFeatureUsage('/family/daily/telephone-conversation', 'view');
     if (showForm && formRef.current) {
       setTimeout(() => {
         formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });

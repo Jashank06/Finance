@@ -25,7 +25,22 @@ api.interceptors.request.use(
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
-  getCurrentUser: () => api.get('/auth/me'),
+  getCurrentUser: async () => {
+    const response = await api.get('/auth/me');
+    const userData = response.data.user;
+    
+    // Fetch subscription plan details if exists
+    if (userData.subscriptionPlan) {
+      try {
+        const planResponse = await api.get(`/subscription-plans/${userData.subscriptionPlan}`);
+        userData.subscriptionPlan = planResponse.data;
+      } catch (err) {
+        console.error('Error fetching subscription plan:', err);
+      }
+    }
+    
+    return { ...response, data: { user: userData } };
+  },
 };
 
 export default api;

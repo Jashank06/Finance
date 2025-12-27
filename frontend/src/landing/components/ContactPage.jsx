@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiMail, FiPhone, FiMapPin, FiSend, FiArrowLeft } from 'react-icons/fi';
+import axios from 'axios';
 import financeLogo from '../../assets/FinanceLogo.png';
 import './ContactPage.css';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const ContactPage = () => {
     const [formData, setFormData] = useState({
@@ -11,6 +14,8 @@ const ContactPage = () => {
         subject: '',
         message: ''
     });
+    const [submitting, setSubmitting] = useState(false);
+    const [submitMessage, setSubmitMessage] = useState('');
 
     const handleChange = (e) => {
         setFormData({
@@ -19,12 +24,25 @@ const ContactPage = () => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Here you would typically send the data to your backend
-        console.log('Form submitted:', formData);
-        alert('Message sent! We will get back to you shortly.');
-        setFormData({ name: '', email: '', subject: '', message: '' });
+        setSubmitting(true);
+        setSubmitMessage('');
+
+        try {
+            const response = await axios.post(`${API_URL}/contact-messages/submit`, formData);
+            
+            setSubmitMessage(response.data.message || 'Message sent successfully! We will get back to you shortly.');
+            setFormData({ name: '', email: '', subject: '', message: '' });
+            
+            setTimeout(() => setSubmitMessage(''), 5000);
+        } catch (error) {
+            console.error('Error submitting contact form:', error);
+            setSubmitMessage('Error sending message. Please try again.');
+            setTimeout(() => setSubmitMessage(''), 5000);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -84,6 +102,20 @@ const ContactPage = () => {
                         <p className="form-subtitle">Fill out the form below and we'll get back to you within 24 hours.</p>
                     </div>
 
+                    {submitMessage && (
+                        <div style={{
+                            padding: '1rem',
+                            marginBottom: '1rem',
+                            borderRadius: '8px',
+                            background: submitMessage.includes('Error') ? '#ef4444' : '#10b981',
+                            color: 'white',
+                            textAlign: 'center',
+                            fontWeight: '500'
+                        }}>
+                            {submitMessage}
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="contact-form">
                         <div className="form-row">
                             <div className="form-group">
@@ -141,8 +173,8 @@ const ContactPage = () => {
                             ></textarea>
                         </div>
 
-                        <button type="submit" className="submit-button">
-                            <span>Send Message</span>
+                        <button type="submit" className="submit-button" disabled={submitting}>
+                            <span>{submitting ? 'Sending...' : 'Send Message'}</span>
                             <FiSend />
                         </button>
                     </form>

@@ -14,6 +14,7 @@ import { syncInventoryFromTransaction } from '../../../utils/inventorySyncUtil';
 import { getBroaderCategories, getMainCategories, getSubCategories } from '../../../utils/categoryData';
 import PayingForDropdown from '../../../components/PayingForDropdown';
 import { syncPaymentToModule } from '../../../utils/payingForSync';
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
 const ModalPortal = ({ children }) => {
   if (typeof document === 'undefined') return null;
@@ -198,6 +199,8 @@ const CashCardsBank = () => {
 
   useEffect(() => {
     fetchData();
+    // Track page view
+    trackFeatureUsage('/family/daily/cash-cards-bank', 'view');
   }, []);
 
   const fetchData = async () => {
@@ -357,8 +360,10 @@ const CashCardsBank = () => {
     try {
       if (editingItem) {
         await api.put(`/cash/${editingItem._id}`, cashForm);
+        trackAction.update('/family/daily/cash-cards-bank', { type: 'cash' });
       } else {
         await api.post('/cash', cashForm);
+        trackAction.create('/family/daily/cash-cards-bank', { type: 'cash' });
       }
       resetCashForm();
       setShowCashForm(false);
@@ -386,8 +391,10 @@ const CashCardsBank = () => {
         }
 
         await api.put(`/cards/${editingItem._id}`, updateData);
+        trackAction.update('/family/daily/cash-cards-bank', { type: 'card' });
       } else {
         await api.post('/cards', cardForm);
+        trackAction.create('/family/daily/cash-cards-bank', { type: 'card' });
       }
       resetCardForm();
       setShowCardForm(false);
@@ -573,6 +580,7 @@ const CashCardsBank = () => {
     if (window.confirm('Are you sure you want to delete this item?')) {
       try {
         await api.delete(`/${type}/${id}`);
+        trackAction.delete('/family/daily/cash-cards-bank', { type });
         fetchData();
       } catch (error) {
         console.error('Error deleting item:', error);

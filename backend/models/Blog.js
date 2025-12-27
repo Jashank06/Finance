@@ -55,6 +55,44 @@ const blogSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  likedBy: [{
+    type: String, // Store user IPs or session IDs
+    trim: true
+  }],
+  comments: [{
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    comment: {
+      type: String,
+      required: true
+    },
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  shares: {
+    type: Number,
+    default: 0
+  },
+  averageRating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  totalRatings: {
+    type: Number,
+    default: 0
+  },
   metaTitle: {
     type: String,
     trim: true

@@ -10,6 +10,8 @@ import InsuranceModal from '../../components/InsuranceModal';
 import LoanModal from '../../components/LoanModal';
 import './Investment.css';
 
+import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
+
 const InvestmentValuationNew = () => {
   // State for all investment data
   const [mutualFundsLumpsum, setMutualFundsLumpsum] = useState([]);
@@ -32,6 +34,7 @@ const InvestmentValuationNew = () => {
 
   // Fetch all data on component mount
   useEffect(() => {
+    trackFeatureUsage('/family/investments/investment-valuation', 'view');
     fetchAllData();
   }, []);
 

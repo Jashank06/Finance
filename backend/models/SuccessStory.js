@@ -78,13 +78,55 @@ const successStorySchema = new mongoose.Schema({
   views: {
     type: Number,
     default: 0
+  },
+  likes: {
+    type: Number,
+    default: 0
+  },
+  likedBy: [{
+    type: String, // Store user IPs or session IDs
+    trim: true
+  }],
+  comments: [{
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    comment: {
+      type: String,
+      required: true
+    },
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  shares: {
+    type: Number,
+    default: 0
+  },
+  averageRating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  totalRatings: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true
 });
 
 // Auto-generate slug from title if not provided
-successStorySchema.pre('save', function(next) {
+successStorySchema.pre('save', function() {
   if (!this.slug && this.title) {
     this.slug = this.title
       .toLowerCase()
@@ -96,8 +138,6 @@ successStorySchema.pre('save', function(next) {
   if (this.published && !this.publishedDate) {
     this.publishedDate = new Date();
   }
-  
-  if (next) next();
 });
 
 module.exports = mongoose.model('SuccessStory', successStorySchema);

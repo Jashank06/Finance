@@ -3,9 +3,9 @@ import { FiPlus, FiEdit, FiTrash2, FiTrendingUp, FiPieChart, FiBarChart2, FiCloc
 import axios from 'axios';
 import './Investment.css';
 
-const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5001'
-    : 'https://finance-qr54.onrender.com';
+import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const TradingDetails = () => {
     const [tradingRecords, setTradingRecords] = useState([]);
@@ -41,6 +41,7 @@ const TradingDetails = () => {
     });
 
     useEffect(() => {
+    trackFeatureUsage('/family/investments/trading-details', 'view');
         fetchTradingRecords();
         fetchCompletedRecordIds();
     }, []);

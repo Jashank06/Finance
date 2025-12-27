@@ -5,6 +5,8 @@ import { syncContactsFromForm } from '../../utils/contactSyncUtil';
 import { syncRemindersFromForm } from '../../utils/remindersSyncUtil';
 import './static/Static.css';
 
+import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
+
 const FamilyTasks = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -26,6 +28,7 @@ const FamilyTasks = () => {
   const CATEGORY_KEY = 'family-tasks';
 
   useEffect(() => {
+    trackFeatureUsage('/family/tasks', 'view');
     fetchTasks();
   }, []);
 

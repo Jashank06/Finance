@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { FiCalendar, FiUser, FiTag, FiArrowLeft, FiEye, FiThumbsUp } from 'react-icons/fi';
+import InteractionSection from '../../components/InteractionSection';
 import './BlogDetailPage.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const BlogDetailPage = () => {
     const { slug } = useParams();
@@ -117,6 +118,21 @@ const BlogDetailPage = () => {
                         </div>
                     )}
                 </article>
+
+                {/* Interaction Section - Likes, Share, Comments, Rating */}
+                <InteractionSection 
+                    type="blog"
+                    slug={blog.slug}
+                    initialData={{
+                        likes: blog.likes,
+                        shares: blog.shares,
+                        comments: blog.comments || [],
+                        averageRating: blog.averageRating,
+                        totalRatings: blog.totalRatings,
+                        title: blog.title,
+                        excerpt: blog.excerpt
+                    }}
+                />
 
                 {/* Back Button */}
                 <div className="back-button-container">

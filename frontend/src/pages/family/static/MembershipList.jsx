@@ -5,6 +5,8 @@ import './Static.css';
 import { syncRemindersFromForm } from '../../../utils/remindersSyncUtil';
 import { syncBillScheduleFromForm } from '../../../utils/billScheduleSyncUtil';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const defaultEntry = {
   membershipType: 'Gym',
   organizationName: '',
@@ -41,6 +43,7 @@ const MembershipList = () => {
   const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
+    trackFeatureUsage('/family/static/membership-list', 'view');
     fetchEntries();
   }, []);
 

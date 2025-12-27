@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import api from '../../../utils/api';
 import './BudgetPlan.css';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const BudgetPlanTab = () => {
     const [budgetPlans, setBudgetPlans] = useState([]);
     const [selectedPlan, setSelectedPlan] = useState(null);
@@ -12,6 +14,7 @@ const BudgetPlanTab = () => {
     const [showIncomeForm, setShowIncomeForm] = useState(false);
 
     useEffect(() => {
+    trackFeatureUsage('/family/monitoring/budget-plan', 'view');
         fetchBudgetPlans();
         fetchCurrentPlanAndAnalysis();
     }, []);

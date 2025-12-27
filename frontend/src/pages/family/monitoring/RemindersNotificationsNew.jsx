@@ -3,6 +3,8 @@ import { FiBell, FiClock, FiCalendar, FiRepeat, FiPlus, FiEdit2, FiTrash2, FiChe
 import { investmentAPI } from '../../../utils/investmentAPI';
 import './RemindersNotifications.css';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const RemindersNotifications = () => {
   const [reminders, setReminders] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -42,6 +44,7 @@ const RemindersNotifications = () => {
   const CATEGORY_KEY = 'reminders-notifications';
 
   useEffect(() => {
+    trackFeatureUsage('/family/monitoring/reminders-notifications', 'view');
     fetchData();
   }, []);
 

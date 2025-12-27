@@ -1,0 +1,499 @@
+import { useState, useEffect } from 'react';
+import '../investments/Investment.css';
+import './AdminPages.css';
+import { 
+    FiTrendingUp, 
+    FiUsers, 
+    FiActivity, 
+    FiBarChart2, 
+    FiClock,
+    FiSearch,
+    FiCalendar
+} from 'react-icons/fi';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL || '/api';
+
+const FeaturesAnalytics = () => {
+    const [analytics, setAnalytics] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [dateRange, setDateRange] = useState('30');
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [categoryDetails, setCategoryDetails] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    useEffect(() => {
+        fetchAnalytics();
+    }, [dateRange]);
+
+    useEffect(() => {
+        if (selectedCategory) {
+            fetchCategoryDetails(selectedCategory);
+        }
+    }, [selectedCategory]);
+
+    const fetchAnalytics = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - parseInt(dateRange));
+
+            const response = await axios.get(
+                `${API_URL}/feature-usage/analytics/overview?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (response.data.success) {
+                setAnalytics(response.data.analytics);
+            }
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching analytics:', err);
+            setError(err.response?.data?.message || 'Failed to fetch analytics');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchCategoryDetails = async (categoryId) => {
+        try {
+            const token = localStorage.getItem('token');
+            
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - parseInt(dateRange));
+
+            const response = await axios.get(
+                `${API_URL}/feature-usage/analytics/category/${categoryId}?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (response.data.success) {
+                setCategoryDetails(response.data.analytics);
+            }
+        } catch (err) {
+            console.error('Error fetching category details:', err);
+        }
+    };
+
+    const getCategoryColor = (category) => {
+        const colors = {
+            daily_finance: '#3b82f6',
+            monitoring: '#10b981',
+            investments: '#8b5cf6',
+            static_data: '#f59e0b',
+            reports_analytics: '#ef4444',
+            family_management: '#06b6d4'
+        };
+        return colors[category] || '#6b7280';
+    };
+
+    const filteredTopFeatures = analytics?.topFeatures?.filter(feature =>
+        feature.feature.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
+
+    if (loading) {
+        return (
+            <div className="investment-container">
+                <div className="investment-header">
+                    <h1>Features Usage Analytics</h1>
+                    <p>Loading analytics data...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="investment-container">
+                <div className="investment-header">
+                    <h1>Features Usage Analytics</h1>
+                    <p style={{ color: '#ef4444' }}>{error}</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="investment-container">
+            <div className="investment-header">
+                <h1>Features Usage Analytics</h1>
+                <p>Track how users are using platform features</p>
+            </div>
+
+            {/* Date Range Filter */}
+            <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <label style={{ fontWeight: '500' }}>Time Period:</label>
+                <select
+                    value={dateRange}
+                    onChange={(e) => setDateRange(e.target.value)}
+                    style={{
+                        padding: '0.75rem',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        minWidth: '150px'
+                    }}
+                >
+                    <option value="7">Last 7 Days</option>
+                    <option value="30">Last 30 Days</option>
+                    <option value="90">Last 90 Days</option>
+                    <option value="180">Last 6 Months</option>
+                    <option value="365">Last Year</option>
+                </select>
+            </div>
+
+            {/* Statistics Cards */}
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', 
+                gap: '1rem', 
+                marginBottom: '2rem' 
+            }}>
+                <StatCard
+                    icon={<FiActivity />}
+                    title="Total Usage"
+                    value={analytics?.totalUsage?.toLocaleString() || '0'}
+                    color="#3b82f6"
+                />
+                <StatCard
+                    icon={<FiUsers />}
+                    title="Active Users"
+                    value={analytics?.uniqueUserCount || '0'}
+                    subtitle={`of ${analytics?.totalUsers || '0'} total users`}
+                    color="#10b981"
+                />
+                <StatCard
+                    icon={<FiTrendingUp />}
+                    title="Engagement Rate"
+                    value={`${analytics?.engagementRate || '0'}%`}
+                    color="#8b5cf6"
+                />
+                <StatCard
+                    icon={<FiBarChart2 />}
+                    title="Categories"
+                    value={analytics?.categoryUsage?.length || '0'}
+                    subtitle="feature categories"
+                    color="#f59e0b"
+                />
+            </div>
+
+            {/* Usage by Category */}
+            <div className="investment-section" style={{ marginBottom: '2rem' }}>
+                <div className="section-header">
+                    <h3>Usage by Category</h3>
+                </div>
+                <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+                    gap: '1rem',
+                    padding: '1rem' 
+                }}>
+                    {analytics?.categoryUsage?.map((cat) => (
+                        <div
+                            key={cat.category}
+                            onClick={() => setSelectedCategory(cat.category)}
+                            style={{
+                                background: '#fff',
+                                padding: '1.5rem',
+                                borderRadius: '12px',
+                                border: `2px solid ${selectedCategory === cat.category ? getCategoryColor(cat.category) : '#e5e7eb'}`,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: selectedCategory === cat.category ? '0 4px 6px rgba(0,0,0,0.1)' : 'none'
+                            }}
+                        >
+                            <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '0.5rem',
+                                marginBottom: '0.75rem'
+                            }}>
+                                <div style={{
+                                    width: '12px',
+                                    height: '12px',
+                                    borderRadius: '50%',
+                                    background: getCategoryColor(cat.category)
+                                }} />
+                                <h4 style={{ margin: 0, fontSize: '1rem' }}>{cat.categoryName}</h4>
+                            </div>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: getCategoryColor(cat.category) }}>
+                                {cat.count.toLocaleString()}
+                            </div>
+                            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
+                                {cat.uniqueUsers} unique users
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Category Details Modal */}
+            {selectedCategory && categoryDetails && (
+                <div className="investment-section" style={{ marginBottom: '2rem' }}>
+                    <div className="section-header">
+                        <div style={{ flex: 1 }}>
+                            <h3>Features in {categoryDetails.categoryName || selectedCategory}</h3>
+                        </div>
+                        <button
+                            onClick={() => {
+                                setSelectedCategory(null);
+                                setCategoryDetails(null);
+                            }}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                background: '#fff',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Close
+                        </button>
+                    </div>
+                    <div className="table-container">
+                        <table className="investments-table">
+                            <thead>
+                                <tr>
+                                    <th>Feature Name</th>
+                                    <th>Total Usage</th>
+                                    <th>Unique Users</th>
+                                    <th>Avg. Per User</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {categoryDetails.featureBreakdown?.map((feature, idx) => (
+                                    <tr key={idx}>
+                                        <td><strong>{feature.feature}</strong></td>
+                                        <td>{feature.count.toLocaleString()}</td>
+                                        <td>{feature.uniqueUsers}</td>
+                                        <td>{(feature.count / feature.uniqueUsers).toFixed(1)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* Top Features */}
+            <div className="investment-section" style={{ marginBottom: '2rem' }}>
+                <div className="section-header">
+                    <div style={{ flex: 1 }}>
+                        <h3>Most Used Features</h3>
+                        <p className="section-subtitle">Top 20 features by usage count</p>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                        <FiSearch style={{ 
+                            position: 'absolute', 
+                            left: '10px', 
+                            top: '50%', 
+                            transform: 'translateY(-50%)', 
+                            color: '#6b7280' 
+                        }} />
+                        <input
+                            type="text"
+                            placeholder="Search features..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                paddingLeft: '2.5rem',
+                                padding: '0.75rem',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                width: '250px'
+                            }}
+                        />
+                    </div>
+                </div>
+                <div className="table-container">
+                    <table className="investments-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Feature Name</th>
+                                <th>Category</th>
+                                <th>Total Usage</th>
+                                <th>Unique Users</th>
+                                <th>Usage Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredTopFeatures.length === 0 ? (
+                                <tr>
+                                    <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                                        No features found
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredTopFeatures.map((feature, idx) => (
+                                    <tr key={idx}>
+                                        <td>{idx + 1}</td>
+                                        <td><strong>{feature.feature}</strong></td>
+                                        <td>
+                                            <span style={{
+                                                padding: '0.25rem 0.75rem',
+                                                borderRadius: '12px',
+                                                fontSize: '0.85rem',
+                                                background: `${getCategoryColor(feature.category)}15`,
+                                                color: getCategoryColor(feature.category),
+                                                fontWeight: '500'
+                                            }}>
+                                                {feature.category}
+                                            </span>
+                                        </td>
+                                        <td>{feature.count.toLocaleString()}</td>
+                                        <td>{feature.uniqueUsers}</td>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <div style={{
+                                                    flex: 1,
+                                                    height: '8px',
+                                                    background: '#e5e7eb',
+                                                    borderRadius: '4px',
+                                                    overflow: 'hidden'
+                                                }}>
+                                                    <div style={{
+                                                        height: '100%',
+                                                        width: `${Math.min((feature.uniqueUsers / analytics.totalUsers) * 100, 100)}%`,
+                                                        background: getCategoryColor(feature.category),
+                                                        borderRadius: '4px'
+                                                    }} />
+                                                </div>
+                                                <span style={{ fontSize: '0.875rem', color: '#6b7280', minWidth: '45px' }}>
+                                                    {((feature.uniqueUsers / analytics.totalUsers) * 100).toFixed(1)}%
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Daily Usage Trend */}
+            <div className="investment-section">
+                <div className="section-header">
+                    <h3>Daily Usage Trend (Last 30 Days)</h3>
+                </div>
+                <div style={{ padding: '2rem', background: '#fff', borderRadius: '8px' }}>
+                    <DailyUsageChart data={analytics?.dailyUsage || []} />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Stat Card Component
+const StatCard = ({ icon, title, value, subtitle, color }) => (
+    <div style={{
+        background: '#fff',
+        padding: '1.5rem',
+        borderRadius: '12px',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            <div style={{ color }}>{icon}</div>
+            <span style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '500' }}>{title}</span>
+        </div>
+        <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>
+            {value}
+        </div>
+        {subtitle && (
+            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                {subtitle}
+            </div>
+        )}
+    </div>
+);
+
+// Simple Daily Usage Chart Component
+const DailyUsageChart = ({ data }) => {
+    if (!data || data.length === 0) {
+        return (
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
+                No usage data available
+            </div>
+        );
+    }
+
+    const maxCount = Math.max(...data.map(d => d.count), 1);
+    const maxHeight = 200;
+
+    return (
+        <div>
+            <div style={{ 
+                display: 'flex', 
+                alignItems: 'flex-end', 
+                gap: '4px',
+                height: maxHeight + 40,
+                padding: '1rem 0'
+            }}>
+                {data.map((day, idx) => (
+                    <div
+                        key={idx}
+                        style={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}
+                    >
+                        <div
+                            title={`${day.date}: ${day.count} uses by ${day.uniqueUsers} users`}
+                            style={{
+                                width: '100%',
+                                height: `${(day.count / maxCount) * maxHeight}px`,
+                                background: 'linear-gradient(to top, #3b82f6, #60a5fa)',
+                                borderRadius: '4px 4px 0 0',
+                                cursor: 'pointer',
+                                transition: 'opacity 0.2s',
+                                minHeight: '2px'
+                            }}
+                            onMouseEnter={(e) => e.target.style.opacity = '0.7'}
+                            onMouseLeave={(e) => e.target.style.opacity = '1'}
+                        />
+                        <div style={{
+                            fontSize: '0.7rem',
+                            color: '#6b7280',
+                            transform: 'rotate(-45deg)',
+                            whiteSpace: 'nowrap',
+                            marginTop: '1rem'
+                        }}>
+                            {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                marginTop: '1rem',
+                paddingTop: '1rem',
+                borderTop: '1px solid #e5e7eb'
+            }}>
+                <div>
+                    <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Total: </span>
+                    <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>
+                        {data.reduce((sum, d) => sum + d.count, 0).toLocaleString()}
+                    </span>
+                </div>
+                <div>
+                    <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Avg/Day: </span>
+                    <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>
+                        {(data.reduce((sum, d) => sum + d.count, 0) / data.length).toFixed(0)}
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default FeaturesAnalytics;

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { FiStar, FiMapPin, FiArrowLeft, FiEye, FiAward } from 'react-icons/fi';
-import './LandingNav.css';
+import InteractionSection from '../../components/InteractionSection';
+import './SuccessStoryDetailPage.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
 
@@ -17,7 +18,7 @@ const SuccessStoryDetailPage = () => {
 
     const fetchStory = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/success-stories/public/${slug}`);
+            const response = await axios.get(`${API_URL}/success-stories/public/${slug}`);
             setStory(response.data);
             setLoading(false);
         } catch (error) {
@@ -49,7 +50,7 @@ const SuccessStoryDetailPage = () => {
         return (
             <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem' }}>
                 <p style={{ fontSize: '1.5rem', color: '#6b7280' }}>Success story not found</p>
-                <Link to="/landing/success-stories" style={{ color: '#10b981', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Link to="/landing/success-stories" style={{ color: '#9ca3af', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <FiArrowLeft /> Back to Success Stories
                 </Link>
             </div>
@@ -60,9 +61,10 @@ const SuccessStoryDetailPage = () => {
         <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
             {/* Header */}
             <div style={{
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                background: 'linear-gradient(135deg, #1f2937 0%, #111827 100%)',
                 color: 'white',
-                padding: '3rem 2rem'
+                padding: '8rem 2rem 3rem',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
             }}>
                 <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                     <Link
@@ -149,7 +151,7 @@ const SuccessStoryDetailPage = () => {
                             width: '100px',
                             height: '100px',
                             borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            background: 'linear-gradient(135deg, #374151 0%, #1f2937 100%)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -215,7 +217,7 @@ const SuccessStoryDetailPage = () => {
                     {story.results && (
                         <>
                             <h3 style={{ fontSize: '1.5rem', color: '#1f2937', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <FiAward color="#10b981" /> Results Achieved
+                                <FiAward color="#6b7280" /> Results Achieved
                             </h3>
                             <div style={{
                                 fontSize: '1.125rem',
@@ -223,9 +225,9 @@ const SuccessStoryDetailPage = () => {
                                 color: '#374151',
                                 whiteSpace: 'pre-wrap',
                                 padding: '1.5rem',
-                                background: '#10b98110',
+                                background: 'rgba(107, 114, 128, 0.1)',
                                 borderRadius: '8px',
-                                borderLeft: '4px solid #10b981',
+                                borderLeft: '4px solid #6b7280',
                                 marginBottom: '2rem'
                             }}>
                                 {story.results}
@@ -244,7 +246,7 @@ const SuccessStoryDetailPage = () => {
                                 padding: '1.5rem',
                                 background: '#f9fafb',
                                 borderRadius: '8px',
-                                borderLeft: '4px solid #10b981',
+                                borderLeft: '4px solid #6b7280',
                                 margin: 0
                             }}>
                                 "{story.testimonial}"
@@ -256,6 +258,21 @@ const SuccessStoryDetailPage = () => {
                     )}
                 </article>
 
+                {/* Interaction Section - Likes, Share, Comments, Rating */}
+                <InteractionSection 
+                    type="success-story"
+                    slug={story.slug}
+                    initialData={{
+                        likes: story.likes,
+                        shares: story.shares,
+                        comments: story.comments || [],
+                        averageRating: story.averageRating,
+                        totalRatings: story.totalRatings,
+                        title: story.title,
+                        excerpt: story.excerpt
+                    }}
+                />
+
                 {/* Back Button */}
                 <div style={{ textAlign: 'center', marginTop: '3rem' }}>
                     <Link
@@ -265,12 +282,13 @@ const SuccessStoryDetailPage = () => {
                             alignItems: 'center',
                             gap: '0.5rem',
                             padding: '1rem 2rem',
-                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            background: 'linear-gradient(135deg, #374151 0%, #1f2937 100%)',
                             color: 'white',
                             textDecoration: 'none',
                             borderRadius: '8px',
                             fontSize: '1rem',
-                            fontWeight: '500'
+                            fontWeight: '500',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
                         }}
                     >
                         <FiArrowLeft /> Back to All Success Stories

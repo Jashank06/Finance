@@ -4,6 +4,8 @@ import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Toolti
 import { investmentAPI } from '../../../utils/investmentAPI';
 import '../../investments/Investment.css';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const BillDates = () => {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -211,6 +213,7 @@ const BillDates = () => {
   };
 
   useEffect(() => {
+    trackFeatureUsage('/family/monitoring/bill-dates', 'view');
     fetchEntries();
     fetchReferenceBills();
   }, []);

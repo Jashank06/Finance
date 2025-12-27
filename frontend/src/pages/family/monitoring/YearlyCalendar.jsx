@@ -6,6 +6,8 @@ import EventModal from '../../../components/EventModal';
 import ManageCategories from '../../../components/ManageCategories';
 import './YearlyCalendar.css';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
@@ -81,6 +83,7 @@ const YearlyCalendar = () => {
   };
 
   useEffect(() => {
+    trackFeatureUsage('/family/monitoring/yearly-calendar', 'view');
     fetchCategories();
   }, []);
 

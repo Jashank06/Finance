@@ -30,8 +30,8 @@ const AdminSidebar = () => {
         { path: '/admin/blogs', icon: FiFileText, label: 'Blogs' },
         { path: '/admin/success-stories', icon: FiMessageSquare, label: 'Success Stories' },
         { path: '/admin/careers', icon: FiUsers, label: 'Career Openings' },
+        { path: '/admin/contact-messages', icon: FiMail, label: 'Contact Messages' },
         { path: '/admin/contact', icon: FiMail, label: 'Contact Developer' },
-        { path: '/admin/feedback', icon: FiMessageSquare, label: 'Feedback' },
     ];
 
     return (

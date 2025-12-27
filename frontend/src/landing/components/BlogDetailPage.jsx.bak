@@ -1,0 +1,148 @@
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import axios from 'axios';
+import { FiCalendar, FiUser, FiTag, FiArrowLeft, FiEye, FiThumbsUp } from 'react-icons/fi';
+import InteractionSection from '../../components/InteractionSection';
+import './BlogDetailPage.css';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+
+const BlogDetailPage = () => {
+    const { slug } = useParams();
+    const [blog, setBlog] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchBlog();
+    }, [slug]);
+
+    const fetchBlog = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/blogs/public/${slug}`);
+            setBlog(response.data);
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching blog:', error);
+            setLoading(false);
+        }
+    };
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
+    if (loading) {
+        return (
+            <div className="blog-loading">
+                <p>Loading blog...</p>
+            </div>
+        );
+    }
+
+    if (!blog) {
+        return (
+            <div className="blog-not-found">
+                <p>Blog not found</p>
+                <Link to="/landing/blogs">
+                    <FiArrowLeft /> Back to Blogs
+                </Link>
+            </div>
+        );
+    }
+
+    return (
+        <div className="blog-detail-page">
+            {/* Header */}
+            <div className="blog-detail-header">
+                <div className="blog-detail-header-content">
+                    <Link to="/landing/blogs" className="back-link">
+                        <FiArrowLeft /> Back to Blogs
+                    </Link>
+                    <div>
+                        <span className="blog-category-badge">{blog.category}</span>
+                        <h1 className="blog-detail-title">{blog.title}</h1>
+                        <div className="blog-meta-row">
+                            <div className="blog-meta-item-detail">
+                                <FiUser />
+                                <span>{blog.author}</span>
+                            </div>
+                            <div className="blog-meta-item-detail">
+                                <FiCalendar />
+                                <span>{formatDate(blog.publishedDate)}</span>
+                            </div>
+                            <div className="blog-meta-item-detail">
+                                <FiEye />
+                                <span>{blog.views} views</span>
+                            </div>
+                            {blog.likes > 0 && (
+                                <div className="blog-meta-item-detail">
+                                    <FiThumbsUp />
+                                    <span>{blog.likes} likes</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Content */}
+            <div className="blog-detail-content">
+                <article className="blog-article">
+                    {blog.featuredImage && (
+                        <img
+                            src={blog.featuredImage}
+                            alt={blog.title}
+                            className="blog-featured-image-large"
+                        />
+                    )}
+                    
+                    <div className="blog-content-text">
+                        {blog.content}
+                    </div>
+
+                    {blog.tags && blog.tags.length > 0 && (
+                        <div className="blog-tags-section">
+                            <h4>Tags:</h4>
+                            <div className="blog-tags-list">
+                                {blog.tags.map((tag, idx) => (
+                                    <span key={idx} className="blog-tag-detail">
+                                        <FiTag size={14} />
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </article>
+
+                {/* Interaction Section - Likes, Share, Comments, Rating */}
+                <InteractionSection 
+                    type="blog"
+                    slug={blog.slug}
+                    initialData={{
+                        likes: blog.likes,
+                        shares: blog.shares,
+                        comments: blog.comments || [],
+                        averageRating: blog.averageRating,
+                        totalRatings: blog.totalRatings,
+                        title: blog.title,
+                        excerpt: blog.excerpt
+                    }}
+                />
+
+                {/* Back Button */}
+                <div className="back-button-container">
+                    <Link to="/landing/blogs" className="back-button">
+                        <FiArrowLeft /> Back to All Blogs
+                    </Link>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default BlogDetailPage;

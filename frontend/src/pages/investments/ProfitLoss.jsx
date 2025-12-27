@@ -3,9 +3,9 @@ import { FiRefreshCw, FiTrendingUp, FiTrendingDown, FiDollarSign, FiEdit, FiTras
 import axios from 'axios';
 import '../investments/Investment.css';
 
-const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5001'
-    : 'https://finance-qr54.onrender.com';
+import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const ProfitLoss = () => {
     const [plRecords, setPlRecords] = useState([]);
@@ -16,6 +16,7 @@ const ProfitLoss = () => {
     const [filterType, setFilterType] = useState('all'); // all, profit, loss
 
     useEffect(() => {
+    trackFeatureUsage('/family/investments/profit-loss', 'view');
         fetchPLRecords();
         fetchSummary();
     }, []);

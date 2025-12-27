@@ -7,6 +7,8 @@ import { syncCustomerSupportFromForm } from '../../../utils/customerSupportSyncU
 import { syncRemindersFromForm } from '../../../utils/remindersSyncUtil';
 import { syncBillScheduleFromForm } from '../../../utils/billScheduleSyncUtil';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const defaultEntry = {
   type: 'Mobile',
   name: '',
@@ -71,6 +73,7 @@ const MobileEmailDetails = () => {
   };
 
   useEffect(() => {
+    trackFeatureUsage('/family/static/mobile-email-details', 'view');
     (async () => {
       try {
         const res = await staticAPI.getMobileEmailDetails();

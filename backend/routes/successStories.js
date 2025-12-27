@@ -6,7 +6,7 @@ const auth = require('../middleware/auth');
 // Public routes - Get all published success stories
 router.get('/public', async (req, res) => {
   try {
-    const { category, featured, limit = 10, page = 1 } = req.query;
+    const { category, featured, limit = 10, page = 1, sort = 'date' } = req.query;
     
     let query = { published: true };
     
@@ -15,8 +15,18 @@ router.get('/public', async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
+    // Determine sort order
+    let sortOrder = { featured: -1, publishedDate: -1 }; // default: featured first, then by date
+    if (sort === 'date') {
+      sortOrder = { publishedDate: -1 }; // latest first
+    } else if (sort === 'views') {
+      sortOrder = { views: -1, publishedDate: -1 }; // most viewed first, then by date
+    } else if (sort === 'rating') {
+      sortOrder = { rating: -1, publishedDate: -1 }; // highest rated first, then by date
+    }
+    
     const stories = await SuccessStory.find(query)
-      .sort({ featured: -1, publishedDate: -1 })
+      .sort(sortOrder)
       .limit(parseInt(limit))
       .skip(skip);
     
@@ -52,6 +62,102 @@ router.get('/public/:slug', async (req, res) => {
     res.json(story);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Public interaction routes (no auth required)
+
+// Like a success story
+router.post('/public/:slug/like', async (req, res) => {
+  try {
+    const { userIdentifier } = req.body; // Can be IP, session ID, or user ID
+    const story = await SuccessStory.findOne({ slug: req.params.slug, published: true });
+    
+    if (!story) {
+      return res.status(404).json({ message: 'Success story not found' });
+    }
+    
+    // Check if user already liked
+    const alreadyLiked = story.likedBy.includes(userIdentifier);
+    
+    if (alreadyLiked) {
+      // Unlike
+      story.likedBy = story.likedBy.filter(id => id !== userIdentifier);
+      story.likes = Math.max(0, story.likes - 1);
+    } else {
+      // Like
+      story.likedBy.push(userIdentifier);
+      story.likes += 1;
+    }
+    
+    await story.save();
+    res.json({ 
+      likes: story.likes, 
+      liked: !alreadyLiked 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating likes', error: error.message });
+  }
+});
+
+// Add comment to success story
+router.post('/public/:slug/comment', async (req, res) => {
+  try {
+    const { name, comment, rating } = req.body;
+    const story = await SuccessStory.findOne({ slug: req.params.slug, published: true });
+    
+    if (!story) {
+      return res.status(404).json({ message: 'Success story not found' });
+    }
+    
+    if (!name || !comment) {
+      return res.status(400).json({ message: 'Name and comment are required' });
+    }
+    
+    const newComment = {
+      name,
+      comment,
+      rating: rating || undefined,
+      createdAt: new Date()
+    };
+    
+    story.comments.push(newComment);
+    
+    // Update average rating if rating provided
+    if (rating) {
+      const ratingsCount = story.comments.filter(c => c.rating).length;
+      const totalRating = story.comments.reduce((sum, c) => sum + (c.rating || 0), 0);
+      story.averageRating = ratingsCount > 0 ? totalRating / ratingsCount : 0;
+      story.totalRatings = ratingsCount;
+    }
+    
+    await story.save();
+    res.status(201).json({ 
+      message: 'Comment added successfully',
+      comment: newComment,
+      averageRating: story.averageRating,
+      totalRatings: story.totalRatings
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error adding comment', error: error.message });
+  }
+});
+
+// Increment share count
+router.post('/public/:slug/share', async (req, res) => {
+  try {
+    const story = await SuccessStory.findOne({ slug: req.params.slug, published: true });
+    
+    if (!story) {
+      return res.status(404).json({ message: 'Success story not found' });
+    }
+    
+    story.shares += 1;
+    await story.save();
+    
+    res.json({ shares: story.shares });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating shares', error: error.message });
   }
 });
 
@@ -97,6 +203,8 @@ router.post('/', async (req, res) => {
     await story.save();
     res.status(201).json(story);
   } catch (error) {
+    console.error('Error creating success story:', error);
+    console.error('Stack trace:', error.stack);
     if (error.code === 11000) {
       return res.status(400).json({ message: 'Story with this slug already exists' });
     }

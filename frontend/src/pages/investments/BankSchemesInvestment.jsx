@@ -6,6 +6,8 @@ import { staticAPI } from '../../utils/staticAPI';
 import { fetchBankRates } from '../../utils/livePricesAPI';
 import './Investment.css';
 
+import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
+
 const BankSchemesInvestment = () => {
   const [investments, setInvestments] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -50,6 +52,7 @@ const BankSchemesInvestment = () => {
   };
 
   useEffect(() => {
+    trackFeatureUsage('/family/investments/bank-schemes', 'view');
     fetchInvestments();
     fetchFamilyMembers();
     fetchRates();

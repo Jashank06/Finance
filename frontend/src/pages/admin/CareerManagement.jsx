@@ -5,7 +5,7 @@ import axios from 'axios';
 import { FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff, FiStar } from 'react-icons/fi';
 import '../investments/Investment.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const CareerManagement = () => {
     const [careers, setCareers] = useState([]);

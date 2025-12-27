@@ -6,6 +6,8 @@ import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
 import { syncCustomerSupportFromForm } from '../../../utils/customerSupportSyncUtil';
 import { syncBillScheduleFromForm } from '../../../utils/billScheduleSyncUtil';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const defaultWebsiteEntry = {
   // Basic Information
   projectName: '',
@@ -194,6 +196,7 @@ const DigitalAssets = () => {
   const priorities = ['low', 'medium', 'high', 'critical'];
 
   useEffect(() => {
+    trackFeatureUsage('/family/static/digital-assets', 'view');
     fetchWebsites();
   }, []);
 

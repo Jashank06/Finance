@@ -6,7 +6,7 @@ const auth = require('../middleware/auth');
 // Public routes - Get all published blogs
 router.get('/public', async (req, res) => {
   try {
-    const { category, tag, search, limit = 10, page = 1 } = req.query;
+    const { category, tag, search, limit = 10, page = 1, sort = 'date' } = req.query;
     
     let query = { published: true };
     
@@ -22,8 +22,16 @@ router.get('/public', async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
+    // Determine sort order
+    let sortOrder = { publishedDate: -1 }; // default: latest first
+    if (sort === 'views') {
+      sortOrder = { views: -1, publishedDate: -1 }; // most viewed first, then by date
+    } else if (sort === 'likes') {
+      sortOrder = { likes: -1, publishedDate: -1 }; // most liked first, then by date
+    }
+    
     const blogs = await Blog.find(query)
-      .sort({ publishedDate: -1 })
+      .sort(sortOrder)
       .limit(parseInt(limit))
       .skip(skip)
       .select('-content');
@@ -60,6 +68,102 @@ router.get('/public/:slug', async (req, res) => {
     res.json(blog);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Public interaction routes (no auth required)
+
+// Like a blog post
+router.post('/public/:slug/like', async (req, res) => {
+  try {
+    const { userIdentifier } = req.body; // Can be IP, session ID, or user ID
+    const blog = await Blog.findOne({ slug: req.params.slug, published: true });
+    
+    if (!blog) {
+      return res.status(404).json({ message: 'Blog not found' });
+    }
+    
+    // Check if user already liked
+    const alreadyLiked = blog.likedBy.includes(userIdentifier);
+    
+    if (alreadyLiked) {
+      // Unlike
+      blog.likedBy = blog.likedBy.filter(id => id !== userIdentifier);
+      blog.likes = Math.max(0, blog.likes - 1);
+    } else {
+      // Like
+      blog.likedBy.push(userIdentifier);
+      blog.likes += 1;
+    }
+    
+    await blog.save();
+    res.json({ 
+      likes: blog.likes, 
+      liked: !alreadyLiked 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating likes', error: error.message });
+  }
+});
+
+// Add comment to blog
+router.post('/public/:slug/comment', async (req, res) => {
+  try {
+    const { name, comment, rating } = req.body;
+    const blog = await Blog.findOne({ slug: req.params.slug, published: true });
+    
+    if (!blog) {
+      return res.status(404).json({ message: 'Blog not found' });
+    }
+    
+    if (!name || !comment) {
+      return res.status(400).json({ message: 'Name and comment are required' });
+    }
+    
+    const newComment = {
+      name,
+      comment,
+      rating: rating || undefined,
+      createdAt: new Date()
+    };
+    
+    blog.comments.push(newComment);
+    
+    // Update average rating if rating provided
+    if (rating) {
+      const ratingsCount = blog.comments.filter(c => c.rating).length;
+      const totalRating = blog.comments.reduce((sum, c) => sum + (c.rating || 0), 0);
+      blog.averageRating = ratingsCount > 0 ? totalRating / ratingsCount : 0;
+      blog.totalRatings = ratingsCount;
+    }
+    
+    await blog.save();
+    res.status(201).json({ 
+      message: 'Comment added successfully',
+      comment: newComment,
+      averageRating: blog.averageRating,
+      totalRatings: blog.totalRatings
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error adding comment', error: error.message });
+  }
+});
+
+// Increment share count
+router.post('/public/:slug/share', async (req, res) => {
+  try {
+    const blog = await Blog.findOne({ slug: req.params.slug, published: true });
+    
+    if (!blog) {
+      return res.status(404).json({ message: 'Blog not found' });
+    }
+    
+    blog.shares += 1;
+    await blog.save();
+    
+    res.json({ shares: blog.shares });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating shares', error: error.message });
   }
 });
 

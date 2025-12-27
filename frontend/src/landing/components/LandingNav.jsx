@@ -8,6 +8,7 @@ const LandingNav = () => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [animated, setAnimated] = useState(false);
+    const [moreInfoOpen, setMoreInfoOpen] = useState(false);
     const location = useLocation();
 
     useEffect(() => {
@@ -76,27 +77,56 @@ const LandingNav = () => {
                     >
                         <span>About</span>
                     </Link>
-                    <Link
-                        to="/landing/blogs"
-                        className={`nav-link ${isActive('/landing/blogs') ? 'active' : ''}`}
-                        onClick={scrollToTop}
+                    
+                    {/* More Info Dropdown */}
+                    <div 
+                        className="nav-dropdown"
+                        onMouseEnter={() => setMoreInfoOpen(true)}
+                        onMouseLeave={() => setMoreInfoOpen(false)}
                     >
-                        <span>Blogs</span>
-                    </Link>
-                    <Link
-                        to="/landing/success-stories"
-                        className={`nav-link ${isActive('/landing/success-stories') ? 'active' : ''}`}
-                        onClick={scrollToTop}
-                    >
-                        <span>Success Stories</span>
-                    </Link>
-                    <Link
-                        to="/landing/careers"
-                        className={`nav-link ${isActive('/landing/careers') ? 'active' : ''}`}
-                        onClick={scrollToTop}
-                    >
-                        <span>Careers</span>
-                    </Link>
+                        <span className={`nav-link dropdown-trigger ${
+                            isActive('/landing/blogs') || 
+                            isActive('/landing/success-stories') || 
+                            isActive('/landing/careers') ? 'active' : ''
+                        }`}>
+                            <span>More Info</span>
+                            <FiChevronRight className={`dropdown-icon ${moreInfoOpen ? 'open' : ''}`} />
+                        </span>
+                        
+                        <div className={`dropdown-menu ${moreInfoOpen ? 'open' : ''}`}>
+                            <Link
+                                to="/landing/blogs"
+                                className={`dropdown-item ${isActive('/landing/blogs') ? 'active' : ''}`}
+                                onClick={() => {
+                                    scrollToTop();
+                                    setMoreInfoOpen(false);
+                                }}
+                            >
+                                <span>Blogs</span>
+                            </Link>
+                            <Link
+                                to="/landing/success-stories"
+                                className={`dropdown-item ${isActive('/landing/success-stories') ? 'active' : ''}`}
+                                onClick={() => {
+                                    scrollToTop();
+                                    setMoreInfoOpen(false);
+                                }}
+                            >
+                                <span>Success Stories</span>
+                            </Link>
+                            <Link
+                                to="/landing/careers"
+                                className={`dropdown-item ${isActive('/landing/careers') ? 'active' : ''}`}
+                                onClick={() => {
+                                    scrollToTop();
+                                    setMoreInfoOpen(false);
+                                }}
+                            >
+                                <span>Careers</span>
+                            </Link>
+                        </div>
+                    </div>
+                    
                     <Link
                         to="/landing/contact"
                         className={`nav-link ${isActive('/landing/contact') ? 'active' : ''}`}

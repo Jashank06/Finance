@@ -4,6 +4,10 @@ const cors = require('cors');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
+const otpRoutes = require('./routes/otp');
+const usersRoutes = require('./routes/users');
+const featureUsageRoutes = require('./routes/featureUsage');
+const paymentRoutes = require('./routes/payment');
 const investmentRoutes = require('./routes/investment');
 const goldSgbRoutes = require('./routes/goldSgb');
 const staticRoutes = require('./routes/static');
@@ -33,6 +37,8 @@ const profitLossRoutes = require('./routes/profitLoss');
 const blogsRoutes = require('./routes/blogs');
 const successStoriesRoutes = require('./routes/successStories');
 const careersRoutes = require('./routes/careers');
+const contactMessagesRoutes = require('./routes/contactMessages');
+const subscriptionPlansRoutes = require('./routes/subscriptionPlans');
 const uploadRoutes = require('./routes/upload');
 
 const app = express();
@@ -43,15 +49,29 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
+    // Get allowed origins from environment variable or use defaults
+    const envOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
+    
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5173',
-      'https://jashank06.github.io'
+      'http://localhost:5001',
+      'http://13.235.53.147',
+      'http://13.235.53.147:5001',
+      'https://jashank06.github.io',
+      ...envOrigins
     ];
 
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.startsWith('http://localhost')) {
+    // Allow localhost in development
+    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      // In production, log rejected origins for debugging
+      console.log('CORS rejected origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -70,6 +90,10 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/otp', otpRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/feature-usage', featureUsageRoutes);
+app.use('/api/payment', paymentRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/gold-sgb', goldSgbRoutes);
 app.use('/api/static', staticRoutes);
@@ -99,6 +123,8 @@ app.use('/api/profit-loss', profitLossRoutes);
 app.use('/api/blogs', blogsRoutes);
 app.use('/api/success-stories', successStoriesRoutes);
 app.use('/api/careers', careersRoutes);
+app.use('/api/contact-messages', contactMessagesRoutes);
+app.use('/api/subscription-plans', subscriptionPlansRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Health check route

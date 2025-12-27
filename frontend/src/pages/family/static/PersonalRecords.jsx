@@ -6,6 +6,8 @@ import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
 import { syncCustomerSupportFromForm } from '../../../utils/customerSupportSyncUtil';
 import { syncRemindersFromForm } from '../../../utils/remindersSyncUtil';
 
+import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+
 const defaultEntry = {
   docType: 'Aadhaar',
   idNumber: '',
@@ -61,6 +63,7 @@ const PersonalRecords = () => {
   };
 
   useEffect(() => {
+    trackFeatureUsage('/family/static/personal-records', 'view');
     (async () => {
       try {
         const res = await staticAPI.getPersonalRecords();

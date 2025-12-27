@@ -6,7 +6,7 @@ const auth = require('../middleware/auth');
 // Public routes - Get all published career openings
 router.get('/public', async (req, res) => {
   try {
-    const { department, jobType, experienceLevel, location, featured, limit = 10, page = 1 } = req.query;
+    const { department, jobType, experienceLevel, location, featured, limit = 10, page = 1, sort = 'date' } = req.query;
     
     let query = { published: true };
     
@@ -18,8 +18,18 @@ router.get('/public', async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
+    // Determine sort order
+    let sortOrder = { featured: -1, publishedDate: -1 }; // default: featured first, then by date
+    if (sort === 'date') {
+      sortOrder = { publishedDate: -1 }; // latest first
+    } else if (sort === 'views') {
+      sortOrder = { views: -1, publishedDate: -1 }; // most viewed first, then by date
+    } else if (sort === 'applications') {
+      sortOrder = { applicationCount: -1, publishedDate: -1 }; // most applications first, then by date
+    }
+    
     const careers = await Career.find(query)
-      .sort({ featured: -1, publishedDate: -1 })
+      .sort(sortOrder)
       .limit(parseInt(limit))
       .skip(skip);
     

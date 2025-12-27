@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useFeatureAccess } from '../hooks/useFeatureAccess';
+import UpgradeModal from './UpgradeModal';
 import './Sidebar.css';
 
 const Sidebar = () => {
@@ -11,8 +13,10 @@ const Sidebar = () => {
   const [dailyOpen, setDailyOpen] = useState(false);
   const [monitoringOpen, setMonitoringOpen] = useState(false);
   const [businessDailyOpen, setBusinessDailyOpen] = useState(false);
+  const [upgradeModal, setUpgradeModal] = useState({ isOpen: false, featureName: '' });
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const { hasFeatureAccess } = useFeatureAccess();
 
   const handleLogout = () => {
     logout();
@@ -43,9 +47,15 @@ const Sidebar = () => {
               <div className="nav-subsection">
                 <div
                   className={`submenu-item nav-header ${dailyOpen ? 'active' : ''}`}
-                  onClick={() => setDailyOpen(!dailyOpen)}
+                  onClick={() => {
+                    if (!hasFeatureAccess('daily_finance')) {
+                      setUpgradeModal({ isOpen: true, featureName: 'Daily Finance Management' });
+                    } else {
+                      setDailyOpen(!dailyOpen);
+                    }
+                  }}
                 >
-                  Daily
+                  Daily {!hasFeatureAccess('daily_finance') && <span style={{ marginLeft: 'auto' }}>🔒</span>}
                 </div>
                 {dailyOpen && (
                   <div className="nested-submenu">
@@ -61,9 +71,15 @@ const Sidebar = () => {
               <div className="nav-subsection">
                 <div
                   className={`submenu-item nav-header ${monitoringOpen ? 'active' : ''}`}
-                  onClick={() => setMonitoringOpen(!monitoringOpen)}
+                  onClick={() => {
+                    if (!hasFeatureAccess('monitoring')) {
+                      setUpgradeModal({ isOpen: true, featureName: 'Monitoring & Planning' });
+                    } else {
+                      setMonitoringOpen(!monitoringOpen);
+                    }
+                  }}
                 >
-                  Monitoring
+                  Monitoring {!hasFeatureAccess('monitoring') && <span style={{ marginLeft: 'auto' }}>🔒</span>}
                 </div>
                 {monitoringOpen && (
                   <div className="nested-submenu">
@@ -81,9 +97,15 @@ const Sidebar = () => {
               <div className="nav-subsection">
                 <div
                   className={`submenu-item nav-header ${investmentsOpen ? 'active' : ''}`}
-                  onClick={() => setInvestmentsOpen(!investmentsOpen)}
+                  onClick={() => {
+                    if (!hasFeatureAccess('investments')) {
+                      setUpgradeModal({ isOpen: true, featureName: 'Investment Management' });
+                    } else {
+                      setInvestmentsOpen(!investmentsOpen);
+                    }
+                  }}
                 >
-                  Investments
+                  Investments {!hasFeatureAccess('investments') && <span style={{ marginLeft: 'auto' }}>🔒</span>}
                 </div>
                 {investmentsOpen && (
                   <div className="nested-submenu">
@@ -104,9 +126,15 @@ const Sidebar = () => {
               <div className="nav-subsection">
                 <div
                   className={`submenu-item nav-header ${staticOpen ? 'active' : ''}`}
-                  onClick={() => setStaticOpen(!staticOpen)}
+                  onClick={() => {
+                    if (!hasFeatureAccess('static_data')) {
+                      setUpgradeModal({ isOpen: true, featureName: 'Static Data & Records' });
+                    } else {
+                      setStaticOpen(!staticOpen);
+                    }
+                  }}
                 >
-                  Static
+                  Static {!hasFeatureAccess('static_data') && <span style={{ marginLeft: 'auto' }}>🔒</span>}
                 </div>
                 {staticOpen && (
                   <div className="nested-submenu">
@@ -180,6 +208,12 @@ const Sidebar = () => {
         <Link to="/contact" className="nav-item">Contact Developer</Link>
         <div onClick={handleLogout} className="nav-item logout">Logout</div>
       </nav>
+      
+      <UpgradeModal
+        isOpen={upgradeModal.isOpen}
+        onClose={() => setUpgradeModal({ isOpen: false, featureName: '' })}
+        featureName={upgradeModal.featureName}
+      />
     </div>
   );
 };

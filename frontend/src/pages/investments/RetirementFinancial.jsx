@@ -3,6 +3,8 @@ import { FiBarChart2, FiDownload, FiRefreshCw, FiTrendingUp } from 'react-icons/
 import { AreaChart, Area, ResponsiveContainer, Tooltip, CartesianGrid, XAxis, YAxis } from 'recharts';
 import './RetirementFinancial.css';
 
+import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
+
 const RetirementFinancial = () => {
   const formRef = useRef(null);
   const [inputs, setInputs] = useState({
@@ -28,6 +30,7 @@ const RetirementFinancial = () => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    trackFeatureUsage('/family/investments/retirement-financial', 'view');
     if (show && formRef.current) {
       setTimeout(() => {
         formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });

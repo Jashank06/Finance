@@ -4,6 +4,8 @@ import { FiEdit, FiTrash2, FiPlus } from 'react-icons/fi';
 import './Investment.css';
 import './LoanAmortization.css';
 
+import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
+
 const LoanAmortization = () => {
   const [view, setView] = useState('calculator'); // 'calculator' or 'manage'
   const [savedLoans, setSavedLoans] = useState([]);
@@ -90,6 +92,7 @@ const LoanAmortization = () => {
   }, [inputs, extraPayments, rateType]);
 
   useEffect(() => {
+    trackFeatureUsage('/family/investments/loan-amortization', 'view');
     if (view === 'manage') {
       fetchSavedLoans();
     }

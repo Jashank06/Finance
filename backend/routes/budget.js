@@ -8,6 +8,11 @@ const auth = require('../middleware/auth');
 
 // Cheque Register Schema
 const chequeRegisterSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   receivedDate: { type: Date, required: true },
   chequeDepositDate: { type: Date },
   difference: { type: Number },
@@ -28,6 +33,11 @@ const chequeRegisterSchema = new mongoose.Schema({
 
 // Daily Cash Register Schema
 const dailyCashSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   date: { type: Date, required: true },
   description: { type: String },
   credit: { type: Number },
@@ -42,6 +52,11 @@ const dailyCashSchema = new mongoose.Schema({
 
 // Milestone Schema
 const milestoneSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   title: { type: String, required: true },
   description: { type: String },
   startDate: { type: Date, required: true },
@@ -71,9 +86,9 @@ const Milestone = mongoose.model('Milestone', milestoneSchema);
 // CHEQUE REGISTER ROUTES
 
 // GET all cheque records
-router.get('/cheque-register', async (req, res) => {
+router.get('/cheque-register', auth, async (req, res) => {
   try {
-    const records = await ChequeRegister.find().sort({ receivedDate: -1 });
+    const records = await ChequeRegister.find({ userId: req.user._id }).sort({ receivedDate: -1 });
     res.json(records);
   } catch (error) {
     console.error('Error fetching cheque records:', error);
@@ -82,9 +97,9 @@ router.get('/cheque-register', async (req, res) => {
 });
 
 // GET single cheque record
-router.get('/cheque-register/:id', async (req, res) => {
+router.get('/cheque-register/:id', auth, async (req, res) => {
   try {
-    const record = await ChequeRegister.findById(req.params.id);
+    const record = await ChequeRegister.findOne({ _id: req.params.id, userId: req.user._id });
     if (!record) {
       return res.status(404).json({ message: 'Cheque record not found' });
     }
@@ -96,7 +111,7 @@ router.get('/cheque-register/:id', async (req, res) => {
 });
 
 // POST new cheque record
-router.post('/cheque-register', async (req, res) => {
+router.post('/cheque-register', auth, async (req, res) => {
   try {
     // Calculate difference if both dates are provided
     if (req.body.receivedDate && req.body.chequeDepositDate) {
@@ -107,7 +122,7 @@ router.post('/cheque-register', async (req, res) => {
       req.body.difference = diffDays;
     }
 
-    const record = new ChequeRegister(req.body);
+    const record = new ChequeRegister({ ...req.body, userId: req.user._id });
     const savedRecord = await record.save();
     res.status(201).json(savedRecord);
   } catch (error) {
@@ -117,7 +132,7 @@ router.post('/cheque-register', async (req, res) => {
 });
 
 // PUT update cheque record
-router.put('/cheque-register/:id', async (req, res) => {
+router.put('/cheque-register/:id', auth, async (req, res) => {
   try {
     // Calculate difference if both dates are provided
     if (req.body.receivedDate && req.body.chequeDepositDate) {
@@ -129,7 +144,11 @@ router.put('/cheque-register/:id', async (req, res) => {
     }
 
     req.body.updatedAt = new Date();
-    const record = await ChequeRegister.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const record = await ChequeRegister.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      req.body,
+      { new: true }
+    );
     if (!record) {
       return res.status(404).json({ message: 'Cheque record not found' });
     }
@@ -141,9 +160,9 @@ router.put('/cheque-register/:id', async (req, res) => {
 });
 
 // DELETE cheque record
-router.delete('/cheque-register/:id', async (req, res) => {
+router.delete('/cheque-register/:id', auth, async (req, res) => {
   try {
-    const record = await ChequeRegister.findByIdAndDelete(req.params.id);
+    const record = await ChequeRegister.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
     if (!record) {
       return res.status(404).json({ message: 'Cheque record not found' });
     }
@@ -157,9 +176,9 @@ router.delete('/cheque-register/:id', async (req, res) => {
 // DAILY CASH REGISTER ROUTES
 
 // GET all cash records
-router.get('/daily-cash', async (req, res) => {
+router.get('/daily-cash', auth, async (req, res) => {
   try {
-    const records = await DailyCash.find().sort({ date: -1 });
+    const records = await DailyCash.find({ userId: req.user._id }).sort({ date: -1 });
     res.json(records);
   } catch (error) {
     console.error('Error fetching cash records:', error);
@@ -168,9 +187,9 @@ router.get('/daily-cash', async (req, res) => {
 });
 
 // GET single cash record
-router.get('/daily-cash/:id', async (req, res) => {
+router.get('/daily-cash/:id', auth, async (req, res) => {
   try {
-    const record = await DailyCash.findById(req.params.id);
+    const record = await DailyCash.findOne({ _id: req.params.id, userId: req.user._id });
     if (!record) {
       return res.status(404).json({ message: 'Cash record not found' });
     }
@@ -182,9 +201,9 @@ router.get('/daily-cash/:id', async (req, res) => {
 });
 
 // POST new cash record
-router.post('/daily-cash', async (req, res) => {
+router.post('/daily-cash', auth, async (req, res) => {
   try {
-    const record = new DailyCash(req.body);
+    const record = new DailyCash({ ...req.body, userId: req.user._id });
     const savedRecord = await record.save();
     res.status(201).json(savedRecord);
   } catch (error) {
@@ -194,10 +213,14 @@ router.post('/daily-cash', async (req, res) => {
 });
 
 // PUT update cash record
-router.put('/daily-cash/:id', async (req, res) => {
+router.put('/daily-cash/:id', auth, async (req, res) => {
   try {
     req.body.updatedAt = new Date();
-    const record = await DailyCash.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const record = await DailyCash.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      req.body,
+      { new: true }
+    );
     if (!record) {
       return res.status(404).json({ message: 'Cash record not found' });
     }
@@ -209,9 +232,9 @@ router.put('/daily-cash/:id', async (req, res) => {
 });
 
 // DELETE cash record
-router.delete('/daily-cash/:id', async (req, res) => {
+router.delete('/daily-cash/:id', auth, async (req, res) => {
   try {
-    const record = await DailyCash.findByIdAndDelete(req.params.id);
+    const record = await DailyCash.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
     if (!record) {
       return res.status(404).json({ message: 'Cash record not found' });
     }
@@ -225,9 +248,9 @@ router.delete('/daily-cash/:id', async (req, res) => {
 // MILESTONE ROUTES
 
 // GET all milestones
-router.get('/milestones', async (req, res) => {
+router.get('/milestones', auth, async (req, res) => {
   try {
-    const records = await Milestone.find().sort({ startDate: -1 });
+    const records = await Milestone.find({ userId: req.user._id }).sort({ startDate: -1 });
     res.json(records);
   } catch (error) {
     console.error('Error fetching milestones:', error);
@@ -236,9 +259,9 @@ router.get('/milestones', async (req, res) => {
 });
 
 // GET single milestone
-router.get('/milestones/:id', async (req, res) => {
+router.get('/milestones/:id', auth, async (req, res) => {
   try {
-    const record = await Milestone.findById(req.params.id);
+    const record = await Milestone.findOne({ _id: req.params.id, userId: req.user._id });
     if (!record) {
       return res.status(404).json({ message: 'Milestone not found' });
     }
@@ -250,9 +273,9 @@ router.get('/milestones/:id', async (req, res) => {
 });
 
 // POST new milestone
-router.post('/milestones', async (req, res) => {
+router.post('/milestones', auth, async (req, res) => {
   try {
-    const record = new Milestone(req.body);
+    const record = new Milestone({ ...req.body, userId: req.user._id });
     const savedRecord = await record.save();
     res.status(201).json(savedRecord);
   } catch (error) {
@@ -262,10 +285,14 @@ router.post('/milestones', async (req, res) => {
 });
 
 // PUT update milestone
-router.put('/milestones/:id', async (req, res) => {
+router.put('/milestones/:id', auth, async (req, res) => {
   try {
     req.body.updatedAt = new Date();
-    const record = await Milestone.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const record = await Milestone.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      req.body,
+      { new: true }
+    );
     if (!record) {
       return res.status(404).json({ message: 'Milestone not found' });
     }
@@ -277,9 +304,9 @@ router.put('/milestones/:id', async (req, res) => {
 });
 
 // DELETE milestone
-router.delete('/milestones/:id', async (req, res) => {
+router.delete('/milestones/:id', auth, async (req, res) => {
   try {
-    const record = await Milestone.findByIdAndDelete(req.params.id);
+    const record = await Milestone.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
     if (!record) {
       return res.status(404).json({ message: 'Milestone not found' });
     }
@@ -293,16 +320,20 @@ router.delete('/milestones/:id', async (req, res) => {
 // ANALYTICS ROUTES
 
 // GET cheque register analytics
-router.get('/analytics/cheque-register', async (req, res) => {
+router.get('/analytics/cheque-register', auth, async (req, res) => {
   try {
-    const totalRecords = await ChequeRegister.countDocuments();
+    const userId = req.user._id;
+    const totalRecords = await ChequeRegister.countDocuments({ userId });
     const totalDeposits = await ChequeRegister.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(userId) } },
       { $group: { _id: null, total: { $sum: '$deposit' } } }
     ]);
     const totalWithdrawals = await ChequeRegister.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(userId) } },
       { $group: { _id: null, total: { $sum: '$withdrawal' } } }
     ]);
     const avgDelayDays = await ChequeRegister.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(userId) } },
       { $group: { _id: null, avg: { $avg: '$difference' } } }
     ]);
 
@@ -319,16 +350,20 @@ router.get('/analytics/cheque-register', async (req, res) => {
 });
 
 // GET cash register analytics
-router.get('/analytics/daily-cash', async (req, res) => {
+router.get('/analytics/daily-cash', auth, async (req, res) => {
   try {
-    const totalRecords = await DailyCash.countDocuments();
+    const userId = req.user._id;
+    const totalRecords = await DailyCash.countDocuments({ userId });
     const totalCredits = await DailyCash.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(userId) } },
       { $group: { _id: null, total: { $sum: '$credit' } } }
     ]);
     const totalDebits = await DailyCash.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(userId) } },
       { $group: { _id: null, total: { $sum: '$debit' } } }
     ]);
     const categoryBreakdown = await DailyCash.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(userId) } },
       { $group: { _id: '$category', count: { $sum: 1 }, total: { $sum: '$credit' } } }
     ]);
 
@@ -346,16 +381,20 @@ router.get('/analytics/daily-cash', async (req, res) => {
 });
 
 // GET milestone analytics
-router.get('/analytics/milestones', async (req, res) => {
+router.get('/analytics/milestones', auth, async (req, res) => {
   try {
-    const totalMilestones = await Milestone.countDocuments();
+    const userId = req.user._id;
+    const totalMilestones = await Milestone.countDocuments({ userId });
     const statusBreakdown = await Milestone.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(userId) } },
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
     const priorityBreakdown = await Milestone.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(userId) } },
       { $group: { _id: '$priority', count: { $sum: 1 } } }
     ]);
     const avgProgress = await Milestone.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(userId) } },
       { $group: { _id: null, avg: { $avg: '$progress' } } }
     ]);
 
@@ -372,9 +411,9 @@ router.get('/analytics/milestones', async (req, res) => {
 });
 
 // Targets for Life Routes
-router.get('/targets-for-life', async (req, res) => {
+router.get('/targets-for-life', auth, async (req, res) => {
   try {
-    const targets = await Target.find().sort({ createdAt: -1 });
+    const targets = await Target.find({ userId: req.user._id }).sort({ createdAt: -1 });
     res.json(targets);
   } catch (error) {
     console.error('Error fetching targets:', error);
@@ -382,15 +421,15 @@ router.get('/targets-for-life', async (req, res) => {
   }
 });
 
-router.post('/targets-for-life', async (req, res) => {
+router.post('/targets-for-life', auth, async (req, res) => {
   try {
     const target = new Target({
+      userId: req.user._id,
       goalType: req.body.goalType,
       specificGoal: req.body.specificGoal,
       timeHorizon: req.body.timeHorizon,
       estimatedCost: req.body.estimatedCost,
       recommendedInvestmentVehicle: req.body.recommendedInvestmentVehicle,
-      riskTolerance: req.body.riskTolerance,
       riskTolerance: req.body.riskTolerance,
       targetDate: req.body.targetDate,
       monthlyExpenses: req.body.monthlyExpenses,
@@ -404,10 +443,10 @@ router.post('/targets-for-life', async (req, res) => {
   }
 });
 
-router.put('/targets-for-life/:id', async (req, res) => {
+router.put('/targets-for-life/:id', auth, async (req, res) => {
   try {
-    const target = await Target.findByIdAndUpdate(
-      req.params.id,
+    const target = await Target.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
       {
         $set: {
           goalType: req.body.goalType,
@@ -434,9 +473,9 @@ router.put('/targets-for-life/:id', async (req, res) => {
   }
 });
 
-router.delete('/targets-for-life/:id', async (req, res) => {
+router.delete('/targets-for-life/:id', auth, async (req, res) => {
   try {
-    const target = await Target.findByIdAndDelete(req.params.id);
+    const target = await Target.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
     if (!target) {
       return res.status(404).json({ message: 'Target not found' });
     }

@@ -1,0 +1,144 @@
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000/api';
+
+// Generate a unique session ID for this browser session
+let sessionId = sessionStorage.getItem('feature_tracking_session');
+if (!sessionId) {
+  sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  sessionStorage.setItem('feature_tracking_session', sessionId);
+}
+
+// Feature name mapping based on routes
+const FEATURE_ROUTE_MAP = {
+  // Daily Finance
+  '/family/daily/cash-cards-bank': { category: 'daily_finance', name: 'Cash Cards Bank' },
+  '/family/daily/daily-transactions': { category: 'daily_finance', name: 'Daily Transactions' },
+  '/family/daily/income-expenses': { category: 'daily_finance', name: 'Income Expenses' },
+  '/family/daily/manage-finance': { category: 'daily_finance', name: 'Manage Finance' },
+  '/family/daily/bill-checklist': { category: 'daily_finance', name: 'Bill Checklist' },
+  '/family/daily/cheque-register': { category: 'daily_finance', name: 'Cheque Register' },
+  '/family/daily/loan-ledger': { category: 'daily_finance', name: 'Loan Ledger' },
+  '/family/daily/daily-cash-register': { category: 'daily_finance', name: 'Daily Cash Register' },
+  '/family/daily/telephone-conversation': { category: 'daily_finance', name: 'Telephone Conversation' },
+  
+  // Monitoring
+  '/family/monitoring/budget': { category: 'monitoring', name: 'Budget Management' },
+  '/family/monitoring/budget-plan': { category: 'monitoring', name: 'Budget Plan' },
+  '/family/monitoring/multiple-calendars': { category: 'monitoring', name: 'Multiple Calendars' },
+  '/family/monitoring/reminders-notifications': { category: 'monitoring', name: 'Reminders Notifications' },
+  '/family/monitoring/targets-for-life': { category: 'monitoring', name: 'Targets For Life' },
+  '/family/monitoring/roadmap': { category: 'monitoring', name: 'Roadmap' },
+  '/family/monitoring/milestones': { category: 'monitoring', name: 'Milestones' },
+  '/family/monitoring/bill-dates': { category: 'monitoring', name: 'Bill Dates' },
+  '/family/monitoring/yearly-calendar': { category: 'monitoring', name: 'Yearly Calendar' },
+  '/family/monitoring/weekly-appointments': { category: 'monitoring', name: 'Weekly Appointments' },
+  
+  // Investments
+  '/family/investments/mf-insurance-shares': { category: 'investments', name: 'MF Insurance Shares' },
+  '/family/investments/gold-sgb': { category: 'investments', name: 'Gold SGB' },
+  '/family/investments/nps-ppf': { category: 'investments', name: 'NPS PPF' },
+  '/family/investments/bank-schemes': { category: 'investments', name: 'Bank Schemes' },
+  '/family/investments/investment-profile': { category: 'investments', name: 'Investment Profile' },
+  '/family/investments/investment-valuation': { category: 'investments', name: 'Investment Valuation' },
+  '/family/investments/profit-loss': { category: 'investments', name: 'Profit Loss' },
+  '/family/investments/project-income-expense': { category: 'investments', name: 'Project Income Expense' },
+  '/family/investments/trading-details': { category: 'investments', name: 'Trading Details' },
+  '/family/investments/loan-amortization': { category: 'investments', name: 'Loan Amortization' },
+  '/family/investments/retirement-financial': { category: 'investments', name: 'Retirement Financial' },
+  
+  // Static Data
+  '/family/static/family-profile': { category: 'static_data', name: 'Family Profile' },
+  '/family/static/basic-details': { category: 'static_data', name: 'Basic Details' },
+  '/family/static/contact-management': { category: 'static_data', name: 'Contact Management' },
+  '/family/static/personal-records': { category: 'static_data', name: 'Personal Records' },
+  '/family/static/company-records': { category: 'static_data', name: 'Company Records' },
+  '/family/static/land-records': { category: 'static_data', name: 'Land Records' },
+  '/family/static/membership-list': { category: 'static_data', name: 'Membership List' },
+  '/family/static/inventory-record': { category: 'static_data', name: 'Inventory Record' },
+  '/family/static/mobile-email-details': { category: 'static_data', name: 'Mobile Email Details' },
+  '/family/static/online-access-details': { category: 'static_data', name: 'Online Access Details' },
+  '/family/static/digital-assets': { category: 'static_data', name: 'Digital Assets' },
+  '/family/static/customer-support': { category: 'static_data', name: 'Customer Support' },
+  
+  // Reports & Analytics
+  '/family/reports': { category: 'reports_analytics', name: 'Reports' },
+  '/family/analytics': { category: 'reports_analytics', name: 'Analytics' },
+  '/family/cashflow-analysis': { category: 'reports_analytics', name: 'Cashflow Analysis' },
+  
+  // Family Management
+  '/family-profile': { category: 'family_management', name: 'Family Profile Overview' },
+  '/family/tasks': { category: 'family_management', name: 'Family Tasks' },
+};
+
+/**
+ * Track feature usage
+ * @param {string} route - Current route path
+ * @param {string} action - Action type (view, create, update, delete, export, import)
+ * @param {object} metadata - Additional metadata (optional)
+ */
+export const trackFeatureUsage = async (route, action = 'view', metadata = {}) => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    // Don't track if user is not logged in
+    if (!token) return;
+
+    // Get feature info from route
+    const featureInfo = FEATURE_ROUTE_MAP[route];
+    
+    if (!featureInfo) {
+      // For unmapped routes, try to extract category and name
+      console.log('Unmapped route for tracking:', route);
+      return;
+    }
+
+    const data = {
+      featureCategory: featureInfo.category,
+      featureName: featureInfo.name,
+      route,
+      action,
+      metadata,
+      sessionId
+    };
+
+    // Send tracking data (fire and forget - don't wait for response)
+    axios.post(`${API_URL}/feature-usage/track`, data, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).catch(err => {
+      // Silently fail to not disrupt user experience
+      console.error('Feature tracking failed:', err);
+    });
+  } catch (error) {
+    console.error('Error in trackFeatureUsage:', error);
+  }
+};
+
+/**
+ * Hook to automatically track page views
+ * Use this in useEffect of your page components
+ */
+export const useFeatureTracking = (route) => {
+  const trackPageView = () => {
+    trackFeatureUsage(route, 'view');
+  };
+
+  return trackPageView;
+};
+
+/**
+ * Track specific actions
+ */
+export const trackAction = {
+  create: (route, metadata) => trackFeatureUsage(route, 'create', metadata),
+  update: (route, metadata) => trackFeatureUsage(route, 'update', metadata),
+  delete: (route, metadata) => trackFeatureUsage(route, 'delete', metadata),
+  export: (route, metadata) => trackFeatureUsage(route, 'export', metadata),
+  import: (route, metadata) => trackFeatureUsage(route, 'import', metadata),
+};
+
+export default {
+  trackFeatureUsage,
+  useFeatureTracking,
+  trackAction
+};
