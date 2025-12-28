@@ -1,6 +1,6 @@
 server {
     listen 80;
-    server_name _;
+    server_name palbamb.com www.palbamb.com palbamb.in www.palbamb.in 13.235.53.147;
 
     root /usr/share/nginx/html;
     index index.html;

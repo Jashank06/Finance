@@ -13,7 +13,7 @@ upstream backend {
 # HTTP Server
 server {
     listen 80;
-    server_name _;  # Accept any domain/IP
+    server_name palbamb.com www.palbamb.com palbamb.in www.palbamb.in 13.235.53.147;
     
     root /usr/share/nginx/html;
     index index.html;

@@ -52,7 +52,7 @@ const corsOptions = {
     if (!origin) return callback(null, true);
 
     // Get allowed origins from environment variable or use defaults
-    const envOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
+    const envOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : [];
 
     const allowedOrigins = [
       'http://localhost:3000',
@@ -61,6 +61,15 @@ const corsOptions = {
       'http://13.235.53.147',
       'http://13.235.53.147:5001',
       'https://jashank06.github.io',
+      // Production domains
+      'http://palbamb.com',
+      'https://palbamb.com',
+      'http://www.palbamb.com',
+      'https://www.palbamb.com',
+      'http://palbamb.in',
+      'https://palbamb.in',
+      'http://www.palbamb.in',
+      'https://www.palbamb.in',
       ...envOrigins
     ];
 
