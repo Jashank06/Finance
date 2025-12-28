@@ -23,7 +23,18 @@ const Signup = () => {
         const result = await register({ name, email, password });
 
         if (result.success) {
-            navigate('/dashboard');
+            // Check if user has an active subscription
+            const hasActiveSubscription = result.user?.subscriptionStatus === 'active' || 
+                                         result.user?.subscriptionStatus === 'trial' ||
+                                         result.user?.subscriptionPlan;
+            
+            if (hasActiveSubscription) {
+                // Has subscription - go to dashboard
+                navigate('/dashboard');
+            } else {
+                // No subscription - go to pricing page
+                navigate('/landing/pricing');
+            }
         } else {
             setError(result.message);
         }

@@ -97,9 +97,17 @@ export const useFeatureAccess = () => {
             return Object.keys(FEATURE_CATEGORIES);
         }
 
-        // If no subscription plan, give FULL ACCESS to all features (for existing users)
-        if (!user?.subscriptionPlan?.featureCategories) {
-            return Object.keys(FEATURE_CATEGORIES); // All features unlocked
+        // Check if user has active or trial subscription status (backward compatibility for old users)
+        const hasActiveSubscription = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trial';
+        
+        // If user has active/trial status but no plan details (old users), give full access
+        if (hasActiveSubscription && !user?.subscriptionPlan) {
+            return Object.keys(FEATURE_CATEGORIES); // Full access for existing users
+        }
+
+        // If no subscription plan or expired/cancelled, return empty array (no access)
+        if (!user?.subscriptionPlan?.featureCategories || user?.subscriptionPlan?.featureCategories.length === 0) {
+            return []; // No features unlocked
         }
 
         return user.subscriptionPlan.featureCategories;

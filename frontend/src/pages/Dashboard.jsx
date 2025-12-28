@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FiDollarSign, FiCalendar, FiCheckSquare, FiUserPlus, FiTrendingUp, FiBox, FiBell, FiPhoneCall, FiArrowUpRight, FiArrowDownLeft, FiActivity } from 'react-icons/fi';
+import { FiDollarSign, FiCalendar, FiCheckSquare, FiUserPlus, FiTrendingUp, FiBox, FiBell, FiPhoneCall, FiArrowUpRight, FiArrowDownLeft, FiActivity, FiLock, FiZap } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { investmentAPI } from '../utils/investmentAPI';
 import { incomeExpenseAPI } from '../utils/incomeExpenseAPI';
@@ -10,6 +11,7 @@ import './Dashboard.css';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('bill-dates');
   const [loading, setLoading] = useState(true);
 
@@ -50,12 +52,12 @@ const Dashboard = () => {
   const weekDays = useMemo(() => {
     const days = [];
     const today = new Date();
-    console.log('[weekDays] Today is:', today, 'Local:', getLocalDateString(today));
+
     for (let i = 0; i < 7; i++) {
       const day = new Date(today);
       day.setDate(today.getDate() + i);
       const localDateStr = getLocalDateString(day);
-      console.log(`[weekDays] Day ${i}:`, day.getDate(), day.toDateString(), 'Local Date:', localDateStr);
+
       days.push({
         full: day,
         date: day.getDate(),
@@ -64,7 +66,7 @@ const Dashboard = () => {
         iso: localDateStr  // Using local date string instead of UTC ISO
       });
     }
-    console.log('[weekDays] Generated 7 days:', days.map(d => `${d.date}=${d.iso}`).join(', '));
+
     return days;
   }, []);
 
@@ -112,25 +114,18 @@ const Dashboard = () => {
         api.get('/budget/targets-for-life').catch(() => ({ data: null }))
       ]);
 
-      console.log('[Dashboard RAW] Bills response:', billsRes);
-      console.log('[Dashboard RAW] Tasks response:', tasksRes);
-      console.log('[Dashboard RAW] Loans response:', loansRes);
-      console.log('[Dashboard RAW] Banks response:', bankRes);
-      console.log('[Dashboard RAW] IE Summary response:', IEActualRes);
-      console.log('[Dashboard RAW] Reminders response:', remindersRes);
-      console.log('[Dashboard RAW] P&L Records response:', plRecordsRes);
-      console.log('[Dashboard RAW] P&L Stats response:', plStatsRes);
+
 
       // Extract bills from analytics response - it has upcoming bills array
       const billsData = billsRes.data.upcoming || billsRes.data.investments || [];
-      console.log('[Dashboard] Bills data structure:', billsData.length > 0 ? billsData[0] : 'no bills');
+
       const tasksData = tasksRes.data || [];
       const combinedLoans = [
         ...(loansRes.data.investments || []),
         ...(onBehalfRes.data.investments || [])
       ];
 
-      console.log('[Dashboard Success] Bills:', billsData.length, 'Tasks:', tasksData.length, 'Loans:', combinedLoans.length, 'Banks:', bankRes.data?.length);
+
 
       setBills(billsData);
       setTasks(tasksData);
@@ -171,7 +166,7 @@ const Dashboard = () => {
           }
         }, 0);
 
-      console.log('[Metrics] Income:', actualInc, 'Expense:', actualExp, 'Upcoming Bills:', upcomingBillsTotal, 'Loans:', upcomingLoansTotal);
+
 
       const budgetData = budgetRes.data || {};
 
@@ -356,6 +351,23 @@ const Dashboard = () => {
           <h1>Welcome back, {user?.name}!</h1>
           <p>Here's what's happening this week.</p>
         </div>
+
+        {/* Subscription Alert Banner */}
+        {(!user?.subscriptionPlan && user?.subscriptionStatus !== 'active' && user?.subscriptionStatus !== 'trial') && (
+          <div className="subscription-alert-banner">
+            <div className="alert-icon">
+              <FiLock size={32} />
+            </div>
+            <div className="alert-content">
+              <h3>Unlock Full Access</h3>
+              <p>You don't have an active subscription. Subscribe now to unlock all premium features and start managing your finances effectively!</p>
+            </div>
+            <button className="alert-upgrade-btn" onClick={() => navigate('/landing/pricing')}>
+              <FiZap size={18} />
+              <span>Choose a Plan</span>
+            </button>
+          </div>
+        )}
 
         {/* Tab Selection */}
         <div className="tab-container">
