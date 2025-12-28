@@ -11,7 +11,7 @@ import { investmentAPI } from './investmentAPI';
 export const syncContactsFromForm = async (formData, formType) => {
   try {
     const contacts = extractContactsFromForm(formData, formType);
-    
+
     if (contacts.length === 0) {
       return { success: true, message: 'No contacts to sync', count: 0 };
     }
@@ -21,7 +21,7 @@ export const syncContactsFromForm = async (formData, formType) => {
       try {
         // Check if contact already exists
         const existing = await findExistingContact(contact);
-        
+
         if (existing) {
           // Update existing contact
           await investmentAPI.update(existing._id, toContactPayload(contact, formType));
@@ -257,7 +257,21 @@ const extractContactsFromForm = (formData, formType) => {
         });
       }
 
-      // Extract family member contacts
+      // Extract family member contact (Single Member)
+      if (formData.name && (formData.mobile || formData.email)) {
+        contacts.push({
+          nameOfPerson: formData.name,
+          mobileNumber1: formData.mobile || '',
+          mobileNumber2: formData.additionalInfo?.alternatePhone || formData.workPhone || '',
+          emailId: formData.email || '',
+          category: 'Family',
+          profession: formData.occupation || '',
+          nameOfCompany: formData.companyName || '',
+          notes: `Source: Family Profile - ${formData.relation || 'Family Member'}`,
+        });
+      }
+
+      // Extract family member contacts (Array - Backward Compatibility/Bulk Sync)
       if (formData.members && Array.isArray(formData.members)) {
         formData.members.forEach((member) => {
           if (member.name && (member.mobile || member.email)) {
@@ -274,6 +288,23 @@ const extractContactsFromForm = (formData, formType) => {
           }
         });
       }
+
+      // Extract document support contacts
+      if (formData.documents && Array.isArray(formData.documents)) {
+        formData.documents.forEach((doc) => {
+          if (doc.issuingAuthority && (doc.customerCareNumber || doc.customerCareEmail)) {
+            contacts.push({
+              nameOfPerson: `${doc.issuingAuthority} Customer Care`,
+              nameOfCompany: doc.issuingAuthority,
+              mobileNumber1: doc.customerCareNumber || '',
+              emailId: doc.customerCareEmail || '',
+              category: 'Customer Support',
+              serviceProviderOrProductSeller: 'Customer Service',
+              notes: `Source: Family Profile - ${formData.name || 'Member'} - ${doc.documentType || 'Document'}`,
+            });
+          }
+        });
+      }
       break;
 
     case 'GoldSgbInvestment':
@@ -286,6 +317,26 @@ const extractContactsFromForm = (formData, formType) => {
           serviceProviderOrProductSeller: 'Investment Provider',
           primaryProducts: formData.type || 'Gold/SGB',
           notes: `Source: Gold/SGB Investment - Provider for ${formData.name || 'Investment'}`,
+        });
+      }
+      break;
+
+    case 'MembershipList':
+      // Extract membership organization contact
+      if (formData.organizationName && (formData.contactInfo?.phone || formData.contactInfo?.email)) {
+        contacts.push({
+          nameOfPerson: formData.organizationName,
+          nameOfCompany: formData.organizationName,
+          mobileNumber1: formData.contactInfo.phone || '',
+          emailId: formData.contactInfo.email || '',
+          website: formData.contactInfo.website || '',
+          address: formData.address?.street || '',
+          city: formData.address?.city || '',
+          state: formData.address?.state || '',
+          pinCode: formData.address?.pincode || '',
+          category: 'Service Provider',
+          serviceProviderOrProductSeller: formData.membershipType || 'Membership',
+          notes: `Source: Membership List - ${formData.membershipType} - Member: ${formData.memberName || 'N/A'}\nMembership No: ${formData.membershipNumber || 'N/A'}`,
         });
       }
       break;
@@ -311,7 +362,7 @@ const findExistingContact = async (contact) => {
     });
 
     // Try to find by exact name match
-    const existing = contacts.find(c => 
+    const existing = contacts.find(c =>
       c.nameOfPerson && contact.nameOfPerson &&
       c.nameOfPerson.toLowerCase().trim() === contact.nameOfPerson.toLowerCase().trim()
     );

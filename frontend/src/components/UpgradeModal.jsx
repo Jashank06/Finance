@@ -9,7 +9,7 @@ const UpgradeModal = ({ isOpen, onClose, featureName, requiredPlan = 'Premium' }
 
     const handleUpgrade = () => {
         onClose();
-        navigate('/pricing'); // Or wherever your pricing page is
+        navigate('/landing/pricing');
     };
 
     return (

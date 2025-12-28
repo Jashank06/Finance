@@ -37,7 +37,8 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login
+// Login - Direct login (No OTP - Use for Admin only)
+// Regular users should use /api/otp/login-request
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -54,9 +55,21 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Only allow admin users to use this direct login route
+    if (!user.isAdmin) {
+      console.log(`⚠️  Non-admin user ${user.email} attempted direct login - redirecting to OTP`);
+      return res.status(403).json({ 
+        message: 'Please use OTP login',
+        requireOTP: true,
+        userId: user._id
+      });
+    }
+
+    console.log(`🔐 Admin login: ${user.email} - Direct access granted`);
+
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user._id, email: user.email, isAdmin: true },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -64,11 +77,12 @@ router.post('/login', async (req, res) => {
     res.json({
       success: true,
       token,
+      message: 'Admin login successful',
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        isAdmin: user.isAdmin || false
+        isAdmin: true
       }
     });
   } catch (error) {

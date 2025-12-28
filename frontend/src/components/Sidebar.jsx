@@ -156,7 +156,7 @@ const Sidebar = () => {
               <Link to="/family/tasks" className="submenu-item">Tasks to Do</Link>
               <Link to="/family/daily/telephone-conversation" className="submenu-item">Telephone Conversation</Link>
               <Link to="/family/static/contact-management" className="submenu-item">Contact Management</Link>
-              <Link to="/family/files" className="submenu-item">Files & Folders</Link>
+              <Link to="/documents" className="submenu-item">📁 Documents</Link>
             </div>
           )}
         </div>
@@ -208,7 +208,7 @@ const Sidebar = () => {
         <Link to="/contact" className="nav-item">Contact Developer</Link>
         <div onClick={handleLogout} className="nav-item logout">Logout</div>
       </nav>
-      
+
       <UpgradeModal
         isOpen={upgradeModal.isOpen}
         onClose={() => setUpgradeModal({ isOpen: false, featureName: '' })}

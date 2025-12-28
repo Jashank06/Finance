@@ -3,6 +3,8 @@ import { FiUsers, FiEdit2, FiSave, FiX, FiPlus, FiTrash2 } from 'react-icons/fi'
 import { staticAPI } from '../utils/staticAPI';
 import { syncMobileEmailFromFamilyProfile } from '../utils/mobileEmailSyncUtil';
 import { syncPersonalRecordsFromFamilyProfile } from '../utils/personalRecordsSyncUtil';
+import { syncContactsFromForm } from '../utils/contactSyncUtil';
+import { syncCustomerSupportFromForm } from '../utils/customerSupportSyncUtil';
 import './family/static/Static.css';
 import '../components/Modal.css';
 
@@ -239,7 +241,7 @@ const FamilyProfile = () => {
       ...prev,
       documents: [
         ...(prev.documents || []),
-        { documentType: '', idNumber: '', issuingAuthority: '', issueDate: '', expiryDate: '' }
+        { documentType: '', idNumber: '', issuingAuthority: '', customerCareNumber: '', customerCareEmail: '', issueDate: '', expiryDate: '' }
       ]
     }));
   };
@@ -287,6 +289,12 @@ const FamilyProfile = () => {
 
       // Auto-sync documents to Personal Records
       await syncPersonalRecordsFromFamilyProfile(memberFormData);
+
+      // Auto-sync contacts to Contact Management
+      await syncContactsFromForm(memberFormData, 'FamilyProfile');
+
+      // Auto-sync customer support to Customer Support
+      await syncCustomerSupportFromForm(memberFormData, 'FamilyProfile');
 
       // Refresh data from server to ensure consistency
       await fetchFamilyProfile();
@@ -385,18 +393,20 @@ const FamilyProfile = () => {
                         <td>{member.anniversaryDate || 'N/A'}</td>
                         <td>{member.bloodGroup || 'N/A'}</td>
                         <td>
-                          <button
-                            className="btn-icon"
-                            onClick={() => handleEditMember(member, index)}
-                          >
-                            <FiEdit2 />
-                          </button>
-                          <button
-                            className="btn-icon btn-danger"
-                            onClick={() => deleteMember(index)}
-                          >
-                            <FiTrash2 />
-                          </button>
+                          <div className="table-actions">
+                            <button
+                              className="btn-edit"
+                              onClick={() => handleEditMember(member, index)}
+                            >
+                              <FiEdit2 />
+                            </button>
+                            <button
+                              className="btn-remove"
+                              onClick={() => deleteMember(index)}
+                            >
+                              <FiTrash2 />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -420,7 +430,7 @@ const FamilyProfile = () => {
             <div className="modal-content large">
               <div className="modal-header">
                 <h2>{editingMemberIndex !== null ? 'Edit Member' : 'Add New Member'}</h2>
-                <button className="btn-close" onClick={cancelMemberForm}>
+                <button className="close-button" onClick={cancelMemberForm}>
                   <FiX />
                 </button>
               </div>
@@ -700,7 +710,7 @@ const FamilyProfile = () => {
                             </div>
                             <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
                               <button
-                                className="btn-icon btn-danger"
+                                className="btn-remove"
                                 onClick={() => removeDocument(index)}
                                 title="Remove Document"
                               >

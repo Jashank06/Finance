@@ -77,22 +77,29 @@ const LandingNav = () => {
                     >
                         <span>About</span>
                     </Link>
-                    
+                    <Link
+                        to="/landing/pricing"
+                        className={`nav-link ${isActive('/landing/pricing') ? 'active' : ''}`}
+                        onClick={scrollToTop}
+                    >
+                        <span>Pricing</span>
+                    </Link>
+
                     {/* More Info Dropdown */}
-                    <div 
+                    <div
                         className="nav-dropdown"
                         onMouseEnter={() => setMoreInfoOpen(true)}
                         onMouseLeave={() => setMoreInfoOpen(false)}
                     >
-                        <span className={`nav-link dropdown-trigger ${
-                            isActive('/landing/blogs') || 
-                            isActive('/landing/success-stories') || 
-                            isActive('/landing/careers') ? 'active' : ''
-                        }`}>
+                        <span className={`nav-link dropdown-trigger ${isActive('/landing/blogs') ||
+                            isActive('/landing/success-stories') ||
+                            isActive('/landing/careers') ||
+                            isActive('/landing/philanthropy') ? 'active' : ''
+                            }`}>
                             <span>More Info</span>
                             <FiChevronRight className={`dropdown-icon ${moreInfoOpen ? 'open' : ''}`} />
                         </span>
-                        
+
                         <div className={`dropdown-menu ${moreInfoOpen ? 'open' : ''}`}>
                             <Link
                                 to="/landing/blogs"
@@ -124,9 +131,21 @@ const LandingNav = () => {
                             >
                                 <span>Careers</span>
                             </Link>
+                            <Link
+                                to="/landing/philanthropy"
+                                className={`dropdown-item ${isActive('/landing/philanthropy') ? 'active' : ''}`}
+                                onClick={() => {
+                                    scrollToTop();
+                                    setMoreInfoOpen(false);
+                                }}
+                            >
+                                <span>Philanthropy</span>
+                            </Link>
                         </div>
                     </div>
-                    
+
+
+
                     <Link
                         to="/landing/contact"
                         className={`nav-link ${isActive('/landing/contact') ? 'active' : ''}`}
@@ -182,6 +201,13 @@ const LandingNav = () => {
                         About
                     </Link>
                     <Link
+                        to="/landing/pricing"
+                        className={`mobile-nav-link ${isActive('/landing/pricing') ? 'active' : ''}`}
+                        onClick={handleNavigation}
+                    >
+                        Pricing
+                    </Link>
+                    <Link
                         to="/landing/blogs"
                         className={`mobile-nav-link ${isActive('/landing/blogs') ? 'active' : ''}`}
                         onClick={handleNavigation}
@@ -201,6 +227,13 @@ const LandingNav = () => {
                         onClick={handleNavigation}
                     >
                         Careers
+                    </Link>
+                    <Link
+                        to="/landing/philanthropy"
+                        className={`mobile-nav-link ${isActive('/landing/philanthropy') ? 'active' : ''}`}
+                        onClick={handleNavigation}
+                    >
+                        Philanthropy
                     </Link>
                     <Link
                         to="/landing/contact"

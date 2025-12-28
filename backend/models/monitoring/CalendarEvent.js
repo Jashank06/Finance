@@ -77,6 +77,14 @@ const calendarEventSchema = new mongoose.Schema({
     url: String,
     type: String
   }],
+  referenceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    index: true,
+  },
+  referenceType: {
+    type: String,
+    index: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -91,5 +99,6 @@ const calendarEventSchema = new mongoose.Schema({
 calendarEventSchema.index({ userId: 1, date: 1 });
 calendarEventSchema.index({ userId: 1, calendar: 1 });
 calendarEventSchema.index({ userId: 1, status: 1 });
+calendarEventSchema.index({ referenceId: 1, referenceType: 1 });
 
 module.exports = mongoose.model('CalendarEvent', calendarEventSchema);

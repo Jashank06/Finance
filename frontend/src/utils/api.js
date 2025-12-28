@@ -41,4 +41,38 @@ export const authAPI = {
   },
 };
 
+// Folder API
+export const folderAPI = {
+  getFolders: () => api.get('/folders'),
+  getFolderTree: () => api.get('/folders/tree'),
+  getFolder: (id) => api.get(`/folders/${id}`),
+  createFolder: (data) => api.post('/folders', data),
+  renameFolder: (id, name) => api.put(`/folders/${id}`, { name }),
+  deleteFolder: (id) => api.delete(`/folders/${id}`),
+  moveFolder: (id, newParentId) => api.post(`/folders/${id}/move`, { newParentId }),
+  seedDefaultFolders: () => api.post('/folders/seed/default'),
+};
+
+// Document API
+export const documentAPI = {
+  getDocuments: () => api.get('/documents'),
+  getDocumentsByFolder: (folderId) => api.get(`/documents/folder/${folderId}`),
+  getDocument: (id) => api.get(`/documents/${id}`),
+  uploadDocuments: (formData) => api.post('/documents/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  downloadDocument: (id) => api.get(`/documents/${id}/download`, {
+    responseType: 'blob'
+  }),
+  getPreview: (id) => api.get(`/documents/${id}/preview`, {
+    responseType: 'blob'
+  }),
+  getPreviewUrl: (id) => `${API_BASE_URL}/documents/${id}/preview`,
+  updateDocument: (id, data) => api.put(`/documents/${id}`, data),
+  deleteDocument: (id) => api.delete(`/documents/${id}`),
+  moveDocument: (id, newFolderId) => api.post(`/documents/${id}/move`, { newFolderId }),
+  copyDocument: (id, targetFolderId) => api.post(`/documents/${id}/copy`, { targetFolderId }),
+  searchDocuments: (params) => api.get('/documents/search/query', { params }),
+};
+
 export default api;

@@ -61,7 +61,7 @@ const HomePage = () => {
         elements.forEach(el => observer.observe(el));
 
         return () => observer.disconnect();
-    }, []);
+    }, [pricingPlans, loadingPlans]); // Re-run when plans load to attach observer to dynamic cards
 
     const fetchPricingPlans = async () => {
         try {
@@ -126,7 +126,7 @@ const HomePage = () => {
                     </p>
 
                     <div className="hero-cta-buttons">
-                        <a href="#pricing" className="btn-primary">Start Free Trial</a>
+                        <button onClick={() => navigate('/landing/pricing')} className="btn-primary">Start Free Trial</button>
                     </div>
 
                     <div className="hero-trust-badges">
@@ -749,19 +749,19 @@ const HomePage = () => {
                             </div>
                         ) : (
                             pricingPlans.map((plan, index) => (
-                                <div 
-                                    key={plan._id} 
+                                <div
+                                    key={plan._id}
                                     className={`pricing-card ${plan.isPopular ? 'featured' : ''} animate-on-scroll delay-${index + 1}`}
                                 >
                                     {plan.isPopular && <div className="pricing-badge">MOST POPULAR</div>}
                                     <div className="pricing-tag">{plan.tagline || plan.name}</div>
                                     <div className="pricing-amount">
-                                        <span className="currency">{plan.currency}</span>
+                                        <span className="currency">{plan.currency || '₹'}</span>
                                         <span className="price">{plan.price}</span>
-                                        <span className="period">/{plan.period}</span>
+                                        <span className="period">/{plan.period || plan.duration || 'month'}</span>
                                     </div>
                                     <ul className="pricing-features">
-                                        {plan.features.map((feature, idx) => (
+                                        {plan.features?.map((feature, idx) => (
                                             <li key={idx}><FiCheck className="check-icon" /> {feature}</li>
                                         ))}
                                         {plan.featureCategories && plan.featureCategories.length > 0 && (
@@ -784,11 +784,11 @@ const HomePage = () => {
                                             </>
                                         )}
                                     </ul>
-                                    <button 
+                                    <button
                                         className={`pricing-btn ${plan.isPopular ? 'featured-btn' : ''}`}
                                         onClick={() => handlePlanSelect(plan)}
                                     >
-                                        {plan.buttonText}
+                                        {plan.buttonText || 'Get Started'}
                                     </button>
                                 </div>
                             ))

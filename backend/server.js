@@ -40,6 +40,8 @@ const careersRoutes = require('./routes/careers');
 const contactMessagesRoutes = require('./routes/contactMessages');
 const subscriptionPlansRoutes = require('./routes/subscriptionPlans');
 const uploadRoutes = require('./routes/upload');
+const folderRoutes = require('./routes/folders');
+const documentRoutes = require('./routes/documents');
 
 const app = express();
 
@@ -51,7 +53,7 @@ const corsOptions = {
 
     // Get allowed origins from environment variable or use defaults
     const envOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
-    
+
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5173',
@@ -128,6 +130,8 @@ app.use('/api/careers', careersRoutes);
 app.use('/api/contact-messages', contactMessagesRoutes);
 app.use('/api/subscription-plans', subscriptionPlansRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/folders', folderRoutes);
+app.use('/api/documents', documentRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

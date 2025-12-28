@@ -52,10 +52,7 @@
   font-size: 26px;
   font-weight: 900;
   letter-spacing: -0.7px;
-  background: linear-gradient(135deg, #1a202c 0%, #475569 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #000000;
   filter: drop-shadow(0 2px 15px rgba(0, 0, 0, 0.1));
   position: relative;
   z-index: 2;
@@ -75,7 +72,7 @@
   display: flex;
   align-items: center;
   padding: 14px 20px;
-  color: #64748b;
+  color: #1a1a1a;
   text-decoration: none;
   border-radius: 12px;
   cursor: pointer;
@@ -169,7 +166,7 @@
 .submenu-item {
   display: block;
   padding: 10px 15px 10px 30px;
-  color: #64748b;
+  color: #1a1a1a;
   text-decoration: none;
   font-size: 13.5px;
   transition: all 0.2s ease;
@@ -225,7 +222,7 @@
 .nested-submenu-item {
   display: block;
   padding: 8px 12px;
-  color: #94a3b8;
+  color: #1a1a1a;
   text-decoration: none;
   font-size: 13px;
   transition: all 0.3s ease;

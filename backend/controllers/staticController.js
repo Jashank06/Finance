@@ -442,6 +442,7 @@ const DigitalAssetsSchema = new mongoose.Schema({
   projectName: { type: String, required: true },
   purpose: String,
   projectType: { type: String, default: 'business' },
+  customProjectTypeOther: String, // Custom project type when "other" is selected
 
   // Domain Information
   domain: {

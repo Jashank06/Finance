@@ -157,9 +157,7 @@ const OnlineAccessDetails = () => {
           </div>
         </div>
         <div className="header-actions">
-          <button className="btn-primary" onClick={() => setEditMode(!editMode)}>
-            {editMode ? 'Lock Form' : 'Edit Form'}
-          </button>
+
           <button className="btn-success" onClick={() => {
             resetForm();
             setEditMode(true);
@@ -377,9 +375,9 @@ const OnlineAccessDetails = () => {
                       <td>{e.twoFA ? 'Enabled' : 'Disabled'}</td>
                       <td>{e.otpMethod}</td>
                       <td>
-                        <div className="investment-actions">
-                          <button onClick={() => handleEdit(idx)} className="btn-icon"><FiEdit2 /></button>
-                          <button onClick={() => handleDelete(idx)} className="btn-icon btn-danger"><FiTrash2 /></button>
+                        <div className="table-actions">
+                          <button onClick={() => handleEdit(idx)} className="btn-edit"><FiEdit2 /></button>
+                          <button onClick={() => handleDelete(idx)} className="btn-remove"><FiTrash2 /></button>
                         </div>
                       </td>
                     </tr>

@@ -8,6 +8,7 @@ const Notification = require('../models/monitoring/Notification');
 const { syncBillStatusToExpenses, BILL_CATEGORY_KEY } = require('../utils/billExpenseSync');
 const { syncBillPaymentToScheduledExpense } = require('../utils/manageFinanceBillSync');
 const { syncInsuranceToReminders, syncLoanToReminders, syncInvestmentToReminders } = require('../utils/reminderSyncUtil');
+const { syncInvestmentToAll, deleteLinkedEntries } = require('../utils/crossModuleSync');
 
 const router = express.Router();
 
@@ -89,17 +90,11 @@ router.post('/', authMiddleware, async (req, res) => {
     const investment = new Investment(investmentData);
     await investment.save();
 
-    // Sync Reminders
+    // Sync to Calendar and Reminders
     try {
-      if (investment.category === 'insurance' || investment.type === 'Insurance') {
-        await syncInsuranceToReminders(investment);
-      } else if (investment.category === 'loan' || investment.category === 'daily-loan-ledger') {
-        await syncLoanToReminders(investment);
-      } else {
-        await syncInvestmentToReminders(investment);
-      }
+      await syncInvestmentToAll(investment);
     } catch (syncError) {
-      console.error('Error syncing investment reminders:', syncError);
+      console.error('Error syncing investment to all modules:', syncError);
     }
 
     res.status(201).json({
@@ -166,17 +161,11 @@ router.put('/:id', authMiddleware, async (req, res) => {
       }
     }
 
-    // Sync Reminders
+    // Sync to Calendar and Reminders
     try {
-      if (investment.category === 'insurance' || investment.type === 'Insurance') {
-        await syncInsuranceToReminders(investment);
-      } else if (investment.category === 'loan' || investment.category === 'daily-loan-ledger') {
-        await syncLoanToReminders(investment);
-      } else {
-        await syncInvestmentToReminders(investment);
-      }
+      await syncInvestmentToAll(investment);
     } catch (syncError) {
-      console.error('Error syncing investment reminders:', syncError);
+      console.error('Error syncing investment to all modules:', syncError);
     }
 
     res.json({
@@ -198,6 +187,13 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
     if (!investment) {
       return res.status(404).json({ message: 'Investment not found' });
+    }
+
+    // Delete linked entries in Calendar and Reminders
+    try {
+      await deleteLinkedEntries(investment._id);
+    } catch (syncError) {
+      console.error('Error deleting linked entries:', syncError);
     }
 
     res.json({ message: 'Investment deleted successfully' });

@@ -1,3 +1,5 @@
+// Updated at: 1766878868
+
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
@@ -33,8 +35,51 @@ router.post('/login-request', async (req, res) => {
       return res.status(403).json({ message: 'Account is deactivated. Please contact support.' });
     }
 
-    // Generate and send OTP
-    const userName = user.firstName || user.email.split('@')[0];
+    // Debug logging
+    console.log('DEBUG: User found:', user.email);
+    console.log('DEBUG: user.isAdmin:', user.isAdmin);
+    console.log('DEBUG: typeof user.isAdmin:', typeof user.isAdmin);
+    console.log('DEBUG: user.isAdmin === true:', user.isAdmin === true);
+
+    // Skip OTP for admin users - direct login
+    if (user.isAdmin === true) {
+      console.log(`🔐 Admin login detected for ${user.email} - Skipping OTP`);
+      
+      // Generate JWT token directly for admin
+      const token = jwt.sign(
+        { 
+          userId: user._id,
+          email: user.email,
+          isAdmin: true
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      // Update last login
+      if (user.lastLogin !== undefined) {
+        user.lastLogin = new Date();
+        await user.save();
+      }
+
+      return res.json({
+        success: true,
+        message: 'Admin login successful',
+        token,
+        skipOTP: true,
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name || user.firstName,
+          isAdmin: true,
+          subscriptionPlan: user.subscriptionPlan,
+          subscriptionStatus: user.subscriptionStatus
+        }
+      });
+    }
+
+    // Generate and send OTP for regular users
+    const userName = user.firstName || user.name || user.email.split('@')[0];
     const result = await createAndSendOTP(user._id, user.email, userName, 'login');
 
     res.json({

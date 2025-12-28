@@ -1,0 +1,465 @@
+.philanthropy-page {
+    background: #ffffff;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Hero Section */
+.philo-hero {
+    height: 70vh;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #ffffff;
+    overflow: hidden;
+}
+
+.philo-hero-video-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.philo-hero-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.philo-hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(10, 10, 10, 0.7) 0%, rgba(10, 10, 10, 0.5) 100%);
+    z-index: 2;
+}
+
+.philo-hero-content {
+    position: relative;
+    z-index: 3;
+    max-width: 900px;
+    padding: 0 20px;
+}
+
+.philo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 25px;
+    animation: float 3s ease-in-out infinite;
+}
+
+.badge-icon {
+    color: #ffffff;
+}
+
+.philo-title {
+    font-size: 5rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #FFFFFF 0%, #E5E5E5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.2));
+}
+
+.philo-subtitle {
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Involved Grid */
+.philo-involved {
+    padding: 100px 0;
+    background: #fcfcfc;
+}
+
+.philo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.philo-grid-secondary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+}
+
+@media (max-width: 768px) {
+    .philo-grid-secondary {
+        grid-template-columns: 1fr;
+    }
+}
+
+.philo-card {
+    position: relative;
+    padding: 40px;
+    border-radius: 30px;
+    background: #ffffff;
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.05);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
+
+.philo-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 100%);
+    z-index: 1;
+}
+
+.philo-card>* {
+    position: relative;
+    z-index: 2;
+}
+
+/* Card Types Colors */
+.volunteer {
+    background: #E8F5E9;
+}
+
+.volunteer .philo-card-icon-wrapper {
+    background: #1B5E20;
+    color: #ffffff;
+}
+
+.volunteer .philo-link {
+    color: #1B5E20;
+}
+
+.volunteer .card-bg-circle {
+    background: #A5D6A7;
+}
+
+.donate {
+    background: #FFF3E0;
+}
+
+.donate .philo-card-icon-wrapper {
+    background: #E65100;
+    color: #ffffff;
+}
+
+.donate .philo-link {
+    color: #E65100;
+}
+
+.donate .card-bg-circle {
+    background: #FFE0B2;
+}
+
+.sponsor {
+    background: #E3F2FD;
+}
+
+.sponsor .philo-card-icon-wrapper {
+    background: #0D47A1;
+    color: #ffffff;
+}
+
+.sponsor .philo-link {
+    color: #0D47A1;
+}
+
+.sponsor .card-bg-circle {
+    background: #BBDEFB;
+}
+
+.events {
+    background: #FCE4EC;
+}
+
+.events .philo-card-icon-wrapper {
+    background: #880E4F;
+    color: #ffffff;
+}
+
+.events .philo-link {
+    color: #880E4F;
+}
+
+.events .card-bg-circle {
+    background: #F8BBD0;
+}
+
+.activities {
+    background: #E1F5FE;
+}
+
+.activities .philo-card-icon-wrapper {
+    background: #01579B;
+    color: #ffffff;
+}
+
+.activities .philo-link {
+    color: #01579B;
+}
+
+.activities .card-bg-circle {
+    background: #B3E5FC;
+}
+
+.gallery {
+    background: #FFFDE7;
+}
+
+.gallery .philo-card-icon-wrapper {
+    background: #F9A825;
+    color: #ffffff;
+}
+
+.gallery .philo-link {
+    color: #F9A825;
+}
+
+.gallery .card-bg-circle {
+    background: #FFF9C4;
+}
+
+.philo-card-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 25px;
+    transition: all 0.4s ease;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.philo-card h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #1a1a1a;
+}
+
+.philo-card p {
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 25px;
+    font-size: 15px;
+}
+
+.philo-link {
+    background: transparent;
+    border: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.philo-link:hover {
+    transform: translateX(5px);
+}
+
+.card-bg-circle {
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    opacity: 0.2;
+    z-index: 1;
+    transition: all 0.5s ease;
+}
+
+.philo-card:hover {
+    transform: translateY(-10px) rotateX(5deg);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.12);
+}
+
+.philo-card:hover .philo-card-icon-wrapper {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.philo-card:hover .card-bg-circle {
+    transform: scale(1.5);
+    opacity: 0.3;
+}
+
+/* Services Section */
+.philo-services {
+    padding: 100px 0;
+    background: #ffffff;
+}
+
+.philo-services .section-title {
+    color: #1a1a1a;
+    font-weight: 800;
+    margin-bottom: 20px;
+}
+
+.philo-services .section-description {
+    color: #444;
+    margin-bottom: 60px;
+}
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 40px;
+}
+
+.service-card {
+    background: #ffffff;
+    padding: 50px 40px;
+    border-radius: 30px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
+    transition: all 0.4s ease;
+    text-align: center;
+}
+
+.service-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 24px;
+    margin: 0 auto 30px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.service-card h3 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #1a1a1a;
+}
+
+.service-card p {
+    color: #666;
+    line-height: 1.7;
+    margin-bottom: 25px;
+}
+
+.service-btn {
+    background: transparent;
+    border: none;
+    color: #1a1a1a;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.service-btn:hover {
+    color: #444;
+}
+
+.service-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Animations */
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-on-scroll {
+    opacity: 0;
+}
+
+.delay-1 {
+    animation-delay: 0.2s;
+}
+
+.delay-2 {
+    animation-delay: 0.4s;
+}
+
+.delay-3 {
+    animation-delay: 0.6s;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+    .philo-title {
+        font-size: 4rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .philo-title {
+        font-size: 3rem;
+    }
+
+    .philo-subtitle {
+        font-size: 1.2rem;
+    }
+
+    .philo-involved,
+    .philo-services {
+        padding: 60px 0;
+    }
+
+    .service-card {
+        padding: 40px 30px;
+    }
+}

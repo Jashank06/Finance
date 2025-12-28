@@ -357,9 +357,10 @@ const PersonalRecords = () => {
                         )}
                       </td>
                       <td>
-                        <div className="investment-actions">
-                          <button onClick={() => handleEdit(idx)} className="btn-icon"><FiEdit2 /></button>
-                          <button onClick={() => handleDelete(idx)} className="btn-icon btn-danger"><FiTrash2 /></button>
+                        <div className="table-actions">
+                          <a href={e.fileUrl} target="_blank" rel="noreferrer" className="btn-icon"><FiLink /></a>
+                          <button onClick={() => handleEdit(idx)} className="btn-edit"><FiEdit2 /></button>
+                          <button onClick={() => handleDelete(idx)} className="btn-remove"><FiTrash2 /></button>
                         </div>
                       </td>
                     </tr>

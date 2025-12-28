@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Reminder = require('../models/monitoring/Reminder');
 const auth = require('../middleware/auth');
+const { syncReminderToCalendar, deleteLinkedEntries } = require('../utils/crossModuleSync');
 
 // Get all reminders for a user
 router.get('/', auth, async (req, res) => {
@@ -137,6 +138,13 @@ router.post('/', auth, async (req, res) => {
     const reminder = new Reminder(reminderData);
     await reminder.save();
 
+    // Sync to Calendar
+    try {
+      await syncReminderToCalendar(reminder);
+    } catch (syncError) {
+      console.error('Error syncing reminder to calendar:', syncError);
+    }
+
     res.status(201).json({ reminder });
   } catch (error) {
     console.error('Create reminder error:', error);
@@ -160,6 +168,13 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(404).json({ error: 'Reminder not found' });
     }
 
+    // Sync to Calendar
+    try {
+      await syncReminderToCalendar(reminder);
+    } catch (syncError) {
+      console.error('Error syncing reminder to calendar:', syncError);
+    }
+
     res.json({ reminder });
   } catch (error) {
     console.error('Update reminder error:', error);
@@ -180,6 +195,13 @@ router.delete('/:id', auth, async (req, res) => {
 
     if (!reminder) {
       return res.status(404).json({ error: 'Reminder not found' });
+    }
+
+    // Delete linked entries
+    try {
+      await deleteLinkedEntries(reminder._id);
+    } catch (syncError) {
+      console.error('Error deleting linked entries:', syncError);
     }
 
     res.json({ message: 'Reminder deleted successfully' });

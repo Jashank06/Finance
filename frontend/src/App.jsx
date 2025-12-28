@@ -46,6 +46,7 @@ import ChequeRegister from './pages/family/daily/ChequeRegister';
 import DailyCashRegister from './pages/family/daily/DailyCashRegister';
 import Milestones from './pages/family/monitoring/Milestones';
 import TargetsForLife from './pages/family/monitoring/TargetsForLife';
+import DocumentManager from './pages/documents/DocumentManager';
 
 // Admin Panel Imports
 import AdminLayout from './components/AdminLayout';
@@ -84,7 +85,7 @@ function App() {
         <Routes>
           {/* Root redirect to landing page */}
           <Route path="/" element={<Navigate to="/landing" replace />} />
-          
+
           {/* Landing Page - Public Route */}
           <Route path="/landing/*" element={<LandingLayout />} />
 
@@ -576,6 +577,17 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <RemindersNotifications />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <DocumentManager />
                 </Layout>
               </ProtectedRoute>
             }

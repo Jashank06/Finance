@@ -13,6 +13,7 @@ const defaultWebsiteEntry = {
   projectName: '',
   purpose: '',
   projectType: 'business',
+  customProjectTypeOther: '',
 
   // Domain Information
   domain: {
@@ -231,6 +232,12 @@ const DigitalAssets = () => {
       return;
     }
 
+    // Validate custom project type when "other" is selected
+    if (formData.projectType === 'other' && !formData.customProjectTypeOther.trim()) {
+      alert('Please enter a custom project type');
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -326,6 +333,11 @@ const DigitalAssets = () => {
     setCustomProjectType(value);
     handleInputChange(null, 'projectType', value);
 
+    // Clear custom project type field if not selecting "other"
+    if (value !== 'other') {
+      handleInputChange(null, 'customProjectTypeOther', '');
+    }
+
     // Add custom type to dropdown if it doesn't exist
     if (value && !projectTypes.includes(value.toLowerCase())) {
       setProjectTypes([...projectTypes, value.toLowerCase()]);
@@ -335,6 +347,14 @@ const DigitalAssets = () => {
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     // Could add a toast notification here
+  };
+
+  // Helper function to get display name for project type
+  const getProjectTypeDisplay = (website) => {
+    if (website.projectType === 'other' && website.customProjectTypeOther) {
+      return website.customProjectTypeOther;
+    }
+    return website.projectType ? website.projectType.charAt(0).toUpperCase() + website.projectType.slice(1) : 'N/A';
   };
 
   const showSuccessPopupFn = (message) => {
@@ -621,6 +641,18 @@ const DigitalAssets = () => {
                           )}
                         </select>
                       </div>
+                      {formData.projectType === 'other' && (
+                        <div className="form-group">
+                          <label>Custom Project Type</label>
+                          <input
+                            type="text"
+                            value={formData.customProjectTypeOther}
+                            onChange={(e) => handleInputChange(null, 'customProjectTypeOther', e.target.value)}
+                            placeholder="Enter your custom project type"
+                            required
+                          />
+                        </div>
+                      )}
                       <div className="form-group full-width">
                         <label>Purpose</label>
                         <textarea

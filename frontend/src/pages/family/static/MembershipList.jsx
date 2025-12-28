@@ -4,6 +4,7 @@ import { staticAPI } from '../../../utils/staticAPI';
 import './Static.css';
 import { syncRemindersFromForm } from '../../../utils/remindersSyncUtil';
 import { syncBillScheduleFromForm } from '../../../utils/billScheduleSyncUtil';
+import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
 
 import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
@@ -71,10 +72,11 @@ const MembershipList = () => {
         await staticAPI.createMembership(formData);
       }
 
-      // Sync reminders and bills to respective modules
+      // Sync reminders, bills, and contacts
       await Promise.all([
         syncRemindersFromForm(formData, 'MembershipList'),
-        syncBillScheduleFromForm(formData, 'MembershipList')
+        syncBillScheduleFromForm(formData, 'MembershipList'),
+        syncContactsFromForm(formData, 'MembershipList')
       ]);
 
       await fetchEntries();
@@ -250,7 +252,7 @@ const MembershipList = () => {
                               <button className="btn-edit" onClick={() => handleEdit(index)}>
                                 <FiEdit2 />
                               </button>
-                              <button className="btn-delete" onClick={() => handleDelete(index)}>
+                              <button className="btn-remove" onClick={() => handleDelete(index)}>
                                 <FiTrash2 />
                               </button>
                             </div>

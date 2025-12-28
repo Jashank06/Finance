@@ -4,6 +4,7 @@ import { staticAPI } from '../../utils/staticAPI';
 import { syncContactsFromForm } from '../../utils/contactSyncUtil';
 import { syncRemindersFromForm } from '../../utils/remindersSyncUtil';
 import './static/Static.css';
+import './FamilyTasks.css';
 
 import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
 
@@ -48,7 +49,7 @@ const FamilyTasks = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      
+
       const payload = {
         category: CATEGORY_KEY,
         type: 'Task',
@@ -165,7 +166,7 @@ const FamilyTasks = () => {
             <p>Manage and track all your family tasks and activities</p>
           </div>
         </div>
-        <button 
+        <button
           className="add-button"
           onClick={() => {
             resetForm();
@@ -359,8 +360,8 @@ const FamilyTasks = () => {
                       <div className="updates-text">
                         {task.updates ? (
                           <span title={task.updates}>
-                            {task.updates.length > 50 
-                              ? `${task.updates.substring(0, 50)}...` 
+                            {task.updates.length > 50
+                              ? `${task.updates.substring(0, 50)}...`
                               : task.updates}
                           </span>
                         ) : '-'}
@@ -370,8 +371,8 @@ const FamilyTasks = () => {
                       <div className="notes-text">
                         {task.notes ? (
                           <span title={task.notes}>
-                            {task.notes.length > 30 
-                              ? `${task.notes.substring(0, 30)}...` 
+                            {task.notes.length > 30
+                              ? `${task.notes.substring(0, 30)}...`
                               : task.notes}
                           </span>
                         ) : '-'}
@@ -384,7 +385,7 @@ const FamilyTasks = () => {
                       </div>
                     </td>
                     <td>
-                      <span 
+                      <span
                         className="priority-badge"
                         style={{ backgroundColor: getPriorityColor(task.priority) }}
                       >
@@ -417,412 +418,6 @@ const FamilyTasks = () => {
         </div>
       </div>
 
-      <style>{`
-        .static-container {
-          padding: 20px;
-          max-width: 100%;
-          margin: 0 auto;
-          background: #f8fafc;
-          min-height: 100vh;
-          overflow-x: hidden;
-        }
-
-        .static-header {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          padding: 30px;
-          border-radius: 16px;
-          margin-bottom: 30px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .header-content {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-        }
-
-        .header-icon {
-          background: rgba(255,255,255,0.2);
-          padding: 15px;
-          border-radius: 12px;
-          font-size: 24px;
-        }
-
-        .header-text h1 {
-          margin: 0 0 8px 0;
-          font-size: 28px;
-          font-weight: 700;
-          color: white;
-        }
-
-        .header-text p {
-          margin: 0;
-          opacity: 0.9;
-          font-size: 16px;
-          color: white;
-        }
-
-        .add-button {
-          background: rgba(255,255,255,0.2);
-          color: white;
-          border: 2px solid rgba(255,255,255,0.3);
-          padding: 12px 24px;
-          border-radius: 12px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          transition: all 0.3s ease;
-        }
-
-        .add-button:hover {
-          background: rgba(255,255,255,0.3);
-          transform: translateY(-2px);
-        }
-
-        .static-form-card {
-          background: white;
-          border-radius: 16px;
-          padding: 30px;
-          margin-bottom: 30px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-          border: 1px solid #e2e8f0;
-        }
-
-        .static-form-card h2 {
-          margin: 0 0 25px 0;
-          color: #1e293b;
-          font-size: 22px;
-          font-weight: 700;
-          padding-bottom: 15px;
-          border-bottom: 2px solid #f1f5f9;
-        }
-
-        .static-form {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .form-row {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 20px;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .form-group label {
-          font-weight: 600;
-          color: #374151;
-          font-size: 14px;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-          padding: 12px 16px;
-          border: 2px solid #e5e7eb;
-          border-radius: 10px;
-          font-size: 15px;
-          transition: all 0.3s ease;
-          background: #f9fafb;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-          outline: none;
-          border-color: #667eea;
-          background: white;
-          box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
-        }
-
-        .form-group textarea {
-          resize: vertical;
-          min-height: 100px;
-        }
-
-        .form-actions {
-          display: flex;
-          gap: 15px;
-          margin-top: 10px;
-        }
-
-        .btn-primary {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border: none;
-          padding: 14px 28px;
-          border-radius: 10px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(102,126,234,0.3);
-        }
-
-        .btn-primary:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .btn-secondary {
-          background: #f3f4f6;
-          color: #374151;
-          border: 2px solid #e5e7eb;
-          padding: 14px 28px;
-          border-radius: 10px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .btn-secondary:hover {
-          background: #e5e7eb;
-          border-color: #d1d5db;
-        }
-
-        .static-table-card {
-          background: white;
-          border-radius: 16px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-          border: 1px solid #e2e8f0;
-          overflow: hidden;
-        }
-
-        .table-header {
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-          padding: 25px 30px;
-          border-bottom: 2px solid #e2e8f0;
-        }
-
-        .table-header h2 {
-          margin: 0;
-          color: #1e293b;
-          font-size: 20px;
-          font-weight: 700;
-        }
-
-        .table-container {
-          overflow-x: auto;
-          max-width: 100%;
-          -webkit-overflow-scrolling: touch;
-          max-height: 70vh;
-        }
-
-        .static-table {
-          width: 100%;
-          min-width: 1600px;
-          border-collapse: collapse;
-          table-layout: auto;
-        }
-
-        .static-table th {
-          background: #f8fafc;
-          padding: 16px 15px;
-          text-align: left;
-          font-weight: 700;
-          color: #374151;
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
-          border-bottom: 2px solid #e2e8f0;
-          white-space: nowrap;
-          position: sticky;
-          top: 0;
-          z-index: 10;
-          min-width: 120px;
-        }
-
-        .static-table td {
-          padding: 16px 15px;
-          border-bottom: 1px solid #f1f5f9;
-          font-size: 14px;
-          color: #4b5563;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          min-width: 120px;
-        }
-
-        .static-table tbody tr:hover {
-          background: #f8fafc;
-          transform: scale(1.01);
-        }
-
-        .category-badge {
-          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-          color: #1e40af;
-          padding: 6px 12px;
-          border-radius: 20px;
-          font-size: 12px;
-          font-weight: 600;
-          display: inline-block;
-          text-transform: capitalize;
-          border: 1px solid #93c5fd;
-        }
-
-        .task-details {
-          max-width: 250px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          font-weight: 500;
-          color: #374151;
-        }
-
-        .updates-text, .notes-text {
-          max-width: 150px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          color: #6b7280;
-          font-size: 13px;
-        }
-
-        .status-cell {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .status-text {
-          font-size: 12px;
-          text-transform: capitalize;
-          font-weight: 600;
-        }
-
-        .priority-badge {
-          color: white;
-          padding: 4px 10px;
-          border-radius: 16px;
-          font-size: 11px;
-          font-weight: 700;
-          text-transform: capitalize;
-          letter-spacing: 0.5px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-
-        .action-buttons {
-          display: flex;
-          gap: 10px;
-        }
-
-        .edit-btn, .delete-btn {
-          background: #f8fafc;
-          border: 2px solid #e2e8f0;
-          padding: 8px;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .edit-btn:hover {
-          background: #dbeafe;
-          border-color: #3b82f6;
-          color: #3b82f6;
-          transform: scale(1.1);
-        }
-
-        .delete-btn {
-          background: #fee2e2;
-          border: 2px solid #ef4444;
-          color: #ef4444;
-          padding: 8px;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .delete-btn:hover {
-          background: #fecaca;
-          border-color: #dc2626;
-          color: #dc2626;
-          transform: scale(1.1);
-        }
-
-        .no-data {
-          text-align: center;
-          padding: 60px;
-          color: #6b7280;
-          font-size: 16px;
-          background: #f8fafc;
-        }
-
-        .loading {
-          text-align: center;
-          padding: 40px;
-          color: #6b7280;
-          font-size: 18px;
-        }
-
-        @media (max-width: 768px) {
-          .static-container {
-            padding: 15px;
-            overflow-x: hidden;
-          }
-
-          .static-header {
-            flex-direction: column;
-            gap: 20px;
-            text-align: center;
-          }
-
-          .header-content {
-            flex-direction: column;
-            text-align: center;
-          }
-
-          .form-row {
-            grid-template-columns: 1fr;
-          }
-
-          .table-container {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-          }
-
-          .static-table {
-            min-width: 800px;
-            font-size: 12px;
-          }
-
-          .static-table th,
-          .static-table td {
-            padding: 10px 8px;
-          }
-
-          .task-details {
-            max-width: 120px;
-          }
-
-          .updates-text, .notes-text {
-            max-width: 60px;
-          }
-        }
-      `}</style>
     </div>
   );
 };

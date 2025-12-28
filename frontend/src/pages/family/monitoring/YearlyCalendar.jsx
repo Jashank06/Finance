@@ -88,13 +88,13 @@ const YearlyCalendar = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = events.filter(event => 
+    const filtered = events.filter(event =>
       selectedCategories.includes(event.category || 'other')
     );
     setFilteredEvents(filtered);
   }, [events, selectedCategories]);
 
-useEffect(() => {
+  useEffect(() => {
     if (categories.length > 0) {
       fetchEvents();
     }
@@ -172,7 +172,7 @@ useEffect(() => {
     if (!window.confirm('Are you sure you want to delete this event?')) {
       return;
     }
-    
+
     try {
       await calendarAPI.delete(eventId);
       await fetchEvents();
@@ -202,9 +202,9 @@ useEffect(() => {
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
-    
+
     const days = [];
-    
+
     // Previous month days
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = startingDayOfWeek - 1; i >= 0; i--) {
@@ -214,7 +214,7 @@ useEffect(() => {
         fullDate: new Date(year, month - 1, prevMonthLastDay - i)
       });
     }
-    
+
     // Current month days
     for (let i = 1; i <= daysInMonth; i++) {
       days.push({
@@ -223,7 +223,7 @@ useEffect(() => {
         fullDate: new Date(year, month, i)
       });
     }
-    
+
     // Next month days to complete the grid
     const remainingDays = 42 - days.length;
     for (let i = 1; i <= remainingDays; i++) {
@@ -233,23 +233,56 @@ useEffect(() => {
         fullDate: new Date(year, month + 1, i)
       });
     }
-    
+
     return days;
   };
 
+  const isEventOnDate = (event, date) => {
+    const eventStartDate = new Date(event.date);
+    const targetDate = new Date(date);
+
+    // Normalize dates to midnight for comparison
+    eventStartDate.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
+
+    // Event must start on or before target date
+    if (eventStartDate > targetDate) return false;
+
+    // Check repeat end date
+    if (event.repeatEndDate) {
+      const endDate = new Date(event.repeatEndDate);
+      endDate.setHours(0, 0, 0, 0);
+      if (targetDate > endDate) return false;
+    }
+
+    if (!event.repeat) {
+      return eventStartDate.getTime() === targetDate.getTime();
+    }
+
+    switch (event.repeat.toLowerCase()) {
+      case 'daily':
+        return true;
+      case 'weekly':
+        return eventStartDate.getDay() === targetDate.getDay();
+      case 'monthly':
+        return eventStartDate.getDate() === targetDate.getDate();
+      case 'yearly':
+        return eventStartDate.getMonth() === targetDate.getMonth() &&
+          eventStartDate.getDate() === targetDate.getDate();
+      default:
+        return eventStartDate.getTime() === targetDate.getTime();
+    }
+  };
+
   const getEventsForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return filteredEvents.filter(event => {
-      const eventDate = new Date(event.date).toISOString().split('T')[0];
-      return eventDate === dateStr;
-    });
+    return filteredEvents.filter(event => isEventOnDate(event, date));
   };
 
   const isToday = (date) => {
     const today = new Date();
     return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
   };
 
   const getCurrentPeriodText = () => {
@@ -272,7 +305,7 @@ useEffect(() => {
   const renderYearView = () => {
     const year = currentDate.getFullYear();
     const getDaysInMonth = (month) => new Date(year, month + 1, 0).getDate();
-    
+
     return (
       <div className="year-table-view">
         <div className="year-table-container">
@@ -287,25 +320,22 @@ useEffect(() => {
             <tbody>
               {MONTHS.map((monthName, monthIndex) => {
                 const daysInMonth = getDaysInMonth(monthIndex);
-                const monthEvents = events.filter(event => {
-                  const eventDate = new Date(event.date);
-                  return eventDate.getFullYear() === year && 
-                         eventDate.getMonth() === monthIndex &&
-                         selectedCategories.includes(event.category || 'other');
-                });
-                
-                // Group events by date and category
+                // Group events by date and category for the entire month
                 const eventsByDateAndCategory = {};
-                monthEvents.forEach(event => {
-                  const day = new Date(event.date).getDate();
-                  const category = event.category || 'other';
-                  const key = `${day}-${category}`;
-                  if (!eventsByDateAndCategory[key]) {
-                    eventsByDateAndCategory[key] = [];
-                  }
-                  eventsByDateAndCategory[key].push(event);
-                });
-                
+                for (let day = 1; day <= daysInMonth; day++) {
+                  const targetDate = new Date(year, monthIndex, day);
+                  filteredEvents.forEach(event => {
+                    if (isEventOnDate(event, targetDate)) {
+                      const category = event.category || 'other';
+                      const key = `${day}-${category}`;
+                      if (!eventsByDateAndCategory[key]) {
+                        eventsByDateAndCategory[key] = [];
+                      }
+                      eventsByDateAndCategory[key].push(event);
+                    }
+                  });
+                }
+
                 return (
                   <React.Fragment key={monthIndex}>
                     {/* Month header row with days */}
@@ -321,7 +351,7 @@ useEffect(() => {
                         );
                       })}
                     </tr>
-                    
+
                     {/* Category rows */}
                     {categories.map((category) => (
                       <tr key={`${monthIndex}-${category.value}`} className="category-row">
@@ -333,9 +363,9 @@ useEffect(() => {
                           const day = i + 1;
                           const key = `${day}-${category.value}`;
                           const dayEvents = eventsByDateAndCategory[key] || [];
-                          
+
                           return day <= daysInMonth && dayEvents.length > 0 ? (
-                            <td 
+                            <td
                               key={day}
                               className="event-cell has-event"
                               style={{ backgroundColor: `${category.color}15`, borderLeft: `3px solid ${category.color}` }}
@@ -391,9 +421,16 @@ useEffect(() => {
                         {category.label}
                       </td>
                       {multiYearYears.map((year) => {
-                        const cellEvents = events.filter(ev => {
-                          const d = new Date(ev.date);
-                          return d.getFullYear() === year && d.getMonth() === monthIndex && (ev.category || 'other') === (category.value || 'other') && selectedCategories.includes(category.value);
+                        const cellEvents = filteredEvents.filter(ev => {
+                          const catMatch = (ev.category || 'other') === (category.value || 'other');
+                          if (!catMatch) return false;
+
+                          // For multi-year monthly summary, check if event occurs ANY day in this month
+                          const daysInM = new Date(year, monthIndex + 1, 0).getDate();
+                          for (let d = 1; d <= daysInM; d++) {
+                            if (isEventOnDate(ev, new Date(year, monthIndex, d))) return true;
+                          }
+                          return false;
                         });
 
                         const has = cellEvents.length > 0;
@@ -432,7 +469,7 @@ useEffect(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const days = getMonthDays(year, month);
-    
+
     return (
       <div className="month-view">
         <div className="calendar-grid">
@@ -441,7 +478,7 @@ useEffect(() => {
           ))}
           {days.map((day, idx) => {
             const dayEvents = getEventsForDate(day.fullDate);
-            
+
             return (
               <div
                 key={idx}
@@ -478,7 +515,7 @@ useEffect(() => {
 
   const renderDayView = () => {
     const dayEvents = getEventsForDate(currentDate);
-    
+
     return (
       <div className="day-view">
         {dayEvents.length === 0 ? (
@@ -493,7 +530,7 @@ useEffect(() => {
           <div className="day-events-list">
             {dayEvents.map(event => {
               const category = CATEGORIES.find(c => c.value === event.category);
-              
+
               return (
                 <div
                   key={event._id}
@@ -574,19 +611,19 @@ useEffect(() => {
       {/* Toolbar */}
       <div className="calendar-toolbar">
         <div className="view-selector">
-          <button 
+          <button
             className={`view-btn ${view === 'year' ? 'active' : ''}`}
             onClick={() => setView('year')}
           >
             Year
           </button>
-          <button 
+          <button
             className={`view-btn ${view === 'month' ? 'active' : ''}`}
             onClick={() => setView('month')}
           >
             Month
           </button>
-          <button 
+          <button
             className={`view-btn ${view === 'day' ? 'active' : ''}`}
             onClick={() => setView('day')}
           >

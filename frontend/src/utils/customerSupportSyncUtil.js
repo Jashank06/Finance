@@ -141,6 +141,27 @@ const extractCustomerSupportFromForm = (formData, formType) => {
             }
             break;
 
+        case 'FamilyProfile':
+            // Extract document support entries
+            if (formData.documents && Array.isArray(formData.documents)) {
+                formData.documents.forEach((doc) => {
+                    if (doc.issuingAuthority && (doc.customerCareNumber || doc.customerCareEmail)) {
+                        supportEntries.push({
+                            type: 'Document Support',
+                            companyName: doc.issuingAuthority,
+                            serviceCategory: 'Customer Support',
+                            contactPerson: '',
+                            phone: doc.customerCareNumber || '',
+                            email: doc.customerCareEmail || '',
+                            website: '',
+                            supportHours: '',
+                            notes: `Source: Family Profile - Document: ${doc.documentType || 'N/A'}\nMember: ${formData.name || 'N/A'}`,
+                        });
+                    }
+                });
+            }
+            break;
+
         case 'MobileEmailDetails':
             // Extract carrier/provider customer care
             if ((formData.carrier || formData.provider) && (formData.customerCareNo || formData.customerCareEmail)) {

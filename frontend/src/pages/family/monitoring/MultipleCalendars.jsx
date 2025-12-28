@@ -75,7 +75,7 @@ const MultipleCalendars = () => {
         repeat: newEvent.repeat === 'none' ? null : newEvent.repeat,
         attendees: newEvent.attendees ? newEvent.attendees.split(',').map(a => ({ name: a.trim(), email: '', phone: '' })) : []
       };
-      
+
       if (newEvent.id) {
         // Update existing event
         await calendarAPI.update(newEvent.id, eventData);
@@ -84,7 +84,7 @@ const MultipleCalendars = () => {
         const response = await calendarAPI.create(eventData);
         newEvent.id = response.event.id;
       }
-      
+
       await loadEvents(); // Reload events
       resetEventForm();
       setShowEventModal(false);
@@ -210,33 +210,66 @@ const MultipleCalendars = () => {
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const days = [];
-    
+
     // Add empty cells for days before month starts
     for (let i = 0; i < firstDay; i++) {
       days.push(null);
     }
-    
+
     // Add days of the month
     for (let i = 1; i <= daysInMonth; i++) {
       days.push(i);
     }
-    
+
     return days;
+  };
+
+  const isEventOnDate = (event, date) => {
+    const eventStartDate = new Date(event.date);
+    const targetDate = new Date(date);
+
+    // Normalize dates to midnight for comparison
+    eventStartDate.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
+
+    // Event must start on or before target date
+    if (eventStartDate > targetDate) return false;
+
+    // Check repeat end date
+    if (event.repeatEndDate) {
+      const endDate = new Date(event.repeatEndDate);
+      endDate.setHours(0, 0, 0, 0);
+      if (targetDate > endDate) return false;
+    }
+
+    if (!event.repeat || event.repeat === 'none') {
+      return eventStartDate.getTime() === targetDate.getTime();
+    }
+
+    switch (event.repeat.toLowerCase()) {
+      case 'daily':
+        return true;
+      case 'weekly':
+        return eventStartDate.getDay() === targetDate.getDay();
+      case 'monthly':
+        return eventStartDate.getDate() === targetDate.getDate();
+      case 'yearly':
+        return eventStartDate.getMonth() === targetDate.getMonth() &&
+          eventStartDate.getDate() === targetDate.getDate();
+      default:
+        return eventStartDate.getTime() === targetDate.getTime();
+    }
   };
 
   const getEventsForDay = (day) => {
     if (!day) return [];
-    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    
-    // Filter events based on selected calendar
-    const dayEvents = events.filter(event => {
-      const eventDate = event.date ? event.date.split('T')[0] : event.datetime ? event.datetime.split('T')[0] : '';
-      const matchesDate = eventDate === dateStr;
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+
+    return events.filter(event => {
+      const matchesDate = isEventOnDate(event, date);
       const matchesCalendar = selectedCalendar === 'all' || event.calendar === selectedCalendar;
       return matchesDate && matchesCalendar;
     });
-    
-    return dayEvents;
   };
 
   const handlePrevMonth = () => {
@@ -260,10 +293,10 @@ const MultipleCalendars = () => {
   };
 
   const toggleCalendarVisibility = (calendarId) => {
-    setCalendars(calendars.map(cal => 
+    setCalendars(calendars.map(cal =>
       cal.id === calendarId ? { ...cal, visible: !cal.visible } : cal
     ));
-    
+
     // If hiding the currently selected calendar, switch to 'all'
     if (selectedCalendar === calendarId) {
       setSelectedCalendar('all');
@@ -303,21 +336,21 @@ const MultipleCalendars = () => {
               <FiChevronRight />
             </button>
           </div>
-          
+
           <div className="view-modes">
-            <button 
+            <button
               className={`view-btn ${viewMode === 'month' ? 'active' : ''}`}
               onClick={() => setViewMode('month')}
             >
               Month
             </button>
-            <button 
+            <button
               className={`view-btn ${viewMode === 'week' ? 'active' : ''}`}
               onClick={() => setViewMode('week')}
             >
               Week
             </button>
-            <button 
+            <button
               className={`view-btn ${viewMode === 'day' ? 'active' : ''}`}
               onClick={() => setViewMode('day')}
             >
@@ -329,7 +362,7 @@ const MultipleCalendars = () => {
         <div className="calendar-filters">
           <div className="calendar-legend-header">
             <h3>Calendar Types</h3>
-            <button 
+            <button
               className="manage-calendars-btn"
               onClick={() => setShowCalendarTypeModal(true)}
               title="Manage Calendar Types"
@@ -339,12 +372,12 @@ const MultipleCalendars = () => {
           </div>
           <div className="calendar-legend">
             {calendars.map(calendar => (
-              <div 
+              <div
                 key={calendar.id}
                 className={`calendar-item ${!calendar.visible ? 'hidden' : ''}`}
                 onClick={() => toggleCalendarVisibility(calendar.id)}
               >
-                <div 
+                <div
                   className="calendar-color"
                   style={{ backgroundColor: calendar.color }}
                 />
@@ -352,8 +385,8 @@ const MultipleCalendars = () => {
               </div>
             ))}
           </div>
-          
-          <select 
+
+          <select
             value={selectedCalendar}
             onChange={(e) => setSelectedCalendar(e.target.value)}
             className="calendar-select"
@@ -376,17 +409,17 @@ const MultipleCalendars = () => {
               {day}
             </div>
           ))}
-          
+
           {/* Calendar days */}
           {generateCalendarDays().map((day, index) => {
             const dayEvents = getEventsForDay(day);
-            const isToday = day === new Date().getDate() && 
-                           currentDate.getMonth() === new Date().getMonth() && 
-                           currentDate.getFullYear() === new Date().getFullYear();
-            
+            const isToday = day === new Date().getDate() &&
+              currentDate.getMonth() === new Date().getMonth() &&
+              currentDate.getFullYear() === new Date().getFullYear();
+
             return (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`calendar-day ${!day ? 'empty' : ''} ${isToday ? 'today' : ''}`}
               >
                 {day && (
@@ -396,7 +429,7 @@ const MultipleCalendars = () => {
                       {dayEvents.slice(0, 3).map(event => {
                         const calendar = calendars.find(cal => cal.id === event.calendar);
                         return (
-                          <div 
+                          <div
                             key={event.id}
                             className="event-item"
                             style={{ backgroundColor: calendar?.color }}
@@ -437,7 +470,7 @@ const MultipleCalendars = () => {
               const calendar = calendars.find(cal => cal.id === event.calendar);
               return (
                 <div key={event.id} className="upcoming-event">
-                  <div 
+                  <div
                     className="event-indicator"
                     style={{ backgroundColor: calendar?.color }}
                   />
@@ -471,7 +504,7 @@ const MultipleCalendars = () => {
                   placeholder="Enter event title"
                 />
               </div>
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <label>Date</label>
@@ -481,7 +514,7 @@ const MultipleCalendars = () => {
                     onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label>Time</label>
                   <input
@@ -491,7 +524,7 @@ const MultipleCalendars = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="form-group">
                 <label>Calendar</label>
                 <select
@@ -505,7 +538,7 @@ const MultipleCalendars = () => {
                   ))}
                 </select>
               </div>
-              
+
               <div className="form-group">
                 <label>Location</label>
                 <input
@@ -515,7 +548,7 @@ const MultipleCalendars = () => {
                   placeholder="Add location"
                 />
               </div>
-              
+
               <div className="form-group">
                 <label>Description</label>
                 <textarea
@@ -524,7 +557,7 @@ const MultipleCalendars = () => {
                   placeholder="Add description"
                 />
               </div>
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <label>Reminder</label>
@@ -540,7 +573,7 @@ const MultipleCalendars = () => {
                     <option value="1440">1 day before</option>
                   </select>
                 </div>
-                
+
                 <div className="form-group">
                   <label>Repeat</label>
                   <select
@@ -577,7 +610,7 @@ const MultipleCalendars = () => {
           <div className="modal-content calendar-type-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{editingCalendarType ? 'Edit' : 'Add'} Calendar Type</h2>
-              <button 
+              <button
                 className="close-btn"
                 onClick={() => {
                   setShowCalendarTypeModal(false);
@@ -595,7 +628,7 @@ const MultipleCalendars = () => {
                   type="text"
                   placeholder="e.g., Projects, Health, Hobbies"
                   value={calendarTypeForm.name}
-                  onChange={(e) => setCalendarTypeForm({...calendarTypeForm, name: e.target.value})}
+                  onChange={(e) => setCalendarTypeForm({ ...calendarTypeForm, name: e.target.value })}
                 />
               </div>
 
@@ -605,13 +638,13 @@ const MultipleCalendars = () => {
                   <input
                     type="color"
                     value={calendarTypeForm.color}
-                    onChange={(e) => setCalendarTypeForm({...calendarTypeForm, color: e.target.value})}
+                    onChange={(e) => setCalendarTypeForm({ ...calendarTypeForm, color: e.target.value })}
                     className="color-input"
                   />
                   <input
                     type="text"
                     value={calendarTypeForm.color}
-                    onChange={(e) => setCalendarTypeForm({...calendarTypeForm, color: e.target.value})}
+                    onChange={(e) => setCalendarTypeForm({ ...calendarTypeForm, color: e.target.value })}
                     className="color-text-input"
                     placeholder="#3B82F6"
                   />
@@ -619,7 +652,7 @@ const MultipleCalendars = () => {
               </div>
 
               <div className="form-actions">
-                <button 
+                <button
                   onClick={() => {
                     setShowCalendarTypeModal(false);
                     resetCalendarTypeForm();
@@ -640,7 +673,7 @@ const MultipleCalendars = () => {
                   {calendars.map(calendar => (
                     <div key={calendar._id} className="calendar-type-item">
                       <div className="calendar-type-info">
-                        <div 
+                        <div
                           className="calendar-color-box"
                           style={{ backgroundColor: calendar.color }}
                         />
@@ -648,7 +681,7 @@ const MultipleCalendars = () => {
                         {calendar.isDefault && <span className="default-badge">Default</span>}
                       </div>
                       <div className="calendar-type-actions">
-                        <button 
+                        <button
                           onClick={() => handleEditCalendarType(calendar)}
                           className="btn-icon-small"
                           title="Edit"
@@ -656,7 +689,7 @@ const MultipleCalendars = () => {
                           <FiEdit2 />
                         </button>
                         {!calendar.isDefault && (
-                          <button 
+                          <button
                             onClick={() => deleteCalendarType(calendar._id)}
                             className="btn-icon-small danger"
                             title="Delete"

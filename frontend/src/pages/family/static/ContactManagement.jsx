@@ -265,9 +265,9 @@ const ContactManagement = () => {
                       <td>{e.city}</td>
                       <td>{e.category}</td>
                       <td>
-                        <div className="investment-actions">
-                          <button onClick={() => handleEdit(idx)} className="btn-icon"><FiEdit2 /></button>
-                          <button onClick={() => handleDelete(idx)} className="btn-icon btn-danger"><FiTrash2 /></button>
+                        <div className="table-actions">
+                          <button onClick={() => handleEdit(idx)} className="btn-edit"><FiEdit2 /></button>
+                          <button onClick={() => handleDelete(idx)} className="btn-remove"><FiTrash2 /></button>
                         </div>
                       </td>
                     </tr>
