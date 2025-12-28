@@ -4,8 +4,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import PlaceholderPage from './pages/PlaceholderPage';
+import UserSubscription from './pages/UserSubscription';
 import CompanyProfile from './pages/CompanyProfile';
 import NpsPpfInvestment from './pages/investments/NpsPpfInvestment';
 import GoldSgbInvestment from './pages/investments/GoldSgbInvestment';
@@ -92,6 +94,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-failure" element={<PaymentFailure />} />
 
@@ -609,7 +612,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout>
-                  <PlaceholderPage title="Subscription Plan" />
+                  <UserSubscription />
                 </Layout>
               </ProtectedRoute>
             }

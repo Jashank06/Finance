@@ -40,26 +40,31 @@ const User = mongoose.model('User', userSchema);
 
 async function createAdminUser() {
     try {
+        // Admin credentials
+        const adminEmail = 'jashankk908@gmail.com';
+        const adminPassword = 'Jay123';
+        const adminName = 'Jashank';
+
         // Check if admin already exists
-        const existingAdmin = await User.findOne({ email: 'admin@gmail.com' });
+        const existingAdmin = await User.findOne({ email: adminEmail });
 
         if (existingAdmin) {
             console.log('Admin user already exists. Updating...');
             existingAdmin.isAdmin = true;
             // Update password
-            existingAdmin.password = await bcrypt.hash('admin123', 10);
+            existingAdmin.password = await bcrypt.hash(adminPassword, 10);
             await existingAdmin.save();
             console.log('✅ Admin user updated successfully!');
         } else {
             console.log('Creating new admin user...');
 
             // Hash password
-            const hashedPassword = await bcrypt.hash('admin123', 10);
+            const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
             // Create admin user
             const adminUser = new User({
-                name: 'Admin',
-                email: 'admin@gmail.com',
+                name: adminName,
+                email: adminEmail,
                 password: hashedPassword,
                 isAdmin: true
             });
@@ -69,8 +74,8 @@ async function createAdminUser() {
         }
 
         console.log('\nAdmin Credentials:');
-        console.log('Email: admin@gmail.com');
-        console.log('Password: admin123');
+        console.log('Email:', adminEmail);
+        console.log('Password:', adminPassword);
         console.log('\nYou can now login with these credentials.');
 
         process.exit(0);

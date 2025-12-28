@@ -14,6 +14,7 @@ const SuccessStoriesPage = () => {
     const [popularStories, setPopularStories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
 
     const categories = ['Investment Success', 'Debt Free', 'Financial Goal Achieved', 'Business Growth', 'Retirement Planning', 'Other'];
 
@@ -21,6 +22,18 @@ const SuccessStoriesPage = () => {
         fetchStories();
         fetchSidebarStories();
     }, [selectedCategory]);
+
+    // Filter stories based on search term
+    const filteredStories = stories.filter(story => {
+        if (!searchTerm) return true;
+        const searchLower = searchTerm.toLowerCase();
+        return (
+            story.title?.toLowerCase().includes(searchLower) ||
+            story.customerName?.toLowerCase().includes(searchLower) ||
+            story.category?.toLowerCase().includes(searchLower) ||
+            story.summary?.toLowerCase().includes(searchLower)
+        );
+    });
 
     const fetchStories = async () => {
         try {
@@ -83,20 +96,40 @@ const SuccessStoriesPage = () => {
             {/* Filter Section */}
             <div className="success-filter-section">
                 <div className="success-filter-card">
-                    <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '600', color: '#FFFFFF', fontSize: '14px', letterSpacing: '1px' }}>
-                        Filter by Category
-                    </label>
-                    <select
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="filter-select"
-                        style={{ maxWidth: '400px' }}
-                    >
-                        <option value="">All Categories</option>
-                        {categories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                    </select>
+                    <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                        {/* Search Input */}
+                        <div style={{ flex: '1', minWidth: '250px' }}>
+                            <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '600', color: '#FFFFFF', fontSize: '14px', letterSpacing: '1px' }}>
+                                Search Stories
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Search by name, title, category..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="filter-select"
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+
+                        {/* Category Filter */}
+                        <div style={{ flex: '1', minWidth: '250px' }}>
+                            <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '600', color: '#FFFFFF', fontSize: '14px', letterSpacing: '1px' }}>
+                                Filter by Category
+                            </label>
+                            <select
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                className="filter-select"
+                                style={{ width: '100%' }}
+                            >
+                                <option value="">All Categories</option>
+                                {categories.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -109,13 +142,13 @@ const SuccessStoriesPage = () => {
                             <div className="blogs-loading">
                                 <p>Loading success stories...</p>
                             </div>
-                        ) : stories.length === 0 ? (
+                        ) : filteredStories.length === 0 ? (
                             <div className="blogs-empty">
-                                <p>No success stories found.</p>
+                                <p>No success stories found{searchTerm ? ' matching your search' : ''}.</p>
                             </div>
                         ) : (
                             <div className="success-grid">
-                                {stories.map(story => (
+                                {filteredStories.map(story => (
                                     <div
                                         key={story._id}
                                         className="success-card"

@@ -27,8 +27,8 @@ export const authAPI = {
     const response = await api.get('/auth/me');
     const userData = response.data.user;
 
-    // Fetch subscription plan details if exists
-    if (userData.subscriptionPlan) {
+    // Fetch subscription plan details if exists and not already populated
+    if (userData.subscriptionPlan && typeof userData.subscriptionPlan === 'string') {
       try {
         const planResponse = await api.get(`/subscription-plans/${userData.subscriptionPlan}`);
         userData.subscriptionPlan = planResponse.data;
@@ -36,6 +36,7 @@ export const authAPI = {
         console.error('Error fetching subscription plan:', err);
       }
     }
+    // If subscriptionPlan is already an object (populated by backend), no need to fetch again
 
     return { ...response, data: { user: userData } };
   },

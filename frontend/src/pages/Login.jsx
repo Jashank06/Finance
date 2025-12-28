@@ -22,7 +22,7 @@ const Login = () => {
   const { setUser } = useAuth();
   const navigate = useNavigate();
 
-  // Step 1: Request OTP
+  // Step 1: Request OTP or Direct Login for Admin
   const handleRequestOTP = async (e) => {
     e.preventDefault();
     setError('');
@@ -30,19 +30,53 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/otp/login-request`, {
+      // First try direct admin login
+      const adminResponse = await axios.post(`${API_URL}/auth/login`, {
         email,
         password
       });
 
-      if (response.data.success) {
-        setUserId(response.data.userId);
-        setStep(2);
-        setSuccess('OTP sent to your email! Please check your inbox.');
-        startResendTimer();
+      if (adminResponse.data.success) {
+        // Admin login successful - no OTP needed
+        localStorage.setItem('token', adminResponse.data.token);
+        localStorage.setItem('user', JSON.stringify(adminResponse.data.user));
+        setUser(adminResponse.data.user);
+
+        setSuccess('Admin login successful! Redirecting...');
+        
+        setTimeout(() => {
+          if (adminResponse.data.user?.isAdmin) {
+            navigate('/admin');
+          } else {
+            navigate('/dashboard');
+          }
+        }, 1000);
+        setLoading(false);
+        return;
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP. Please try again.');
+      // If direct login fails, check if it's because user needs OTP
+      if (err.response?.data?.requireOTP) {
+        // Regular user - proceed with OTP flow
+        try {
+          const otpResponse = await axios.post(`${API_URL}/otp/login-request`, {
+            email,
+            password
+          });
+
+          if (otpResponse.data.success) {
+            setUserId(otpResponse.data.userId);
+            setStep(2);
+            setSuccess('OTP sent to your email! Please check your inbox.');
+            startResendTimer();
+          }
+        } catch (otpErr) {
+          setError(otpErr.response?.data?.message || 'Failed to send OTP. Please try again.');
+        }
+      } else {
+        // Other error (invalid credentials, etc.)
+        setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
+      }
     }
 
     setLoading(false);
@@ -242,7 +276,7 @@ const Login = () => {
             </div>
 
             <div className="form-footer">
-              <a href="#" className="forgot-password">Forgot password?</a>
+              <Link to="/forgot-password" className="forgot-password">Forgot password?</Link>
             </div>
 
             <button type="submit" disabled={loading} className="auth-button">
@@ -303,10 +337,6 @@ const Login = () => {
             <span>Don't have an account?</span>
             <Link to="/signup" className="auth-switch-link">Sign up</Link>
           </div>
-
-          <p className="demo-credentials">
-            <strong>Demo:</strong> email: demo@example.com, password: demo123
-          </p>
         </div>
       </div>
     </div>

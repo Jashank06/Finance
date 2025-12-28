@@ -263,7 +263,6 @@ const BasicDetails = () => {
     purchaseValue: '',
     currentNAV: '',
     currentValuation: '',
-    currentValuation: '',
     difference: '',
     percentDifference: '',
     subBrokerName: ''
@@ -280,7 +279,6 @@ const BasicDetails = () => {
     numberOfUnits: '',
     purchaseValue: '',
     currentNAV: '',
-    currentValuation: '',
     currentValuation: '',
     difference: '',
     percentDifference: '',
@@ -300,7 +298,6 @@ const BasicDetails = () => {
     premiumAmount: '',
     lastPremiumPayingDate: '',
     maturityDate: '',
-    sumAssured: '',
     sumAssured: '',
     nominee: '',
     subBrokerName: ''

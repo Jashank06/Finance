@@ -106,7 +106,6 @@ const InvestmentProfile = () => {
           await investmentProfileAPI.deleteMutualFund(id);
           break;
         case 'share':
-        case 'share':
           await investmentProfileAPI.deleteShare(id);
           break;
         case 'nps-ppf':

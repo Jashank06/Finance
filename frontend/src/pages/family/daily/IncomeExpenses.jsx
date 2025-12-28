@@ -175,11 +175,9 @@ const IncomeExpenses = () => {
         // Add default paymentMethod for expenses to satisfy backend validation
         paymentMethod: formData.type === 'expense' ? 'other' : undefined,
         // Convert empty strings to undefined for enum fields
-        recurringFrequency: formData.recurringFrequency || undefined,
         source: formData.source || undefined,
         taxCategory: formData.taxCategory || undefined,
         receipt: formData.receipt || undefined,
-        attachments: formData.attachments ? formData.attachments.split(',').map(att => att.trim()) : [],
         // Only include recurring fields if isRecurring is true
         ...(formData.isRecurring ? {
           recurringFrequency: formData.recurringFrequency || undefined,
