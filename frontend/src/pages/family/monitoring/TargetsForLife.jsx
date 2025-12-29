@@ -28,11 +28,28 @@ const TargetsForLife = () => {
         monthlyExpenses: '',
         monthsOfCoverage: ''
     });
+    const [calculatedMonthlyExpenses, setCalculatedMonthlyExpenses] = useState(null);
+    const [loadingExpenses, setLoadingExpenses] = useState(false);
 
     useEffect(() => {
-    trackFeatureUsage('/family/monitoring/targets-for-life', 'view');
+        trackFeatureUsage('/family/monitoring/targets-for-life', 'view');
         fetchData();
+        fetchMonthlyExpenses();
     }, []);
+
+    const fetchMonthlyExpenses = async () => {
+        try {
+            setLoadingExpenses(true);
+            const response = await api.get('/cashflow-analysis/monthly-expenses');
+            if (response.data.success) {
+                setCalculatedMonthlyExpenses(response.data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching monthly expenses:', error);
+        } finally {
+            setLoadingExpenses(false);
+        }
+    };
 
     // Effect to calculate estimated cost for Emergency Fund
     useEffect(() => {
@@ -57,7 +74,10 @@ const TargetsForLife = () => {
                 ...updates,
                 specificGoal: 'Emergency Fund',
                 recommendedInvestmentVehicle: 'High Yield Savings Account / Liquid Funds',
-                riskTolerance: 'Very Low'
+                riskTolerance: 'Very Low',
+                // Auto-populate monthly expenses from calculated data
+                monthlyExpenses: calculatedMonthlyExpenses?.lastMonthExpenses?.toFixed(2) || '',
+                monthsOfCoverage: '6' // Default to 6 months
             };
         }
 
@@ -65,6 +85,21 @@ const TargetsForLife = () => {
             ...prev,
             ...updates
         }));
+    };
+
+    const handleEmergencyFundOpen = () => {
+        resetTargetForm();
+        // Auto-populate with calculated expenses when opening Emergency Fund form
+        setTargetForm(prev => ({
+            ...prev,
+            goalType: 'Emergency Fund',
+            specificGoal: 'Emergency Fund',
+            recommendedInvestmentVehicle: 'High Yield Savings Account / Liquid Funds',
+            riskTolerance: 'Very Low',
+            monthlyExpenses: calculatedMonthlyExpenses?.lastMonthExpenses?.toFixed(2) || '',
+            monthsOfCoverage: '6'
+        }));
+        setShowEmergencyFundForm(true);
     };
 
     const fetchData = async () => {
@@ -267,10 +302,7 @@ const TargetsForLife = () => {
                     </button>
                     <button
                         className="add-btn-premium emergency-fund-btn"
-                        onClick={() => {
-                            resetTargetForm();
-                            setShowEmergencyFundForm(true);
-                        }}
+                        onClick={handleEmergencyFundOpen}
                         style={{
                             background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                             marginRight: '1rem'
@@ -436,7 +468,16 @@ const TargetsForLife = () => {
                                         />
                                     </div>
                                     <small style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '4px', display: 'block' }}>
-                                        Average monthly household expenses
+                                        {loadingExpenses ? (
+                                            '⏳ Calculating from your transactions...'
+                                        ) : calculatedMonthlyExpenses ? (
+                                            <>
+                                                💡 Last month's expenses: <strong>${calculatedMonthlyExpenses.lastMonthExpenses.toFixed(2)}</strong>
+                                                {' '}({calculatedMonthlyExpenses.lastMonthPeriod.start} to {calculatedMonthlyExpenses.lastMonthPeriod.end})
+                                            </>
+                                        ) : (
+                                            'Auto-filled with last month\'s expense data'
+                                        )}
                                     </small>
                                 </div>
 
@@ -695,8 +736,9 @@ const TargetsForLife = () => {
                 </div>
             ) : (
                 <BudgetPlanTab />
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 };
 

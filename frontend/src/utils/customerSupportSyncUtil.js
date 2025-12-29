@@ -180,6 +180,27 @@ const extractCustomerSupportFromForm = (formData, formType) => {
             }
             break;
 
+        case 'BasicDetails':
+            // Extract Sub Broker customer support
+            if (formData.subBrokers && Array.isArray(formData.subBrokers)) {
+                formData.subBrokers.forEach(broker => {
+                    if (broker.nameOfCompany && (broker.customerCareNumber || broker.customerCareEmailId)) {
+                        supportEntries.push({
+                            type: 'Customer Service',
+                            companyName: broker.nameOfCompany,
+                            serviceCategory: 'Investment Support',
+                            contactPerson: '',
+                            phone: broker.customerCareNumber || '',
+                            email: broker.customerCareEmailId || '',
+                            website: broker.website || '',
+                            supportHours: '',
+                            notes: `Source: Basic Details - Sub Broker Support - ${broker.typeOfInvestment || 'Investment'}`,
+                        });
+                    }
+                });
+            }
+            break;
+
         default:
             console.warn(`Unknown form type for customer support sync: ${formType}`);
             break;

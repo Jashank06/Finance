@@ -177,7 +177,8 @@
     border-radius: 12px;
     font-size: 1rem;
     transition: all 0.3s ease;
-    background: white;
+    background-color: #ffffff !important;
+    color: #333333 !important;
 }
 
 .form-input:focus,

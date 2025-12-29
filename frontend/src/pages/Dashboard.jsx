@@ -30,7 +30,8 @@ const Dashboard = () => {
     actualIncome: 0,
     actualExpense: 0,
     budgetPlanned: 0,
-    budgetActual: 0
+    budgetActual: 0,
+    monthlyExpenses: 0
   });
 
   // Helper function to normalize dates for comparison
@@ -98,7 +99,8 @@ const Dashboard = () => {
         commsRes,
         ieSummaryRes,
         IEActualRes,
-        budgetRes
+        budgetRes,
+        monthlyExpensesRes
       ] = await Promise.all([
         investmentAPI.getBillDatesAnalytics(), // CHANGED: Use analytics endpoint
         staticAPI.getFamilyTasks(),
@@ -111,7 +113,8 @@ const Dashboard = () => {
         investmentAPI.getAll('daily-telephone-conversation'),
         incomeExpenseAPI.getRecords({ startDate: isoToday, endDate: isoNextWeek }),
         incomeExpenseAPI.getSummary(),
-        api.get('/budget/targets-for-life').catch(() => ({ data: null }))
+        api.get('/budget/targets-for-life').catch(() => ({ data: null })),
+        api.get('/cashflow-analysis/monthly-expenses').catch(e => ({ data: { success: false, data: { lastMonthExpenses: 0 } } }))
       ]);
 
 
@@ -169,6 +172,7 @@ const Dashboard = () => {
 
 
       const budgetData = budgetRes.data || {};
+      const monthlyExpensesData = monthlyExpensesRes.data.success ? monthlyExpensesRes.data.data : null;
 
       setFinancialStats({
         expectedIncome: expectedIncRecords || (actualInc * 0.25),
@@ -176,7 +180,8 @@ const Dashboard = () => {
         actualIncome: actualInc,
         actualExpense: actualExp,
         budgetPlanned: budgetData.totalSavingsTarget || 0,
-        budgetActual: budgetData.savings || 0
+        budgetActual: budgetData.savings || 0,
+        monthlyExpenses: monthlyExpensesData?.lastMonthExpenses || 0
       });
 
     } catch (error) {

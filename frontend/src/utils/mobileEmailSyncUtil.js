@@ -100,8 +100,6 @@ const extractMobileEmailFromMember = (memberData) => {
 
   // 3. Work Phone Entry
   if (memberData.workPhone && memberData.workPhone.trim() !== '') {
-    // Check if work phone is different from mobile, OR if user wants separate entry even if same
-    // Requirement implies separate entry for Work Phone
     entries.push({
       type: 'Mobile',
       name: `${memberData.name || 'Member'} - Work Phone`,
@@ -116,6 +114,46 @@ const extractMobileEmailFromMember = (memberData) => {
       ownerName: memberData.name || '',
       relationship: memberData.relation || '',
       notes: `Auto-synced from Family Profile - Work Phone`,
+      twoFA: false
+    });
+  }
+
+  // 4. Emergency Contact Mobile
+  if (memberData.additionalInfo?.emergencyContactMobile && memberData.additionalInfo.emergencyContactMobile.trim() !== '') {
+    entries.push({
+      type: 'Mobile',
+      name: `${memberData.additionalInfo.emergencyContactName || 'Emergency Contact'}`,
+      relation: memberData.additionalInfo.emergencyContactRelation || 'Emergency Contact',
+      mobile: memberData.additionalInfo.emergencyContactMobile,
+      carrier: '',
+      simType: 'Prepaid', // Default assumption
+      address: memberData.additionalInfo?.emergencyContactAddress || '',
+      email: '',
+      purpose: 'Emergency',
+      isPrimary: false,
+      ownerName: memberData.additionalInfo.emergencyContactName || 'Emergency Contact',
+      relationship: memberData.additionalInfo.emergencyContactRelation || '',
+      notes: `Auto-synced from Family Profile - Emergency Contact for ${memberData.name || 'Member'}`,
+      twoFA: false
+    });
+  }
+
+  // 5. Alternate Phone
+  if (memberData.additionalInfo?.alternatePhone && memberData.additionalInfo.alternatePhone.trim() !== '') {
+    entries.push({
+      type: 'Mobile',
+      name: `${memberData.name || 'Member'} - Alternate Phone`,
+      relation: memberData.relation || '',
+      mobile: memberData.additionalInfo.alternatePhone,
+      carrier: '',
+      simType: 'Prepaid',
+      address: memberData.additionalInfo?.residentialAddress || '',
+      email: '',
+      purpose: 'Personal',
+      isPrimary: false,
+      ownerName: memberData.name || '',
+      relationship: memberData.relation || '',
+      notes: `Auto-synced from Family Profile - Alternate Phone`,
       twoFA: false
     });
   }

@@ -10,6 +10,11 @@ import { investmentAPI } from './investmentAPI';
  */
 export const syncBillScheduleFromForm = async (formData, formType) => {
     try {
+        // For MembershipList, first cleanup old bills with same provider before creating new ones
+        if (formType === 'MembershipList' && formData.organizationName) {
+            await cleanupOldMembershipBills(formData.organizationName, formData.membershipNumber);
+        }
+
         const bills = extractBillsFromForm(formData, formType);
 
         if (bills.length === 0) {
@@ -291,27 +296,62 @@ const extractBillsFromForm = (formData, formType) => {
             break;
 
         case 'MembershipList':
-            // Extract membership renewal
+            // Extract membership - add two one-time bills for End Date and Renewal Date
             if (formData.organizationName && formData.amount) {
-                const cycle = formData.paymentFrequency === 'Monthly' ? 'monthly' :
-                    formData.paymentFrequency === 'Quarterly' ? 'quarterly' :
-                        formData.paymentFrequency === 'Yearly' ? 'yearly' : 'one-time';
+                // Add bill for End Date (membership expiry)
+                if (formData.endDate) {
+                    bills.push({
+                        billType: formData.membershipType || 'Membership',
+                        billName: `${formData.organizationName} - Expiry`,
+                        provider: formData.organizationName,
+                        accountNumber: formData.membershipNumber || '',
+                        cycle: 'one-time',
+                        amount: 0, // No payment on expiry, just reminder
+                        dueDate: formData.endDate,
+                        autoDebit: false,
+                        paymentMethod: 'UPI',
+                        status: formData.status === 'Active' ? 'pending' : 'inactive',
+                        startDate: formData.startDate || new Date().toISOString().slice(0, 10),
+                        source: 'MembershipList',
+                        notes: `Member: ${formData.memberName || 'N/A'}, Type: Expiry Date`
+                    });
+                }
 
-                bills.push({
-                    billType: formData.membershipType || 'Membership',
-                    billName: formData.organizationName,
-                    provider: formData.organizationName,
-                    accountNumber: formData.membershipNumber || '',
-                    cycle: cycle,
-                    amount: formData.amount || 0,
-                    dueDate: formData.renewalDate || formData.endDate,
-                    autoDebit: formData.autoRenewal || false,
-                    paymentMethod: 'UPI',
-                    status: formData.status === 'Active' ? 'pending' : 'inactive',
-                    startDate: formData.startDate || new Date().toISOString().slice(0, 10),
-                    source: 'MembershipList',
-                    notes: `Member: ${formData.memberName || 'N/A'}, Benefits: ${(formData.benefits || []).join(', ')}`
-                });
+                // Add bill for Renewal Date (if different from end date)
+                if (formData.renewalDate && formData.renewalDate !== formData.endDate) {
+                    bills.push({
+                        billType: formData.membershipType || 'Membership',
+                        billName: `${formData.organizationName} - Renewal`,
+                        provider: formData.organizationName,
+                        accountNumber: formData.membershipNumber || '',
+                        cycle: 'one-time',
+                        amount: formData.amount || 0,
+                        dueDate: formData.renewalDate,
+                        autoDebit: formData.autoRenewal || false,
+                        paymentMethod: 'UPI',
+                        status: formData.status === 'Active' ? 'pending' : 'inactive',
+                        startDate: formData.startDate || new Date().toISOString().slice(0, 10),
+                        source: 'MembershipList',
+                        notes: `Member: ${formData.memberName || 'N/A'}, Benefits: ${(formData.benefits || []).join(', ')}`
+                    });
+                } else if (!formData.renewalDate && formData.endDate) {
+                    // If no renewal date specified, use end date for renewal payment
+                    bills.push({
+                        billType: formData.membershipType || 'Membership',
+                        billName: `${formData.organizationName} - Renewal`,
+                        provider: formData.organizationName,
+                        accountNumber: formData.membershipNumber || '',
+                        cycle: 'one-time',
+                        amount: formData.amount || 0,
+                        dueDate: formData.endDate,
+                        autoDebit: formData.autoRenewal || false,
+                        paymentMethod: 'UPI',
+                        status: formData.status === 'Active' ? 'pending' : 'inactive',
+                        startDate: formData.startDate || new Date().toISOString().slice(0, 10),
+                        source: 'MembershipList',
+                        notes: `Member: ${formData.memberName || 'N/A'}, Benefits: ${(formData.benefits || []).join(', ')}`
+                    });
+                }
             }
             break;
 
@@ -322,8 +362,8 @@ const extractBillsFromForm = (formData, formType) => {
 
     return bills.filter(bill =>
         bill.provider &&
-        bill.provider.trim() !== '' &&
-        bill.amount > 0
+        bill.provider.trim() !== ''
+        // Allow bills with 0 amount for reminders (like membership expiry)
     );
 };
 
@@ -335,23 +375,35 @@ const findExistingBill = async (bill) => {
         const response = await investmentAPI.getAll('daily-bill-checklist');
         const bills = response.data.investments || [];
 
-        // Try to find by provider + account number match
+        // Try to find by provider + account number + source match
         const existing = bills.find(b => {
             const bProvider = (b.provider || '').toLowerCase().trim();
             const billProvider = (bill.provider || '').toLowerCase().trim();
             const bAccount = (b.accountNumber || '').toLowerCase().trim();
             const billAccount = (bill.accountNumber || '').toLowerCase().trim();
+            
+            let notes = {};
+            try { notes = b.notes ? JSON.parse(b.notes) : {}; } catch { }
+            const bSource = (notes.syncedFrom || notes.source || '').toLowerCase().trim();
+            const billSource = (bill.source || '').toLowerCase().trim();
 
-            // Match by provider and account number
-            if (bProvider === billProvider && bAccount === billAccount && bAccount !== '') {
+            // Match by provider, account number and source
+            if (bProvider === billProvider && bAccount === billAccount && bAccount !== '' && bSource === billSource) {
                 return true;
             }
 
-            // Match by provider and bill type if no account number
-            if (bProvider === billProvider && !billAccount) {
-                let notes = {};
-                try { notes = b.notes ? JSON.parse(b.notes) : {}; } catch { }
+            // Match by provider, bill type and source if no account number
+            if (bProvider === billProvider && !billAccount && bSource === billSource) {
                 return notes.billType === bill.billType;
+            }
+            
+            // For MembershipList, also match by bill name to distinguish Expiry vs Renewal
+            if (billSource === 'membershiplist' && bSource === 'membershiplist') {
+                const bName = (b.name || '').toLowerCase().trim();
+                const billName = (bill.billName || '').toLowerCase().trim();
+                if (bProvider === billProvider && bName.includes(billName)) {
+                    return true;
+                }
             }
 
             return false;
@@ -397,6 +449,56 @@ const calculateNextHalfYearlyDate = () => {
 const calculateNextSIPDate = (sipDay) => {
     if (!sipDay) return calculateNextMonthlyDate();
     return calculateNextBillDate(sipDay);
+};
+
+/**
+ * Cleanup old membership bills before creating new ones
+ * This helps prevent duplicate entries when membership details are updated
+ */
+const cleanupOldMembershipBills = async (organizationName, membershipNumber) => {
+    try {
+        const response = await investmentAPI.getAll('daily-bill-checklist');
+        const bills = response.data.investments || [];
+
+        const orgNameLower = organizationName.toLowerCase().trim();
+        const memberNumLower = (membershipNumber || '').toLowerCase().trim();
+
+        // Find all bills from MembershipList with same organization
+        const oldBills = bills.filter(b => {
+            const bProvider = (b.provider || '').toLowerCase().trim();
+            const bAccount = (b.accountNumber || '').toLowerCase().trim();
+            
+            let notes = {};
+            try { notes = b.notes ? JSON.parse(b.notes) : {}; } catch { }
+            const bSource = (notes.syncedFrom || notes.source || '').toLowerCase().trim();
+
+            // Match by provider (organization) and source (MembershipList)
+            if (bSource === 'membershiplist' && bProvider === orgNameLower) {
+                // If membership number exists, also match by that
+                if (memberNumLower && bAccount) {
+                    return bAccount === memberNumLower;
+                }
+                return true;
+            }
+            return false;
+        });
+
+        // Delete old bills
+        for (const oldBill of oldBills) {
+            try {
+                await investmentAPI.delete(oldBill._id);
+                console.log(`🗑️ Deleted old membership bill: ${oldBill.name}`);
+            } catch (error) {
+                console.error(`Error deleting old bill ${oldBill._id}:`, error);
+            }
+        }
+
+        if (oldBills.length > 0) {
+            console.log(`✅ Cleaned up ${oldBills.length} old membership bill(s) for ${organizationName}`);
+        }
+    } catch (error) {
+        console.error('Error in cleanupOldMembershipBills:', error);
+    }
 };
 
 export default {

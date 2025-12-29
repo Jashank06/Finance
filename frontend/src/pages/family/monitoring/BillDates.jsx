@@ -152,11 +152,11 @@ const BillDates = () => {
     };
   };
 
-  const fetchEntries = async () => {
+  const fetchEntries = async (year = selectedYear) => {
     try {
       setLoading(true);
-      // Prefer backend analytics for performance
-      const analytics = await investmentAPI.getBillDatesAnalytics();
+      // Prefer backend analytics for performance with selected year
+      const analytics = await investmentAPI.getBillDatesAnalytics({ year });
       const a = analytics.data || {};
       if (a.monthlyProvisions && a.cycleMix && a.yearlySchedule && a.upcoming) {
         setMonthlyProvisions(a.monthlyProvisions);
@@ -216,7 +216,7 @@ const BillDates = () => {
     trackFeatureUsage('/family/monitoring/bill-dates', 'view');
     fetchEntries();
     fetchReferenceBills();
-  }, []);
+  }, [selectedYear]); // Re-fetch when year changes
 
   const handleBillClick = (bill) => {
     setShowBillOptions(bill);

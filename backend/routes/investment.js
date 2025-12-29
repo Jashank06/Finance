@@ -474,31 +474,197 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
       items: [],
       total: 0,
     }));
+    
+    // Generate recurring bill instances based on cycle
     for (const e of entries) {
       // Use payableDate if available, otherwise fall back to dueDate
       const dateToUse = e.payableDate || e.dueDate;
       if (!dateToUse) continue;
-      const d = new Date(dateToUse);
-      if (d.getFullYear() !== currentYear) continue;
-      const bucket = byMonth[d.getMonth()];
-      bucket.items.push({ day: d.getDate(), provider: e.billName || e.provider || e.billType, billType: e.billType, cycle: e.cycle, amount: Number(e.amount) || 0 });
-      bucket.total += Number(e.amount) || 0;
+      
+      const billDate = new Date(dateToUse);
+      const billDay = billDate.getDate();
+      const start = e.startDate ? new Date(e.startDate) : null;
+      const startMonth = start && start.getFullYear() === currentYear ? start.getMonth() : 0;
+      
+      if (e.cycle === 'monthly') {
+        // Generate bill for each month starting from startMonth
+        for (let m = Math.max(0, startMonth); m < 12; m++) {
+          const bucket = byMonth[m];
+          bucket.items.push({ 
+            day: billDay, 
+            provider: e.billName || e.provider || e.billType, 
+            billType: e.billType, 
+            cycle: e.cycle, 
+            amount: Number(e.amount) || 0 
+          });
+          bucket.total += Number(e.amount) || 0;
+        }
+      } else if (e.cycle === 'quarterly') {
+        // Generate bill every 3 months
+        const baseMonth = billDate.getFullYear() === currentYear ? billDate.getMonth() : startMonth;
+        const first = Math.max(0, baseMonth);
+        for (let m = first; m < 12; m += 3) {
+          const bucket = byMonth[m];
+          bucket.items.push({ 
+            day: billDay, 
+            provider: e.billName || e.provider || e.billType, 
+            billType: e.billType, 
+            cycle: e.cycle, 
+            amount: Number(e.amount) || 0 
+          });
+          bucket.total += Number(e.amount) || 0;
+        }
+      } else if (e.cycle === 'yearly') {
+        // Generate bill once for the year
+        if (billDate.getFullYear() === currentYear) {
+          const bucket = byMonth[billDate.getMonth()];
+          bucket.items.push({ 
+            day: billDay, 
+            provider: e.billName || e.provider || e.billType, 
+            billType: e.billType, 
+            cycle: e.cycle, 
+            amount: Number(e.amount) || 0 
+          });
+          bucket.total += Number(e.amount) || 0;
+        }
+      } else if (e.cycle === 'daily') {
+        // For daily bills, add to every day of every month (this might be too many, but following the requirement)
+        for (let m = Math.max(0, startMonth); m < 12; m++) {
+          const daysInMonth = new Date(currentYear, m + 1, 0).getDate();
+          for (let day = 1; day <= daysInMonth; day++) {
+            const bucket = byMonth[m];
+            bucket.items.push({ 
+              day: day, 
+              provider: e.billName || e.provider || e.billType, 
+              billType: e.billType, 
+              cycle: e.cycle, 
+              amount: Number(e.amount) || 0 
+            });
+            bucket.total += Number(e.amount) || 0;
+          }
+        }
+      } else {
+        // one-time or unknown cycle - add only once
+        // For one-time bills, show them in any year if they fall in that year
+        if (billDate.getFullYear() === currentYear) {
+          const bucket = byMonth[billDate.getMonth()];
+          bucket.items.push({ 
+            day: billDay, 
+            provider: e.billName || e.provider || e.billType, 
+            billType: e.billType, 
+            cycle: e.cycle || 'one-time', 
+            amount: Number(e.amount) || 0,
+            fullDate: billDate.toISOString().slice(0, 10) // Store full date for one-time bills
+          });
+          bucket.total += Number(e.amount) || 0;
+        }
+      }
     }
+    
     for (const m of byMonth) { m.items.sort((a, b) => a.day - b.day); }
     const yearlySchedule = byMonth;
 
     const end = new Date(now);
     end.setDate(end.getDate() + horizonDays);
     const upcoming = [];
+    
+    // Generate recurring bill instances for upcoming period
     for (const e of entries) {
       // Use payableDate if available, otherwise fall back to dueDate
       const dateToUse = e.payableDate || e.dueDate;
       if (!dateToUse) continue;
-      const d = new Date(dateToUse);
-      if (d >= now && d <= end) {
-        upcoming.push({ date: d.toISOString().slice(0, 10), provider: e.billName || e.provider || e.billType, billType: e.billType, amount: Number(e.amount) || 0, cycle: e.cycle });
+      
+      const billDate = new Date(dateToUse);
+      const billDay = billDate.getDate();
+      
+      if (e.cycle === 'monthly') {
+        // Generate monthly instances within the horizon
+        const current = new Date(now.getFullYear(), now.getMonth(), billDay);
+        while (current <= end) {
+          if (current >= now) {
+            upcoming.push({ 
+              date: current.toISOString().slice(0, 10), 
+              provider: e.billName || e.provider || e.billType, 
+              billType: e.billType, 
+              amount: Number(e.amount) || 0, 
+              cycle: e.cycle 
+            });
+          }
+          current.setMonth(current.getMonth() + 1);
+        }
+      } else if (e.cycle === 'quarterly') {
+        // Generate quarterly instances within the horizon
+        const current = new Date(billDate);
+        // Find next occurrence from now
+        while (current < now) {
+          current.setMonth(current.getMonth() + 3);
+        }
+        while (current <= end) {
+          if (current >= now) {
+            upcoming.push({ 
+              date: current.toISOString().slice(0, 10), 
+              provider: e.billName || e.provider || e.billType, 
+              billType: e.billType, 
+              amount: Number(e.amount) || 0, 
+              cycle: e.cycle 
+            });
+          }
+          current.setMonth(current.getMonth() + 3);
+        }
+      } else if (e.cycle === 'yearly') {
+        // Check if the yearly bill falls within the horizon
+        const yearlyDate = new Date(now.getFullYear(), billDate.getMonth(), billDay);
+        if (yearlyDate >= now && yearlyDate <= end) {
+          upcoming.push({ 
+            date: yearlyDate.toISOString().slice(0, 10), 
+            provider: e.billName || e.provider || e.billType, 
+            billType: e.billType, 
+            amount: Number(e.amount) || 0, 
+            cycle: e.cycle 
+          });
+        }
+        // Check next year if we're near year end
+        const nextYearDate = new Date(now.getFullYear() + 1, billDate.getMonth(), billDay);
+        if (nextYearDate >= now && nextYearDate <= end) {
+          upcoming.push({ 
+            date: nextYearDate.toISOString().slice(0, 10), 
+            provider: e.billName || e.provider || e.billType, 
+            billType: e.billType, 
+            amount: Number(e.amount) || 0, 
+            cycle: e.cycle 
+          });
+        }
+      } else if (e.cycle === 'daily') {
+        // Generate daily instances within the horizon
+        const current = new Date(now);
+        current.setHours(0, 0, 0, 0);
+        while (current <= end) {
+          if (current >= now) {
+            upcoming.push({ 
+              date: current.toISOString().slice(0, 10), 
+              provider: e.billName || e.provider || e.billType, 
+              billType: e.billType, 
+              amount: Number(e.amount) || 0, 
+              cycle: e.cycle 
+            });
+          }
+          current.setDate(current.getDate() + 1);
+        }
+      } else {
+        // one-time bill
+        const d = new Date(dateToUse);
+        if (d >= now && d <= end) {
+          upcoming.push({ 
+            date: d.toISOString().slice(0, 10), 
+            provider: e.billName || e.provider || e.billType, 
+            billType: e.billType, 
+            amount: Number(e.amount) || 0, 
+            cycle: e.cycle || 'one-time'
+          });
+        }
       }
     }
+    
     upcoming.sort((a, b) => (a.date > b.date ? 1 : -1));
     const upcomingTotal = upcoming.reduce((s, i) => s + i.amount, 0);
     const scheduledCount = yearlySchedule.reduce((s, m) => s + m.items.length, 0);

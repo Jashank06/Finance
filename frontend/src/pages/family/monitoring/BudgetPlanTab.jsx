@@ -12,11 +12,14 @@ const BudgetPlanTab = () => {
     const [budgetAnalysis, setBudgetAnalysis] = useState(null);
     const [loading, setLoading] = useState(false);
     const [showIncomeForm, setShowIncomeForm] = useState(false);
+    const [calculatedMonthlyIncome, setCalculatedMonthlyIncome] = useState(null);
+    const [loadingIncome, setLoadingIncome] = useState(false);
 
     useEffect(() => {
     trackFeatureUsage('/family/monitoring/budget-plan', 'view');
         fetchBudgetPlans();
         fetchCurrentPlanAndAnalysis();
+        fetchMonthlyIncome();
     }, []);
 
     const fetchBudgetPlans = async () => {
@@ -26,6 +29,23 @@ const BudgetPlanTab = () => {
         } catch (error) {
             console.error('Error fetching budget plans:', error);
         }
+    };
+
+    const fetchMonthlyIncome = async () => {
+        setLoadingIncome(true);
+        try {
+            const response = await api.get('/cashflow/monthly-income');
+            if (response.data.success) {
+                setCalculatedMonthlyIncome(response.data.data);
+                // Auto-populate monthlyIncome if not set
+                if (!monthlyIncome && response.data.data.lastMonthIncome > 0) {
+                    setMonthlyIncome(response.data.data.lastMonthIncome.toFixed(2));
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching monthly income:', error);
+        }
+        setLoadingIncome(false);
     };
 
     const fetchCurrentPlanAndAnalysis = async () => {
@@ -54,6 +74,10 @@ const BudgetPlanTab = () => {
         setSelectedPlan(planId);
         if (!currentBudgetPlan) {
             setShowIncomeForm(true);
+            // Auto-populate income from calculated data
+            if (calculatedMonthlyIncome && calculatedMonthlyIncome.lastMonthIncome > 0) {
+                setMonthlyIncome(calculatedMonthlyIncome.lastMonthIncome.toFixed(2));
+            }
         }
     };
 
@@ -178,6 +202,18 @@ const BudgetPlanTab = () => {
                                 step="0.01"
                             />
                         </div>
+                        <small style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '8px', display: 'block' }}>
+                            {loadingIncome ? (
+                                '⏳ Calculating from your transactions...'
+                            ) : calculatedMonthlyIncome ? (
+                                <>
+                                    💡 Last month's income: <strong>${calculatedMonthlyIncome.lastMonthIncome.toFixed(2)}</strong>
+                                    {' '}({calculatedMonthlyIncome.lastMonthPeriod.start} to {calculatedMonthlyIncome.lastMonthPeriod.end})
+                                </>
+                            ) : (
+                                'Auto-filled with last month\'s income data'
+                            )}
+                        </small>
                         <button
                             onClick={handleSaveBudgetPlan}
                             className="save-budget-btn"

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { FiUser, FiPhone, FiMail, FiMapPin, FiCalendar, FiEdit2, FiSave, FiX, FiUsers, FiHome, FiBriefcase, FiGlobe, FiPlus, FiTrendingUp } from 'react-icons/fi';
 import { staticAPI } from '../../../utils/staticAPI';
+import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
+import { syncCustomerSupportFromForm } from '../../../utils/customerSupportSyncUtil';
 import './Static.css';
 import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
@@ -1076,6 +1078,15 @@ const BasicDetails = () => {
         sharesPortfolio: data.sharesPortfolio || prev.sharesPortfolio || [],
         insurancePortfolio: data.insurancePortfolio || prev.insurancePortfolio || []
       }));
+
+      // Trigger sync if subBrokers section was saved
+      if (sectionName === 'subBrokers') {
+        // Sync contacts
+        await syncContactsFromForm(data, 'BasicDetails');
+        // Sync customer support
+        await syncCustomerSupportFromForm(data, 'BasicDetails');
+      }
+
       setEditingSection(null);
     } catch (error) {
       console.error('Error saving section:', error);
@@ -1111,6 +1122,11 @@ const BasicDetails = () => {
 
       console.log('Save response:', response);
       setFormData(response.data);
+
+      // Trigger sync for all sections
+      await syncContactsFromForm(response.data, 'BasicDetails');
+      await syncCustomerSupportFromForm(response.data, 'BasicDetails');
+
       setEditMode(false);
       setEditingSection(null);
       console.log('=== SAVE SUCCESSFUL ===');
@@ -3565,7 +3581,7 @@ const BasicDetails = () => {
                     <th>Website</th>
                     <th>Contact Number</th>
                     <th>Email Id</th>
-                    <th>Type of Investment</th>
+                    {/* <th>Type of Investment</th> */}
                     <th>Address</th>
                     <th>City</th>
                     <th>State</th>
@@ -3582,7 +3598,7 @@ const BasicDetails = () => {
                       <td>{broker.website || '-'}</td>
                       <td>{broker.contactNumber || '-'}</td>
                       <td>{broker.emailId || '-'}</td>
-                      <td>{broker.typeOfInvestment || '-'}</td>
+                      {/* <td>{broker.typeOfInvestment || '-'}</td> */}
                       <td>{broker.address || '-'}</td>
                       <td>{broker.city || '-'}</td>
                       <td>{broker.state || '-'}</td>
@@ -3656,7 +3672,7 @@ const BasicDetails = () => {
                     placeholder="e.g., info@example.com"
                   />
                 </div>
-                <div className="form-group">
+                {/* <div className="form-group">
                   <label>Type of Investment</label>
                   <select
                     value={newSubBroker.typeOfInvestment}
@@ -3670,7 +3686,7 @@ const BasicDetails = () => {
                     <option value="Fixed Deposits">Fixed Deposits</option>
                     <option value="Others">Others</option>
                   </select>
-                </div>
+                </div> */}
                 <div className="form-group full-width">
                   <label>Address</label>
                   <textarea

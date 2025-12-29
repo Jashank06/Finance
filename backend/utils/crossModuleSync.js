@@ -76,6 +76,14 @@ const deleteLinkedEntries = async (referenceId) => {
  * Sync Investment (Bill) to All modules
  */
 const syncInvestmentToAll = async (investment) => {
+    // Only sync Bill Checklist entries to Calendar, not Telephone Conversation or other categories
+    const allowedCategories = ['daily-bill-checklist', 'daily-bill-checklist-new'];
+    
+    if (!allowedCategories.includes(investment.category)) {
+        // Don't sync Telephone Conversation, Contact Management, or other non-bill entries to Calendar
+        return;
+    }
+
     const targetDate = investment.payableDate || investment.maturityDate || investment.startDate;
     if (!targetDate) return;
 

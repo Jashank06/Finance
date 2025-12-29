@@ -247,27 +247,49 @@ const extractContactsFromForm = (formData, formType) => {
 
     case 'FamilyProfile':
       // Extract emergency contact
-      if (formData.emergencyContact?.name && formData.emergencyContact?.mobile) {
+      if (formData.additionalInfo?.emergencyContactName && formData.additionalInfo?.emergencyContactMobile) {
         contacts.push({
-          nameOfPerson: formData.emergencyContact.name,
-          mobileNumber1: formData.emergencyContact.mobile,
-          address: formData.emergencyContact.address || '',
+          nameOfPerson: formData.additionalInfo.emergencyContactName,
+          mobileNumber1: formData.additionalInfo.emergencyContactMobile,
+          address: formData.additionalInfo.emergencyContactAddress || '',
           category: 'Emergency Contact',
-          notes: `Source: Family Profile - Emergency Contact - Relation: ${formData.emergencyContact.relation || ''}`,
+          notes: `Source: Family Profile - Emergency Contact - Relation: ${formData.additionalInfo.emergencyContactRelation || ''}`,
         });
       }
 
-      // Extract family member contact (Single Member)
+      // Extract family member contact (Main - Personal)
       if (formData.name && (formData.mobile || formData.email)) {
         contacts.push({
           nameOfPerson: formData.name,
           mobileNumber1: formData.mobile || '',
-          mobileNumber2: formData.additionalInfo?.alternatePhone || formData.workPhone || '',
           emailId: formData.email || '',
           category: 'Family',
           profession: formData.occupation || '',
           nameOfCompany: formData.companyName || '',
           notes: `Source: Family Profile - ${formData.relation || 'Family Member'}`,
+        });
+      }
+
+      // Extract Work Phone as separate entry
+      if (formData.name && formData.workPhone) {
+        contacts.push({
+          nameOfPerson: `${formData.name} - Work`,
+          mobileNumber1: formData.workPhone,
+          emailId: formData.workEmail || '',
+          category: 'Family',
+          profession: formData.occupation || 'Work',
+          nameOfCompany: formData.companyName || '',
+          notes: `Source: Family Profile - Work Phone for ${formData.name}`,
+        });
+      }
+
+      // Extract Alternate Phone as separate entry
+      if (formData.name && formData.additionalInfo?.alternatePhone) {
+        contacts.push({
+          nameOfPerson: `${formData.name} - Alternate`,
+          mobileNumber1: formData.additionalInfo.alternatePhone,
+          category: 'Family',
+          notes: `Source: Family Profile - Alternate Phone for ${formData.name}`,
         });
       }
 
@@ -337,6 +359,31 @@ const extractContactsFromForm = (formData, formType) => {
           category: 'Service Provider',
           serviceProviderOrProductSeller: formData.membershipType || 'Membership',
           notes: `Source: Membership List - ${formData.membershipType} - Member: ${formData.memberName || 'N/A'}\nMembership No: ${formData.membershipNumber || 'N/A'}`,
+        });
+      }
+      break;
+
+    case 'BasicDetails':
+      // Extract Sub Brokers
+      if (formData.subBrokers && Array.isArray(formData.subBrokers)) {
+        formData.subBrokers.forEach(broker => {
+          if (broker.nameOfCompany && (broker.contactNumber || broker.emailId)) {
+            contacts.push({
+              nameOfPerson: broker.nameOfCompany,
+              nameOfCompany: broker.nameOfCompany,
+              mobileNumber1: broker.contactNumber || '',
+              emailId: broker.emailId || '',
+              website: broker.website || '',
+              address: broker.address || '',
+              city: broker.city || '',
+              state: broker.state || '',
+              pinCode: broker.pinCode || '',
+              category: 'Service Provider',
+              serviceProviderOrProductSeller: 'Sub Broker',
+              primaryProducts: broker.typeOfInvestment || 'Investment',
+              notes: `Source: Basic Details - Sub Broker - ${broker.typeOfInvestment || 'Investment'}`,
+            });
+          }
         });
       }
       break;

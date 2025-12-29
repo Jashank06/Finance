@@ -6,6 +6,9 @@ const auth = require('../middleware/auth');
 // Import models
 const Bank = require('../models/Bank');
 const BankTransaction = require('../models/BankTransaction');
+const CashTransaction = require('../models/CashTransaction');
+const Card = require('../models/Card');
+const IncomeExpense = require('../models/IncomeExpense');
 
 // Get ScheduledExpense model
 const ScheduledExpense = mongoose.model('ScheduledExpense');
@@ -208,5 +211,176 @@ function generateTransferSuggestions(cashFlowData) {
 
   return suggestions;
 }
+
+// GET monthly income calculation for Budget Plan
+router.get('/monthly-income', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const now = new Date();
+    
+    // Calculate last month's date range
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    
+    // Fetch income from IncomeExpense model
+    const incomeExpenseRecords = await IncomeExpense.find({
+      userId: userId,
+      type: 'income',
+      isActive: true,
+      date: { $gte: lastMonthStart, $lte: lastMonthEnd }
+    });
+    
+    const incomeExpenseTotal = incomeExpenseRecords.reduce((sum, record) => 
+      sum + (parseFloat(record.amount) || 0), 0);
+    
+    // Fetch income from Bank transactions (deposits that are income)
+    const bankTransactions = await BankTransaction.find({
+      user: userId,
+      date: { $gte: lastMonthStart, $lte: lastMonthEnd },
+      type: 'deposit',
+      transactionType: { $ne: 'transfer' } // Exclude internal transfers
+    });
+    
+    const bankIncome = bankTransactions.reduce((sum, txn) => 
+      sum + (parseFloat(txn.amount) || 0), 0);
+    
+    // Fetch income from Cash transactions
+    const cashTransactions = await CashTransaction.find({
+      userId: userId,
+      date: { $gte: lastMonthStart, $lte: lastMonthEnd },
+      type: 'income'
+    });
+    
+    const cashIncome = cashTransactions.reduce((sum, txn) => 
+      sum + (parseFloat(txn.amount) || 0), 0);
+    
+    // Calculate total income
+    const totalIncome = incomeExpenseTotal + bankIncome + cashIncome;
+    
+    res.json({
+      success: true,
+      data: {
+        lastMonthIncome: totalIncome,
+        lastMonthPeriod: {
+          start: lastMonthStart.toISOString().slice(0, 10),
+          end: lastMonthEnd.toISOString().slice(0, 10)
+        },
+        breakdown: {
+          incomeExpense: incomeExpenseTotal,
+          bank: bankIncome,
+          cash: cashIncome
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error calculating monthly income:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error calculating monthly income', 
+      error: error.message 
+    });
+  }
+});
+
+// GET monthly expenses calculation for Emergency Fund
+router.get('/monthly-expenses', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const now = new Date();
+    
+    // Calculate last month's date range
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    
+    // Fetch all expense transactions from last month
+    const bankTransactions = await BankTransaction.find({
+      user: userId,
+      date: { $gte: lastMonthStart, $lte: lastMonthEnd },
+      transactionType: 'Expense'
+    });
+    
+    const cashTransactions = await CashTransaction.find({
+      userId: userId,
+      date: { $gte: lastMonthStart, $lte: lastMonthEnd },
+      transactionType: 'Expense'
+    });
+    
+    // Fetch card transactions (expenses)
+    const cards = await Card.find({ userId: userId });
+    let cardExpenses = 0;
+    
+    for (const card of cards) {
+      if (card.transactions && Array.isArray(card.transactions)) {
+        const cardTxns = card.transactions.filter(txn => {
+          const txnDate = new Date(txn.date);
+          return txnDate >= lastMonthStart && 
+                 txnDate <= lastMonthEnd && 
+                 txn.transactionType === 'Expense';
+        });
+        cardExpenses += cardTxns.reduce((sum, txn) => sum + (parseFloat(txn.amount) || 0), 0);
+      }
+    }
+    
+    // Calculate total expenses
+    const bankExpenses = bankTransactions.reduce((sum, txn) => sum + (parseFloat(txn.amount) || 0), 0);
+    const cashExpensesTotal = cashTransactions.reduce((sum, txn) => sum + (parseFloat(txn.amount) || 0), 0);
+    
+    const totalExpenses = bankExpenses + cashExpensesTotal + cardExpenses;
+    
+    // Calculate average (in case we want to show current month too)
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentMonthTransactions = await BankTransaction.find({
+      user: userId,
+      date: { $gte: currentMonthStart },
+      transactionType: 'Expense'
+    });
+    
+    const currentCashTransactions = await CashTransaction.find({
+      userId: userId,
+      date: { $gte: currentMonthStart },
+      transactionType: 'Expense'
+    });
+    
+    let currentCardExpenses = 0;
+    for (const card of cards) {
+      if (card.transactions && Array.isArray(card.transactions)) {
+        const cardTxns = card.transactions.filter(txn => {
+          const txnDate = new Date(txn.date);
+          return txnDate >= currentMonthStart && txn.transactionType === 'Expense';
+        });
+        currentCardExpenses += cardTxns.reduce((sum, txn) => sum + (parseFloat(txn.amount) || 0), 0);
+      }
+    }
+    
+    const currentMonthExpenses = 
+      currentMonthTransactions.reduce((sum, txn) => sum + (parseFloat(txn.amount) || 0), 0) +
+      currentCashTransactions.reduce((sum, txn) => sum + (parseFloat(txn.amount) || 0), 0) +
+      currentCardExpenses;
+    
+    res.json({
+      success: true,
+      data: {
+        lastMonthExpenses: totalExpenses,
+        currentMonthExpenses: currentMonthExpenses,
+        lastMonthPeriod: {
+          start: lastMonthStart.toISOString().slice(0, 10),
+          end: lastMonthEnd.toISOString().slice(0, 10)
+        },
+        breakdown: {
+          bank: bankExpenses,
+          cash: cashExpensesTotal,
+          card: cardExpenses
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error calculating monthly expenses:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error calculating monthly expenses', 
+      error: error.message 
+    });
+  }
+});
 
 module.exports = router;

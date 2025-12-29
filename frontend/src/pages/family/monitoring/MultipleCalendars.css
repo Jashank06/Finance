@@ -31,11 +31,13 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  color: #000000;
 }
 
 .header-text p {
   font-size: 1.1rem;
-  opacity: 0.9;
+  color: #000000;
+  opacity: 1;
 }
 
 .header-actions .btn-primary {
@@ -159,6 +161,18 @@
 
 .calendar-item:hover {
   background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.calendar-item.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.calendar-item.active .calendar-color {
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .calendar-item.hidden {

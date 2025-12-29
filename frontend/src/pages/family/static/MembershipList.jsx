@@ -42,6 +42,7 @@ const MembershipList = () => {
   const [formData, setFormData] = useState(defaultEntry);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [familyMembers, setFamilyMembers] = useState([]); // Add familyMembers state
 
   useEffect(() => {
     trackFeatureUsage('/family/static/membership-list', 'view');
@@ -50,10 +51,16 @@ const MembershipList = () => {
 
   const fetchEntries = async () => {
     try {
-      const res = await staticAPI.getMembershipList();
+      const [res, familyRes] = await Promise.all([
+        staticAPI.getMembershipList(),
+        staticAPI.getFamilyProfile()
+      ]);
       setEntries(res.data || []);
+      if (familyRes.data && familyRes.data.length > 0) {
+        setFamilyMembers(familyRes.data[0].members || []);
+      }
     } catch (e) {
-      console.error('Error fetching membership list:', e);
+      console.error('Error fetching data:', e);
     }
   };
 
@@ -307,12 +314,15 @@ const MembershipList = () => {
                   </div>
                   <div className="form-group">
                     <label>Member Name</label>
-                    <input
-                      type="text"
+                    <select
                       value={formData.memberName}
                       onChange={(e) => handleInputChange('memberName', e.target.value)}
-                      placeholder="Your name on the membership"
-                    />
+                    >
+                      <option value="">Select family member...</option>
+                      {familyMembers.map((member, index) => (
+                        <option key={index} value={member.name}>{member.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-group">
                     <label>Membership Number</label>

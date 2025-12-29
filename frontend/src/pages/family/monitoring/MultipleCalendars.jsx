@@ -292,15 +292,10 @@ const MultipleCalendars = () => {
     }
   };
 
-  const toggleCalendarVisibility = (calendarId) => {
-    setCalendars(calendars.map(cal =>
-      cal.id === calendarId ? { ...cal, visible: !cal.visible } : cal
-    ));
-
-    // If hiding the currently selected calendar, switch to 'all'
-    if (selectedCalendar === calendarId) {
-      setSelectedCalendar('all');
-    }
+  // Handle calendar selection filter
+  const handleCalendarFilter = (calendarId) => {
+    setSelectedCalendar(calendarId);
+    trackAction('calendar_filter_change', { calendarId });
   };
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -371,19 +366,32 @@ const MultipleCalendars = () => {
             </button>
           </div>
           <div className="calendar-legend">
-            {calendars.map(calendar => (
+            <div
+              className={`calendar-item ${selectedCalendar === 'all' ? 'active' : ''}`}
+              onClick={() => handleCalendarFilter('all')}
+            >
               <div
-                key={calendar.id}
-                className={`calendar-item ${!calendar.visible ? 'hidden' : ''}`}
-                onClick={() => toggleCalendarVisibility(calendar.id)}
-              >
+                className="calendar-color"
+                style={{ backgroundColor: '#64748b' }}
+              />
+              <span>All</span>
+            </div>
+            {calendars.map(calendar => {
+              const calId = calendar.id || calendar._id;
+              return (
                 <div
-                  className="calendar-color"
-                  style={{ backgroundColor: calendar.color }}
-                />
-                <span>{calendar.name}</span>
-              </div>
-            ))}
+                  key={calId}
+                  className={`calendar-item ${selectedCalendar === calId ? 'active' : ''}`}
+                  onClick={() => handleCalendarFilter(calId)}
+                >
+                  <div
+                    className="calendar-color"
+                    style={{ backgroundColor: calendar.color }}
+                  />
+                  <span>{calendar.name}</span>
+                </div>
+              );
+            })}
           </div>
 
           <select
@@ -427,7 +435,7 @@ const MultipleCalendars = () => {
                     <div className="day-number">{day}</div>
                     <div className="day-events">
                       {dayEvents.slice(0, 3).map(event => {
-                        const calendar = calendars.find(cal => cal.id === event.calendar);
+                        const calendar = calendars.find(cal => cal.id === event.calendar || cal._id === event.calendar);
                         return (
                           <div
                             key={event.id}
@@ -454,6 +462,7 @@ const MultipleCalendars = () => {
       </div>
 
       {/* Upcoming Events Sidebar */}
+      {/* 
       <div className="upcoming-events">
         <h3><FiClock /> Upcoming Events</h3>
         <div className="events-list">
@@ -467,7 +476,7 @@ const MultipleCalendars = () => {
             .sort((a, b) => new Date(a.datetime || a.date) - new Date(b.datetime || b.date))
             .slice(0, 5)
             .map(event => {
-              const calendar = calendars.find(cal => cal.id === event.calendar);
+              const calendar = calendars.find(cal => cal.id === event.calendar || cal._id === event.calendar);
               return (
                 <div key={event.id} className="upcoming-event">
                   <div
@@ -485,6 +494,7 @@ const MultipleCalendars = () => {
             })}
         </div>
       </div>
+      */}
 
       {/* Add Event Modal */}
       {showEventModal && (
