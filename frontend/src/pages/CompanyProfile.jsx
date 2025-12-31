@@ -343,14 +343,14 @@ const CompanyProfile = () => {
 
   return (
     <div className="static-page">
-      <div className="static-header">
+      <div className="static-header" style={{ background: 'rgba(255, 255, 255, 0.95)' }}>
         <div className="header-content">
           <div className="header-icon">
             <FiBriefcase />
           </div>
           <div className="header-text">
-            <h1>Company Profile</h1>
-            <p>Manage your company information and documents</p>
+            <h1 style={{ color: '#0A0A0A !important' }}>Company Profile</h1>
+            <p style={{ color: '#4A5568 !important' }}>Manage your company information and documents</p>
           </div>
         </div>
         <div className="header-actions">

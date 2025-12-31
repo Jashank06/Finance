@@ -14,6 +14,11 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   },
+  mobile: {
+    type: String,
+    trim: true,
+    default: null
+  },
   password: {
     type: String,
     required: true
@@ -35,7 +40,32 @@ const userSchema = new mongoose.Schema({
   subscriptionExpiry: {
     type: Date,
     default: null
-  }
+  },
+  // Storage space management
+  totalStorage: {
+    type: Number, // in GB
+    default: 5 // Default 5GB free storage
+  },
+  usedStorage: {
+    type: Number, // in GB
+    default: 0
+  },
+  purchasedSpacePlans: [{
+    spacePlan: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SpacePlan'
+    },
+    purchaseDate: {
+      type: Date,
+      default: Date.now
+    },
+    expiryDate: {
+      type: Date
+    },
+    storageAdded: {
+      type: Number // in GB
+    }
+  }]
 }, {
   timestamps: true
 });

@@ -36,7 +36,7 @@ const DocumentManager = () => {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState('');
-    const [breadcrumbs, setBreadcrumbs] = useState([{ name: 'All Documents', _id: null }]);
+    const [breadcrumbs, setBreadcrumbs] = useState([{ name: 'All Files', _id: null }]);
 
     useEffect(() => {
         fetchFolders();
@@ -48,7 +48,7 @@ const DocumentManager = () => {
             buildBreadcrumbs(currentFolder);
         } else {
             showRootFolders();
-            setBreadcrumbs([{ name: 'All Documents', _id: null }]);
+            setBreadcrumbs([{ name: 'All Files', _id: null }]);
         }
     }, [currentFolder, folders]);
 
@@ -112,7 +112,7 @@ const DocumentManager = () => {
             current = folders.find(f => f._id === current.parentFolder);
         }
 
-        crumbs.unshift({ name: 'All Documents', _id: null });
+        crumbs.unshift({ name: 'All Files', _id: null });
         setBreadcrumbs(crumbs);
     };
 
@@ -245,7 +245,7 @@ const DocumentManager = () => {
                     <div className="doc-title-section">
                         <FiFolder className="header-icon" />
                         <div>
-                            <h1>Document Manager</h1>
+                            <h1>Files & Folders</h1>
                             <p>Organize and manage your financial documents</p>
                         </div>
                     </div>
@@ -434,7 +434,7 @@ const DocumentManager = () => {
                         {/* Documents Grid */}
                         {currentFolderContents.documents.length > 0 && (
                             <div className="documents-section">
-                                <h3 className="section-title">Documents</h3>
+                                <h3 className="section-title">Files</h3>
                                 {viewMode === 'grid' ? (
                                     <div className="document-grid">
                                         {currentFolderContents.documents.map(doc => (

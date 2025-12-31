@@ -298,10 +298,10 @@ const LandRecords = () => {
   if (loading && entries.length === 0) {
     return (
       <div className="static-page">
-        <div className="static-header">
+        <div className="static-header" style={{ background: 'rgba(255, 255, 255, 0.95)' }}>
           <FiMap className="section-icon" />
-          <h2>Land Records</h2>
-          <p>Manage your land and property records</p>
+          <h2 style={{ color: '#0A0A0A' }}>Land Records</h2>
+          <p style={{ color: '#4A5568' }}>Manage your land and property records</p>
         </div>
         <div className="loading">Loading...</div>
       </div>
@@ -310,10 +310,10 @@ const LandRecords = () => {
 
   return (
     <div className="static-page">
-      <div className="static-header">
+      <div className="static-header" style={{ background: 'rgba(255, 255, 255, 0.95)' }}>
         <FiMap className="section-icon" />
-        <h2>Land Records</h2>
-        <p>Manage your land and property records</p>
+        <h2 style={{ color: '#0A0A0A' }}>Land Records</h2>
+        <p style={{ color: '#4A5568' }}>Manage your land and property records</p>
       </div>
 
       <div className="static-content">

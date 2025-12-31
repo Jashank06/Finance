@@ -43,10 +43,10 @@ const Login = () => {
         setUser(adminResponse.data.user);
 
         setSuccess('Admin login successful! Redirecting...');
-        
+
         setTimeout(() => {
           if (adminResponse.data.user?.isAdmin) {
-            navigate('/admin');
+            navigate('/admin/subscribers');
           } else {
             navigate('/dashboard');
           }
@@ -102,11 +102,11 @@ const Login = () => {
         setUser(response.data.user);
 
         setSuccess('Login successful! Redirecting...');
-        
+
         // Redirect based on role
         setTimeout(() => {
           if (response.data.user?.role === 'admin') {
-            navigate('/admin');
+            navigate('/admin/subscribers');
           } else {
             navigate('/dashboard');
           }
@@ -229,8 +229,8 @@ const Login = () => {
           <div className="auth-header">
             <h2 className="auth-title">{step === 1 ? 'Welcome back' : 'Verify OTP'}</h2>
             <p className="auth-subtitle">
-              {step === 1 
-                ? 'Log in to continue managing your finances.' 
+              {step === 1
+                ? 'Log in to continue managing your finances.'
                 : 'Enter the 6-digit code sent to your email.'}
             </p>
           </div>
@@ -239,98 +239,98 @@ const Login = () => {
           {success && <div className="success-message">{success}</div>}
 
           {step === 1 ? (
-          <form onSubmit={handleRequestOTP} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="email" className="form-label">Email</label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="you@example.com"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="password" className="form-label">Password</label>
-              <div className="password-input-wrapper">
+            <form onSubmit={handleRequestOTP} className="auth-form">
+              <div className="form-group">
+                <label htmlFor="email" className="form-label">Email</label>
                 <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="Enter your password"
+                  placeholder="you@example.com"
                   className="form-input"
                 />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="password" className="form-label">Password</label>
+                <div className="password-input-wrapper">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Enter your password"
+                    className="form-input"
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-footer">
+                <Link to="/forgot-password" className="forgot-password">Forgot password?</Link>
+              </div>
+
+              <button type="submit" disabled={loading} className="auth-button">
+                {loading ? 'Sending OTP...' : 'Send OTP'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOTP} className="auth-form">
+              <div className="form-group">
+                <label htmlFor="otp" className="form-label">
+                  <FiMail style={{ display: 'inline', marginRight: '8px' }} />
+                  Verification Code
+                </label>
+                <input
+                  type="text"
+                  id="otp"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  required
+                  placeholder="Enter 6-digit OTP"
+                  className="form-input otp-input"
+                  maxLength="6"
+                  autoComplete="off"
+                  autoFocus
+                />
+                <p className="otp-helper-text">
+                  Check your email for the verification code. It expires in 10 minutes.
+                </p>
+              </div>
+
+              <div className="otp-actions">
                 <button
                   type="button"
-                  className="password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={handleResendOTP}
+                  disabled={loading || resendTimer > 0}
+                  className="resend-otp-button"
                 >
-                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                  <FiRefreshCw style={{ marginRight: '6px' }} />
+                  {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleBackToLogin}
+                  className="back-to-login-button"
+                >
+                  Back to Login
                 </button>
               </div>
-            </div>
 
-            <div className="form-footer">
-              <Link to="/forgot-password" className="forgot-password">Forgot password?</Link>
-            </div>
-
-            <button type="submit" disabled={loading} className="auth-button">
-              {loading ? 'Sending OTP...' : 'Send OTP'}
-            </button>
-          </form>
-          ) : (
-          <form onSubmit={handleVerifyOTP} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="otp" className="form-label">
-                <FiMail style={{ display: 'inline', marginRight: '8px' }} />
-                Verification Code
-              </label>
-              <input
-                type="text"
-                id="otp"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                required
-                placeholder="Enter 6-digit OTP"
-                className="form-input otp-input"
-                maxLength="6"
-                autoComplete="off"
-                autoFocus
-              />
-              <p className="otp-helper-text">
-                Check your email for the verification code. It expires in 10 minutes.
-              </p>
-            </div>
-
-            <div className="otp-actions">
-              <button 
-                type="button" 
-                onClick={handleResendOTP} 
-                disabled={loading || resendTimer > 0}
-                className="resend-otp-button"
-              >
-                <FiRefreshCw style={{ marginRight: '6px' }} />
-                {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
+              <button type="submit" disabled={loading || otp.length !== 6} className="auth-button">
+                {loading ? 'Verifying...' : 'Verify & Login'}
               </button>
-
-              <button 
-                type="button" 
-                onClick={handleBackToLogin}
-                className="back-to-login-button"
-              >
-                Back to Login
-              </button>
-            </div>
-
-            <button type="submit" disabled={loading || otp.length !== 6} className="auth-button">
-              {loading ? 'Verifying...' : 'Verify & Login'}
-            </button>
-          </form>
+            </form>
           )}
 
           <div className="auth-switch">

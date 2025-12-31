@@ -59,7 +59,20 @@ const InvestmentValuationAllocation = () => {
             isBasicDetail: true
           }));
 
-          fetchedInvestments = [...fetchedInvestments, ...mfPortfolio, ...sharePortfolio, ...insPortfolio];
+
+
+          // Map Loans Portfolio
+          const loanPortfolio = (basicData.loansPortfolio || []).map(item => ({
+            _id: `basic-loan-${item.srNo || Math.random()}`,
+            category: 'Loans (Given)',
+            provider: item.borrowerName || 'Unknown Borrower',
+            name: `${item.loanType} Loan` || 'Loan',
+            amount: parseFloat(item.principalAmount) || 0,
+            currentValue: parseFloat(item.outstandingAmount) || parseFloat(item.principalAmount) || 0,
+            isBasicDetail: true
+          }));
+
+          fetchedInvestments = [...fetchedInvestments, ...mfPortfolio, ...sharePortfolio, ...insPortfolio, ...loanPortfolio];
         }
 
         setInvestments(fetchedInvestments);

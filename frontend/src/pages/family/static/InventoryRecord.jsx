@@ -41,12 +41,23 @@ const defaultEntry = {
   notes: '',
 };
 
+const STANDARD_CATEGORIES = [
+  'Electronics',
+  'Furniture',
+  'Appliances',
+  'Books',
+  'Clothing',
+  'Kitchen',
+  'Tools'
+];
+
 const InventoryRecord = () => {
   const [entries, setEntries] = useState([]);
   const [formData, setFormData] = useState(defaultEntry);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editMode, setEditMode] = useState(false);
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
 
   const CATEGORY_KEY = 'static-inventory-record';
 
@@ -102,6 +113,7 @@ const InventoryRecord = () => {
     setFormData(defaultEntry);
     setEditingIndex(null);
     setEditingId(null);
+    setIsCustomCategory(false);
   };
 
   const handleSubmit = async (e) => {
@@ -124,6 +136,7 @@ const InventoryRecord = () => {
 
       await fetchEntries();
       resetForm();
+      setEditMode(false);
     } catch (error) {
       alert(error.response?.data?.message || 'Error saving inventory record');
     }
@@ -132,6 +145,14 @@ const InventoryRecord = () => {
   const handleEdit = (index) => {
     const item = entries[index];
     setFormData({ ...item });
+
+    // Check if category is custom
+    if (item.category && !STANDARD_CATEGORIES.includes(item.category)) {
+      setIsCustomCategory(true);
+    } else {
+      setIsCustomCategory(false);
+    }
+
     setEditingIndex(index);
     setEditingId(item._id);
     setEditMode(true);
@@ -149,22 +170,30 @@ const InventoryRecord = () => {
     }
   };
 
+  const handleCategoryChange = (e) => {
+    const value = e.target.value;
+    if (value === 'Other') {
+      setIsCustomCategory(true);
+      setFormData({ ...formData, category: '' });
+    } else {
+      setIsCustomCategory(false);
+      setFormData({ ...formData, category: value });
+    }
+  };
+
   return (
     <div className="static-page">
-      <div className="static-header">
+      <div className="static-header" style={{ background: 'rgba(255, 255, 255, 0.95)' }}>
         <div className="header-content">
           <div className="header-icon">
             <FiPackage />
           </div>
           <div className="header-text">
-            <h1>Inventory Record</h1>
-            <p>Track household and office inventory items</p>
+            <h1 style={{ color: '#0A0A0A' }}>Inventory Record</h1>
+            <p style={{ color: '#4A5568' }}>Track household and office inventory items</p>
           </div>
         </div>
         <div className="header-actions">
-          <button className="btn-primary" onClick={() => setEditMode(!editMode)}>
-            {editMode ? 'Lock Form' : 'Edit Form'}
-          </button>
           <button className="btn-success" onClick={() => {
             resetForm();
             setEditMode(true);
@@ -189,16 +218,26 @@ const InventoryRecord = () => {
                 </div>
                 <div className="form-group">
                   <label>Category</label>
-                  <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })}>
-                    <option>Electronics</option>
-                    <option>Furniture</option>
-                    <option>Appliances</option>
-                    <option>Books</option>
-                    <option>Clothing</option>
-                    <option>Kitchen</option>
-                    <option>Tools</option>
-                    <option>Other</option>
+                  <select
+                    value={isCustomCategory ? 'Other' : formData.category}
+                    onChange={handleCategoryChange}
+                  >
+                    {STANDARD_CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                    <option value="Other">Other (Custom)</option>
                   </select>
+                  {isCustomCategory && (
+                    <input
+                      type="text"
+                      placeholder="Enter custom category"
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      style={{ marginTop: '10px' }}
+                      autoFocus
+                      required
+                    />
+                  )}
                 </div>
                 <div className="form-group">
                   <label>Quantity</label>

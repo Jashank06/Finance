@@ -146,14 +146,14 @@ const OnlineAccessDetails = () => {
 
   return (
     <div className="static-page">
-      <div className="static-header">
+      <div className="static-header" style={{ background: 'rgba(255, 255, 255, 0.95)' }}>
         <div className="header-content">
           <div className="header-icon">
             <FiGlobe />
           </div>
           <div className="header-text">
-            <h1>Online Access Details</h1>
-            <p>Maintain secure records of online accounts and access information</p>
+            <h1 style={{ color: '#0A0A0A' }}>Online Access Details</h1>
+            <p style={{ color: '#4A5568' }}>Maintain secure records of online accounts and access information</p>
           </div>
         </div>
         <div className="header-actions">

@@ -10,16 +10,61 @@ const PaymentModal = ({ plan, onClose, onSuccess }) => {
     email: '',
     password: '',
     confirmPassword: '',
-    contact: ''
+    contact: '',
+    couponCode: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [couponValidating, setCouponValidating] = useState(false);
+  const [couponApplied, setCouponApplied] = useState(null);
+  const [discountedPrice, setDiscountedPrice] = useState(plan.price);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const validateCoupon = async () => {
+    if (!formData.couponCode.trim()) {
+      setError('Please enter a coupon code');
+      return;
+    }
+
+    setCouponValidating(true);
+    setError('');
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/coupons/validate`,
+        {
+          code: formData.couponCode,
+          planId: plan._id,
+          amount: plan.price
+        }
+      );
+
+      if (response.data.valid) {
+        setCouponApplied(response.data.coupon);
+        setDiscountedPrice(response.data.finalAmount);
+        setError('');
+        alert(`✅ Coupon applied! You saved ₹${response.data.discount}`);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid coupon code');
+      setCouponApplied(null);
+      setDiscountedPrice(plan.price);
+    } finally {
+      setCouponValidating(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setCouponApplied(null);
+    setDiscountedPrice(plan.price);
+    setFormData({ ...formData, couponCode: '' });
+    setError('');
   };
 
   const loadRazorpayScript = () => {
@@ -70,7 +115,9 @@ const PaymentModal = ({ plan, onClose, onSuccess }) => {
         planId: plan._id,
         email: formData.email,
         name: formData.name,
-        contact: formData.contact
+        contact: formData.contact,
+        couponCode: couponApplied ? formData.couponCode : null,
+        finalAmount: discountedPrice
       });
 
       const { order, razorpayKeyId } = orderResponse.data;
@@ -304,6 +351,135 @@ const PaymentModal = ({ plan, onClose, onSuccess }) => {
                   Confirm Password <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required minLength="6" style={inputStyle} placeholder="Re-enter password" />
+              </div>
+            </div>
+
+            {/* Coupon Code Section */}
+            <div style={{ 
+              background: 'rgba(16, 185, 129, 0.1)', 
+              padding: '1rem', 
+              borderRadius: '8px',
+              border: '1px dashed rgba(16, 185, 129, 0.3)',
+              marginBottom: '1.25rem'
+            }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                🎟️ Have a Coupon Code?
+              </label>
+              
+              {couponApplied ? (
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '6px'
+                }}>
+                  <div>
+                    <span style={{ 
+                      color: '#10b981', 
+                      fontWeight: '700',
+                      fontSize: '1rem',
+                      marginRight: '0.5rem'
+                    }}>
+                      {couponApplied.code}
+                    </span>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.85rem' }}>
+                      {couponApplied.discountType === 'percentage' 
+                        ? `${couponApplied.discountValue}% OFF` 
+                        : `₹${couponApplied.discountValue} OFF`}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeCoupon}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: 'rgba(239, 68, 68, 0.2)',
+                      color: '#ef4444',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    name="couponCode"
+                    value={formData.couponCode}
+                    onChange={handleChange}
+                    placeholder="Enter coupon code"
+                    style={{
+                      ...inputStyle,
+                      flex: 1,
+                      textTransform: 'uppercase'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={validateCoupon}
+                    disabled={couponValidating || !formData.couponCode.trim()}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      background: couponValidating || !formData.couponCode.trim() 
+                        ? 'rgba(156, 163, 175, 0.3)' 
+                        : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: couponValidating || !formData.couponCode.trim() ? 'not-allowed' : 'pointer',
+                      fontWeight: '600',
+                      fontSize: '0.85rem',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {couponValidating ? 'Validating...' : 'Apply'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Price Summary */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              padding: '1rem',
+              borderRadius: '8px',
+              marginBottom: '1.25rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem' }}>Original Price:</span>
+                <span style={{ 
+                  color: couponApplied ? 'rgba(255, 255, 255, 0.5)' : 'white',
+                  fontWeight: '600',
+                  textDecoration: couponApplied ? 'line-through' : 'none'
+                }}>
+                  ₹{plan.price}
+                </span>
+              </div>
+              {couponApplied && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ color: '#10b981', fontSize: '0.9rem' }}>Discount:</span>
+                  <span style={{ color: '#10b981', fontWeight: '600' }}>
+                    - ₹{plan.price - discountedPrice}
+                  </span>
+                </div>
+              )}
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                paddingTop: '0.75rem',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <span style={{ color: 'white', fontWeight: '700', fontSize: '1.1rem' }}>Total Amount:</span>
+                <span style={{ color: '#10b981', fontWeight: '700', fontSize: '1.3rem' }}>
+                  ₹{discountedPrice}
+                </span>
               </div>
             </div>
 

@@ -91,10 +91,10 @@ const CustomerSupport = () => {
   if (loading && entries.length === 0) {
     return (
       <div className="static-page">
-        <div className="static-header">
+        <div className="static-header" style={{ background: 'rgba(255, 255, 255, 0.95)' }}>
           <FiHeadset className="section-icon" />
-          <h2>Customer Support</h2>
-          <p>Manage customer service and support contacts</p>
+          <h2 style={{ color: '#0A0A0A' }}>Customer Support</h2>
+          <p style={{ color: '#4A5568' }}>Manage customer service and support contacts</p>
         </div>
         <div className="loading">Loading...</div>
       </div>
@@ -103,10 +103,10 @@ const CustomerSupport = () => {
 
   return (
     <div className="static-page">
-      <div className="static-header">
+      <div className="static-header" style={{ background: 'rgba(255, 255, 255, 0.95)' }}>
         <FiUser className="section-icon" />
-        <h2>Customer Support</h2>
-        <p>Manage customer service and support contacts</p>
+        <h2 style={{ color: '#0A0A0A' }}>Customer Support</h2>
+        <p style={{ color: '#4A5568' }}>Manage customer service and support contacts</p>
       </div>
 
       <div className="static-content">

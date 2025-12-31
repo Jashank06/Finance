@@ -156,7 +156,7 @@ const Sidebar = () => {
               <Link to="/family/tasks" className="submenu-item">Tasks to Do</Link>
               <Link to="/family/daily/telephone-conversation" className="submenu-item">Telephone Conversation</Link>
               <Link to="/family/static/contact-management" className="submenu-item">Contact Management</Link>
-              <Link to="/documents" className="submenu-item">📁 Documents</Link>
+              <Link to="/documents" className="submenu-item">📁 Files & Folders</Link>
             </div>
           )}
         </div>
@@ -204,6 +204,7 @@ const Sidebar = () => {
 
         <Link to="/libraries" className="nav-item">Libraries</Link>
         <Link to="/subscription" className="nav-item">Subscription Plan</Link>
+        <Link to="/space-management" className="nav-item">💾 Space Management</Link>
         <Link to="/feedback" className="nav-item">Feedback</Link>
         <Link to="/contact" className="nav-item">Contact Developer</Link>
         <div onClick={handleLogout} className="nav-item logout">Logout</div>

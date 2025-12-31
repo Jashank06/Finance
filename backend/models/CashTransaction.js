@@ -51,7 +51,7 @@ const cashTransactionSchema = new mongoose.Schema({
   },
   transactionType: {
     type: String,
-    enum: ['expense', 'transfer', 'loan-give', 'loan-take', 'udhar-give', 'udhar-receive', 'on-behalf-in', 'on-behalf-out'],
+    enum: ['credit', 'debit'],
   },
   modeOfTransaction: {
     type: String,

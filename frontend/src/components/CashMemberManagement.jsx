@@ -1053,14 +1053,8 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
                           onChange={(e) => setTransactionForm({ ...transactionForm, transactionType: e.target.value })}
                         >
                           <option value="">Select type...</option>
-                          <option value="expense">Expense</option>
-                          <option value="transfer">Transfer</option>
-                          <option value="loan-give">Loan Give</option>
-                          <option value="loan-take">Loan Take</option>
-                          <option value="udhar-give">Udhar Give</option>
-                          <option value="udhar-receive">Udhar Receive</option>
-                          <option value="on-behalf-in">On-behalf - Amount In</option>
-                          <option value="on-behalf-out">On-behalf - Amount Out</option>
+                          <option value="credit">Credit (Deposit)</option>
+                          <option value="debit">Debit (Withdrawal)</option>
                         </select>
                       </div>
 

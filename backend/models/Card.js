@@ -109,7 +109,7 @@ const cardSchema = new mongoose.Schema({
   // New transaction classification fields
   transactionType: {
     type: String,
-    enum: ['expense', 'transfer', 'loan-give', 'loan-take', 'on-behalf-in', 'on-behalf-out'],
+    enum: ['credit', 'debit'],
   },
   expenseType: {
     type: String,

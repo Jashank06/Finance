@@ -167,10 +167,10 @@ const MembershipList = () => {
   if (loading && entries.length === 0) {
     return (
       <div className="static-page">
-        <div className="static-header">
+        <div className="static-header" style={{ background: 'rgba(255, 255, 255, 0.95)' }}>
           <FiUsers className="section-icon" />
-          <h2>Membership List</h2>
-          <p>Manage your memberships and subscriptions</p>
+          <h2 style={{ color: '#0A0A0A' }}>Membership List</h2>
+          <p style={{ color: '#4A5568' }}>Manage your memberships and subscriptions</p>
         </div>
         <div className="loading">Loading...</div>
       </div>
@@ -179,10 +179,10 @@ const MembershipList = () => {
 
   return (
     <div className="static-page">
-      <div className="static-header">
+      <div className="static-header" style={{ background: 'rgba(255, 255, 255, 0.95)' }}>
         <FiUsers className="section-icon" />
-        <h2>Membership List</h2>
-        <p>Manage your memberships and subscriptions</p>
+        <h2 style={{ color: '#0A0A0A' }}>Membership List</h2>
+        <p style={{ color: '#4A5568' }}>Manage your memberships and subscriptions</p>
       </div>
 
       <div className="static-content">

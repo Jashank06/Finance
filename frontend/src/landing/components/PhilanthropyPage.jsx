@@ -7,7 +7,6 @@ import {
     FiSunrise, FiDroplet
 } from 'react-icons/fi';
 import './PhilanthropyPage.css';
-import heroVideo from '../../assets/hero-bg-new.mp4';
 
 const PhilanthropyPage = () => {
     const navigate = useNavigate();
@@ -62,19 +61,6 @@ const PhilanthropyPage = () => {
         <div className="philanthropy-page">
             {/* HERO SECTION */}
             <section className="philo-hero">
-                <div className="philo-hero-video-container">
-                    <video
-                        className="philo-hero-video"
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                    >
-                        <source src={heroVideo} type="video/mp4" />
-                    </video>
-                    <div className="philo-hero-overlay"></div>
-                </div>
-
                 <div className="philo-hero-content animate-on-scroll">
                     <div className="philo-badge">
                         <FiHeart className="badge-icon" />

@@ -129,7 +129,7 @@ const InvestmentValuationNew = () => {
           const currentVal = parseFloat(item.currentValuation) || 0;
 
           return {
-            _id: `basic-share-${index}`,
+            _id: `basic-share-port-${index}`,
             broker: item.dematCompany || '-',
             investorName: item.investorName || '-',
             scripName: item.scriptName || 'Unknown Script', // Note: scriptName vs scripName
@@ -140,14 +140,33 @@ const InvestmentValuationNew = () => {
             currentValuation: currentVal,
             unrealisedPL: currentVal - purchaseVal,
             purchaseDate: item.dateOfPurchase ? new Date(item.dateOfPurchase).toLocaleDateString() : '-',
-            source: 'Basic Details'
+            source: 'Basic Details (Portfolio)'
           };
         });
         setShares(prev => {
-          // Filter out any duplicates if necessary, or just append
-          // For now, simple append
           return [...prev, ...basicShares];
         });
+      }
+
+      // Merge Basic Details Shares (Static Info)
+      if (basicDetails && basicDetails.shares) {
+        const staticShares = basicDetails.shares.map((item, index) => ({
+          _id: `basic-share-static-${index}`,
+          broker: item.dematCompany || item.subBrokerName || '-',
+          investorName: item.investorName || '-',
+          scripName: item.scriptName || 'Unknown Script',
+          dpId: item.dpId || '-',
+          tradingId: item.tradingId || '-',
+          purchasePrice: 0,
+          quantity: 0,
+          purchaseAmount: 0,
+          currentPrice: 0,
+          currentValuation: 0,
+          unrealisedPL: 0,
+          purchaseDate: '-',
+          source: 'Basic Details (Static)'
+        }));
+        setShares(prev => [...prev, ...staticShares]);
       }
 
       // Separate insurance by type
@@ -155,20 +174,64 @@ const InvestmentValuationNew = () => {
       setLifeInsurance(allInsurance.filter(ins => ins.insuranceType === 'life'));
       setHealthInsurance(allInsurance.filter(ins => ins.insuranceType === 'health'));
 
-      // Merge Basic Details Insurance (Life implied)
+      // Merge Basic Details Insurance (Static Info)
+      if (basicDetails && basicDetails.insurance) {
+        const basicStaticInsurance = basicDetails.insurance.map((item, index) => {
+          const type = (item.insuranceType || '').toLowerCase();
+          return {
+            _id: `basic-ins-static-${index}`,
+            customerName: item.nominee || '-', // Placeholder as customer name might not be explicit
+            companyName: item.insuranceCompany,
+            policyName: item.policyName,
+            policyNumber: item.policyNumber,
+            policyType: item.insuranceType,
+            purchaseDate: '-', // Not available in static
+            premiumPaymentMode: '-',
+            premiumDate: '-',
+            premiumAmount: 0, // No amount in static
+            lastPremiumDate: '-',
+            maturityDate: '-',
+            sumAssured: 0, // No sum assured in static
+            maturityAmount: 0,
+            insuranceType: type === 'health' ? 'health' : 'life',
+            source: 'Basic Details (Static)'
+          };
+        });
+
+        setLifeInsurance(prev => [...prev, ...basicStaticInsurance.filter(i => i.insuranceType === 'life')]);
+        setHealthInsurance(prev => [...prev, ...basicStaticInsurance.filter(i => i.insuranceType === 'health')]);
+      }
+
+      // Merge Basic Details Insurance (Portfolio)
       if (basicDetails && basicDetails.insurancePortfolio) {
-        const basicInsurance = basicDetails.insurancePortfolio.map((item, index) => ({
-          _id: `basic-ins-${index}`,
-          companyName: item.insuranceCompany,
-          policyName: item.policyName,
-          policyNumber: item.policyNumber,
-          premiumAmount: parseFloat(item.premiumAmount) || 0,
-          sumAssured: parseFloat(item.sumAssured) || 0,
-          maturityDate: item.maturityDate,
-          insuranceType: 'life',
-          source: 'Basic Details'
-        }));
-        setLifeInsurance(prev => [...prev, ...basicInsurance]);
+        const basicPortfolioInsurance = basicDetails.insurancePortfolio.map((item, index) => {
+          const type = (item.policyType || '').toLowerCase();
+          // Check if explicit type "Health" is mentioned in policyType, otherwise default to Life
+          const isHealth = type.includes('health') || (item.insuranceCompany && item.insuranceCompany.toLowerCase().includes('health'));
+
+          return {
+            _id: `basic-ins-port-${index}`,
+            customerName: item.nominee || '-',
+            companyName: item.insuranceCompany,
+            policyName: item.policyName,
+            policyNumber: item.policyNumber,
+            policyType: item.policyType,
+            purchaseDate: item.policyStartDate,
+            premiumPaymentMode: item.premiumMode,
+            premiumDate: '-',
+            premiumAmount: parseFloat(item.premiumAmount) || 0,
+            lastPremiumDate: item.lastPremiumPayingDate,
+            maturityDate: item.maturityDate,
+            sumAssured: parseFloat(item.sumAssured) || 0,
+            sumInsured: parseFloat(item.sumAssured) || 0, // For Health
+            maturityAmount: 0, // Not typically in portfolio inputs
+            insuranceType: isHealth ? 'health' : 'life',
+            source: 'Basic Details (Portfolio)'
+          };
+        });
+
+        setLifeInsurance(prev => [...prev, ...basicPortfolioInsurance.filter(i => i.insuranceType === 'life')]);
+        setHealthInsurance(prev => [...prev, ...basicPortfolioInsurance.filter(i => i.insuranceType === 'health')]);
       }
 
       setLoans(loansRes.data.data.loans || []);
@@ -188,6 +251,28 @@ const InvestmentValuationNew = () => {
       }));
 
       setLoans(prev => [...prev, ...lentLoans]);
+
+      // Merge Basic Details Loans
+      if (basicDetails && basicDetails.loansPortfolio) {
+        const basicLoans = basicDetails.loansPortfolio.map((item, index) => ({
+          _id: `basic-loan-${index}`,
+          debtorName: item.borrowerName,
+          companyName: 'Personal Loan (Basic Details)',
+          loanType: item.loanType,
+          commencementDate: item.dateGiven,
+          closureDate: item.tenure ? `${item.tenure} Months` : '-',
+          emiAmount: 0, // Not applicable
+          emiDate: '-',
+          principalAmount: parseFloat(item.principalAmount) || 0,
+          interestAmount: 0,
+          penalty: 0,
+          totalEMI: 0,
+          balance: parseFloat(item.outstandingAmount) || parseFloat(item.principalAmount) || 0,
+          interestPaid: 0,
+          source: 'Basic Details'
+        }));
+        setLoans(prev => [...prev, ...basicLoans]);
+      }
 
     } catch (error) {
       console.error('Error fetching investment data:', error);

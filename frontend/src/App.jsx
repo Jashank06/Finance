@@ -49,6 +49,7 @@ import DailyCashRegister from './pages/family/daily/DailyCashRegister';
 import Milestones from './pages/family/monitoring/Milestones';
 import TargetsForLife from './pages/family/monitoring/TargetsForLife';
 import DocumentManager from './pages/documents/DocumentManager';
+import SpaceManagement from './pages/SpaceManagement';
 
 // Admin Panel Imports
 import AdminLayout from './components/AdminLayout';
@@ -591,6 +592,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <DocumentManager />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/space-management"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <SpaceManagement />
                 </Layout>
               </ProtectedRoute>
             }

@@ -135,14 +135,14 @@ const MobileEmailDetails = () => {
 
   return (
     <div className="static-page">
-      <div className="static-header">
+      <div className="static-header" style={{ background: 'rgba(255, 255, 255, 0.95)' }}>
         <div className="header-content">
           <div className="header-icon">
             <FiPhone />
           </div>
           <div className="header-text">
-            <h1>Mobile & Email Details</h1>
-            <p>Keep important contact and access details for family members</p>
+            <h1 style={{ color: '#0A0A0A' }}>Mobile & Email Details</h1>
+            <p style={{ color: '#4A5568' }}>Keep important contact and access details for family members</p>
           </div>
         </div>
         <div className="header-actions">

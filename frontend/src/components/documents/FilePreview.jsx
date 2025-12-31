@@ -86,10 +86,12 @@ const FilePreview = ({ document, onClose, onDownload }) => {
                 return (
                     <div className="preview-not-available">
                         <FiMaximize2 className="preview-icon" />
-                        <h3>Preview not available</h3>
-                        <p>Download the file to view its contents</p>
+                        <h3>{document.fileType === 'spreadsheet' ? 'Excel File' : 'Word Document'}</h3>
+                        <p className="file-name">{document.originalName}</p>
+                        <p>Preview for Office files is not available in browser.</p>
+                        <p>Please download the file to view it in Excel or Word.</p>
                         <button className="btn-primary premium-btn" onClick={onDownload}>
-                            <FiDownload /> Download File
+                            <FiDownload /> Download & Open
                         </button>
                     </div>
                 );

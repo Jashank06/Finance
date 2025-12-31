@@ -126,14 +126,14 @@ const PersonalRecords = () => {
 
   return (
     <div className="static-page">
-      <div className="static-header">
+      <div className="static-header" style={{ background: 'rgba(255, 255, 255, 0.95)' }}>
         <div className="header-content">
           <div className="header-icon">
             <FiUser />
           </div>
           <div className="header-text">
-            <h1>Personal Records</h1>
-            <p>Store key identity and document details for family members</p>
+            <h1 style={{ color: '#0A0A0A' }}>Personal Records</h1>
+            <p style={{ color: '#4A5568' }}>Store key identity and document details for family members</p>
           </div>
         </div>
         <div className="header-actions">

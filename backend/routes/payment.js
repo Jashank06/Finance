@@ -4,28 +4,44 @@ const razorpay = require('../config/razorpay');
 const Payment = require('../models/Payment');
 const User = require('../models/User');
 const SubscriptionPlan = require('../models/SubscriptionPlan');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
 // Create Razorpay order
 router.post('/create-order', async (req, res) => {
   try {
-    const { planId, email, name, contact } = req.body;
+    const { planId, email, name, contact, planType, amount } = req.body;
 
-    // Get plan details
-    const plan = await SubscriptionPlan.findById(planId);
-    if (!plan) {
-      return res.status(404).json({ success: false, message: 'Plan not found' });
+    let plan;
+    let planPrice;
+
+    // Check if it's a space plan or subscription plan
+    if (planType === 'space') {
+      const SpacePlan = require('../models/SpacePlan');
+      plan = await SpacePlan.findById(planId);
+      if (!plan) {
+        return res.status(404).json({ success: false, message: 'Space plan not found' });
+      }
+      planPrice = amount || plan.price;
+    } else {
+      // Default: subscription plan
+      plan = await SubscriptionPlan.findById(planId);
+      if (!plan) {
+        return res.status(404).json({ success: false, message: 'Plan not found' });
+      }
+      planPrice = plan.price;
     }
 
     // Create Razorpay order
     const options = {
-      amount: plan.price * 100, // amount in paise
+      amount: planPrice * 100, // amount in paise
       currency: 'INR',
       receipt: `receipt_${Date.now()}`,
       notes: {
         planId: plan._id.toString(),
         planName: plan.name,
+        planType: planType || 'subscription',
         email,
         name,
         contact
@@ -36,8 +52,9 @@ router.post('/create-order', async (req, res) => {
 
     // Create payment record (without user initially, as user may not exist yet)
     const payment = new Payment({
-      subscriptionPlan: plan._id,
-      amount: plan.price,
+      subscriptionPlan: planType === 'space' ? null : plan._id,
+      spacePlan: planType === 'space' ? plan._id : null,
+      amount: planPrice,
       currency: 'INR',
       razorpayOrderId: order.id,
       status: 'created',
@@ -246,6 +263,86 @@ router.post('/webhook', async (req, res) => {
 
   } catch (error) {
     console.error('Webhook error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Verify space plan payment
+router.post('/verify-space-payment', authMiddleware, async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planId } = req.body;
+    const userId = req.userId;
+
+    // Verify signature
+    const sign = razorpay_order_id + '|' + razorpay_payment_id;
+    const expectedSign = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(sign.toString())
+      .digest('hex');
+
+    if (razorpay_signature === expectedSign) {
+      // Get space plan
+      const SpacePlan = require('../models/SpacePlan');
+      const plan = await SpacePlan.findById(planId);
+      
+      if (!plan) {
+        return res.status(404).json({ success: false, message: 'Space plan not found' });
+      }
+
+      // Get user
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      // Calculate expiry date
+      let expiryDate = null;
+      if (plan.period !== 'lifetime') {
+        expiryDate = new Date();
+        if (plan.period === 'month') {
+          expiryDate.setMonth(expiryDate.getMonth() + 1);
+        } else if (plan.period === 'year') {
+          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+        }
+      }
+
+      // Add purchased plan to user
+      user.purchasedSpacePlans.push({
+        spacePlan: plan._id,
+        purchaseDate: new Date(),
+        expiryDate: expiryDate,
+        storageAdded: plan.storageSize
+      });
+
+      // Update total storage
+      user.totalStorage += plan.storageSize;
+      await user.save();
+
+      // Update payment record
+      await Payment.findOneAndUpdate(
+        { razorpayOrderId: razorpay_order_id },
+        { 
+          razorpayPaymentId: razorpay_payment_id,
+          razorpaySignature: razorpay_signature,
+          status: 'completed'
+        }
+      );
+
+      res.json({
+        success: true,
+        message: 'Space plan purchased successfully',
+        storage: {
+          totalStorage: user.totalStorage,
+          usedStorage: user.usedStorage,
+          availableStorage: user.totalStorage - user.usedStorage
+        }
+      });
+    } else {
+      res.status(400).json({ success: false, message: 'Invalid signature' });
+    }
+
+  } catch (error) {
+    console.error('Space payment verification error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

@@ -26,6 +26,7 @@ const CashCardsBank = () => {
   const [cashRecords, setCashRecords] = useState([]);
   const [cardRecords, setCardRecords] = useState([]);
   const [bankRecords, setBankRecords] = useState([]);
+  const [companyRecords, setCompanyRecords] = useState([]); // New state for companies
   const [showCashForm, setShowCashForm] = useState(false);
   const [showCardForm, setShowCardForm] = useState(false);
   const [showTransactionForm, setShowTransactionForm] = useState(false);
@@ -205,13 +206,14 @@ const CashCardsBank = () => {
 
   const fetchData = async () => {
     try {
-      const [cashRes, cardRes, bankRes, transactionRes, bankTransactionRes, familyRes] = await Promise.all([
+      const [cashRes, cardRes, bankRes, transactionRes, bankTransactionRes, familyRes, companyRes] = await Promise.all([
         api.get('/cash'),
         api.get('/cards'),
         api.get('/bank'),
         api.get('/transactions'),
         api.get('/bank-transactions'),
-        staticAPI.getFamilyProfile()
+        staticAPI.getFamilyProfile(),
+        staticAPI.getCompanyRecords()
       ]);
 
       setCashRecords(cashRes.data);
@@ -219,11 +221,20 @@ const CashCardsBank = () => {
       setBankRecords(bankRes.data);
       setCardTransactions(transactionRes.data);
       setBankTransactions(bankTransactionRes.data);
+      setCompanyRecords(companyRes.data || []);
 
       // Extract family members
       if (familyRes.data && familyRes.data.length > 0) {
         setFamilyMembers(familyRes.data[0].members || []);
       }
+
+      // Correctly set company records from the 6th response (index 5 in Promise.all array if we added one, but wait, let's check array index)
+      // Original Promise.all had 6 items before my edit? No, it had 6 items: cash, card, bank, trans, bankTrans, family.
+      // I added one more. So it should be 7 items.
+      // cashRes (0), cardRes (1), bankRes (2), transactionRes (3), bankTransactionRes (4), familyRes (5), companyRes (6)
+
+      // Re-doing the fetch block properly in next chunk to avoid confusion
+
 
       setLoading(false);
     } catch (error) {
@@ -375,6 +386,53 @@ const CashCardsBank = () => {
     }
   };
 
+  const getErrorMessage = (error) => {
+    if (error.response?.data?.message) {
+      const msg = error.response.data.message;
+
+      // Card validation errors
+      if (msg.includes('Card number must be 13-19 digits')) {
+        return '❌ Card number must be between 13-19 digits. Please enter a valid card number.';
+      }
+      if (msg.includes('Expiry date must be in MM/YY format')) {
+        return '❌ Expiry date format is incorrect. Please use MM/YY format (e.g., 12/25).';
+      }
+      if (msg.includes('CVV must be 3 or 4 digits')) {
+        return '❌ CVV must be 3 or 4 digits only. Please check your CVV.';
+      }
+
+      // Bank validation errors
+      if (msg.includes('Invalid IFSC code format')) {
+        return '❌ IFSC code format is incorrect. It should be 11 characters (e.g., SBIN0001234).\nFormat: First 4 letters (Bank code) + 0 + Last 6 characters (Branch code)';
+      }
+      if (msg.includes('Pincode must be 6 digits')) {
+        return '❌ Pincode must be exactly 6 digits. Please enter a valid pincode.';
+      }
+      if (msg.includes('duplicate key') && msg.includes('accountNumber')) {
+        return '❌ This account number already exists in the system. Please check and try again.';
+      }
+
+      // General validation errors
+      if (msg.includes('Required fields are missing')) {
+        return '❌ Some required fields are missing. Please fill all mandatory fields.';
+      }
+      if (msg.includes('ValidationError')) {
+        return '❌ Validation failed. Please check all fields and try again.';
+      }
+
+      return `❌ ${msg}`;
+    }
+
+    if (error.response?.status === 400) {
+      return '❌ Invalid data provided. Please check all fields and try again.';
+    }
+    if (error.response?.status === 500) {
+      return '❌ Server error occurred. Please try again later.';
+    }
+
+    return '❌ An error occurred. Please check your internet connection and try again.';
+  };
+
   const handleCardSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -402,7 +460,7 @@ const CashCardsBank = () => {
       fetchData();
     } catch (error) {
       console.error('Error saving card:', error);
-      alert('Error saving card');
+      alert(getErrorMessage(error));
     }
   };
 
@@ -420,7 +478,7 @@ const CashCardsBank = () => {
       fetchData();
     } catch (error) {
       console.error('Error saving bank account:', error);
-      alert('Error saving bank account');
+      alert(getErrorMessage(error));
     }
   };
 
@@ -474,7 +532,7 @@ const CashCardsBank = () => {
       fetchData();
     } catch (error) {
       console.error('Error saving transaction:', error);
-      alert('Error saving transaction');
+      alert(getErrorMessage(error));
     }
   };
 
@@ -528,7 +586,7 @@ const CashCardsBank = () => {
       fetchData();
     } catch (error) {
       console.error('Error saving bank transaction:', error);
-      alert('Error saving bank transaction');
+      alert(getErrorMessage(error));
     }
   };
 
@@ -1395,6 +1453,7 @@ const CashCardsBank = () => {
                           {getBroaderCategories().map(cat => (
                             <option key={cat} value={cat}>{cat}</option>
                           ))}
+                          <option value="Investment to Business">Investment to Business</option>
                         </select>
                       </div>
 
@@ -1416,9 +1475,13 @@ const CashCardsBank = () => {
                             required
                           >
                             <option value="">Select main category...</option>
-                            {getMainCategories(transactionForm.broaderCategory).map(cat => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
+                            {transactionForm.broaderCategory === 'Investment to Business' ? (
+                              <option value="Business">Business</option>
+                            ) : (
+                              getMainCategories(transactionForm.broaderCategory).map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))
+                            )}
                           </select>
                         </div>
                       )}
@@ -1440,9 +1503,17 @@ const CashCardsBank = () => {
                             required
                           >
                             <option value="">Select sub category...</option>
-                            {getSubCategories(transactionForm.broaderCategory, transactionForm.mainCategory).map(cat => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
+                            {transactionForm.broaderCategory === 'Investment to Business' && transactionForm.mainCategory === 'Business' ? (
+                              <>
+                                {companyRecords.map(company => (
+                                  <option key={company._id || company.id} value={company.companyName}>{company.companyName}</option>
+                                ))}
+                              </>
+                            ) : (
+                              getSubCategories(transactionForm.broaderCategory, transactionForm.mainCategory).map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))
+                            )}
                           </select>
                         </div>
                       )}
@@ -1476,12 +1547,8 @@ const CashCardsBank = () => {
                           onChange={(e) => setTransactionForm({ ...transactionForm, transactionType: e.target.value })}
                         >
                           <option value="">Select type...</option>
-                          <option value="expense">Expense</option>
-                          <option value="transfer">Transfer</option>
-                          <option value="loan-give">Loan Give</option>
-                          <option value="loan-take">Loan Take</option>
-                          <option value="on-behalf-in">On-behalf - Amount In</option>
-                          <option value="on-behalf-out">On-behalf - Amount Out</option>
+                          <option value="credit">Credit (Deposit)</option>
+                          <option value="debit">Debit (Withdrawal)</option>
                         </select>
                       </div>
                       <div className="form-group">
@@ -2167,6 +2234,7 @@ const CashCardsBank = () => {
                           {getBroaderCategories().map(cat => (
                             <option key={cat} value={cat}>{cat}</option>
                           ))}
+                          <option value="Investment to Business">Investment to Business</option>
                         </select>
                       </div>
 
@@ -2188,9 +2256,13 @@ const CashCardsBank = () => {
                             required
                           >
                             <option value="">Select main category...</option>
-                            {getMainCategories(bankTransactionForm.broaderCategory).map(cat => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
+                            {bankTransactionForm.broaderCategory === 'Investment to Business' ? (
+                              <option value="Business">Business</option>
+                            ) : (
+                              getMainCategories(bankTransactionForm.broaderCategory).map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))
+                            )}
                           </select>
                         </div>
                       )}
@@ -2212,9 +2284,17 @@ const CashCardsBank = () => {
                             required
                           >
                             <option value="">Select sub category...</option>
-                            {getSubCategories(bankTransactionForm.broaderCategory, bankTransactionForm.mainCategory).map(cat => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
+                            {bankTransactionForm.broaderCategory === 'Investment to Business' && bankTransactionForm.mainCategory === 'Business' ? (
+                              <>
+                                {companyRecords.map(company => (
+                                  <option key={company._id || company.id} value={company.companyName}>{company.companyName}</option>
+                                ))}
+                              </>
+                            ) : (
+                              getSubCategories(bankTransactionForm.broaderCategory, bankTransactionForm.mainCategory).map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))
+                            )}
                           </select>
                         </div>
                       )}
@@ -2248,12 +2328,8 @@ const CashCardsBank = () => {
                           onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, transactionType: e.target.value })}
                         >
                           <option value="">Select type...</option>
-                          <option value="expense">Expense</option>
-                          <option value="transfer">Transfer</option>
-                          <option value="loan-give">Loan Give</option>
-                          <option value="loan-take">Loan Take</option>
-                          <option value="on-behalf-in">On-behalf - Amount In</option>
-                          <option value="on-behalf-out">On-behalf - Amount Out</option>
+                          <option value="credit">Credit (Deposit)</option>
+                          <option value="debit">Debit (Withdrawal)</option>
                         </select>
                       </div>
                       <div className="form-group">

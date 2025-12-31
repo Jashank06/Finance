@@ -305,6 +305,7 @@ const SubscriberManagement = () => {
                                 <tr>
                                     <th>Name</th>
                                     <th>Email</th>
+                                    <th>Mobile Number</th>
                                     <th>Plan</th>
                                     <th>Status</th>
                                     <th>Joined Date</th>
@@ -316,7 +317,7 @@ const SubscriberManagement = () => {
                             <tbody>
                                 {filteredSubscribers.length === 0 ? (
                                     <tr>
-                                        <td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                                        <td colSpan="9" style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
                                             No subscribers found
                                         </td>
                                     </tr>
@@ -330,6 +331,7 @@ const SubscriberManagement = () => {
                                             <tr key={sub._id}>
                                                 <td><strong>{sub.name}</strong></td>
                                                 <td>{sub.email}</td>
+                                                <td>{sub.mobile || '-'}</td>
                                                 <td>
                                                     <span style={{
                                                         padding: '0.25rem 0.75rem',

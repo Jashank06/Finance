@@ -37,9 +37,25 @@ const SubscriptionPlans = () => {
         maxMembers: null,
         description: ''
     });
+    
+    // Coupon management states
+    const [showCouponSection, setShowCouponSection] = useState(false);
+    const [coupons, setCoupons] = useState([]);
+    const [selectedPlanForCoupon, setSelectedPlanForCoupon] = useState(null);
+    const [couponForm, setCouponForm] = useState({
+        code: '',
+        description: '',
+        discountType: 'percentage',
+        discountValue: 0,
+        subscriptionPlan: null,
+        maxUses: null,
+        validUntil: '',
+        minPurchaseAmount: 0
+    });
 
     useEffect(() => {
         fetchPlans();
+        fetchCoupons();
     }, []);
 
     const fetchPlans = async () => {
@@ -53,6 +69,67 @@ const SubscriptionPlans = () => {
         } catch (error) {
             console.error('Error fetching plans:', error);
             setLoading(false);
+        }
+    };
+    
+    const fetchCoupons = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${API_URL}/coupons`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setCoupons(response.data);
+        } catch (error) {
+            console.error('Error fetching coupons:', error);
+        }
+    };
+    
+    const handleCouponSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            const couponData = {
+                ...couponForm,
+                subscriptionPlan: selectedPlanForCoupon
+            };
+            
+            await axios.post(`${API_URL}/coupons`, couponData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            alert('✅ Coupon created successfully!');
+            setCouponForm({
+                code: '',
+                description: '',
+                discountType: 'percentage',
+                discountValue: 0,
+                subscriptionPlan: null,
+                maxUses: null,
+                validUntil: '',
+                minPurchaseAmount: 0
+            });
+            setSelectedPlanForCoupon(null);
+            setShowCouponSection(false); // Close the form
+            fetchCoupons();
+        } catch (error) {
+            console.error('Error creating coupon:', error);
+            alert('❌ Error creating coupon: ' + (error.response?.data?.message || error.message));
+        }
+    };
+    
+    const handleDeleteCoupon = async (couponId) => {
+        if (!confirm('Are you sure you want to delete this coupon?')) return;
+        
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`${API_URL}/coupons/${couponId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            alert('✅ Coupon deleted successfully!');
+            fetchCoupons();
+        } catch (error) {
+            console.error('Error deleting coupon:', error);
+            alert('❌ Error deleting coupon');
         }
     };
 
@@ -619,6 +696,256 @@ const SubscriptionPlans = () => {
                     </div>
                 </div>
             )}
+
+            {/* Coupon Management Section */}
+            <div style={{ marginTop: '3rem' }}>
+                <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '1.5rem'
+                }}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>
+                        Coupon Management
+                    </h2>
+                    <button
+                        onClick={() => setShowCouponSection(!showCouponSection)}
+                        style={{
+                            padding: '0.75rem 1.5rem',
+                            background: '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}
+                    >
+                        <FiPlus /> {showCouponSection ? 'Hide' : 'Create Coupon'}
+                    </button>
+                </div>
+
+                {/* Coupon Creation Form */}
+                {showCouponSection && (
+                    <div style={{
+                        background: 'white',
+                        padding: '2rem',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                        marginBottom: '2rem'
+                    }}>
+                        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: '600' }}>
+                            Create New Coupon
+                        </h3>
+                        <form onSubmit={handleCouponSubmit}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                        Coupon Code *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={couponForm.code}
+                                        onChange={(e) => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })}
+                                        placeholder="e.g., NEWYEAR2025"
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                        Plan (Optional)
+                                    </label>
+                                    <select
+                                        value={selectedPlanForCoupon || ''}
+                                        onChange={(e) => setSelectedPlanForCoupon(e.target.value || null)}
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                                    >
+                                        <option value="">All Plans</option>
+                                        {plans.map(plan => (
+                                            <option key={plan._id} value={plan._id}>{plan.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                        Discount Type *
+                                    </label>
+                                    <select
+                                        value={couponForm.discountType}
+                                        onChange={(e) => setCouponForm({ ...couponForm, discountType: e.target.value })}
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                                        required
+                                    >
+                                        <option value="percentage">Percentage (%)</option>
+                                        <option value="fixed">Fixed Amount (₹)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                        Discount Value *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={couponForm.discountValue}
+                                        onChange={(e) => setCouponForm({ ...couponForm, discountValue: parseFloat(e.target.value) })}
+                                        placeholder={couponForm.discountType === 'percentage' ? 'e.g., 10' : 'e.g., 100'}
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                        Valid Until *
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={couponForm.validUntil}
+                                        onChange={(e) => setCouponForm({ ...couponForm, validUntil: e.target.value })}
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                        Max Uses (Optional)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={couponForm.maxUses || ''}
+                                        onChange={(e) => setCouponForm({ ...couponForm, maxUses: e.target.value ? parseInt(e.target.value) : null })}
+                                        placeholder="Unlimited"
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                                    />
+                                </div>
+
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                        Description
+                                    </label>
+                                    <textarea
+                                        value={couponForm.description}
+                                        onChange={(e) => setCouponForm({ ...couponForm, description: e.target.value })}
+                                        placeholder="Coupon description..."
+                                        rows="3"
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                style={{
+                                    marginTop: '1.5rem',
+                                    padding: '0.75rem 2rem',
+                                    background: '#10b981',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontWeight: '500',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Create Coupon
+                            </button>
+                        </form>
+                    </div>
+                )}
+
+                {/* Coupons List */}
+                <div style={{ 
+                    background: 'white', 
+                    padding: '2rem', 
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                }}>
+                    <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: '600' }}>
+                        Active Coupons ({coupons.length})
+                    </h3>
+                    
+                    {coupons.length === 0 ? (
+                        <p style={{ textAlign: 'center', color: '#6b7280', padding: '2rem' }}>
+                            No coupons created yet. Create your first coupon above!
+                        </p>
+                    ) : (
+                        <div style={{ display: 'grid', gap: '1rem' }}>
+                            {coupons.map(coupon => (
+                                <div key={coupon._id} style={{
+                                    border: '1px solid #e5e7eb',
+                                    padding: '1.5rem',
+                                    borderRadius: '8px',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                }}>
+                                    <div>
+                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                            <span style={{
+                                                background: '#10b981',
+                                                color: 'white',
+                                                padding: '0.25rem 0.75rem',
+                                                borderRadius: '6px',
+                                                fontWeight: '700',
+                                                fontSize: '1.1rem'
+                                            }}>
+                                                {coupon.code}
+                                            </span>
+                                            <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>
+                                                {coupon.discountType === 'percentage' 
+                                                    ? `${coupon.discountValue}% OFF` 
+                                                    : `₹${coupon.discountValue} OFF`
+                                                }
+                                            </span>
+                                            {coupon.subscriptionPlan && (
+                                                <span style={{
+                                                    background: '#dbeafe',
+                                                    color: '#1e40af',
+                                                    padding: '0.25rem 0.5rem',
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.85rem'
+                                                }}>
+                                                    {coupon.subscriptionPlan.name}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {coupon.description && (
+                                            <p style={{ color: '#6b7280', margin: '0.5rem 0' }}>{coupon.description}</p>
+                                        )}
+                                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: '#9ca3af' }}>
+                                            <span>Valid until: {new Date(coupon.validUntil).toLocaleDateString()}</span>
+                                            {coupon.maxUses && <span>Max uses: {coupon.maxUses} | Used: {coupon.usedCount}</span>}
+                                            {!coupon.maxUses && <span>Used: {coupon.usedCount} times</span>}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleDeleteCoupon(coupon._id)}
+                                        style={{
+                                            padding: '0.5rem 1rem',
+                                            background: '#ef4444',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem'
+                                        }}
+                                    >
+                                        <FiTrash2 /> Delete
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
