@@ -1152,62 +1152,178 @@ const DigitalAssets = () => {
                     <h3>Technology Stack</h3>
                   </div>
                   <div className="section-content">
-                    <div className="form-grid">
-                      <div className="form-group">
-                        <label>Frontend Technologies</label>
-                        <div className="tech-tags">
-                          {frontendFrameworks.map(framework => (
-                            <label key={framework} className="tech-checkbox">
+                    <div className="tech-stack-container">
+                      {/* Left Column - Frontend */}
+                      <div className="tech-column">
+                        <div className="form-group">
+                          <label>Frontend Technologies</label>
+                          <div className="tech-tags">
+                            {frontendFrameworks.map(framework => (
+                              <label key={framework} className="tech-checkbox">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.technology?.frontend?.includes(framework) || false}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      addArrayItem('technology', 'frontend', framework);
+                                    } else {
+                                      removeArrayItem('technology', 'frontend', formData.technology?.frontend?.indexOf(framework) || -1);
+                                    }
+                                  }}
+                                />
+                                {framework}
+                              </label>
+                            ))}
+                          </div>
+                          
+                          <div className="custom-tech-section">
+                            <div className="custom-tech-input">
                               <input
-                                type="checkbox"
-                                checked={formData.technology?.frontend?.includes(framework) || false}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    addArrayItem('technology', 'frontend', framework);
-                                  } else {
-                                    removeArrayItem('technology', 'frontend', formData.technology?.frontend?.indexOf(framework) || -1);
+                                type="text"
+                                placeholder="Add custom frontend technology"
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && e.target.value.trim()) {
+                                    e.preventDefault();
+                                    const tech = e.target.value.trim();
+                                    if (!formData.technology?.frontend?.includes(tech)) {
+                                      addArrayItem('technology', 'frontend', tech);
+                                    }
+                                    e.target.value = '';
                                   }
                                 }}
                               />
-                              {framework}
-                            </label>
-                          ))}
+                              <button
+                                type="button"
+                                className="btn-icon"
+                                onClick={(e) => {
+                                  const input = e.target.previousElementSibling;
+                                  if (input.value.trim()) {
+                                    const tech = input.value.trim();
+                                    if (!formData.technology?.frontend?.includes(tech)) {
+                                      addArrayItem('technology', 'frontend', tech);
+                                    }
+                                    input.value = '';
+                                  }
+                                }}
+                              >
+                                <FiPlus /> Add Field
+                              </button>
+                            </div>
+                            <div className="custom-tech-list">
+                              {formData.technology?.frontend?.filter(tech => !frontendFrameworks.includes(tech)).map((tech, index) => (
+                                <div key={tech} className="custom-tech-item">
+                                  <span>{tech}</span>
+                                  <button
+                                    type="button"
+                                    className="btn-icon btn-danger"
+                                    onClick={() => {
+                                      const actualIndex = formData.technology?.frontend?.indexOf(tech);
+                                      if (actualIndex !== -1) {
+                                        removeArrayItem('technology', 'frontend', actualIndex);
+                                      }
+                                    }}
+                                  >
+                                    <FiTrash2 />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="form-group">
-                        <label>Backend Technologies</label>
-                        <div className="tech-tags">
-                          {backendFrameworks.map(framework => (
-                            <label key={framework} className="tech-checkbox">
+
+                      {/* Right Column - Backend */}
+                      <div className="tech-column">
+                        <div className="form-group">
+                          <label>Backend Technologies</label>
+                          <div className="tech-tags">
+                            {backendFrameworks.map(framework => (
+                              <label key={framework} className="tech-checkbox">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.technology?.backend?.includes(framework) || false}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      addArrayItem('technology', 'backend', framework);
+                                    } else {
+                                      removeArrayItem('technology', 'backend', formData.technology?.backend?.indexOf(framework) || -1);
+                                    }
+                                  }}
+                                />
+                                {framework}
+                              </label>
+                            ))}
+                          </div>
+                          
+                          <div className="custom-tech-section">
+                            <div className="custom-tech-input">
                               <input
-                                type="checkbox"
-                                checked={formData.technology?.backend?.includes(framework) || false}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    addArrayItem('technology', 'backend', framework);
-                                  } else {
-                                    removeArrayItem('technology', 'backend', formData.technology?.backend?.indexOf(framework) || -1);
+                                type="text"
+                                placeholder="Add custom backend technology"
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && e.target.value.trim()) {
+                                    e.preventDefault();
+                                    const tech = e.target.value.trim();
+                                    if (!formData.technology?.backend?.includes(tech)) {
+                                      addArrayItem('technology', 'backend', tech);
+                                    }
+                                    e.target.value = '';
                                   }
                                 }}
                               />
-                              {framework}
-                            </label>
-                          ))}
+                              <button
+                                type="button"
+                                className="btn-icon"
+                                onClick={(e) => {
+                                  const input = e.target.previousElementSibling;
+                                  if (input.value.trim()) {
+                                    const tech = input.value.trim();
+                                    if (!formData.technology?.backend?.includes(tech)) {
+                                      addArrayItem('technology', 'backend', tech);
+                                    }
+                                    input.value = '';
+                                  }
+                                }}
+                              >
+                                <FiPlus /> Add Field
+                              </button>
+                            </div>
+                            <div className="custom-tech-list">
+                              {formData.technology?.backend?.filter(tech => !backendFrameworks.includes(tech)).map((tech, index) => (
+                                <div key={tech} className="custom-tech-item">
+                                  <span>{tech}</span>
+                                  <button
+                                    type="button"
+                                    className="btn-icon btn-danger"
+                                    onClick={() => {
+                                      const actualIndex = formData.technology?.backend?.indexOf(tech);
+                                      if (actualIndex !== -1) {
+                                        removeArrayItem('technology', 'backend', actualIndex);
+                                      }
+                                    }}
+                                  >
+                                    <FiTrash2 />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="form-group">
-                        <label>Package Manager</label>
-                        <select
-                          value={formData.technology?.packageManager || 'npm'}
-                          onChange={(e) => handleInputChange('technology', 'packageManager', e.target.value)}
-                        >
-                          <option value="npm">NPM</option>
-                          <option value="yarn">Yarn</option>
-                          <option value="pnpm">PNPM</option>
-                          <option value="composer">Composer</option>
-                          <option value="pip">PIP</option>
-                        </select>
-                      </div>
+                    </div>
+                    
+                    <div className="form-group" style={{ marginTop: '1rem', maxWidth: '300px' }}>
+                      <label>Package Manager</label>
+                      <select
+                        value={formData.technology?.packageManager || 'npm'}
+                        onChange={(e) => handleInputChange('technology', 'packageManager', e.target.value)}
+                      >
+                        <option value="npm">NPM</option>
+                        <option value="yarn">Yarn</option>
+                        <option value="pnpm">PNPM</option>
+                        <option value="composer">Composer</option>
+                        <option value="pip">PIP</option>
+                      </select>
                     </div>
                   </div>
                 </div>

@@ -3,6 +3,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiBarChart2, FiPieChart, FiPhoneCall, FiCloc
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { investmentAPI } from '../../../utils/investmentAPI';
 import { staticAPI } from '../../../utils/staticAPI';
+import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
 import '../../investments/Investment.css';
 
 import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
@@ -207,6 +208,10 @@ const TelephoneConversation = () => {
       } else {
         await investmentAPI.create(toPayload(inputs));
       }
+
+      // Sync contact to Contact Management
+      await syncContactsFromForm(inputs, 'TelephoneConversation');
+
       await fetchEntries();
       setEditingId(null);
       setInputs({

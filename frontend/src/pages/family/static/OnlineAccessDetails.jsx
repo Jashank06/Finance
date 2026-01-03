@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { FiGlobe, FiShield, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import './Static.css';
 import { investmentAPI } from '../../../utils/investmentAPI';
+import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
 
 import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
@@ -117,8 +118,13 @@ const OnlineAccessDetails = () => {
       } else {
         await investmentAPI.create(toPayload(formData));
       }
+
+      // Sync recovery contact to Contact Management
+      await syncContactsFromForm(formData, 'OnlineAccessDetails');
+
       await fetchEntries();
       resetForm();
+      setEditMode(false);
     } catch (error) {
       alert(error.response?.data?.message || 'Error saving record');
     }

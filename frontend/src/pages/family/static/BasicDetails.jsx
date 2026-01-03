@@ -97,7 +97,9 @@ const BasicDetails = () => {
     sharesPortfolio: [],
     insurancePortfolio: [],
     // Sub Broker Information
-    subBrokers: []
+    subBrokers: [],
+    // Loans Portfolio
+    loansPortfolio: []
   });
 
   const [newFamilyMember, setNewFamilyMember] = useState({
@@ -356,9 +358,23 @@ const BasicDetails = () => {
       const response = await staticAPI.getBasicDetails();
       if (response.data && response.data.length > 0) {
         const data = response.data[0];
+
+        // Filter out demo family members if they exist
+        const demoNames = ['John Doe', 'Jane Doe', 'Johnny Doe'];
+        const cleanFamilyMembers = (data.familyMembers || []).filter(
+          member => !demoNames.includes(member.name)
+        );
+
+        // Filter out demo emergency contact
+        const cleanEmergencyContact = data.emergencyContact && data.emergencyContact.name === 'Robert Doe'
+          ? { name: '', relation: '', mobile: '', address: '' }
+          : (data.emergencyContact || { name: '', relation: '', mobile: '', address: '' });
+
         setFormData(prev => ({
           ...prev,
           ...data,
+          familyMembers: cleanFamilyMembers,
+          emergencyContact: cleanEmergencyContact,
           subBrokers: data.subBrokers || [],
           mutualFundsPortfolio: data.mutualFundsPortfolio || [],
           sharesPortfolio: data.sharesPortfolio || [],
@@ -366,141 +382,144 @@ const BasicDetails = () => {
           loansPortfolio: data.loansPortfolio || []
         }));
       } else {
-        // Set demo data if no records exist
+        // Set empty data if no records exist
         setFormData({
-          firstName: 'John',
-          lastName: 'Doe',
-          dateOfBirth: '1990-01-15',
-          gender: 'Male',
-          bloodGroup: 'B+',
-          maritalStatus: 'Married',
-          anniversaryDate: '2018-11-20',
-          primaryMobile: '+91 98765 43210',
-          secondaryMobile: '+91 87654 32109',
-          primaryEmail: 'john.doe@email.com',
-          secondaryEmail: 'john.doe.work@email.com',
-          whatsappNumber: '+91 98765 43210',
+          firstName: '',
+          lastName: '',
+          dateOfBirth: '',
+          gender: '',
+          bloodGroup: '',
+          maritalStatus: '',
+          anniversaryDate: '',
+          primaryMobile: '',
+          secondaryMobile: '',
+          primaryEmail: '',
+          secondaryEmail: '',
+          whatsappNumber: '',
           currentAddress: {
-            street: '123 Main Street',
-            area: 'Andheri',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            pincode: '400053',
+            street: '',
+            area: '',
+            city: '',
+            state: '',
+            pincode: '',
             country: 'India'
           },
           permanentAddress: {
-            street: '123 Main Street',
-            area: 'Andheri',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            pincode: '400053',
+            street: '',
+            area: '',
+            city: '',
+            state: '',
+            pincode: '',
             country: 'India'
           },
           sameAsCurrent: true,
-          familyHead: 'John Doe',
-          familyMembers: [
-            { name: 'John Doe', relation: 'Self', age: '35', gender: 'Male', occupation: 'Software Engineer', mobile: '+91 98765 43210', email: 'john.doe@email.com' },
-            { name: 'Jane Doe', relation: 'Spouse', age: '32', gender: 'Female', occupation: 'Teacher', mobile: '+91 87654 32109', email: 'jane.doe@email.com' },
-            { name: 'Johnny Doe', relation: 'Son', age: '8', gender: 'Male', occupation: 'Student', mobile: '', email: '' }
-          ],
-          totalFamilyMembers: '3',
-          dependents: '2',
-          occupation: 'Software Engineer',
-          companyName: 'Tech Solutions Pvt Ltd',
-          designation: 'Senior Developer',
-          workEmail: 'john.doe@techsolutions.com',
-          workPhone: '+91 22 1234 5678',
+          familyHead: '',
+          familyMembers: [],
+          totalFamilyMembers: '0',
+          dependents: '0',
+          occupation: '',
+          companyName: '',
+          designation: '',
+          workEmail: '',
+          workPhone: '',
           officeAddress: {
-            street: '456 Business Park',
-            area: 'Andheri',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            pincode: '400053'
+            street: '',
+            area: '',
+            city: '',
+            state: '',
+            pincode: ''
           },
           nationality: 'Indian',
-          religion: 'Hindu',
-          caste: 'General',
-          motherTongue: 'Hindi',
-          languagesKnown: ['Hindi', 'English', 'Marathi'],
-          aadhaarNumber: '1234 5678 9012',
-          panNumber: 'ABCDE1234F',
-          passportNumber: 'P1234567',
-          voterId: 'ABC1234567',
+          religion: '',
+          caste: '',
+          motherTongue: '',
+          languagesKnown: [],
+          aadhaarNumber: '',
+          panNumber: '',
+          passportNumber: '',
+          voterId: '',
           emergencyContact: {
-            name: 'Robert Doe',
-            relation: 'Brother',
-            mobile: '+91 98765 43212',
-            address: '789 Brother Street, Delhi, India'
-          }
+            name: '',
+            relation: '',
+            mobile: '',
+            address: ''
+          },
+          mutualFunds: [],
+          shares: [],
+          insurance: [],
+          banks: [],
+          mobileBills: [],
+          cards: [],
+          paymentGateways: [],
+          mutualFundsPortfolio: [],
+          sharesPortfolio: [],
+          insurancePortfolio: [],
+          subBrokers: []
         });
       }
     } catch (error) {
       console.error('Error fetching basic details:', error);
-      // Set demo data if API fails
+      // Set empty data if API fails
       setFormData({
-        firstName: 'John',
-        lastName: 'Doe',
-        dateOfBirth: '1990-01-15',
-        gender: 'Male',
-        bloodGroup: 'B+',
-        maritalStatus: 'Married',
-        anniversaryDate: '2018-11-20',
-        primaryMobile: '+91 98765 43210',
-        secondaryMobile: '+91 87654 32109',
-        primaryEmail: 'john.doe@email.com',
-        secondaryEmail: 'john.doe.work@email.com',
-        whatsappNumber: '+91 98765 43210',
+        firstName: '',
+        lastName: '',
+        dateOfBirth: '',
+        gender: '',
+        bloodGroup: '',
+        maritalStatus: '',
+        anniversaryDate: '',
+        primaryMobile: '',
+        secondaryMobile: '',
+        primaryEmail: '',
+        secondaryEmail: '',
+        whatsappNumber: '',
         currentAddress: {
-          street: '123 Main Street',
-          area: 'Andheri',
-          city: 'Mumbai',
-          state: 'Maharashtra',
-          pincode: '400053',
+          street: '',
+          area: '',
+          city: '',
+          state: '',
+          pincode: '',
           country: 'India'
         },
         permanentAddress: {
-          street: '123 Main Street',
-          area: 'Andheri',
-          city: 'Mumbai',
-          state: 'Maharashtra',
-          pincode: '400053',
+          street: '',
+          area: '',
+          city: '',
+          state: '',
+          pincode: '',
           country: 'India'
         },
         sameAsCurrent: true,
-        familyHead: 'John Doe',
-        familyMembers: [
-          { name: 'John Doe', relation: 'Self', age: '35', gender: 'Male', occupation: 'Software Engineer', mobile: '+91 98765 43210', email: 'john.doe@email.com' },
-          { name: 'Jane Doe', relation: 'Spouse', age: '32', gender: 'Female', occupation: 'Teacher', mobile: '+91 87654 32109', email: 'jane.doe@email.com' },
-          { name: 'Johnny Doe', relation: 'Son', age: '8', gender: 'Male', occupation: 'Student', mobile: '', email: '' }
-        ],
-        totalFamilyMembers: '3',
-        dependents: '2',
-        occupation: 'Software Engineer',
-        companyName: 'Tech Solutions Pvt Ltd',
-        designation: 'Senior Developer',
-        workEmail: 'john.doe@techsolutions.com',
-        workPhone: '+91 22 1234 5678',
+        familyHead: '',
+        familyMembers: [],
+        totalFamilyMembers: '0',
+        dependents: '0',
+        occupation: '',
+        companyName: '',
+        designation: '',
+        workEmail: '',
+        workPhone: '',
         officeAddress: {
-          street: '456 Business Park',
-          area: 'Andheri',
-          city: 'Mumbai',
-          state: 'Maharashtra',
-          pincode: '400053'
+          street: '',
+          area: '',
+          city: '',
+          state: '',
+          pincode: ''
         },
         nationality: 'Indian',
-        religion: 'Hindu',
-        caste: 'General',
-        motherTongue: 'Hindi',
-        languagesKnown: ['Hindi', 'English', 'Marathi'],
-        aadhaarNumber: '1234 5678 9012',
-        panNumber: 'ABCDE1234F',
-        passportNumber: 'P1234567',
-        voterId: 'ABC1234567',
+        religion: '',
+        caste: '',
+        motherTongue: '',
+        languagesKnown: [],
+        aadhaarNumber: '',
+        panNumber: '',
+        passportNumber: '',
+        voterId: '',
         emergencyContact: {
-          name: 'Robert Doe',
-          relation: 'Brother',
-          mobile: '+91 98765 43212',
-          address: '789 Brother Street, Delhi, India'
+          name: '',
+          relation: '',
+          mobile: '',
+          address: ''
         }
       });
     } finally {
@@ -1085,17 +1104,35 @@ const BasicDetails = () => {
       }
 
       const data = response.data;
+
+      // Filter out demo data
+      const demoNames = ['John Doe', 'Jane Doe', 'Johnny Doe'];
+      const cleanFamilyMembers = (data.familyMembers || []).filter(
+        member => !demoNames.includes(member.name)
+      );
+      const cleanEmergencyContact = data.emergencyContact && data.emergencyContact.name === 'Robert Doe'
+        ? { name: '', relation: '', mobile: '', address: '' }
+        : (data.emergencyContact || { name: '', relation: '', mobile: '', address: '' });
+
       setFormData(prev => ({
-        ...prev,
         ...data,
-        subBrokers: data.subBrokers || prev.subBrokers || [],
-        mutualFundsPortfolio: data.mutualFundsPortfolio || prev.mutualFundsPortfolio || [],
-        sharesPortfolio: data.sharesPortfolio || prev.sharesPortfolio || [],
-        insurancePortfolio: data.insurancePortfolio || prev.insurancePortfolio || []
+        familyMembers: cleanFamilyMembers,
+        emergencyContact: cleanEmergencyContact,
+        subBrokers: data.subBrokers || [],
+        mutualFundsPortfolio: data.mutualFundsPortfolio || [],
+        sharesPortfolio: data.sharesPortfolio || [],
+        insurancePortfolio: data.insurancePortfolio || [],
+        loansPortfolio: data.loansPortfolio || []
       }));
 
-      // Trigger sync if subBrokers section was saved
-      if (sectionName === 'subBrokers') {
+      // Trigger sync for relevant sections
+      const sectionsToSync = [
+        'mutualFunds', 'shares', 'insurance', 'banks',
+        'mobileBills', 'cards', 'subBrokers',
+        'mutualFundsPortfolio', 'sharesPortfolio', 'insurancePortfolio'
+      ];
+
+      if (sectionsToSync.includes(sectionName)) {
         // Sync contacts
         await syncContactsFromForm(data, 'BasicDetails');
         // Sync customer support
@@ -1103,6 +1140,7 @@ const BasicDetails = () => {
       }
 
       setEditingSection(null);
+      setEditMode(false);
     } catch (error) {
       console.error('Error saving section:', error);
       alert('Failed to save. Please try again.');
@@ -1136,10 +1174,30 @@ const BasicDetails = () => {
       }
 
       console.log('Save response:', response);
-      setFormData(response.data);
+      const data = response.data;
+
+      // Filter out demo data
+      const demoNames = ['John Doe', 'Jane Doe', 'Johnny Doe'];
+      const cleanFamilyMembers = (data.familyMembers || []).filter(
+        member => !demoNames.includes(member.name)
+      );
+      const cleanEmergencyContact = data.emergencyContact && data.emergencyContact.name === 'Robert Doe'
+        ? { name: '', relation: '', mobile: '', address: '' }
+        : (data.emergencyContact || { name: '', relation: '', mobile: '', address: '' });
+
+      setFormData({
+        ...data,
+        familyMembers: cleanFamilyMembers,
+        emergencyContact: cleanEmergencyContact,
+        subBrokers: data.subBrokers || [],
+        mutualFundsPortfolio: data.mutualFundsPortfolio || [],
+        sharesPortfolio: data.sharesPortfolio || [],
+        insurancePortfolio: data.insurancePortfolio || [],
+        loansPortfolio: data.loansPortfolio || []
+      });
 
       // Trigger sync for all sections
-      await syncContactsFromForm(response.data, 'BasicDetails');
+      await syncContactsFromForm(data, 'BasicDetails');
       await syncCustomerSupportFromForm(response.data, 'BasicDetails');
 
       setEditMode(false);

@@ -57,6 +57,7 @@ export const syncContactsFromForm = async (formData, formType) => {
  * Extract contact information from form data based on form type
  */
 const extractContactsFromForm = (formData, formType) => {
+  console.log(`--- Extracting contacts from ${formType} ---`);
   const contacts = [];
 
   switch (formType) {
@@ -367,23 +368,274 @@ const extractContactsFromForm = (formData, formType) => {
       // Extract Sub Brokers
       if (formData.subBrokers && Array.isArray(formData.subBrokers)) {
         formData.subBrokers.forEach(broker => {
-          if (broker.nameOfCompany && (broker.contactNumber || broker.emailId)) {
+          if (broker.nameOfCompany && broker.contactNumber) {
             contacts.push({
               nameOfPerson: broker.nameOfCompany,
               nameOfCompany: broker.nameOfCompany,
-              mobileNumber1: broker.contactNumber || '',
+              mobileNumber1: broker.contactNumber,
               emailId: broker.emailId || '',
-              website: broker.website || '',
-              address: broker.address || '',
-              city: broker.city || '',
-              state: broker.state || '',
-              pinCode: broker.pinCode || '',
               category: 'Service Provider',
               serviceProviderOrProductSeller: 'Sub Broker',
-              primaryProducts: broker.typeOfInvestment || 'Investment',
-              notes: `Source: Basic Details - Sub Broker - ${broker.typeOfInvestment || 'Investment'}`,
+              notes: `Source: Basic Details - Sub Broker`,
             });
           }
+          if (broker.nameOfCompany && broker.customerCareNumber) {
+            contacts.push({
+              nameOfPerson: `${broker.nameOfCompany} Customer Care`,
+              nameOfCompany: broker.nameOfCompany,
+              mobileNumber1: broker.customerCareNumber,
+              emailId: broker.customerCareEmailId || '',
+              category: 'Customer Support',
+              notes: `Source: Basic Details - Sub Broker Support`,
+            });
+          }
+        });
+      }
+
+      // Extract Bank RM Contacts
+      if (formData.banks && Array.isArray(formData.banks)) {
+        formData.banks.forEach(bank => {
+          if (bank.rmName && bank.rmMobile) {
+            contacts.push({
+              nameOfPerson: bank.rmName,
+              nameOfCompany: bank.bankName,
+              mobileNumber1: bank.rmMobile,
+              emailId: bank.rmEmail || '',
+              category: 'Relationship Manager',
+              serviceProviderOrProductSeller: 'Bank RM',
+              notes: `Source: Basic Details - Bank RM for ${bank.bankName}`,
+            });
+          }
+          if (bank.accountHolderName && bank.registeredMobile) {
+            contacts.push({
+              nameOfPerson: bank.accountHolderName,
+              nameOfCompany: bank.bankName,
+              mobileNumber1: bank.registeredMobile,
+              emailId: bank.registeredEmail || '',
+              category: 'Bank Customer',
+              notes: `Source: Basic Details - Registered Number for Bank: ${bank.bankName}`,
+            });
+          }
+        });
+      }
+
+      // Extract Insurance RM Contacts
+      if (formData.insurance && Array.isArray(formData.insurance)) {
+        formData.insurance.forEach(ins => {
+          if (ins.insuranceCompany && ins.customerCareNumber) {
+            contacts.push({
+              nameOfPerson: `${ins.insuranceCompany} Customer Care`,
+              nameOfCompany: ins.insuranceCompany,
+              mobileNumber1: ins.customerCareNumber,
+              emailId: ins.customerCareEmail || '',
+              category: 'Customer Support',
+              notes: `Source: Basic Details - Insurance Support`,
+            });
+          }
+          if (ins.rmName && ins.rmMobile) {
+            contacts.push({
+              nameOfPerson: ins.rmName,
+              nameOfCompany: ins.insuranceCompany,
+              mobileNumber1: ins.rmMobile,
+              emailId: ins.rmEmail || '',
+              category: 'Relationship Manager',
+              serviceProviderOrProductSeller: 'Insurance RM',
+              notes: `Source: Basic Details - Insurance RM for ${ins.insuranceCompany}`,
+            });
+          }
+          if (ins.insurerName && ins.registeredMobile) {
+            contacts.push({
+              nameOfPerson: ins.insurerName,
+              nameOfCompany: ins.insuranceCompany,
+              mobileNumber1: ins.registeredMobile,
+              category: 'Insurance Policy Holder',
+              notes: `Source: Basic Details - Registered Number for Insurance: ${ins.insuranceCompany}`,
+            });
+          } else if (ins.insuranceCompany && ins.registeredMobile) {
+            // Fallback if insurerName is missing but company and mobile exist
+            contacts.push({
+              nameOfPerson: `Insurer - ${ins.insuranceCompany}`,
+              nameOfCompany: ins.insuranceCompany,
+              mobileNumber1: ins.registeredMobile,
+              category: 'Insurance Contact',
+              notes: `Source: Basic Details - Registered Number for Insurance: ${ins.insuranceCompany} (Name missing)`,
+            });
+          }
+        });
+      }
+
+      // Extract Mutual Fund RM Contacts
+      if (formData.mutualFunds && Array.isArray(formData.mutualFunds)) {
+        formData.mutualFunds.forEach(mf => {
+          if (mf.fundHouse && mf.customerCareNumber) {
+            contacts.push({
+              nameOfPerson: `${mf.fundHouse} Customer Care`,
+              nameOfCompany: mf.fundHouse,
+              mobileNumber1: mf.customerCareNumber,
+              emailId: mf.customerCareEmail || '',
+              category: 'Customer Support',
+              notes: `Source: Basic Details - MF Support`,
+            });
+          }
+          if (mf.rmName && mf.rmMobile) {
+            contacts.push({
+              nameOfPerson: mf.rmName,
+              nameOfCompany: mf.fundHouse,
+              mobileNumber1: mf.rmMobile,
+              emailId: mf.rmEmail || '',
+              category: 'Relationship Manager',
+              serviceProviderOrProductSeller: 'MF RM',
+              notes: `Source: Basic Details - MF RM for ${mf.fundHouse}`,
+            });
+          }
+          if (mf.investorName && mf.registeredMobile) {
+            contacts.push({
+              nameOfPerson: mf.investorName,
+              nameOfCompany: mf.fundHouse,
+              mobileNumber1: mf.registeredMobile,
+              category: 'MF Investor',
+              notes: `Source: Basic Details - Registered Number for Mutual Fund: ${mf.fundHouse}`,
+            });
+          }
+        });
+      }
+
+      // Extract Share Registered Numbers
+      if (formData.shares && Array.isArray(formData.shares)) {
+        formData.shares.forEach(share => {
+          if (share.investorName && share.registeredMobile) {
+            contacts.push({
+              nameOfPerson: share.investorName,
+              nameOfCompany: share.dematCompany,
+              mobileNumber1: share.registeredMobile,
+              category: 'Share Investor',
+              notes: `Source: Basic Details - Registered Number for Shares: ${share.dematCompany}`,
+            });
+          }
+        });
+      }
+
+      // Extract Portfolio Contacts
+      if (formData.mutualFundsPortfolio && Array.isArray(formData.mutualFundsPortfolio)) {
+        formData.mutualFundsPortfolio.forEach(mfp => {
+          if (mfp.investorName && mfp.folioNumber) {
+            contacts.push({
+              nameOfPerson: mfp.investorName,
+              nameOfCompany: mfp.fundHouse || 'Mutual Fund',
+              notes: `Source: Basic Details - MF Portfolio: ${mfp.fundName || ''} (Folio: ${mfp.folioNumber})`,
+              category: 'Portfolio Contact'
+            });
+          }
+        });
+      }
+
+      if (formData.sharesPortfolio && Array.isArray(formData.sharesPortfolio)) {
+        formData.sharesPortfolio.forEach(sp => {
+          if (sp.investorName && sp.scriptName) {
+            contacts.push({
+              nameOfPerson: sp.investorName,
+              nameOfCompany: sp.dematCompany || 'Shares',
+              notes: `Source: Basic Details - Share Portfolio: ${sp.scriptName}`,
+              category: 'Portfolio Contact'
+            });
+          }
+        });
+      }
+
+      if (formData.insurancePortfolio && Array.isArray(formData.insurancePortfolio)) {
+        formData.insurancePortfolio.forEach(ip => {
+          if (ip.insurerName && ip.policyNumber) {
+            contacts.push({
+              nameOfPerson: ip.insurerName,
+              nameOfCompany: ip.insuranceCompany || 'Insurance',
+              notes: `Source: Basic Details - Insurance Portfolio: ${ip.policyName} (Policy: ${ip.policyNumber})`,
+              category: 'Portfolio Contact'
+            });
+          }
+        });
+      }
+
+      // Extract Card Support
+      if (formData.cards && Array.isArray(formData.cards)) {
+        formData.cards.forEach(card => {
+          if (card.bankName && card.customerCareNumber) {
+            contacts.push({
+              nameOfPerson: `${card.bankName} Card Support`,
+              nameOfCompany: card.bankName,
+              mobileNumber1: card.customerCareNumber,
+              emailId: card.customerCareEmail || '',
+              category: 'Customer Support',
+              notes: `Source: Basic Details - Card Support`,
+            });
+          }
+        });
+      }
+
+      // Extract Mobile Contact from Bills
+      if (formData.mobileBills && Array.isArray(formData.mobileBills)) {
+        formData.mobileBills.forEach(bill => {
+          if (bill.mobileNumber && bill.usedBy) {
+            contacts.push({
+              nameOfPerson: bill.usedBy,
+              mobileNumber1: bill.mobileNumber,
+              mobileNumber2: bill.alternateNo || '',
+              emailId: bill.emailId || '',
+              category: 'Personal',
+              notes: `Source: Basic Details - Mobile Bill User`,
+            });
+          }
+        });
+      }
+
+      // Extract Emergency Contact
+      if (formData.emergencyContact && formData.emergencyContact.name && formData.emergencyContact.mobile) {
+        contacts.push({
+          nameOfPerson: formData.emergencyContact.name,
+          mobileNumber1: formData.emergencyContact.mobile,
+          category: 'Emergency Contact',
+          notes: `Source: Basic Details - Emergency Contact - Relation: ${formData.emergencyContact.relation || ''}`,
+        });
+      }
+
+      // Extract Family Members
+      if (formData.familyMembers && Array.isArray(formData.familyMembers)) {
+        formData.familyMembers.forEach(member => {
+          if (member.name && (member.mobile || member.email)) {
+            contacts.push({
+              nameOfPerson: member.name,
+              mobileNumber1: member.mobile || '',
+              emailId: member.email || '',
+              category: 'Family',
+              notes: `Source: Basic Details - Family Member - Relation: ${member.relation || ''}`,
+            });
+          }
+        });
+      }
+      break;
+
+    case 'OnlineAccessDetails':
+      // Extract recovery contact
+      if (formData.serviceName && (formData.recoveryPhone || formData.recoveryEmail)) {
+        contacts.push({
+          nameOfPerson: `${formData.serviceName} Recovery`,
+          nameOfCompany: formData.serviceName,
+          mobileNumber1: formData.recoveryPhone || '',
+          emailId: formData.recoveryEmail || '',
+          category: 'Digital Service',
+          serviceProviderOrProductSeller: formData.category || 'Online Access',
+          notes: `Source: Online Access Details - Recovery for ${formData.serviceName}`,
+        });
+      }
+      break;
+
+    case 'TelephoneConversation':
+      // Extract call contact
+      if (formData.contactName && formData.phoneNumber) {
+        contacts.push({
+          nameOfPerson: formData.contactName,
+          mobileNumber1: formData.phoneNumber,
+          category: 'Call Contact',
+          notes: `Source: Telephone Conversation - ${formData.topic || 'Call'}`,
         });
       }
       break;

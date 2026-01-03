@@ -63,14 +63,18 @@ const YearlyCalendar = () => {
           fetchedEvents = results.flatMap(r => r.events || []);
         } else {
           const year = currentDate.getFullYear();
+          console.log('Fetching year events for:', year);
           const response = await calendarAPI.getYearEvents(year);
           fetchedEvents = response.events || [];
+          console.log('Fetched events:', fetchedEvents.length, fetchedEvents);
         }
       } else {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth() + 1;
+        console.log('Fetching month events for:', year, month);
         const response = await calendarAPI.getMonthEvents(year, month);
         fetchedEvents = response.events || [];
+        console.log('Fetched events:', fetchedEvents.length, fetchedEvents);
       }
 
       setEvents(fetchedEvents);
@@ -88,9 +92,15 @@ const YearlyCalendar = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = events.filter(event =>
-      selectedCategories.includes(event.category || 'other')
-    );
+    console.log('Filtering events. Total:', events.length, 'Selected categories:', selectedCategories);
+    const filtered = events.filter(event => {
+      const matches = selectedCategories.includes(event.category || 'other');
+      if (!matches) {
+        console.log('Event filtered out:', event.title, 'category:', event.category);
+      }
+      return matches;
+    });
+    console.log('Filtered events:', filtered.length, filtered);
     setFilteredEvents(filtered);
   }, [events, selectedCategories]);
 
@@ -529,7 +539,7 @@ const YearlyCalendar = () => {
         ) : (
           <div className="day-events-list">
             {dayEvents.map(event => {
-              const category = CATEGORIES.find(c => c.value === event.category);
+              const category = categories.find(c => c.value === event.category);
 
               return (
                 <div

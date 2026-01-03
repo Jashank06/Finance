@@ -1,5 +1,15 @@
 // Three-level category hierarchy for transaction categorization
 export const categoryHierarchy = {
+    "Income": {
+        "Salary": [
+            "Name of Company",
+            "Other"
+        ],
+        "Business": [
+            "Name of Company",
+            "Other"
+        ]
+    },
     "Fixed & Contractual Costs (Needs)": {
         "Housing": [
             "Rent / Mortgage Payment",

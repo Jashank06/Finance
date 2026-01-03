@@ -4,6 +4,7 @@ import { staticAPI } from '../../../utils/staticAPI';
 import './Static.css';
 import '../../../components/Modal.css';
 import { syncMobileEmailFromFamilyProfile } from '../../../utils/mobileEmailSyncUtil';
+import { syncSingleFamilyEvent } from '../../../utils/familyEventSync';
 import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
 const FamilyProfile = () => {
@@ -11,6 +12,7 @@ const FamilyProfile = () => {
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [editingMemberIndex, setEditingMemberIndex] = useState(null);
   const [members, setMembers] = useState([]);
+  const [syncing, setSyncing] = useState(false);
   const [memberFormData, setMemberFormData] = useState({
     name: '',
     relation: '',
@@ -43,7 +45,14 @@ const FamilyProfile = () => {
       const response = await staticAPI.getFamilyProfile();
       if (response.data && response.data.length > 0) {
         const data = response.data[0];
-        setMembers(data.members || []);
+
+        // Filter out demo members
+        const demoNames = ['John Doe', 'Jane Doe', 'Johnny Doe', 'Robert Doe'];
+        const cleanMembers = (data.members || []).filter(
+          member => !demoNames.includes(member.name)
+        );
+
+        setMembers(cleanMembers);
       }
     } catch (error) {
       console.error('Error fetching family profile:', error);
@@ -119,8 +128,33 @@ const FamilyProfile = () => {
 
       // Sync to Mobile & Email Details
       const syncResult = await syncMobileEmailFromFamilyProfile(memberFormData);
+
+      // Sync Birthday and Anniversary to Calendar
+      let calendarSyncMessages = [];
+      if (memberFormData.dateOfBirth) {
+        const birthdaySync = await syncSingleFamilyEvent(memberFormData, 'birthday');
+        if (birthdaySync.success && !birthdaySync.skipped) {
+          calendarSyncMessages.push('Birthday');
+        }
+      }
+      if (memberFormData.anniversaryDate) {
+        const anniversarySync = await syncSingleFamilyEvent(memberFormData, 'anniversary');
+        if (anniversarySync.success && !anniversarySync.skipped) {
+          calendarSyncMessages.push('Anniversary');
+        }
+      }
+
+      // Show success messages
+      let successMessage = 'Member saved successfully!';
       if (syncResult.count > 0) {
-        alert(`Synced ${syncResult.count} contact(s) to Mobile & Email Details`);
+        successMessage += `\n✓ Synced ${syncResult.count} contact(s) to Mobile & Email Details`;
+      }
+      if (calendarSyncMessages.length > 0) {
+        successMessage += `\n✓ Added ${calendarSyncMessages.join(' and ')} to Family Calendar`;
+      }
+
+      if (syncResult.count > 0 || calendarSyncMessages.length > 0) {
+        alert(successMessage);
       }
 
       setShowMemberForm(false);
@@ -158,6 +192,39 @@ const FamilyProfile = () => {
     setEditingMemberIndex(null);
   };
 
+  const syncAllFamilyEventsToCalendar = async () => {
+    if (!window.confirm('This will sync all birthdays and anniversaries to the Family Calendar. Continue?')) {
+      return;
+    }
+
+    try {
+      setSyncing(true);
+      let syncedCount = 0;
+
+      for (const member of members) {
+        if (member.dateOfBirth) {
+          const birthdaySync = await syncSingleFamilyEvent(member, 'birthday');
+          if (birthdaySync.success && !birthdaySync.skipped) {
+            syncedCount++;
+          }
+        }
+        if (member.anniversaryDate) {
+          const anniversarySync = await syncSingleFamilyEvent(member, 'anniversary');
+          if (anniversarySync.success && !anniversarySync.skipped) {
+            syncedCount++;
+          }
+        }
+      }
+
+      alert(`✓ Successfully synced ${syncedCount} family events to the calendar!`);
+    } catch (error) {
+      console.error('Error syncing family events:', error);
+      alert('Failed to sync family events. Please try again.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
 
 
   if (loading) {
@@ -189,9 +256,22 @@ const FamilyProfile = () => {
           <div className="section-header">
             <FiUsers className="section-icon" />
             <h3>Family Members</h3>
-            <button className="btn-primary" onClick={handleAddNewMember}>
-              <FiPlus /> Add Member
-            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                className="btn-primary" 
+                onClick={syncAllFamilyEventsToCalendar}
+                disabled={syncing || members.length === 0}
+                style={{ 
+                  background: syncing ? '#9ca3af' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  cursor: syncing || members.length === 0 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {syncing ? '🔄 Syncing...' : '📅 Sync to Calendar'}
+              </button>
+              <button className="btn-primary" onClick={handleAddNewMember}>
+                <FiPlus /> Add Member
+              </button>
+            </div>
           </div>
           <div className="section-content">
             {members && members.length > 0 ? (

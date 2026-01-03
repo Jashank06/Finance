@@ -262,7 +262,6 @@ const BasicDetailsSchema = new mongoose.Schema({
     lastPremiumPayingDate: String,
     maturityDate: String,
     sumAssured: String,
-    sumAssured: String,
     nominee: String
   }],
   loansPortfolio: [{

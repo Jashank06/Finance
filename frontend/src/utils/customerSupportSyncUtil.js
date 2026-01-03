@@ -181,6 +181,82 @@ const extractCustomerSupportFromForm = (formData, formType) => {
             break;
 
         case 'BasicDetails':
+            // Extract Mutual Fund support
+            if (formData.mutualFunds && Array.isArray(formData.mutualFunds)) {
+                formData.mutualFunds.forEach(mf => {
+                    if (mf.fundHouse && (mf.customerCareNumber || mf.customerCareEmail)) {
+                        supportEntries.push({
+                            type: 'Customer Service',
+                            companyName: mf.fundHouse,
+                            serviceCategory: 'Investment Support',
+                            contactPerson: '',
+                            phone: mf.customerCareNumber || '',
+                            email: mf.customerCareEmail || '',
+                            website: '',
+                            supportHours: '',
+                            notes: `Source: Basic Details - Mutual Fund Support - ${mf.fundHouse}\nMF Name: ${mf.mfName || 'N/A'}`,
+                        });
+                    }
+                });
+            }
+
+            // Extract Share support
+            if (formData.shares && Array.isArray(formData.shares)) {
+                formData.shares.forEach(share => {
+                    if (share.dematCompany && (share.customerCareNumber || share.customerCareEmail)) {
+                        supportEntries.push({
+                            type: 'Customer Service',
+                            companyName: share.dematCompany,
+                            serviceCategory: 'Investment Support',
+                            contactPerson: '',
+                            phone: share.customerCareNumber || '',
+                            email: share.customerCareEmail || '',
+                            website: '',
+                            supportHours: '',
+                            notes: `Source: Basic Details - Share Support - ${share.dematCompany}\nScript: ${share.scriptName || 'N/A'}`,
+                        });
+                    }
+                });
+            }
+
+            // Extract Insurance support
+            if (formData.insurance && Array.isArray(formData.insurance)) {
+                formData.insurance.forEach(ins => {
+                    if (ins.insuranceCompany && (ins.customerCareNumber || ins.customerCareEmail)) {
+                        supportEntries.push({
+                            type: 'Customer Service',
+                            companyName: ins.insuranceCompany,
+                            serviceCategory: 'Insurance Support',
+                            contactPerson: '',
+                            phone: ins.customerCareNumber || '',
+                            email: ins.customerCareEmail || '',
+                            website: '',
+                            supportHours: '',
+                            notes: `Source: Basic Details - Insurance Support - ${ins.insuranceCompany}\nPolicy: ${ins.policyName || 'N/A'}`,
+                        });
+                    }
+                });
+            }
+
+            // Extract Card support
+            if (formData.cards && Array.isArray(formData.cards)) {
+                formData.cards.forEach(card => {
+                    if (card.bankName && (card.customerCareNumber || card.customerCareEmail)) {
+                        supportEntries.push({
+                            type: 'Customer Service',
+                            companyName: `${card.bankName} Cards`,
+                            serviceCategory: 'Financial Support',
+                            contactPerson: '',
+                            phone: card.customerCareNumber || '',
+                            email: card.customerCareEmail || '',
+                            website: '',
+                            supportHours: '',
+                            notes: `Source: Basic Details - Card Support - ${card.bankName}\nCard: ${card.displayName || card.cardType || 'N/A'}`,
+                        });
+                    }
+                });
+            }
+
             // Extract Sub Broker customer support
             if (formData.subBrokers && Array.isArray(formData.subBrokers)) {
                 formData.subBrokers.forEach(broker => {

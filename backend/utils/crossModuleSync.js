@@ -153,16 +153,35 @@ const syncCalendarToReminder = async (event) => {
  * Sync Reminder to Calendar
  */
 const syncReminderToCalendar = async (reminder) => {
-    // Avoid double-sync loops
-    if (reminder.referenceType && reminder.referenceType !== 'CalendarEvent') {
+    // Avoid double-sync loops - but allow certain reference types to sync
+    // CalendarEvent -> already synced, skip
+    // Investment, Bill types -> handled separately, skip
+    // FamilyMember, BasicDetails (Birthday/Anniversary) -> SHOULD sync to calendar
+    if (reminder.referenceType === 'CalendarEvent') {
         return;
+    }
+    
+    // Block syncing for Investment/Bill types to avoid conflicts with their own sync logic
+    if (reminder.referenceType && reminder.referenceType.includes('Investment')) {
+        return;
+    }
+
+    // Determine calendar category based on reminder title or reference type
+    let category = 'other';
+    const titleLower = reminder.title.toLowerCase();
+    const refType = reminder.referenceType || '';
+    
+    if (titleLower.includes('birthday') || refType.includes('Birthday')) {
+        category = 'birthday';
+    } else if (titleLower.includes('anniversary') || refType.includes('Anniversary')) {
+        category = 'anniversary';
     }
 
     await syncToCalendar({
         userId: reminder.userId,
-        title: `Event: ${reminder.title}`,
+        title: reminder.title.replace(/^(Reminder:|Event:)\s*/i, ''),
         date: reminder.dateTime,
-        category: 'other',
+        category: category,
         referenceId: reminder._id,
         referenceType: 'Reminder',
         repeat: reminder.type === 'recurring' ? reminder.repeat : null,

@@ -37,7 +37,9 @@ const MultipleCalendars = () => {
       setLoading(true);
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
+      console.log('Multiple Calendars - Fetching events for:', year, month, 'Calendar filter:', selectedCalendar);
       const response = await calendarAPI.getMonthEvents(year, month, selectedCalendar);
+      console.log('Multiple Calendars - Fetched events:', response.events?.length, response.events);
       setEvents(response.events || []);
     } catch (error) {
       console.error('Error loading events:', error);
@@ -265,11 +267,16 @@ const MultipleCalendars = () => {
     if (!day) return [];
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
 
-    return events.filter(event => {
+    const filtered = events.filter(event => {
       const matchesDate = isEventOnDate(event, date);
       const matchesCalendar = selectedCalendar === 'all' || event.calendar === selectedCalendar;
+      if (day === 1 || day === 5 || day === 8) { // Log for specific days
+        console.log(`Day ${day}:`, event.title, 'matchesDate:', matchesDate, 'matchesCalendar:', matchesCalendar, 'event.calendar:', event.calendar);
+      }
       return matchesDate && matchesCalendar;
     });
+    
+    return filtered;
   };
 
   const handlePrevMonth = () => {

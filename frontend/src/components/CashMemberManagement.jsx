@@ -1046,17 +1046,17 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
                         </select>
                       </div>
 
-                      <div className="form-group">
+                      {/* <div className="form-group">
                         <label>Type of Transaction</label>
                         <select
                           value={transactionForm.transactionType}
                           onChange={(e) => setTransactionForm({ ...transactionForm, transactionType: e.target.value })}
                         >
                           <option value="">Select type...</option>
-                          <option value="credit">Credit (Deposit)</option>
+                          <option value="credit">Credit (Deposits)</option>
                           <option value="debit">Debit (Withdrawal)</option>
                         </select>
-                      </div>
+                      </div> */}
 
                       <div className="form-group">
                         <label>Expense Type</label>

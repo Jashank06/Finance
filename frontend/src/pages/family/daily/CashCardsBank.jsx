@@ -40,7 +40,7 @@ const CashCardsBank = () => {
   const bankFileInputRef = useRef(null);
   const [bankTransactionForm, setBankTransactionForm] = useState({
     accountId: '',
-    type: 'withdrawal',
+    type: 'debit',
     amount: '',
     merchant: '',
     category: 'other',
@@ -178,7 +178,7 @@ const CashCardsBank = () => {
   // Transaction form state
   const [transactionForm, setTransactionForm] = useState({
     cardId: '',
-    type: 'purchase',
+    type: 'debit',
     amount: '',
     merchant: '',
     category: 'other',
@@ -331,7 +331,7 @@ const CashCardsBank = () => {
   const resetTransactionForm = () => {
     setTransactionForm({
       cardId: '',
-      type: 'purchase',
+      type: 'debit',
       amount: '',
       merchant: '',
       category: 'other',
@@ -350,7 +350,7 @@ const CashCardsBank = () => {
   const resetBankTransactionForm = () => {
     setBankTransactionForm({
       accountId: '',
-      type: 'withdrawal',
+      type: 'debit',
       amount: '',
       merchant: '',
       category: 'other',
@@ -1394,11 +1394,8 @@ const CashCardsBank = () => {
                           value={transactionForm.type}
                           onChange={(e) => setTransactionForm({ ...transactionForm, type: e.target.value })}
                         >
-                          <option value="purchase">Purchase</option>
-                          <option value="payment">Payment</option>
-                          <option value="withdrawal">Cash Withdrawal</option>
-                          <option value="refund">Refund</option>
-                          <option value="fee">Fee/Charge</option>
+                          <option value="credit">Credit (Deposits)</option>
+                          <option value="debit">Debit (Withdrawal)</option>
                         </select>
                       </div>
                       <div className="form-group">
@@ -1450,10 +1447,18 @@ const CashCardsBank = () => {
                           required
                         >
                           <option value="">Select broader category...</option>
-                          {getBroaderCategories().map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                          <option value="Investment to Business">Investment to Business</option>
+                          {transactionForm.type === 'credit' ? (
+                            // Show only Income for Credit transactions
+                            <option value="Income">Income</option>
+                          ) : (
+                            // Show all expense categories for Debit transactions
+                            <>
+                              {getBroaderCategories().filter(cat => cat !== 'Income').map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))}
+                              <option value="Investment to Business">Investment to Business</option>
+                            </>
+                          )}
                         </select>
                       </div>
 
@@ -1503,7 +1508,15 @@ const CashCardsBank = () => {
                             required
                           >
                             <option value="">Select sub category...</option>
-                            {transactionForm.broaderCategory === 'Investment to Business' && transactionForm.mainCategory === 'Business' ? (
+                            {/* For Income -> Salary or Business, show company names */}
+                            {transactionForm.broaderCategory === 'Income' && (transactionForm.mainCategory === 'Salary' || transactionForm.mainCategory === 'Business') ? (
+                              <>
+                                {companyRecords.map(company => (
+                                  <option key={company._id || company.id} value={company.companyName}>{company.companyName}</option>
+                                ))}
+                                <option value="Other">Other</option>
+                              </>
+                            ) : transactionForm.broaderCategory === 'Investment to Business' && transactionForm.mainCategory === 'Business' ? (
                               <>
                                 {companyRecords.map(company => (
                                   <option key={company._id || company.id} value={company.companyName}>{company.companyName}</option>
@@ -1540,17 +1553,17 @@ const CashCardsBank = () => {
                           required
                         />
                       </div>
-                      <div className="form-group">
+                      {/* <div className="form-group">
                         <label>Type of Transaction:</label>
                         <select
                           value={transactionForm.transactionType}
                           onChange={(e) => setTransactionForm({ ...transactionForm, transactionType: e.target.value })}
                         >
                           <option value="">Select type...</option>
-                          <option value="credit">Credit (Deposit)</option>
+                          <option value="credit">Credit (Deposits)</option>
                           <option value="debit">Debit (Withdrawal)</option>
                         </select>
-                      </div>
+                      </div> */}
                       <div className="form-group">
                         <label>Expense Type:</label>
                         <select
@@ -2187,12 +2200,8 @@ const CashCardsBank = () => {
                           onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, type: e.target.value })}
                           required
                         >
-                          <option value="withdrawal">Withdrawal</option>
-                          <option value="deposit">Deposit</option>
-                          <option value="transfer">Transfer</option>
-                          <option value="payment">Payment</option>
-                          <option value="fee">Fee</option>
-                          <option value="interest">Interest</option>
+                          <option value="credit">Credit (Deposits)</option>
+                          <option value="debit">Debit (Withdrawal)</option>
                         </select>
                       </div>
                       <div className="form-group">
@@ -2231,10 +2240,18 @@ const CashCardsBank = () => {
                           required
                         >
                           <option value="">Select broader category...</option>
-                          {getBroaderCategories().map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                          <option value="Investment to Business">Investment to Business</option>
+                          {bankTransactionForm.type === 'credit' ? (
+                            // Show only Income for Credit transactions
+                            <option value="Income">Income</option>
+                          ) : (
+                            // Show all expense categories for Debit transactions
+                            <>
+                              {getBroaderCategories().filter(cat => cat !== 'Income').map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))}
+                              <option value="Investment to Business">Investment to Business</option>
+                            </>
+                          )}
                         </select>
                       </div>
 
@@ -2284,7 +2301,15 @@ const CashCardsBank = () => {
                             required
                           >
                             <option value="">Select sub category...</option>
-                            {bankTransactionForm.broaderCategory === 'Investment to Business' && bankTransactionForm.mainCategory === 'Business' ? (
+                            {/* For Income -> Salary or Business, show company names */}
+                            {bankTransactionForm.broaderCategory === 'Income' && (bankTransactionForm.mainCategory === 'Salary' || bankTransactionForm.mainCategory === 'Business') ? (
+                              <>
+                                {companyRecords.map(company => (
+                                  <option key={company._id || company.id} value={company.companyName}>{company.companyName}</option>
+                                ))}
+                                <option value="Other">Other</option>
+                              </>
+                            ) : bankTransactionForm.broaderCategory === 'Investment to Business' && bankTransactionForm.mainCategory === 'Business' ? (
                               <>
                                 {companyRecords.map(company => (
                                   <option key={company._id || company.id} value={company.companyName}>{company.companyName}</option>
@@ -2321,17 +2346,17 @@ const CashCardsBank = () => {
                           required
                         />
                       </div>
-                      <div className="form-group">
+                      {/* <div className="form-group">
                         <label>Type of Transaction:</label>
                         <select
                           value={bankTransactionForm.transactionType}
                           onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, transactionType: e.target.value })}
                         >
                           <option value="">Select type...</option>
-                          <option value="credit">Credit (Deposit)</option>
+                          <option value="credit">Credit (Deposits)</option>
                           <option value="debit">Debit (Withdrawal)</option>
                         </select>
-                      </div>
+                      </div> */}
                       <div className="form-group">
                         <label>Expense Type:</label>
                         <select

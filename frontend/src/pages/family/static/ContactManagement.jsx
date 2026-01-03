@@ -55,7 +55,14 @@ const ContactManagement = () => {
     try {
       const res = await investmentAPI.getAll(CATEGORY_KEY);
       const list = (res.data.investments || []).map(fromInvestment);
-      setEntries(list);
+
+      // Filter out demo contacts
+      const demoNames = ['John Doe', 'Jane Doe', 'Johnny Doe', 'Robert Doe'];
+      const cleanList = list.filter(
+        contact => !demoNames.includes(contact.nameOfPerson)
+      );
+
+      setEntries(cleanList);
     } catch (e) {
       console.error('Error fetching contacts:', e);
     }
@@ -63,15 +70,7 @@ const ContactManagement = () => {
 
   useEffect(() => {
     trackFeatureUsage('/family/static/contact-management', 'view');
-    (async () => {
-      try {
-        const res = await investmentAPI.getAll(CATEGORY_KEY);
-        const list = (res.data.investments || []).map(fromInvestment);
-        setEntries(list);
-      } catch (e) {
-        console.error('Error fetching contacts:', e);
-      }
-    })();
+    fetchEntries();
   }, []);
 
   const resetForm = () => {
