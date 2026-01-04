@@ -14,12 +14,13 @@ const BudgetPlanTab = () => {
     const [showIncomeForm, setShowIncomeForm] = useState(false);
     const [calculatedMonthlyIncome, setCalculatedMonthlyIncome] = useState(null);
     const [loadingIncome, setLoadingIncome] = useState(false);
+    const [averageMonths, setAverageMonths] = useState(1); // Default to 1 month
 
     useEffect(() => {
     trackFeatureUsage('/family/monitoring/budget-plan', 'view');
         fetchBudgetPlans();
         fetchCurrentPlanAndAnalysis();
-        fetchMonthlyIncome();
+        fetchMonthlyIncome(1); // Fetch with default 1 month
     }, []);
 
     const fetchBudgetPlans = async () => {
@@ -31,21 +32,36 @@ const BudgetPlanTab = () => {
         }
     };
 
-    const fetchMonthlyIncome = async () => {
+    const fetchMonthlyIncome = async (months = 1) => {
         setLoadingIncome(true);
         try {
-            const response = await api.get('/cashflow/monthly-income');
+            const response = await api.get(`/cashflow/monthly-income?months=${months}`);
             if (response.data.success) {
                 setCalculatedMonthlyIncome(response.data.data);
                 // Auto-populate monthlyIncome if not set
-                if (!monthlyIncome && response.data.data.lastMonthIncome > 0) {
-                    setMonthlyIncome(response.data.data.lastMonthIncome.toFixed(2));
+                const avgIncome = response.data.data.averageIncome || response.data.data.lastMonthIncome || 0;
+                if (!monthlyIncome && avgIncome > 0) {
+                    setMonthlyIncome(avgIncome.toFixed(2));
                 }
+                return response.data.data;
             }
         } catch (error) {
             console.error('Error fetching monthly income:', error);
         }
         setLoadingIncome(false);
+        return null;
+    };
+
+    // Handle average months change
+    const handleAverageMonthsChange = async (months) => {
+        setAverageMonths(months);
+        const newIncomeData = await fetchMonthlyIncome(months);
+        
+        // Update form with new average immediately
+        if (newIncomeData) {
+            const avgIncome = newIncomeData.averageIncome?.toFixed(2) || newIncomeData.lastMonthIncome?.toFixed(2) || '';
+            setMonthlyIncome(avgIncome);
+        }
     };
 
     const fetchCurrentPlanAndAnalysis = async () => {
@@ -190,6 +206,45 @@ const BudgetPlanTab = () => {
                 {selectedPlan && (
                     <div className="income-form-section">
                         <h3>💰 Enter Your Monthly Income</h3>
+                        
+                        {/* Average Months Selector */}
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
+                                Calculate Average From <span style={{ color: '#ef4444' }}>*</span>
+                            </label>
+                            <select
+                                value={averageMonths}
+                                onChange={(e) => handleAverageMonthsChange(parseInt(e.target.value))}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 12px',
+                                    borderRadius: '8px',
+                                    border: '2px solid #e5e7eb',
+                                    fontSize: '14px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <option value={1}>Last 1 Month</option>
+                                <option value={2}>Last 2 Months Average</option>
+                                <option value={3}>Last 3 Months Average</option>
+                                <option value={4}>Last 4 Months Average</option>
+                                <option value={5}>Last 5 Months Average</option>
+                                <option value={6}>Last 6 Months Average</option>
+                                <option value={12}>Last 12 Months Average</option>
+                            </select>
+                            <small style={{ color: '#6b7280', fontSize: '0.875rem', display: 'block', marginTop: '4px' }}>
+                                {loadingIncome ? (
+                                    '⏳ Calculating average from your transactions...'
+                                ) : calculatedMonthlyIncome ? (
+                                    <>
+                                        📊 Calculated from {averageMonths} month{averageMonths > 1 ? 's' : ''} of data
+                                    </>
+                                ) : (
+                                    'Select how many months to average'
+                                )}
+                            </small>
+                        </div>
+
                         <div className="income-input-group">
                             <span className="input-prefix">$</span>
                             <input
@@ -204,14 +259,13 @@ const BudgetPlanTab = () => {
                         </div>
                         <small style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '8px', display: 'block' }}>
                             {loadingIncome ? (
-                                '⏳ Calculating from your transactions...'
+                                '⏳ Calculating...'
                             ) : calculatedMonthlyIncome ? (
                                 <>
-                                    💡 Last month's income: <strong>${calculatedMonthlyIncome.lastMonthIncome.toFixed(2)}</strong>
-                                    {' '}({calculatedMonthlyIncome.lastMonthPeriod.start} to {calculatedMonthlyIncome.lastMonthPeriod.end})
+                                    💡 {averageMonths === 1 ? 'Last month' : `${averageMonths}-month average`}: <strong>${calculatedMonthlyIncome.averageIncome?.toFixed(2) || calculatedMonthlyIncome.lastMonthIncome?.toFixed(2) || '0.00'}</strong>
                                 </>
                             ) : (
-                                'Auto-filled with last month\'s income data'
+                                'Enter your monthly income'
                             )}
                         </small>
                         <button

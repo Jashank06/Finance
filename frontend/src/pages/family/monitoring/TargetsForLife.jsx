@@ -30,24 +30,42 @@ const TargetsForLife = () => {
     });
     const [calculatedMonthlyExpenses, setCalculatedMonthlyExpenses] = useState(null);
     const [loadingExpenses, setLoadingExpenses] = useState(false);
+    const [averageMonths, setAverageMonths] = useState(1); // Default to 1 month
 
     useEffect(() => {
         trackFeatureUsage('/family/monitoring/targets-for-life', 'view');
         fetchData();
-        fetchMonthlyExpenses();
+        fetchMonthlyExpenses(1); // Fetch with default 1 month
     }, []);
 
-    const fetchMonthlyExpenses = async () => {
+    const fetchMonthlyExpenses = async (months = 1) => {
         try {
             setLoadingExpenses(true);
-            const response = await api.get('/cashflow-analysis/monthly-expenses');
+            const response = await api.get(`/cashflow-analysis/monthly-expenses?months=${months}`);
             if (response.data.success) {
                 setCalculatedMonthlyExpenses(response.data.data);
+                return response.data.data;
             }
         } catch (error) {
             console.error('Error fetching monthly expenses:', error);
         } finally {
             setLoadingExpenses(false);
+        }
+        return null;
+    };
+
+    // Handle average months change
+    const handleAverageMonthsChange = async (months) => {
+        setAverageMonths(months);
+        const newExpensesData = await fetchMonthlyExpenses(months);
+        
+        // Update form with new average immediately
+        if (newExpensesData && targetForm.goalType === 'Emergency Fund') {
+            const avgExpense = newExpensesData.averageExpenses?.toFixed(2) || newExpensesData.lastMonthExpenses?.toFixed(2) || '';
+            setTargetForm(prev => ({
+                ...prev,
+                monthlyExpenses: avgExpense
+            }));
         }
     };
 
@@ -76,7 +94,7 @@ const TargetsForLife = () => {
                 recommendedInvestmentVehicle: 'High Yield Savings Account / Liquid Funds',
                 riskTolerance: 'Very Low',
                 // Auto-populate monthly expenses from calculated data
-                monthlyExpenses: calculatedMonthlyExpenses?.lastMonthExpenses?.toFixed(2) || '',
+                monthlyExpenses: calculatedMonthlyExpenses?.averageExpenses?.toFixed(2) || calculatedMonthlyExpenses?.lastMonthExpenses?.toFixed(2) || '',
                 monthsOfCoverage: '6' // Default to 6 months
             };
         }
@@ -96,7 +114,7 @@ const TargetsForLife = () => {
             specificGoal: 'Emergency Fund',
             recommendedInvestmentVehicle: 'High Yield Savings Account / Liquid Funds',
             riskTolerance: 'Very Low',
-            monthlyExpenses: calculatedMonthlyExpenses?.lastMonthExpenses?.toFixed(2) || '',
+            monthlyExpenses: calculatedMonthlyExpenses?.averageExpenses?.toFixed(2) || calculatedMonthlyExpenses?.lastMonthExpenses?.toFixed(2) || '',
             monthsOfCoverage: '6'
         }));
         setShowEmergencyFundForm(true);
@@ -453,6 +471,35 @@ const TargetsForLife = () => {
 
                         <div className="target-form-premium">
                             <div className="form-grid">
+                                <div className="form-group-premium full-width">
+                                    <label>Calculate Average From <span className="required">*</span></label>
+                                    <select
+                                        value={averageMonths}
+                                        onChange={(e) => handleAverageMonthsChange(parseInt(e.target.value))}
+                                        className="form-input"
+                                        style={{ marginBottom: '12px' }}
+                                    >
+                                        <option value={1}>Last 1 Month</option>
+                                        <option value={2}>Last 2 Months Average</option>
+                                        <option value={3}>Last 3 Months Average</option>
+                                        <option value={4}>Last 4 Months Average</option>
+                                        <option value={5}>Last 5 Months Average</option>
+                                        <option value={6}>Last 6 Months Average</option>
+                                        <option value={12}>Last 12 Months Average</option>
+                                    </select>
+                                    <small style={{ color: '#6b7280', fontSize: '0.875rem', display: 'block' }}>
+                                        {loadingExpenses ? (
+                                            '⏳ Calculating average from your transactions...'
+                                        ) : calculatedMonthlyExpenses ? (
+                                            <>
+                                                📊 Calculated from {averageMonths} month{averageMonths > 1 ? 's' : ''} of data
+                                            </>
+                                        ) : (
+                                            'Select how many months to average'
+                                        )}
+                                    </small>
+                                </div>
+
                                 <div className="form-group-premium">
                                     <label>Monthly Expenses <span className="required">*</span></label>
                                     <div className="input-with-prefix">
@@ -469,14 +516,13 @@ const TargetsForLife = () => {
                                     </div>
                                     <small style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '4px', display: 'block' }}>
                                         {loadingExpenses ? (
-                                            '⏳ Calculating from your transactions...'
+                                            '⏳ Calculating...'
                                         ) : calculatedMonthlyExpenses ? (
                                             <>
-                                                💡 Last month's expenses: <strong>${calculatedMonthlyExpenses.lastMonthExpenses.toFixed(2)}</strong>
-                                                {' '}({calculatedMonthlyExpenses.lastMonthPeriod.start} to {calculatedMonthlyExpenses.lastMonthPeriod.end})
+                                                💡 {averageMonths === 1 ? 'Last month' : `${averageMonths}-month average`}: <strong>${calculatedMonthlyExpenses.averageExpenses?.toFixed(2) || calculatedMonthlyExpenses.lastMonthExpenses?.toFixed(2) || '0.00'}</strong>
                                             </>
                                         ) : (
-                                            'Auto-filled with last month\'s expense data'
+                                            'Enter your monthly expenses'
                                         )}
                                     </small>
                                 </div>

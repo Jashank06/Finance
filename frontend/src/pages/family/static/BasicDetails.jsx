@@ -3,6 +3,7 @@ import { FiUser, FiPhone, FiMail, FiMapPin, FiCalendar, FiEdit2, FiSave, FiX, Fi
 import { staticAPI } from '../../../utils/staticAPI';
 import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
 import { syncCustomerSupportFromForm } from '../../../utils/customerSupportSyncUtil';
+import { syncBillScheduleFromForm } from '../../../utils/billScheduleSyncUtil';
 import './Static.css';
 import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
 
@@ -1137,6 +1138,8 @@ const BasicDetails = () => {
         await syncContactsFromForm(data, 'BasicDetails');
         // Sync customer support
         await syncCustomerSupportFromForm(data, 'BasicDetails');
+        // Sync bill schedule (Mobile Bill Info)
+        await syncBillScheduleFromForm(data, 'BasicDetails');
       }
 
       setEditingSection(null);
@@ -1199,6 +1202,7 @@ const BasicDetails = () => {
       // Trigger sync for all sections
       await syncContactsFromForm(data, 'BasicDetails');
       await syncCustomerSupportFromForm(response.data, 'BasicDetails');
+      await syncBillScheduleFromForm(data, 'BasicDetails');
 
       setEditMode(false);
       setEditingSection(null);

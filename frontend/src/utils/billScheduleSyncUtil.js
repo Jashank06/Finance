@@ -355,6 +355,30 @@ const extractBillsFromForm = (formData, formType) => {
             }
             break;
 
+        case 'BasicDetails':
+            if (formData.mobileBills && Array.isArray(formData.mobileBills)) {
+                formData.mobileBills.forEach(bill => {
+                    if (bill.mobileNumber && bill.finalBillPaymentDate) {
+                        bills.push({
+                            billType: 'Mobile',
+                            billName: `${bill.usedBy || 'Mobile'} (${bill.mobileNumber})`,
+                            provider: 'Mobile Carrier', // Generic as specific carrier isn't in BasicDetails.jsx schema
+                            accountNumber: bill.mobileNumber || '',
+                            cycle: 'monthly',
+                            amount: 0, // Amount not specified in Mobile Bill section of BasicDetails
+                            dueDate: bill.finalBillPaymentDate,
+                            autoDebit: false,
+                            paymentMethod: 'UPI',
+                            status: 'pending',
+                            startDate: new Date().toISOString().slice(0, 10),
+                            source: 'BasicDetails',
+                            notes: `Used By: ${bill.usedBy || 'N/A'}, Best Pay Date: ${bill.bestBillPaymentDate || 'N/A'}`
+                        });
+                    }
+                });
+            }
+            break;
+
         default:
             console.warn(`Unknown form type for bill sync: ${formType}`);
             break;
@@ -381,7 +405,7 @@ const findExistingBill = async (bill) => {
             const billProvider = (bill.provider || '').toLowerCase().trim();
             const bAccount = (b.accountNumber || '').toLowerCase().trim();
             const billAccount = (bill.accountNumber || '').toLowerCase().trim();
-            
+
             let notes = {};
             try { notes = b.notes ? JSON.parse(b.notes) : {}; } catch { }
             const bSource = (notes.syncedFrom || notes.source || '').toLowerCase().trim();
@@ -396,7 +420,7 @@ const findExistingBill = async (bill) => {
             if (bProvider === billProvider && !billAccount && bSource === billSource) {
                 return notes.billType === bill.billType;
             }
-            
+
             // For MembershipList, also match by bill name to distinguish Expiry vs Renewal
             if (billSource === 'membershiplist' && bSource === 'membershiplist') {
                 const bName = (b.name || '').toLowerCase().trim();
@@ -467,7 +491,7 @@ const cleanupOldMembershipBills = async (organizationName, membershipNumber) => 
         const oldBills = bills.filter(b => {
             const bProvider = (b.provider || '').toLowerCase().trim();
             const bAccount = (b.accountNumber || '').toLowerCase().trim();
-            
+
             let notes = {};
             try { notes = b.notes ? JSON.parse(b.notes) : {}; } catch { }
             const bSource = (notes.syncedFrom || notes.source || '').toLowerCase().trim();

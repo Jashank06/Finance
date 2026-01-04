@@ -95,14 +95,26 @@ const syncReminder = async ({
         // Check if reminder exists
         const existingReminder = await Reminder.findOne(query);
 
+        let savedReminder;
         if (existingReminder) {
             // Update existing
             Object.assign(existingReminder, reminderData);
             await existingReminder.save();
+            savedReminder = existingReminder;
         } else {
             // Create new
-            await Reminder.create(reminderData);
+            savedReminder = await Reminder.create(reminderData);
         }
+
+        // Sync to Calendar (for Birthday, Anniversary, etc.)
+        try {
+            const { syncReminderToCalendar } = require('./crossModuleSync');
+            await syncReminderToCalendar(savedReminder);
+        } catch (syncError) {
+            console.error('Error syncing reminder to calendar:', syncError);
+        }
+
+        return savedReminder;
     } catch (error) {
         console.error('Error syncing reminder:', error);
     }
@@ -280,6 +292,43 @@ const syncBasicDetailsToReminders = async (details) => {
                     referenceId: policy._id,
                     referenceType: 'BasicDetails_Insurance_Maturity',
                     daysBefore: 30
+                });
+            }
+        }
+    }
+
+    // 5. Mobile Bill Information
+    if (details.mobileBills && Array.isArray(details.mobileBills)) {
+        for (const bill of details.mobileBills) {
+            // Reminder for Best Bill Payment Date
+            if (bill.bestBillPaymentDate) {
+                await syncReminder({
+                    userId: details.userId,
+                    title: `Best Bill Payment: ${bill.usedBy || 'Mobile'} (${bill.mobileNumber})`,
+                    date: bill.bestBillPaymentDate,
+                    category: 'bills',
+                    referenceId: bill._id,
+                    referenceType: 'BasicDetails_MobileBill_Best',
+                    description: `Best payment date for ${bill.mobileNumber} used by ${bill.usedBy || 'N/A'}`,
+                    recurring: true,
+                    frequency: 'monthly',
+                    daysBefore: 2
+                });
+            }
+
+            // Reminder for Final Bill Payment Date
+            if (bill.finalBillPaymentDate) {
+                await syncReminder({
+                    userId: details.userId,
+                    title: `Final Bill Payment: ${bill.usedBy || 'Mobile'} (${bill.mobileNumber})`,
+                    date: bill.finalBillPaymentDate,
+                    category: 'bills',
+                    referenceId: bill._id,
+                    referenceType: 'BasicDetails_MobileBill_Final',
+                    description: `Final payment date for ${bill.mobileNumber} used by ${bill.usedBy || 'N/A'}`,
+                    recurring: true,
+                    frequency: 'monthly',
+                    daysBefore: 3
                 });
             }
         }
