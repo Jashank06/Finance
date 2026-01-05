@@ -73,7 +73,15 @@ router.post('/', authMiddleware, async (req, res) => {
     
     res.status(201).json(populatedTransaction);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating transaction', error: error.message });
+    console.error('Error creating transaction:', error);
+    res.status(500).json({ 
+      message: 'Error creating transaction', 
+      error: error.message,
+      details: error.errors ? Object.keys(error.errors).map(key => ({
+        field: key,
+        message: error.errors[key].message
+      })) : undefined
+    });
   }
 });
 

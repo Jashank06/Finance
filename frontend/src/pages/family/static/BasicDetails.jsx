@@ -605,31 +605,53 @@ const BasicDetails = () => {
     }));
   };
 
-  const addMutualFund = () => {
+  const addMutualFund = async () => {
     if (newMutualFund.fundHouse && newMutualFund.mfName) {
-      setFormData(prev => ({
-        ...prev,
-        mutualFunds: [...prev.mutualFunds, { ...newMutualFund }]
-      }));
-      setNewMutualFund({
-        fundHouse: '',
-        modeOfHolding: '',
-        holdingType: '',
-        investorName: '',
-        ucc: '',
-        mfName: '',
-        folioNo: '',
-        registeredMobile: '',
-        registeredBank: '',
-        registeredAddress: '',
-        nominee: '',
-        customerCareNumber: '',
-        customerCareEmail: '',
-        rmName: '',
-        rmMobile: '',
-        rmEmail: '',
-        branchAddress: ''
-      });
+      const updatedData = {
+        ...formData,
+        mutualFunds: [...formData.mutualFunds, { ...newMutualFund }]
+      };
+      
+      try {
+        setLoading(true);
+        await staticAPI.updateBasicDetails(formData._id, updatedData);
+        setFormData(updatedData);
+        setNewMutualFund({
+          fundHouse: '',
+          modeOfHolding: '',
+          holdingType: '',
+          investorName: '',
+          ucc: '',
+          mfName: '',
+          folioNo: '',
+          registeredMobile: '',
+          registeredBank: '',
+          registeredAddress: '',
+          nominee: '',
+          customerCareNumber: '',
+          customerCareEmail: '',
+          rmName: '',
+          rmMobile: '',
+          rmEmail: '',
+          branchAddress: ''
+        });
+        setEditingSection(null);
+        
+        // Sync contacts and customer support
+        try {
+          await syncContactsFromForm(updatedData, 'BasicDetails');
+          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+        } catch (syncError) {
+          console.error('Error syncing contacts/support:', syncError);
+        }
+        
+        alert('Mutual Fund added successfully!');
+      } catch (error) {
+        console.error('Error adding mutual fund:', error);
+        alert('Failed to add mutual fund');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -651,31 +673,53 @@ const BasicDetails = () => {
     }));
   };
 
-  const addShare = () => {
+  const addShare = async () => {
     if (newShare.dematCompany && newShare.scriptName) {
-      setFormData(prev => ({
-        ...prev,
-        shares: [...prev.shares, { ...newShare }]
-      }));
-      setNewShare({
-        dematCompany: '',
-        modeOfHolding: '',
-        holdingType: '',
-        investorName: '',
-        tradingId: '',
-        dpId: '',
-        scriptName: '',
-        registeredMobile: '',
-        registeredBank: '',
-        registeredAddress: '',
-        nominee: '',
-        customerCareNumber: '',
-        customerCareEmail: '',
-        rmName: '',
-        rmMobile: '',
-        rmEmail: '',
-        branchAddress: ''
-      });
+      const updatedData = {
+        ...formData,
+        shares: [...formData.shares, { ...newShare }]
+      };
+      
+      try {
+        setLoading(true);
+        await staticAPI.updateBasicDetails(formData._id, updatedData);
+        setFormData(updatedData);
+        setNewShare({
+          dematCompany: '',
+          modeOfHolding: '',
+          holdingType: '',
+          investorName: '',
+          tradingId: '',
+          dpId: '',
+          scriptName: '',
+          registeredMobile: '',
+          registeredBank: '',
+          registeredAddress: '',
+          nominee: '',
+          customerCareNumber: '',
+          customerCareEmail: '',
+          rmName: '',
+          rmMobile: '',
+          rmEmail: '',
+          branchAddress: ''
+        });
+        setEditingSection(null);
+        
+        // Sync contacts and customer support
+        try {
+          await syncContactsFromForm(updatedData, 'BasicDetails');
+          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+        } catch (syncError) {
+          console.error('Error syncing contacts/support:', syncError);
+        }
+        
+        alert('Share added successfully!');
+      } catch (error) {
+        console.error('Error adding share:', error);
+        alert('Failed to add share');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -697,31 +741,53 @@ const BasicDetails = () => {
     }));
   };
 
-  const addInsurance = () => {
+  const addInsurance = async () => {
     if (newInsurance.insuranceCompany && newInsurance.policyName) {
-      setFormData(prev => ({
-        ...prev,
-        insurance: [...prev.insurance, { ...newInsurance }]
-      }));
-      setNewInsurance({
-        insuranceCompany: '',
-        insuranceType: '',
-        insuranceSubType: '',
-        policyPurpose: '',
-        insurerName: '',
-        policyName: '',
-        policyNumber: '',
-        registeredMobile: '',
-        registeredBank: '',
-        registeredAddress: '',
-        nominee: '',
-        customerCareNumber: '',
-        customerCareEmail: '',
-        rmName: '',
-        rmMobile: '',
-        rmEmail: '',
-        branchAddress: ''
-      });
+      const updatedData = {
+        ...formData,
+        insurance: [...formData.insurance, { ...newInsurance }]
+      };
+      
+      try {
+        setLoading(true);
+        await staticAPI.updateBasicDetails(formData._id, updatedData);
+        setFormData(updatedData);
+        setNewInsurance({
+          insuranceCompany: '',
+          insuranceType: '',
+          insuranceSubType: '',
+          policyPurpose: '',
+          insurerName: '',
+          policyName: '',
+          policyNumber: '',
+          registeredMobile: '',
+          registeredBank: '',
+          registeredAddress: '',
+          nominee: '',
+          customerCareNumber: '',
+          customerCareEmail: '',
+          rmName: '',
+          rmMobile: '',
+          rmEmail: '',
+          branchAddress: ''
+        });
+        setEditingSection(null);
+        
+        // Sync contacts and customer support
+        try {
+          await syncContactsFromForm(updatedData, 'BasicDetails');
+          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+        } catch (syncError) {
+          console.error('Error syncing contacts/support:', syncError);
+        }
+        
+        alert('Insurance added successfully!');
+      } catch (error) {
+        console.error('Error adding insurance:', error);
+        alert('Failed to add insurance');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -743,29 +809,51 @@ const BasicDetails = () => {
     }));
   };
 
-  const addBank = () => {
+  const addBank = async () => {
     if (newBank.bankName && newBank.accountNumber) {
-      setFormData(prev => ({
-        ...prev,
-        banks: [...prev.banks, { ...newBank }]
-      }));
-      setNewBank({
-        bankName: '',
-        accountType: '',
-        holdingType: '',
-        accountHolderName: '',
-        customerId: '',
-        accountNumber: '',
-        ifscCode: '',
-        branchAddress: '',
-        registeredMobile: '',
-        registeredAddress: '',
-        nominee: '',
-        registeredEmail: '',
-        rmName: '',
-        rmMobile: '',
-        rmEmail: ''
-      });
+      const updatedData = {
+        ...formData,
+        banks: [...formData.banks, { ...newBank }]
+      };
+      
+      try {
+        setLoading(true);
+        await staticAPI.updateBasicDetails(formData._id, updatedData);
+        setFormData(updatedData);
+        setNewBank({
+          bankName: '',
+          accountType: '',
+          holdingType: '',
+          accountHolderName: '',
+          customerId: '',
+          accountNumber: '',
+          ifscCode: '',
+          branchAddress: '',
+          registeredMobile: '',
+          registeredAddress: '',
+          nominee: '',
+          registeredEmail: '',
+          rmName: '',
+          rmMobile: '',
+          rmEmail: ''
+        });
+        setEditingSection(null);
+        
+        // Sync contacts and customer support
+        try {
+          await syncContactsFromForm(updatedData, 'BasicDetails');
+          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+        } catch (syncError) {
+          console.error('Error syncing contacts/support:', syncError);
+        }
+        
+        alert('Bank account added successfully!');
+      } catch (error) {
+        console.error('Error adding bank:', error);
+        alert('Failed to add bank account');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -787,24 +875,46 @@ const BasicDetails = () => {
     }));
   };
 
-  const addMobileBill = () => {
+  const addMobileBill = async () => {
     if (newMobileBill.mobileNumber) {
-      setFormData(prev => ({
-        ...prev,
-        mobileBills: [...prev.mobileBills, { ...newMobileBill }]
-      }));
-      setNewMobileBill({
-        mobileNumber: '',
-        usedBy: '',
-        billGenerationDate: '',
-        bestBillPaymentDate: '',
-        finalBillPaymentDate: '',
-        emailId: '',
-        alternateNo: '',
-        address: '',
-        planNo: '',
-        customerNumber: ''
-      });
+      const updatedData = {
+        ...formData,
+        mobileBills: [...formData.mobileBills, { ...newMobileBill }]
+      };
+      
+      try {
+        setLoading(true);
+        await staticAPI.updateBasicDetails(formData._id, updatedData);
+        setFormData(updatedData);
+        setNewMobileBill({
+          mobileNumber: '',
+          usedBy: '',
+          billGenerationDate: '',
+          bestBillPaymentDate: '',
+          finalBillPaymentDate: '',
+          emailId: '',
+          alternateNo: '',
+          address: '',
+          planNo: '',
+          customerNumber: ''
+        });
+        setEditingSection(null);
+        
+        // Sync contacts and customer support
+        try {
+          await syncContactsFromForm(updatedData, 'BasicDetails');
+          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+        } catch (syncError) {
+          console.error('Error syncing contacts/support:', syncError);
+        }
+        
+        alert('Mobile bill added successfully!');
+      } catch (error) {
+        console.error('Error adding mobile bill:', error);
+        alert('Failed to add mobile bill');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -826,26 +936,48 @@ const BasicDetails = () => {
     }));
   };
 
-  const addCard = () => {
+  const addCard = async () => {
     if (newCard.bankName && newCard.cardNumber) {
-      setFormData(prev => ({
-        ...prev,
-        cards: [...prev.cards, { ...newCard }]
-      }));
-      setNewCard({
-        bankName: '',
-        cardHolderName: '',
-        cardNumber: '',
-        expiryDate: '',
-        atmPin: '',
-        cvv: '',
-        url: '',
-        userId: '',
-        password: '',
-        customerCareNumber: '',
-        customerCareEmail: '',
-        cardType: ''
-      });
+      const updatedData = {
+        ...formData,
+        cards: [...formData.cards, { ...newCard }]
+      };
+      
+      try {
+        setLoading(true);
+        await staticAPI.updateBasicDetails(formData._id, updatedData);
+        setFormData(updatedData);
+        setNewCard({
+          bankName: '',
+          cardHolderName: '',
+          cardNumber: '',
+          expiryDate: '',
+          atmPin: '',
+          cvv: '',
+          url: '',
+          userId: '',
+          password: '',
+          customerCareNumber: '',
+          customerCareEmail: '',
+          cardType: ''
+        });
+        setEditingSection(null);
+        
+        // Sync contacts and customer support
+        try {
+          await syncContactsFromForm(updatedData, 'BasicDetails');
+          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+        } catch (syncError) {
+          console.error('Error syncing contacts/support:', syncError);
+        }
+        
+        alert('Card added successfully!');
+      } catch (error) {
+        console.error('Error adding card:', error);
+        alert('Failed to add card');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -867,21 +999,43 @@ const BasicDetails = () => {
     }));
   };
 
-  const addPaymentGateway = () => {
+  const addPaymentGateway = async () => {
     if (newPaymentGateway.company && newPaymentGateway.companyName) {
-      setFormData(prev => ({
-        ...prev,
-        paymentGateways: [...prev.paymentGateways, { ...newPaymentGateway }]
-      }));
-      setNewPaymentGateway({
-        company: '',
-        companyName: '',
-        bankName: '',
-        accountNumber: '',
-        url: '',
-        userId: '',
-        password: ''
-      });
+      const updatedData = {
+        ...formData,
+        paymentGateways: [...formData.paymentGateways, { ...newPaymentGateway }]
+      };
+      
+      try {
+        setLoading(true);
+        await staticAPI.updateBasicDetails(formData._id, updatedData);
+        setFormData(updatedData);
+        setNewPaymentGateway({
+          company: '',
+          companyName: '',
+          bankName: '',
+          accountNumber: '',
+          url: '',
+          userId: '',
+          password: ''
+        });
+        setEditingSection(null);
+        
+        // Sync contacts and customer support
+        try {
+          await syncContactsFromForm(updatedData, 'BasicDetails');
+          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+        } catch (syncError) {
+          console.error('Error syncing contacts/support:', syncError);
+        }
+        
+        alert('Payment gateway added successfully!');
+      } catch (error) {
+        console.error('Error adding payment gateway:', error);
+        alert('Failed to add payment gateway');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -903,28 +1057,41 @@ const BasicDetails = () => {
     }));
   };
 
-  const addMutualFundPortfolio = () => {
+  const addMutualFundPortfolio = async () => {
     if (newMutualFundPortfolio.fundHouse && newMutualFundPortfolio.fundName) {
-      setFormData(prev => ({
-        ...prev,
-        mutualFundsPortfolio: [...prev.mutualFundsPortfolio, { ...newMutualFundPortfolio }]
-      }));
-      setNewMutualFundPortfolio({
-        srNo: '',
-        fundHouse: '',
-        investorName: '',
-        fundName: '',
-        goalPurpose: '',
-        folioNumber: '',
-        dateOfPurchase: '',
-        purchaseNAV: '',
-        numberOfUnits: '',
-        purchaseValue: '',
-        currentNAV: '',
-        currentValuation: '',
-        difference: '',
-        percentDifference: ''
-      });
+      const updatedData = {
+        ...formData,
+        mutualFundsPortfolio: [...formData.mutualFundsPortfolio, { ...newMutualFundPortfolio }]
+      };
+      
+      try {
+        setLoading(true);
+        await staticAPI.updateBasicDetails(formData._id, updatedData);
+        setFormData(updatedData);
+        setNewMutualFundPortfolio({
+          srNo: '',
+          fundHouse: '',
+          investorName: '',
+          fundName: '',
+          goalPurpose: '',
+          folioNumber: '',
+          dateOfPurchase: '',
+          purchaseNAV: '',
+          numberOfUnits: '',
+          purchaseValue: '',
+          currentNAV: '',
+          currentValuation: '',
+          difference: '',
+          percentDifference: ''
+        });
+        setEditingSection(null);
+        alert('Mutual fund portfolio added successfully!');
+      } catch (error) {
+        console.error('Error adding mutual fund portfolio:', error);
+        alert('Failed to add mutual fund portfolio');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -946,27 +1113,40 @@ const BasicDetails = () => {
     }));
   };
 
-  const addSharePortfolio = () => {
+  const addSharePortfolio = async () => {
     if (newSharePortfolio.dematCompany && newSharePortfolio.scriptName) {
-      setFormData(prev => ({
-        ...prev,
-        sharesPortfolio: [...prev.sharesPortfolio, { ...newSharePortfolio }]
-      }));
-      setNewSharePortfolio({
-        srNo: '',
-        dematCompany: '',
-        investorName: '',
-        scriptName: '',
-        goalPurpose: '',
-        dateOfPurchase: '',
-        purchaseNAV: '',
-        numberOfUnits: '',
-        purchaseValue: '',
-        currentNAV: '',
-        currentValuation: '',
-        difference: '',
-        percentDifference: ''
-      });
+      const updatedData = {
+        ...formData,
+        sharesPortfolio: [...formData.sharesPortfolio, { ...newSharePortfolio }]
+      };
+      
+      try {
+        setLoading(true);
+        await staticAPI.updateBasicDetails(formData._id, updatedData);
+        setFormData(updatedData);
+        setNewSharePortfolio({
+          srNo: '',
+          dematCompany: '',
+          investorName: '',
+          scriptName: '',
+          goalPurpose: '',
+          dateOfPurchase: '',
+          purchaseNAV: '',
+          numberOfUnits: '',
+          purchaseValue: '',
+          currentNAV: '',
+          currentValuation: '',
+          difference: '',
+          percentDifference: ''
+        });
+        setEditingSection(null);
+        alert('Share portfolio added successfully!');
+      } catch (error) {
+        console.error('Error adding share portfolio:', error);
+        alert('Failed to add share portfolio');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -988,28 +1168,41 @@ const BasicDetails = () => {
     }));
   };
 
-  const addInsurancePortfolio = () => {
+  const addInsurancePortfolio = async () => {
     if (newInsurancePortfolio.insuranceCompany && newInsurancePortfolio.policyName) {
-      setFormData(prev => ({
-        ...prev,
-        insurancePortfolio: [...prev.insurancePortfolio, { ...newInsurancePortfolio }]
-      }));
-      setNewInsurancePortfolio({
-        srNo: '',
-        insuranceCompany: '',
-        insurerName: '',
-        policyType: '',
-        goalPurpose: '',
-        policyName: '',
-        policyNumber: '',
-        policyStartDate: '',
-        premiumMode: '',
-        premiumAmount: '',
-        lastPremiumPayingDate: '',
-        maturityDate: '',
-        sumAssured: '',
-        nominee: ''
-      });
+      const updatedData = {
+        ...formData,
+        insurancePortfolio: [...formData.insurancePortfolio, { ...newInsurancePortfolio }]
+      };
+      
+      try {
+        setLoading(true);
+        await staticAPI.updateBasicDetails(formData._id, updatedData);
+        setFormData(updatedData);
+        setNewInsurancePortfolio({
+          srNo: '',
+          insuranceCompany: '',
+          insurerName: '',
+          policyType: '',
+          goalPurpose: '',
+          policyName: '',
+          policyNumber: '',
+          policyStartDate: '',
+          premiumMode: '',
+          premiumAmount: '',
+          lastPremiumPayingDate: '',
+          maturityDate: '',
+          sumAssured: '',
+          nominee: ''
+        });
+        setEditingSection(null);
+        alert('Insurance portfolio added successfully!');
+      } catch (error) {
+        console.error('Error adding insurance portfolio:', error);
+        alert('Failed to add insurance portfolio');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -1031,31 +1224,49 @@ const BasicDetails = () => {
     }));
   };
 
-  const addSubBroker = () => {
+  const addSubBroker = async () => {
     console.log('Attempting to add Sub Broker:', newSubBroker);
     if (newSubBroker.nameOfCompany && newSubBroker.contactNumber) {
       console.log('Validation passed. Adding to list.');
-      setFormData(prev => {
-        const updated = {
-          ...prev,
-          subBrokers: [...(prev.subBrokers || []), { ...newSubBroker }]
-        };
-        console.log('Updated formData:', updated);
-        return updated;
-      });
-      setNewSubBroker({
-        nameOfCompany: '',
-        website: '',
-        contactNumber: '',
-        emailId: '',
-        typeOfInvestment: '',
-        address: '',
-        city: '',
-        state: '',
-        pinCode: '',
-        customerCareNumber: '',
-        customerCareEmailId: ''
-      });
+      const updatedData = {
+        ...formData,
+        subBrokers: [...(formData.subBrokers || []), { ...newSubBroker }]
+      };
+      
+      try {
+        setLoading(true);
+        await staticAPI.updateBasicDetails(formData._id, updatedData);
+        setFormData(updatedData);
+        setNewSubBroker({
+          nameOfCompany: '',
+          website: '',
+          contactNumber: '',
+          emailId: '',
+          typeOfInvestment: '',
+          address: '',
+          city: '',
+          state: '',
+          pinCode: '',
+          customerCareNumber: '',
+          customerCareEmailId: ''
+        });
+        setEditingSection(null);
+        
+        // Sync contacts and customer support
+        try {
+          await syncContactsFromForm(updatedData, 'BasicDetails');
+          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+        } catch (syncError) {
+          console.error('Error syncing contacts/support:', syncError);
+        }
+        
+        alert('Sub Broker added successfully!');
+      } catch (error) {
+        console.error('Error adding sub broker:', error);
+        alert('Failed to add sub broker');
+      } finally {
+        setLoading(false);
+      }
     } else {
       console.warn('Validation failed: Name of Company and Contact Number are required.');
       alert('Please fill Name of Company and Contact Number');
@@ -1243,22 +1454,6 @@ const BasicDetails = () => {
             <p style={{ color: '#4A5568' }}>Personal and family information management</p>
           </div>
         </div>
-        <div className="header-actions">
-          {!editMode ? (
-            <button className="btn-primary" onClick={() => setEditMode(true)}>
-              <FiEdit2 /> Edit Details
-            </button>
-          ) : (
-            <div className="edit-actions">
-              <button className="btn-success" onClick={handleSave}>
-                <FiSave /> Save
-              </button>
-              <button className="btn-secondary" onClick={handleCancel}>
-                <FiX /> Cancel
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="static-content">
@@ -1272,20 +1467,9 @@ const BasicDetails = () => {
               <h3>Mutual Funds Information</h3>
             </div>
             <div className="section-actions">
-              {!isSectionEditing('mutualFunds') ? (
-                <button className="btn-section-edit" onClick={() => toggleSectionEdit('mutualFunds')} title="Edit this section">
-                  <FiEdit2 /> Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-section-save" onClick={() => handleSectionSave('mutualFunds')}>
-                    <FiSave /> Save
-                  </button>
-                  <button className="btn-section-cancel" onClick={() => handleSectionCancel('mutualFunds')}>
-                    <FiX /> Cancel
-                  </button>
-                </div>
-              )}
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('mutualFunds')} title="Add new entry">
+                <FiPlus /> New
+              </button>
             </div>
           </div>
           <div className="section-content">
@@ -1557,20 +1741,9 @@ const BasicDetails = () => {
               <h3>Shares Information</h3>
             </div>
             <div className="section-actions">
-              {!isSectionEditing('shares') ? (
-                <button className="btn-section-edit" onClick={() => toggleSectionEdit('shares')} title="Edit this section">
-                  <FiEdit2 /> Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-section-save" onClick={() => handleSectionSave('shares')}>
-                    <FiSave /> Save
-                  </button>
-                  <button className="btn-section-cancel" onClick={() => handleSectionCancel('shares')}>
-                    <FiX /> Cancel
-                  </button>
-                </div>
-              )}
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('shares')} title="Add new entry">
+                <FiPlus /> New
+              </button>
             </div>
           </div>
           <div className="section-content">
@@ -1840,20 +2013,9 @@ const BasicDetails = () => {
               <h3>Insurance Information</h3>
             </div>
             <div className="section-actions">
-              {!isSectionEditing('insurance') ? (
-                <button className="btn-section-edit" onClick={() => toggleSectionEdit('insurance')} title="Edit this section">
-                  <FiEdit2 /> Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-section-save" onClick={() => handleSectionSave('insurance')}>
-                    <FiSave /> Save
-                  </button>
-                  <button className="btn-section-cancel" onClick={() => handleSectionCancel('insurance')}>
-                    <FiX /> Cancel
-                  </button>
-                </div>
-              )}
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('insurance')} title="Add new entry">
+                <FiPlus /> New
+              </button>
             </div>
           </div>
           <div className="section-content">
@@ -2121,20 +2283,9 @@ const BasicDetails = () => {
               <h3>Bank Accounts Information</h3>
             </div>
             <div className="section-actions">
-              {!isSectionEditing('banks') ? (
-                <button className="btn-section-edit" onClick={() => toggleSectionEdit('banks')} title="Edit this section">
-                  <FiEdit2 /> Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-section-save" onClick={() => handleSectionSave('banks')}>
-                    <FiSave /> Save
-                  </button>
-                  <button className="btn-section-cancel" onClick={() => handleSectionCancel('banks')}>
-                    <FiX /> Cancel
-                  </button>
-                </div>
-              )}
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('banks')} title="Add new entry">
+                <FiPlus /> New
+              </button>
             </div>
           </div>
           <div className="section-content">
@@ -2369,20 +2520,9 @@ const BasicDetails = () => {
               <h3>Mobile Bill Information</h3>
             </div>
             <div className="section-actions">
-              {!isSectionEditing('mobileBills') ? (
-                <button className="btn-section-edit" onClick={() => toggleSectionEdit('mobileBills')} title="Edit this section">
-                  <FiEdit2 /> Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-section-save" onClick={() => handleSectionSave('mobileBills')}>
-                    <FiSave /> Save
-                  </button>
-                  <button className="btn-section-cancel" onClick={() => handleSectionCancel('mobileBills')}>
-                    <FiX /> Cancel
-                  </button>
-                </div>
-              )}
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('mobileBills')} title="Add new entry">
+                <FiPlus /> New
+              </button>
             </div>
           </div>
           <div className="section-content">
@@ -2586,20 +2726,9 @@ const BasicDetails = () => {
               <h3>Card Details</h3>
             </div>
             <div className="section-actions">
-              {!isSectionEditing('cards') ? (
-                <button className="btn-section-edit" onClick={() => toggleSectionEdit('cards')} title="Edit this section">
-                  <FiEdit2 /> Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-section-save" onClick={() => handleSectionSave('cards')}>
-                    <FiSave /> Save
-                  </button>
-                  <button className="btn-section-cancel" onClick={() => handleSectionCancel('cards')}>
-                    <FiX /> Cancel
-                  </button>
-                </div>
-              )}
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('cards')} title="Add new entry">
+                <FiPlus /> New
+              </button>
             </div>
           </div>
           <div className="section-content">
@@ -2799,20 +2928,9 @@ const BasicDetails = () => {
               <h3>Payment Gateway</h3>
             </div>
             <div className="section-actions">
-              {!isSectionEditing('paymentGateways') ? (
-                <button className="btn-section-edit" onClick={() => toggleSectionEdit('paymentGateways')} title="Edit this section">
-                  <FiEdit2 /> Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-section-save" onClick={() => handleSectionSave('paymentGateways')}>
-                    <FiSave /> Save
-                  </button>
-                  <button className="btn-section-cancel" onClick={() => handleSectionCancel('paymentGateways')}>
-                    <FiX /> Cancel
-                  </button>
-                </div>
-              )}
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('paymentGateways')} title="Add new entry">
+                <FiPlus /> New
+              </button>
             </div>
           </div>
           <div className="section-content">
@@ -2956,20 +3074,9 @@ const BasicDetails = () => {
               <h3>Portfolio Details - Mutual Funds</h3>
             </div>
             <div className="section-actions">
-              {!isSectionEditing('mutualFundsPortfolio') ? (
-                <button className="btn-section-edit" onClick={() => toggleSectionEdit('mutualFundsPortfolio')} title="Edit this section">
-                  <FiEdit2 /> Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-section-save" onClick={() => handleSectionSave('mutualFundsPortfolio')}>
-                    <FiSave /> Save
-                  </button>
-                  <button className="btn-section-cancel" onClick={() => handleSectionCancel('mutualFundsPortfolio')}>
-                    <FiX /> Cancel
-                  </button>
-                </div>
-              )}
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('mutualFundsPortfolio')} title="Add new entry">
+                <FiPlus /> New
+              </button>
             </div>
           </div>
           <div className="section-content">
@@ -3200,20 +3307,9 @@ const BasicDetails = () => {
               <h3>Portfolio Details - Shares</h3>
             </div>
             <div className="section-actions">
-              {!isSectionEditing('sharesPortfolio') ? (
-                <button className="btn-section-edit" onClick={() => toggleSectionEdit('sharesPortfolio')} title="Edit this section">
-                  <FiEdit2 /> Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-section-save" onClick={() => handleSectionSave('sharesPortfolio')}>
-                    <FiSave /> Save
-                  </button>
-                  <button className="btn-section-cancel" onClick={() => handleSectionCancel('sharesPortfolio')}>
-                    <FiX /> Cancel
-                  </button>
-                </div>
-              )}
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('sharesPortfolio')} title="Add new entry">
+                <FiPlus /> New
+              </button>
             </div>
           </div>
           <div className="section-content">
@@ -3428,20 +3524,9 @@ const BasicDetails = () => {
               <h3>Portfolio Details - Insurance</h3>
             </div>
             <div className="section-actions">
-              {!isSectionEditing('insurancePortfolio') ? (
-                <button className="btn-section-edit" onClick={() => toggleSectionEdit('insurancePortfolio')} title="Edit this section">
-                  <FiEdit2 /> Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-section-save" onClick={() => handleSectionSave('insurancePortfolio')}>
-                    <FiSave /> Save
-                  </button>
-                  <button className="btn-section-cancel" onClick={() => handleSectionCancel('insurancePortfolio')}>
-                    <FiX /> Cancel
-                  </button>
-                </div>
-              )}
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('insurancePortfolio')} title="Add new entry">
+                <FiPlus /> New
+              </button>
             </div>
           </div>
           <div className="section-content">
@@ -3664,20 +3749,9 @@ const BasicDetails = () => {
               <h3>Sub Broker Information</h3>
             </div>
             <div className="section-actions">
-              {!isSectionEditing('subBrokers') ? (
-                <button className="btn-section-edit" onClick={() => toggleSectionEdit('subBrokers')} title="Edit this section">
-                  <FiEdit2 /> Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-section-save" onClick={() => handleSectionSave('subBrokers')}>
-                    <FiSave /> Save
-                  </button>
-                  <button className="btn-section-cancel" onClick={() => handleSectionCancel('subBrokers')}>
-                    <FiX /> Cancel
-                  </button>
-                </div>
-              )}
+              <button className="btn-section-edit" onClick={() => toggleSectionEdit('subBrokers')} title="Add new entry">
+                <FiPlus /> New
+              </button>
             </div>
           </div>
           <div className="section-content">

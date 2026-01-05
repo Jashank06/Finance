@@ -387,8 +387,20 @@ const CashCardsBank = () => {
   };
 
   const getErrorMessage = (error) => {
-    if (error.response?.data?.message) {
-      const msg = error.response.data.message;
+    if (error.response?.data) {
+      const data = error.response.data;
+      const msg = data.message || '';
+
+      // Display detailed validation errors if available
+      if (data.details && Array.isArray(data.details)) {
+        const fieldErrors = data.details.map(d => `  • ${d.field}: ${d.message}`).join('\n');
+        return `❌ Validation Error:\n${fieldErrors}`;
+      }
+
+      // Display error message with additional details
+      if (data.error && msg) {
+        return `❌ ${msg}\n\nDetails: ${data.error}`;
+      }
 
       // Card validation errors
       if (msg.includes('Card number must be 13-19 digits')) {
@@ -420,7 +432,9 @@ const CashCardsBank = () => {
         return '❌ Validation failed. Please check all fields and try again.';
       }
 
-      return `❌ ${msg}`;
+      if (msg) {
+        return `❌ ${msg}`;
+      }
     }
 
     if (error.response?.status === 400) {
@@ -490,6 +504,22 @@ const CashCardsBank = () => {
       // Prepare transaction data for backend (remove frontend-only fields)
       const dataToSend = { ...transactionForm };
 
+      // Clean up empty string values (Mongoose enum fields don't accept empty strings)
+      Object.keys(dataToSend).forEach(key => {
+        if (dataToSend[key] === '') {
+          delete dataToSend[key];
+        }
+      });
+
+      // Clean up payingFor object if all fields are empty
+      if (dataToSend.payingFor) {
+        const hasValidPayingFor = dataToSend.payingFor.module && 
+                                  dataToSend.payingFor.module !== '';
+        if (!hasValidPayingFor) {
+          delete dataToSend.payingFor;
+        }
+      }
+
       // If inventory category exists, append it to description
       if (dataToSend.inventoryCategory) {
         const categoryInfo = `[Inventory: ${dataToSend.inventoryCategory}]`;
@@ -532,6 +562,7 @@ const CashCardsBank = () => {
       fetchData();
     } catch (error) {
       console.error('Error saving transaction:', error);
+      console.error('Error details:', error.response?.data);
       alert(getErrorMessage(error));
     }
   };
@@ -543,6 +574,22 @@ const CashCardsBank = () => {
 
       // Prepare transaction data for backend (remove frontend-only fields)
       const dataToSend = { ...bankTransactionForm };
+
+      // Clean up empty string values (Mongoose enum fields don't accept empty strings)
+      Object.keys(dataToSend).forEach(key => {
+        if (dataToSend[key] === '') {
+          delete dataToSend[key];
+        }
+      });
+
+      // Clean up payingFor object if all fields are empty
+      if (dataToSend.payingFor) {
+        const hasValidPayingFor = dataToSend.payingFor.module && 
+                                  dataToSend.payingFor.module !== '';
+        if (!hasValidPayingFor) {
+          delete dataToSend.payingFor;
+        }
+      }
 
       // If inventory category exists, append it to description
       if (dataToSend.inventoryCategory) {
@@ -586,6 +633,7 @@ const CashCardsBank = () => {
       fetchData();
     } catch (error) {
       console.error('Error saving bank transaction:', error);
+      console.error('Error details:', error.response?.data);
       alert(getErrorMessage(error));
     }
   };
@@ -1032,11 +1080,15 @@ const CashCardsBank = () => {
     // Calculate net transaction amount
     const netTransactionAmount = accountTransactions.reduce((total, transaction) => {
       const amount = parseFloat(transaction.amount || 0);
-      if (transaction.type === 'deposit') {
+      // Credit transactions add to balance
+      if (transaction.type === 'credit' || transaction.type === 'deposit' || transaction.type === 'refund' || transaction.type === 'income') {
         return total + amount;
-      } else if (transaction.type === 'withdrawal' || transaction.type === 'payment' || transaction.type === 'transfer') {
+      } 
+      // Debit transactions subtract from balance
+      else if (transaction.type === 'debit' || transaction.type === 'withdrawal' || transaction.type === 'payment' || transaction.type === 'transfer') {
         return total - amount;
-      } else {
+      } 
+      else {
         return total; // For other types like fee, interest, etc.
       }
     }, 0);

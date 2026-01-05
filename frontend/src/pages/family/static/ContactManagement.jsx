@@ -89,6 +89,7 @@ const ContactManagement = () => {
       }
       await fetchEntries();
       resetForm();
+      setEditMode(false);
     } catch (error) {
       alert(error.response?.data?.message || 'Error saving contact');
     }
@@ -127,9 +128,6 @@ const ContactManagement = () => {
           </div>
         </div>
         <div className="header-actions">
-          <button className="btn-primary" onClick={() => setEditMode(!editMode)}>
-            {editMode ? 'Lock Form' : 'Edit Form'}
-          </button>
           <button className="btn-success" onClick={() => {
             resetForm();
             setEditMode(true);

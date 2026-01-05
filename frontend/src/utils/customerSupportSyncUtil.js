@@ -60,6 +60,122 @@ const extractCustomerSupportFromForm = (formData, formType) => {
     const supportEntries = [];
 
     switch (formType) {
+        case 'BasicDetails':
+            // Extract customer care from Mutual Funds
+            if (formData.mutualFunds && Array.isArray(formData.mutualFunds)) {
+                formData.mutualFunds.forEach((mf) => {
+                    if (mf.fundHouse && (mf.customerCareNumber || mf.customerCareEmail)) {
+                        supportEntries.push({
+                            type: 'Financial Support',
+                            companyName: mf.fundHouse,
+                            serviceCategory: 'Mutual Fund Support',
+                            contactPerson: mf.rmName || '',
+                            phone: mf.customerCareNumber || '',
+                            email: mf.customerCareEmail || '',
+                            website: '',
+                            supportHours: '',
+                            notes: `Source: Basic Details - Mutual Fund: ${mf.mfName || 'N/A'}\nFolio: ${mf.folioNo || 'N/A'}`,
+                        });
+                    }
+                });
+            }
+
+            // Extract customer care from Shares
+            if (formData.shares && Array.isArray(formData.shares)) {
+                formData.shares.forEach((share) => {
+                    if (share.dematCompany && (share.customerCareNumber || share.customerCareEmail)) {
+                        supportEntries.push({
+                            type: 'Financial Support',
+                            companyName: share.dematCompany,
+                            serviceCategory: 'Demat/Shares Support',
+                            contactPerson: share.rmName || '',
+                            phone: share.customerCareNumber || '',
+                            email: share.customerCareEmail || '',
+                            website: '',
+                            supportHours: '',
+                            notes: `Source: Basic Details - Shares: ${share.scriptName || 'N/A'}\nDP ID: ${share.dpId || 'N/A'}`,
+                        });
+                    }
+                });
+            }
+
+            // Extract customer care from Insurance
+            if (formData.insurance && Array.isArray(formData.insurance)) {
+                formData.insurance.forEach((ins) => {
+                    if (ins.insuranceCompany && (ins.customerCareNumber || ins.customerCareEmail)) {
+                        supportEntries.push({
+                            type: 'Financial Support',
+                            companyName: ins.insuranceCompany,
+                            serviceCategory: 'Insurance Support',
+                            contactPerson: ins.rmName || '',
+                            phone: ins.customerCareNumber || '',
+                            email: ins.customerCareEmail || '',
+                            website: '',
+                            supportHours: '',
+                            notes: `Source: Basic Details - Insurance: ${ins.policyName || 'N/A'}\nPolicy: ${ins.policyNumber || 'N/A'}`,
+                        });
+                    }
+                });
+            }
+
+            // Extract customer care from Banks
+            if (formData.banks && Array.isArray(formData.banks)) {
+                formData.banks.forEach((bank) => {
+                    if (bank.bankName && (bank.registeredMobile || bank.registeredEmail)) {
+                        supportEntries.push({
+                            type: 'Financial Support',
+                            companyName: bank.bankName,
+                            serviceCategory: 'Banking Support',
+                            contactPerson: bank.rmName || '',
+                            phone: bank.registeredMobile || '',
+                            email: bank.registeredEmail || '',
+                            website: '',
+                            supportHours: '',
+                            notes: `Source: Basic Details - Bank Account: ${bank.accountNumber || 'N/A'}\nIFSC: ${bank.ifscCode || 'N/A'}`,
+                        });
+                    }
+                });
+            }
+
+            // Extract customer care from Cards
+            if (formData.cards && Array.isArray(formData.cards)) {
+                formData.cards.forEach((card) => {
+                    if (card.bankName && (card.customerCareNumber || card.customerCareEmail)) {
+                        supportEntries.push({
+                            type: 'Financial Support',
+                            companyName: card.bankName,
+                            serviceCategory: 'Card Support',
+                            contactPerson: card.cardHolderName || '',
+                            phone: card.customerCareNumber || '',
+                            email: card.customerCareEmail || '',
+                            website: card.url || '',
+                            supportHours: '',
+                            notes: `Source: Basic Details - Card: ${card.cardType || 'Card'}\nLast 4 digits: ${card.cardNumber ? card.cardNumber.slice(-4) : 'N/A'}`,
+                        });
+                    }
+                });
+            }
+
+            // Extract customer care from Sub Brokers
+            if (formData.subBrokers && Array.isArray(formData.subBrokers)) {
+                formData.subBrokers.forEach((broker) => {
+                    if (broker.nameOfCompany && (broker.customerCareNumber || broker.customerCareEmailId)) {
+                        supportEntries.push({
+                            type: 'Financial Support',
+                            companyName: broker.nameOfCompany,
+                            serviceCategory: 'Broker Support',
+                            contactPerson: '',
+                            phone: broker.customerCareNumber || broker.contactNumber || '',
+                            email: broker.customerCareEmailId || broker.emailId || '',
+                            website: broker.website || '',
+                            supportHours: '',
+                            notes: `Source: Basic Details - Sub Broker\nAddress: ${broker.address || ''}, ${broker.city || ''}, ${broker.state || ''}`,
+                        });
+                    }
+                });
+            }
+            break;
+
         case 'InventoryRecord':
             // Extract customer care contact
             if (formData.companyName && (formData.customerCareNumber || formData.customerCareEmail)) {

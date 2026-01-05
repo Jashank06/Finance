@@ -64,7 +64,14 @@ router.post('/', auth, async (req, res) => {
     res.status(201).json(populatedTransaction);
   } catch (error) {
     console.error('Error creating bank transaction:', error);
-    res.status(500).json({ message: 'Error creating bank transaction' });
+    res.status(500).json({ 
+      message: 'Error creating bank transaction', 
+      error: error.message,
+      details: error.errors ? Object.keys(error.errors).map(key => ({
+        field: key,
+        message: error.errors[key].message
+      })) : undefined
+    });
   }
 });
 

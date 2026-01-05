@@ -44,7 +44,7 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
     mainCategory: '',
     subCategory: '',
     customSubCategory: '',
-    description: '',
+    description: 'Cash Transaction',
     date: new Date().toISOString().split('T')[0],
     transactionType: '',
     expenseType: '',
@@ -115,6 +115,13 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
       // Prepare transaction data for backend (remove frontend-only fields)
       const dataToSend = { ...transactionForm, memberId: selectedMember._id };
 
+      // Clean up empty string values (Mongoose enum fields don't accept empty strings)
+      Object.keys(dataToSend).forEach(key => {
+        if (dataToSend[key] === '') {
+          delete dataToSend[key];
+        }
+      });
+
       // If inventory category exists, append it to description  
       if (dataToSend.inventoryCategory) {
         const categoryInfo = `[Inventory: ${dataToSend.inventoryCategory}]`;
@@ -139,6 +146,7 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
       fetchData();
     } catch (error) {
       console.error('Error saving transaction:', error);
+      console.error('Error details:', error.response?.data);
       alert('Error saving transaction');
     }
   };
@@ -270,7 +278,7 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
       mainCategory: '',
       subCategory: '',
       customSubCategory: '',
-      description: '',
+      description: 'Cash Transaction',
       date: new Date().toISOString().split('T')[0],
       transactionType: '',
       expenseType: '',
@@ -1074,12 +1082,13 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
                       </div>
 
                       <div className="form-group">
-                        <label>Description (Optional):</label>
+                        <label>Description *</label>
                         <textarea
                           value={transactionForm.description}
                           onChange={(e) => setTransactionForm({ ...transactionForm, description: e.target.value })}
-                          placeholder="Additional notes..."
+                          placeholder="Enter description..."
                           rows="3"
+                          required
                         ></textarea>
                       </div>
                     </div>

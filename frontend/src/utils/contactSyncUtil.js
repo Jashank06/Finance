@@ -61,6 +61,199 @@ const extractContactsFromForm = (formData, formType) => {
   const contacts = [];
 
   switch (formType) {
+    case 'BasicDetails':
+      // Extract primary mobile contact
+      if (formData.firstName && formData.primaryMobile) {
+        contacts.push({
+          nameOfPerson: `${formData.firstName} ${formData.lastName || ''}`.trim(),
+          mobileNumber1: formData.primaryMobile,
+          mobileNumber2: formData.secondaryMobile || '',
+          emailId: formData.primaryEmail || '',
+          address: formData.currentAddress ? `${formData.currentAddress.street || ''}, ${formData.currentAddress.area || ''}, ${formData.currentAddress.city || ''}, ${formData.currentAddress.state || ''} - ${formData.currentAddress.pincode || ''}`.trim() : '',
+          category: 'Personal',
+          notes: 'Source: Basic Details - Personal Contact',
+        });
+      }
+
+      // Extract work contact
+      if (formData.firstName && formData.workPhone) {
+        contacts.push({
+          nameOfPerson: `${formData.firstName} ${formData.lastName || ''}`.trim(),
+          nameOfCompany: formData.companyName || '',
+          mobileNumber1: formData.workPhone,
+          emailId: formData.workEmail || '',
+          address: formData.officeAddress ? `${formData.officeAddress.street || ''}, ${formData.officeAddress.area || ''}, ${formData.officeAddress.city || ''}, ${formData.officeAddress.state || ''} - ${formData.officeAddress.pincode || ''}`.trim() : '',
+          category: 'Professional',
+          profession: formData.occupation || '',
+          notes: `Source: Basic Details - Work Contact${formData.designation ? ` - ${formData.designation}` : ''}`,
+        });
+      }
+
+      // Extract emergency contact
+      if (formData.emergencyContact?.name && formData.emergencyContact?.mobile) {
+        contacts.push({
+          nameOfPerson: formData.emergencyContact.name,
+          mobileNumber1: formData.emergencyContact.mobile,
+          address: formData.emergencyContact.address || '',
+          category: 'Emergency Contact',
+          notes: `Source: Basic Details - Emergency Contact (Relation: ${formData.emergencyContact.relation || 'N/A'})`,
+        });
+      }
+
+      // Extract contacts from Mutual Funds
+      if (formData.mutualFunds && Array.isArray(formData.mutualFunds)) {
+        formData.mutualFunds.forEach((mf) => {
+          if (mf.registeredMobile) {
+            contacts.push({
+              nameOfPerson: mf.investorName || formData.firstName || 'Investor',
+              nameOfCompany: mf.fundHouse || '',
+              mobileNumber1: mf.registeredMobile,
+              emailId: mf.customerCareEmail || '',
+              category: 'Financial',
+              serviceProviderOrProductSeller: 'Mutual Fund',
+              notes: `Source: Basic Details - Mutual Fund: ${mf.mfName || 'N/A'}`,
+            });
+          }
+          // Extract RM contact
+          if (mf.rmName && mf.rmMobile) {
+            contacts.push({
+              nameOfPerson: mf.rmName,
+              nameOfCompany: mf.fundHouse || '',
+              mobileNumber1: mf.rmMobile,
+              emailId: mf.rmEmail || '',
+              category: 'Financial',
+              profession: 'Relationship Manager',
+              notes: `Source: Basic Details - RM for ${mf.mfName || 'Mutual Fund'}`,
+            });
+          }
+        });
+      }
+
+      // Extract contacts from Shares
+      if (formData.shares && Array.isArray(formData.shares)) {
+        formData.shares.forEach((share) => {
+          if (share.registeredMobile) {
+            contacts.push({
+              nameOfPerson: share.investorName || formData.firstName || 'Investor',
+              nameOfCompany: share.dematCompany || '',
+              mobileNumber1: share.registeredMobile,
+              emailId: share.customerCareEmail || '',
+              category: 'Financial',
+              serviceProviderOrProductSeller: 'Shares/Demat',
+              notes: `Source: Basic Details - Shares: ${share.scriptName || 'N/A'}`,
+            });
+          }
+          // Extract RM contact
+          if (share.rmName && share.rmMobile) {
+            contacts.push({
+              nameOfPerson: share.rmName,
+              nameOfCompany: share.dematCompany || '',
+              mobileNumber1: share.rmMobile,
+              emailId: share.rmEmail || '',
+              category: 'Financial',
+              profession: 'Relationship Manager',
+              notes: `Source: Basic Details - RM for ${share.scriptName || 'Shares'}`,
+            });
+          }
+        });
+      }
+
+      // Extract contacts from Insurance
+      if (formData.insurance && Array.isArray(formData.insurance)) {
+        formData.insurance.forEach((ins) => {
+          if (ins.registeredMobile) {
+            contacts.push({
+              nameOfPerson: ins.insurerName || formData.firstName || 'Insured',
+              nameOfCompany: ins.insuranceCompany || '',
+              mobileNumber1: ins.registeredMobile,
+              emailId: ins.customerCareEmail || '',
+              category: 'Financial',
+              serviceProviderOrProductSeller: 'Insurance',
+              notes: `Source: Basic Details - Insurance: ${ins.policyName || 'N/A'}`,
+            });
+          }
+          // Extract RM contact
+          if (ins.rmName && ins.rmMobile) {
+            contacts.push({
+              nameOfPerson: ins.rmName,
+              nameOfCompany: ins.insuranceCompany || '',
+              mobileNumber1: ins.rmMobile,
+              emailId: ins.rmEmail || '',
+              category: 'Financial',
+              profession: 'Relationship Manager',
+              notes: `Source: Basic Details - RM for ${ins.policyName || 'Insurance'}`,
+            });
+          }
+        });
+      }
+
+      // Extract contacts from Banks
+      if (formData.banks && Array.isArray(formData.banks)) {
+        formData.banks.forEach((bank) => {
+          if (bank.registeredMobile) {
+            contacts.push({
+              nameOfPerson: bank.accountHolderName || formData.firstName || 'Account Holder',
+              nameOfCompany: bank.bankName || '',
+              mobileNumber1: bank.registeredMobile,
+              emailId: bank.registeredEmail || '',
+              category: 'Financial',
+              serviceProviderOrProductSeller: 'Banking',
+              notes: `Source: Basic Details - Bank Account: ${bank.accountNumber || 'N/A'}`,
+            });
+          }
+          // Extract RM contact
+          if (bank.rmName && bank.rmMobile) {
+            contacts.push({
+              nameOfPerson: bank.rmName,
+              nameOfCompany: bank.bankName || '',
+              mobileNumber1: bank.rmMobile,
+              emailId: bank.rmEmail || '',
+              category: 'Financial',
+              profession: 'Relationship Manager',
+              notes: `Source: Basic Details - RM for ${bank.bankName || 'Bank'}`,
+            });
+          }
+        });
+      }
+
+      // Extract contacts from Mobile Bills
+      if (formData.mobileBills && Array.isArray(formData.mobileBills)) {
+        formData.mobileBills.forEach((bill) => {
+          if (bill.mobileNumber) {
+            contacts.push({
+              nameOfPerson: bill.usedBy || formData.firstName || 'User',
+              mobileNumber1: bill.mobileNumber,
+              mobileNumber2: bill.alternateNo || '',
+              emailId: bill.emailId || '',
+              address: bill.address || '',
+              category: 'Personal',
+              notes: `Source: Basic Details - Mobile Bill: ${bill.mobileNumber}`,
+            });
+          }
+        });
+      }
+
+      // Extract contacts from Sub Brokers
+      if (formData.subBrokers && Array.isArray(formData.subBrokers)) {
+        formData.subBrokers.forEach((broker) => {
+          if (broker.contactNumber) {
+            contacts.push({
+              nameOfPerson: broker.nameOfCompany || 'Sub Broker',
+              nameOfCompany: broker.nameOfCompany || '',
+              mobileNumber1: broker.contactNumber,
+              mobileNumber2: broker.customerCareNumber || '',
+              emailId: broker.emailId || '',
+              address: `${broker.address || ''}, ${broker.city || ''}, ${broker.state || ''} - ${broker.pinCode || ''}`.trim(),
+              category: 'Financial',
+              serviceProviderOrProductSeller: 'Sub Broker',
+              website: broker.website || '',
+              notes: `Source: Basic Details - Sub Broker`,
+            });
+          }
+        });
+      }
+      break;
+
     case 'InventoryRecord':
       // Extract vendor contact
       if (formData.vendorName && (formData.vendorContactNumber || formData.vendorContactEmail)) {

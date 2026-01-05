@@ -26,12 +26,12 @@ const TransactionTable = ({
           <tr>
             <th>Sr. No.</th>
             <th>Date</th>
+            <th>Transaction Type</th>
             <th>Mode of Transaction</th>
             <th>Description</th>
             <th>Debit</th>
             <th>Credit</th>
             <th>Balance</th>
-            <th>Type of Transaction</th>
             <th>Broader Category</th>
             <th>Main Category</th>
             <th>Sub Category</th>
@@ -43,14 +43,17 @@ const TransactionTable = ({
         <tbody>
           {transactions.map((transaction, index) => {
             // Determine if it's debit or credit
-            const isDebit = transaction.type === 'withdrawal' ||
+            // Card/Bank transactions use 'debit' or 'credit' directly
+            const isDebit = transaction.type === 'debit' ||
+              transaction.type === 'withdrawal' ||
               transaction.type === 'purchase' ||
               transaction.type === 'payment' ||
               transaction.type === 'fee' ||
               transaction.type === 'expense' ||
               transaction.type === 'transfer';
 
-            const isCredit = transaction.type === 'deposit' ||
+            const isCredit = transaction.type === 'credit' ||
+              transaction.type === 'deposit' ||
               transaction.type === 'refund' ||
               transaction.type === 'income' ||
               transaction.type === 'interest';
@@ -69,6 +72,11 @@ const TransactionTable = ({
               <tr key={transaction._id}>
                 <td className="sr-no">{index + 1}</td>
                 <td className="date-col">{new Date(transaction.date).toLocaleDateString('en-IN')}</td>
+                <td className="transaction-type-col">
+                  <span className={`type-badge ${transaction.type === 'debit' || isDebit ? 'debit-badge' : 'credit-badge'}`}>
+                    {transaction.type === 'debit' || isDebit ? 'Debit' : 'Credit'}
+                  </span>
+                </td>
                 <td className="mode-col">
                   <span className="mode-badge">
                     {transaction.modeOfTransaction ?
@@ -88,12 +96,6 @@ const TransactionTable = ({
                 </td>
                 <td className={`balance-amount ${runningBalance < 0 ? 'negative' : ''}`}>
                   {currency} {runningBalance.toLocaleString('en-IN')}
-                </td>
-                <td className="transaction-type-col">
-                  {transaction.transactionType ?
-                    transaction.transactionType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) :
-                    '-'
-                  }
                 </td>
                 <td className="category-col">
                   {transaction.broaderCategory || '-'}
