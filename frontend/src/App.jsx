@@ -48,6 +48,7 @@ import ChequeRegister from './pages/family/daily/ChequeRegister';
 import DailyCashRegister from './pages/family/daily/DailyCashRegister';
 import Milestones from './pages/family/monitoring/Milestones';
 import TargetsForLife from './pages/family/monitoring/TargetsForLife';
+import Portfolio from './pages/family/monitoring/Portfolio';
 import DocumentManager from './pages/documents/DocumentManager';
 import SpaceManagement from './pages/SpaceManagement';
 
@@ -581,6 +582,17 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <RemindersNotifications />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/family/monitoring/portfolio"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Portfolio />
                 </Layout>
               </ProtectedRoute>
             }

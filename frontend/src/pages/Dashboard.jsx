@@ -114,7 +114,7 @@ const Dashboard = () => {
         incomeExpenseAPI.getRecords({ startDate: isoToday, endDate: isoNextWeek }),
         incomeExpenseAPI.getSummary(),
         api.get('/budget/targets-for-life').catch(() => ({ data: null })),
-        api.get('/cashflow-analysis/monthly-expenses').catch(e => ({ data: { success: false, data: { lastMonthExpenses: 0 } } }))
+        api.get('/cashflow/monthly-expenses').catch(e => ({ data: { success: false, data: { lastMonthExpenses: 0 } } }))
       ]);
 
 

@@ -60,7 +60,7 @@ const Sidebar = () => {
                 {dailyOpen && (
                   <div className="nested-submenu">
                     <Link to="/family/daily/cash-cards-bank" className="nested-submenu-item">Cash, Cards & Bank Transactions</Link>
-                    <Link to="/family/daily/loan-udhar" className="nested-submenu-item">Udhar Lena/Dena</Link>
+                    <Link to="/family/daily/loan-udhar" className="nested-submenu-item">Udhar Lena / Dena / Credit Card / Loan / Wallet</Link>
                     <Link to="/family/daily/manage-finance" className="nested-submenu-item">Manage Finance</Link>
                     <Link to="/family/daily/income-expenses" className="nested-submenu-item">Income & Expenses</Link>
                     <Link to="/family/daily/cheque-register" className="nested-submenu-item">Cheque Register</Link>
@@ -91,6 +91,7 @@ const Sidebar = () => {
                     <Link to="/family/monitoring/reminders-notifications" className="nested-submenu-item">Reminders, Notifications</Link>
                     <Link to="/family/monitoring/yearly-calendar" className="nested-submenu-item">Yearly Calendar</Link>
                     <Link to="/family/monitoring/weekly-appointment" className="nested-submenu-item">Weekly Appointment Chart</Link>
+                    <Link to="/family/monitoring/portfolio" className="nested-submenu-item">Portfolio</Link>
                   </div>
                 )}
               </div>

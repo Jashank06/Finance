@@ -17,7 +17,7 @@ const BudgetPlanTab = () => {
     const [averageMonths, setAverageMonths] = useState(1); // Default to 1 month
 
     useEffect(() => {
-    trackFeatureUsage('/family/monitoring/budget-plan', 'view');
+        trackFeatureUsage('/family/monitoring/budget-plan', 'view');
         fetchBudgetPlans();
         fetchCurrentPlanAndAnalysis();
         fetchMonthlyIncome(1); // Fetch with default 1 month
@@ -38,11 +38,6 @@ const BudgetPlanTab = () => {
             const response = await api.get(`/cashflow/monthly-income?months=${months}`);
             if (response.data.success) {
                 setCalculatedMonthlyIncome(response.data.data);
-                // Auto-populate monthlyIncome if not set
-                const avgIncome = response.data.data.averageIncome || response.data.data.lastMonthIncome || 0;
-                if (!monthlyIncome && avgIncome > 0) {
-                    setMonthlyIncome(avgIncome.toFixed(2));
-                }
                 return response.data.data;
             }
         } catch (error) {
@@ -55,13 +50,7 @@ const BudgetPlanTab = () => {
     // Handle average months change
     const handleAverageMonthsChange = async (months) => {
         setAverageMonths(months);
-        const newIncomeData = await fetchMonthlyIncome(months);
-        
-        // Update form with new average immediately
-        if (newIncomeData) {
-            const avgIncome = newIncomeData.averageIncome?.toFixed(2) || newIncomeData.lastMonthIncome?.toFixed(2) || '';
-            setMonthlyIncome(avgIncome);
-        }
+        await fetchMonthlyIncome(months);
     };
 
     const fetchCurrentPlanAndAnalysis = async () => {
@@ -90,16 +79,24 @@ const BudgetPlanTab = () => {
         setSelectedPlan(planId);
         if (!currentBudgetPlan) {
             setShowIncomeForm(true);
-            // Auto-populate income from calculated data
-            if (calculatedMonthlyIncome && calculatedMonthlyIncome.lastMonthIncome > 0) {
-                setMonthlyIncome(calculatedMonthlyIncome.lastMonthIncome.toFixed(2));
-            }
+            // Do not auto-populate monthlyIncome, keep it user-defined or default to saved plan
         }
     };
 
     const handleSaveBudgetPlan = async () => {
-        if (!selectedPlan || !monthlyIncome || parseFloat(monthlyIncome) <= 0) {
-            alert('Please select a plan and enter a valid monthly income');
+        const manualIncome = parseFloat(monthlyIncome) || 0;
+        const autoIncome = calculatedMonthlyIncome?.averageIncome || calculatedMonthlyIncome?.lastMonthIncome || 0;
+        const finalIncome = (manualIncome > 0 && autoIncome > 0)
+            ? Math.min(manualIncome, autoIncome)
+            : (manualIncome || autoIncome);
+
+        if (!selectedPlan) {
+            alert('Please select a plan');
+            return;
+        }
+
+        if (finalIncome <= 0) {
+            alert('Please enter a valid monthly income or ensure your average is calculated');
             return;
         }
 
@@ -107,7 +104,7 @@ const BudgetPlanTab = () => {
         try {
             await api.post('/budget/budget-plan', {
                 selectedPlan,
-                monthlyIncome: parseFloat(monthlyIncome)
+                monthlyIncome: finalIncome
             });
 
             setShowIncomeForm(false);
@@ -202,79 +199,143 @@ const BudgetPlanTab = () => {
                     ))}
                 </div>
 
-                {/* Income Input Form */}
+                {/* Income Input Modal */}
                 {selectedPlan && (
-                    <div className="income-form-section">
-                        <h3>💰 Enter Your Monthly Income</h3>
-                        
-                        {/* Average Months Selector */}
-                        <div style={{ marginBottom: '16px' }}>
-                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                                Calculate Average From <span style={{ color: '#ef4444' }}>*</span>
-                            </label>
-                            <select
-                                value={averageMonths}
-                                onChange={(e) => handleAverageMonthsChange(parseInt(e.target.value))}
-                                style={{
-                                    width: '100%',
-                                    padding: '10px 12px',
-                                    borderRadius: '8px',
-                                    border: '2px solid #e5e7eb',
-                                    fontSize: '14px',
-                                    cursor: 'pointer'
-                                }}
+                    <div className="modal-overlay-premium">
+                        <div className="modal-content-premium">
+                            <button
+                                className="modal-close-btn"
+                                onClick={() => setSelectedPlan(null)}
                             >
-                                <option value={1}>Last 1 Month</option>
-                                <option value={2}>Last 2 Months Average</option>
-                                <option value={3}>Last 3 Months Average</option>
-                                <option value={4}>Last 4 Months Average</option>
-                                <option value={5}>Last 5 Months Average</option>
-                                <option value={6}>Last 6 Months Average</option>
-                                <option value={12}>Last 12 Months Average</option>
-                            </select>
-                            <small style={{ color: '#6b7280', fontSize: '0.875rem', display: 'block', marginTop: '4px' }}>
-                                {loadingIncome ? (
-                                    '⏳ Calculating average from your transactions...'
-                                ) : calculatedMonthlyIncome ? (
-                                    <>
-                                        📊 Calculated from {averageMonths} month{averageMonths > 1 ? 's' : ''} of data
-                                    </>
-                                ) : (
-                                    'Select how many months to average'
-                                )}
-                            </small>
-                        </div>
+                                ×
+                            </button>
 
-                        <div className="income-input-group">
-                            <span className="input-prefix">$</span>
-                            <input
-                                type="number"
-                                value={monthlyIncome}
-                                onChange={(e) => setMonthlyIncome(e.target.value)}
-                                placeholder="Enter monthly income"
-                                className="income-input"
-                                min="0"
-                                step="0.01"
-                            />
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '24px', textAlign: 'center' }}>
+                                💰 Enter Your Monthly Income
+                            </h3>
+
+                            <div className="income-form-grid">
+                                {/* Average Months Selector */}
+                                <div className="form-group-budget full-width">
+                                    <label>
+                                        Calculate Average From <span style={{ color: '#ef4444' }}>*</span>
+                                    </label>
+                                    <select
+                                        value={averageMonths}
+                                        onChange={(e) => handleAverageMonthsChange(parseInt(e.target.value))}
+                                        className="income-input"
+                                        style={{ width: '100%', cursor: 'pointer' }}
+                                    >
+                                        <option value={1}>Last 1 Month</option>
+                                        <option value={2}>Last 2 Months Average</option>
+                                        <option value={3}>Last 3 Months Average</option>
+                                        <option value={4}>Last 4 Months Average</option>
+                                        <option value={5}>Last 5 Months Average</option>
+                                        <option value={6}>Last 6 Months Average</option>
+                                        <option value={12}>Last 12 Months Average</option>
+                                    </select>
+                                    <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                                        {loadingIncome ? (
+                                            '⏳ Calculating average from your transactions...'
+                                        ) : calculatedMonthlyIncome ? (
+                                            <>
+                                                📊 Calculated from {averageMonths} month{averageMonths > 1 ? 's' : ''} of data
+                                            </>
+                                        ) : (
+                                            'Select how many months to average'
+                                        )}
+                                    </small>
+                                </div>
+
+                                {/* Calculated Income (Read Only) */}
+                                <div className="form-group-budget">
+                                    <label>Present Monthly Average Income</label>
+                                    <div className="income-input-group" style={{ backgroundColor: '#f9fafb' }}>
+                                        <span className="input-prefix">$</span>
+                                        <input
+                                            type="text"
+                                            value={calculatedMonthlyIncome?.averageIncome?.toFixed(2) || calculatedMonthlyIncome?.lastMonthIncome?.toFixed(2) || '0.00'}
+                                            readOnly
+                                            className="income-input"
+                                            style={{ backgroundColor: 'transparent', cursor: 'not-allowed' }}
+                                        />
+                                    </div>
+                                    <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                                        {loadingIncome ? '⏳ Calculating...' : 'Based on transaction history'}
+                                    </small>
+                                </div>
+
+                                {/* Want Monthly Income (Editable) */}
+                                <div className="form-group-budget">
+                                    <label>Want Monthly Income</label>
+                                    <div className="income-input-group">
+                                        <span className="input-prefix">$</span>
+                                        <input
+                                            type="number"
+                                            value={monthlyIncome}
+                                            onChange={(e) => setMonthlyIncome(e.target.value)}
+                                            placeholder="0.00"
+                                            className="income-input"
+                                            min="0"
+                                            step="0.01"
+                                        />
+                                    </div>
+                                    <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                                        Enter your income target
+                                    </small>
+                                </div>
+
+                                {/* Final Baseline Indicator */}
+                                <div className="full-width" style={{
+                                    background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                                    padding: '20px',
+                                    borderRadius: '16px',
+                                    border: '1px solid #3b82f6',
+                                    marginTop: '8px'
+                                }}>
+                                    <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1d4ed8', display: 'block', marginBottom: '8px' }}>
+                                        📊 Budgeting Baseline (Lower Value)
+                                    </span>
+                                    <div style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#1e40af' }}>
+                                        {(() => {
+                                            const manualIncome = parseFloat(monthlyIncome) || 0;
+                                            const autoIncome = calculatedMonthlyIncome?.averageIncome || calculatedMonthlyIncome?.lastMonthIncome || 0;
+                                            const finalIncome = (manualIncome > 0 && autoIncome > 0)
+                                                ? Math.min(manualIncome, autoIncome)
+                                                : (manualIncome || autoIncome);
+                                            return `$${finalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                                        })()}
+                                    </div>
+                                    <small style={{ color: '#2563eb', fontSize: '0.875rem', display: 'block', marginTop: '4px' }}>
+                                        {(() => {
+                                            const manualIncome = parseFloat(monthlyIncome) || 0;
+                                            const autoIncome = calculatedMonthlyIncome?.averageIncome || calculatedMonthlyIncome?.lastMonthIncome || 0;
+                                            if (manualIncome > 0 && autoIncome > 0) {
+                                                const isUsingManual = manualIncome <= autoIncome;
+                                                return `Using lower value: ${isUsingManual ? 'Your manual entry' : 'Monthly average'}`;
+                                            }
+                                            return manualIncome > 0 ? 'Using your manual entry' : autoIncome > 0 ? 'Using your monthly average' : 'Waiting for income data...';
+                                        })()}
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div className="modal-actions-premium">
+                                <button
+                                    onClick={() => setSelectedPlan(null)}
+                                    className="cancel-btn-premium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSaveBudgetPlan}
+                                    className="save-budget-btn"
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Saving...' : 'Save Budget Plan'}
+                                </button>
+                            </div>
                         </div>
-                        <small style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '8px', display: 'block' }}>
-                            {loadingIncome ? (
-                                '⏳ Calculating...'
-                            ) : calculatedMonthlyIncome ? (
-                                <>
-                                    💡 {averageMonths === 1 ? 'Last month' : `${averageMonths}-month average`}: <strong>${calculatedMonthlyIncome.averageIncome?.toFixed(2) || calculatedMonthlyIncome.lastMonthIncome?.toFixed(2) || '0.00'}</strong>
-                                </>
-                            ) : (
-                                'Enter your monthly income'
-                            )}
-                        </small>
-                        <button
-                            onClick={handleSaveBudgetPlan}
-                            className="save-budget-btn"
-                            disabled={loading}
-                        >
-                            {loading ? 'Saving...' : 'Save Budget Plan'}
-                        </button>
                     </div>
                 )}
             </div>

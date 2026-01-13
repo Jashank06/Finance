@@ -21,7 +21,7 @@ const LoanLedger = () => {
   const [selectedLoanForHistory, setSelectedLoanForHistory] = useState(null);
   const [showOnBehalfPaymentForm, setShowOnBehalfPaymentForm] = useState(false);
   const [selectedOnBehalfId, setSelectedOnBehalfId] = useState('');
-  
+
   // Loan Form State
   const [loanInputs, setLoanInputs] = useState({
     date: new Date().toISOString().slice(0, 10),
@@ -80,7 +80,7 @@ const LoanLedger = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch loan entries
       const loansResponse = await investmentAPI.getAll('loan-ledger');
       const loans = (loansResponse.data.investments || []).map(loan => {
@@ -102,7 +102,7 @@ const LoanLedger = () => {
         };
       });
       setLoanEntries(loans);
-      
+
       // Fetch on-behalf entries
       const onBehalfResponse = await investmentAPI.getAll('on-behalf');
       const onBehalf = (onBehalfResponse.data.investments || []).map(entry => {
@@ -139,18 +139,18 @@ const LoanLedger = () => {
     // Separate loans by type
     const lentLoans = loanEntries.filter(l => l.loanType === 'Lent');
     const borrowedLoans = loanEntries.filter(l => l.loanType === 'Borrowed');
-    
+
     const totalLentAmount = lentLoans.reduce((sum, loan) => sum + Number(loan.amount || 0), 0);
     const totalLentPaid = lentLoans.reduce((sum, loan) => sum + Number(loan.totalPaid || 0), 0);
     const totalLentBalance = totalLentAmount - totalLentPaid;
-    
+
     const totalBorrowedAmount = borrowedLoans.reduce((sum, loan) => sum + Number(loan.amount || 0), 0);
     const totalBorrowedPaid = borrowedLoans.reduce((sum, loan) => sum + Number(loan.totalPaid || 0), 0);
     const totalBorrowedBalance = totalBorrowedAmount - totalBorrowedPaid;
-    
+
     const totalOnBehalf = onBehalfEntries.reduce((sum, entry) => sum + Number(entry.amountPaid || 0), 0);
     const totalReceived = onBehalfEntries.reduce((sum, entry) => sum + Number(entry.receivedAmount || 0), 0);
-    
+
     return {
       totalLentAmount,
       totalLentPaid,
@@ -171,7 +171,7 @@ const LoanLedger = () => {
     e.preventDefault();
     try {
       setSaving(true);
-      
+
       const payload = {
         category: 'loan-ledger',
         type: loanInputs.loanType, // 'Lent' or 'Borrowed'
@@ -189,10 +189,10 @@ const LoanLedger = () => {
           payments: []
         })
       };
-      
+
       await investmentAPI.create(payload);
       await fetchData(); // Refresh data from database
-      
+
       setLoanInputs({
         date: new Date().toISOString().slice(0, 10),
         loanType: 'Lent',
@@ -219,14 +219,14 @@ const LoanLedger = () => {
     try {
       setSaving(true);
       const paymentAmount = Number(paymentInputs.amountReturned);
-      
+
       // Find the loan
       const loan = loanEntries.find(l => l._id === selectedLoanId);
       if (!loan) {
         alert('Loan not found');
         return;
       }
-      
+
       // Parse existing notes
       const existingNotes = JSON.parse(loan.notes || '{}');
       const totalPaid = (existingNotes.totalPaid || 0) + paymentAmount;
@@ -237,7 +237,7 @@ const LoanLedger = () => {
         paymentDetails: paymentInputs.paymentDetails,
         comments: paymentInputs.comments
       }];
-      
+
       // Update loan with new payment
       const updatedNotes = {
         ...existingNotes,
@@ -245,13 +245,13 @@ const LoanLedger = () => {
         balanceAmount,
         payments
       };
-      
+
       await investmentAPI.update(selectedLoanId, {
         notes: JSON.stringify(updatedNotes)
       });
-      
+
       await fetchData(); // Refresh data from database
-      
+
       setPaymentInputs({
         dateOfReturn: new Date().toISOString().slice(0, 10),
         amountReturned: '',
@@ -274,7 +274,7 @@ const LoanLedger = () => {
     e.preventDefault();
     try {
       setSaving(true);
-      
+
       const payload = {
         category: 'on-behalf',
         type: 'On Behalf',
@@ -292,10 +292,10 @@ const LoanLedger = () => {
           comments: onBehalfInputs.comments
         })
       };
-      
+
       await investmentAPI.create(payload);
       await fetchData(); // Refresh data from database
-      
+
       setOnBehalfInputs({
         date: new Date().toISOString().slice(0, 10),
         paidOnBehalfOf: '',
@@ -341,14 +341,14 @@ const LoanLedger = () => {
     try {
       setSaving(true);
       const receiptAmount = Number(onBehalfPaymentInputs.amountReceived);
-      
+
       // Find the on behalf entry
       const onBehalfEntry = onBehalfEntries.find(e => e._id === selectedOnBehalfId);
       if (!onBehalfEntry) {
         alert('On behalf entry not found');
         return;
       }
-      
+
       // Parse existing notes
       const existingNotes = JSON.parse(onBehalfEntry.notes || '{}');
       const totalReceived = (existingNotes.totalReceived || existingNotes.receivedAmount || 0) + receiptAmount;
@@ -359,7 +359,7 @@ const LoanLedger = () => {
         paymentDetails: onBehalfPaymentInputs.receiptPaymentDetails,
         comments: onBehalfPaymentInputs.comments
       }];
-      
+
       // Update on behalf entry with new receipt
       const updatedNotes = {
         ...existingNotes,
@@ -368,13 +368,13 @@ const LoanLedger = () => {
         receipts,
         receivedAmount: totalReceived // Update this for backward compatibility
       };
-      
+
       await investmentAPI.update(selectedOnBehalfId, {
         notes: JSON.stringify(updatedNotes)
       });
-      
+
       await fetchData(); // Refresh data from database
-      
+
       setOnBehalfPaymentInputs({
         dateOfReceipt: new Date().toISOString().slice(0, 10),
         amountReceived: '',
@@ -396,7 +396,7 @@ const LoanLedger = () => {
   return (
     <div className="investment-container">
       <div className="investment-header">
-        <h1>Udhar Lena/Dena</h1>
+        <h1>Udhar Lena / Dena / Credit Card / Loan / Wallet</h1>
         <div className="header-actions">
           <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
             <FiPlus /> {showForm ? 'Cancel' : 'Add Loan'}
@@ -422,7 +422,7 @@ const LoanLedger = () => {
             <p className="stat-label">Udhaar Dia (Lent)</p>
             <h3 className="stat-value">₹{Math.round(totals.totalLentAmount).toLocaleString('en-IN')}</h3>
             <p style={{ fontSize: '11px', color: '#64748b', margin: '4px 0 0 0' }}>
-              Received: ₹{Math.round(totals.totalLentPaid).toLocaleString('en-IN')} | 
+              Received: ₹{Math.round(totals.totalLentPaid).toLocaleString('en-IN')} |
               Balance: ₹{Math.round(totals.totalLentBalance).toLocaleString('en-IN')}
             </p>
           </div>
@@ -435,7 +435,7 @@ const LoanLedger = () => {
             <p className="stat-label">Udhaar Lia (Borrowed)</p>
             <h3 className="stat-value">₹{Math.round(totals.totalBorrowedAmount).toLocaleString('en-IN')}</h3>
             <p style={{ fontSize: '11px', color: '#64748b', margin: '4px 0 0 0' }}>
-              Paid: ₹{Math.round(totals.totalBorrowedPaid).toLocaleString('en-IN')} | 
+              Paid: ₹{Math.round(totals.totalBorrowedPaid).toLocaleString('en-IN')} |
               Balance: ₹{Math.round(totals.totalBorrowedBalance).toLocaleString('en-IN')}
             </p>
           </div>
@@ -446,8 +446,8 @@ const LoanLedger = () => {
           </div>
           <div className="stat-content">
             <p className="stat-label">Net Position</p>
-            <h3 className="stat-value" style={{ 
-              color: (totals.totalLentBalance - totals.totalBorrowedBalance) >= 0 ? '#10B981' : '#EF4444' 
+            <h3 className="stat-value" style={{
+              color: (totals.totalLentBalance - totals.totalBorrowedBalance) >= 0 ? '#10B981' : '#EF4444'
             }}>
               ₹{Math.round(Math.abs(totals.totalLentBalance - totals.totalBorrowedBalance)).toLocaleString('en-IN')}
             </h3>
@@ -495,11 +495,11 @@ const LoanLedger = () => {
               {loanEntries.map((loan) => (
                 <tr key={loan._id}>
                   <td style={{ minWidth: '140px', width: '140px' }}>
-                    <span 
-                      className="investment-type-badge" 
-                      style={{ 
-                        background: loan.loanType === 'Lent' 
-                          ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' 
+                    <span
+                      className="investment-type-badge"
+                      style={{
+                        background: loan.loanType === 'Lent'
+                          ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
                           : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
                         fontSize: '12px',
                         padding: '6px 12px',
@@ -515,7 +515,7 @@ const LoanLedger = () => {
                   </td>
                   <td>{new Date(loan.date).toLocaleDateString('en-IN')}</td>
                   <td>
-                    <button 
+                    <button
                       onClick={() => handleShowPaymentHistory(loan)}
                       style={{
                         background: 'none',
@@ -541,11 +541,11 @@ const LoanLedger = () => {
                   <td>{loan.paymentDetails}</td>
                   <td>
                     <div className="investment-actions">
-                      <button 
+                      <button
                         onClick={() => {
                           setSelectedLoanId(loan._id);
                           setShowPaymentForm(true);
-                        }} 
+                        }}
                         className="btn-icon"
                         title="Add Payment"
                       >
@@ -588,7 +588,7 @@ const LoanLedger = () => {
                   <tr key={entry._id}>
                     <td>{new Date(entry.date).toLocaleDateString('en-IN')}</td>
                     <td>
-                      <button 
+                      <button
                         onClick={() => handleShowPaymentHistory(entry)}
                         style={{
                           background: 'none',
@@ -613,11 +613,11 @@ const LoanLedger = () => {
                     <td>{entry.comments}</td>
                     <td>
                       <div className="investment-actions">
-                        <button 
+                        <button
                           onClick={() => {
                             setSelectedOnBehalfId(entry._id);
                             setShowOnBehalfPaymentForm(true);
-                          }} 
+                          }}
                           className="btn-icon"
                           title="Add Receipt"
                         >
@@ -644,9 +644,9 @@ const LoanLedger = () => {
             <div className="form-row">
               <div className="form-field">
                 <label>Loan Type *</label>
-                <select 
-                  value={loanInputs.loanType} 
-                  onChange={(e) => setLoanInputs({ ...loanInputs, loanType: e.target.value })} 
+                <select
+                  value={loanInputs.loanType}
+                  onChange={(e) => setLoanInputs({ ...loanInputs, loanType: e.target.value })}
                   required
                   style={{
                     padding: '12px',
@@ -925,11 +925,11 @@ const LoanLedger = () => {
               paddingBottom: '16px'
             }}>
               <h2 style={{ margin: 0, color: '#1f2937' }}>
-                {selectedLoanForHistory.nameOfPerson ? 
-                  `Payment History - ${selectedLoanForHistory.nameOfPerson}` : 
+                {selectedLoanForHistory.nameOfPerson ?
+                  `Payment History - ${selectedLoanForHistory.nameOfPerson}` :
                   `Receipt History - ${selectedLoanForHistory.paidOnBehalfOf}`}
               </h2>
-              <button 
+              <button
                 onClick={() => setShowPaymentHistory(false)}
                 style={{
                   background: 'none',
@@ -955,21 +955,21 @@ const LoanLedger = () => {
                   // Loan History
                   <>
                     <div>
-                      <strong>Loan Type:</strong><br/>
+                      <strong>Loan Type:</strong><br />
                       <span style={{ color: selectedLoanForHistory.loanType === 'Lent' ? '#10B981' : '#EF4444' }}>
                         {selectedLoanForHistory.loanType === 'Lent' ? 'Udhaar Dia' : 'Udhaar Lia'}
                       </span>
                     </div>
                     <div>
-                      <strong>Total Amount:</strong><br/>
+                      <strong>Total Amount:</strong><br />
                       ₹{Math.round(selectedLoanForHistory.amount).toLocaleString('en-IN')}
                     </div>
                     <div>
-                      <strong>Total Paid:</strong><br/>
+                      <strong>Total Paid:</strong><br />
                       ₹{Math.round(selectedLoanForHistory.totalPaid || 0).toLocaleString('en-IN')}
                     </div>
                     <div>
-                      <strong>Balance:</strong><br/>
+                      <strong>Balance:</strong><br />
                       <span style={{ color: selectedLoanForHistory.balanceAmount > 0 ? '#EF4444' : '#10B981' }}>
                         ₹{Math.round(selectedLoanForHistory.balanceAmount).toLocaleString('en-IN')}
                       </span>
@@ -979,19 +979,19 @@ const LoanLedger = () => {
                   // On Behalf History
                   <>
                     <div>
-                      <strong>Entry Type:</strong><br/>
+                      <strong>Entry Type:</strong><br />
                       <span style={{ color: '#8B5CF6' }}>On Behalf Payment</span>
                     </div>
                     <div>
-                      <strong>Amount Paid:</strong><br/>
+                      <strong>Amount Paid:</strong><br />
                       ₹{Math.round(selectedLoanForHistory.amountPaid).toLocaleString('en-IN')}
                     </div>
                     <div>
-                      <strong>Total Received:</strong><br/>
+                      <strong>Total Received:</strong><br />
                       ₹{Math.round(selectedLoanForHistory.totalReceived || 0).toLocaleString('en-IN')}
                     </div>
                     <div>
-                      <strong>Balance to Receive:</strong><br/>
+                      <strong>Balance to Receive:</strong><br />
                       <span style={{ color: selectedLoanForHistory.balanceToReceive > 0 ? '#EF4444' : '#10B981' }}>
                         ₹{Math.round(selectedLoanForHistory.balanceToReceive || 0).toLocaleString('en-IN')}
                       </span>
@@ -1005,8 +1005,8 @@ const LoanLedger = () => {
             <h3 style={{ marginBottom: '16px', color: '#374151' }}>
               {selectedLoanForHistory.nameOfPerson ? 'Payment Records' : 'Receipt Records'}
             </h3>
-            
-            {((selectedLoanForHistory.payments && selectedLoanForHistory.payments.length > 0) || 
+
+            {((selectedLoanForHistory.payments && selectedLoanForHistory.payments.length > 0) ||
               (selectedLoanForHistory.receipts && selectedLoanForHistory.receipts.length > 0)) ? (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{
@@ -1059,61 +1059,61 @@ const LoanLedger = () => {
             )}
 
             {/* Summary Stats */}
-            {((selectedLoanForHistory.payments && selectedLoanForHistory.payments.length > 0) || 
+            {((selectedLoanForHistory.payments && selectedLoanForHistory.payments.length > 0) ||
               (selectedLoanForHistory.receipts && selectedLoanForHistory.receipts.length > 0)) && (
-              <div style={{
-                marginTop: '20px',
-                padding: '16px',
-                backgroundColor: '#f0f9ff',
-                borderRadius: '8px',
-                borderLeft: '4px solid #2563EB'
-              }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', fontSize: '14px' }}>
-                  {selectedLoanForHistory.nameOfPerson ? (
-                    // Loan Stats
-                    <>
-                      <div>
-                        <strong>Total Payments:</strong><br/>
-                        {selectedLoanForHistory.payments?.length || 0} transactions
-                      </div>
-                      <div>
-                        <strong>Last Payment:</strong><br/>
-                        {selectedLoanForHistory.payments && selectedLoanForHistory.payments.length > 0 ?
-                          new Date(Math.max(...selectedLoanForHistory.payments.map(p => new Date(p.date)))).toLocaleDateString('en-IN') :
-                          'No payments yet'
-                        }
-                      </div>
-                      <div>
-                        <strong>Payment Progress:</strong><br/>
-                        {Math.round((selectedLoanForHistory.totalPaid / selectedLoanForHistory.amount) * 100)}% completed
-                      </div>
-                    </>
-                  ) : (
-                    // On Behalf Stats
-                    <>
-                      <div>
-                        <strong>Total Receipts:</strong><br/>
-                        {selectedLoanForHistory.receipts?.length || 0} transactions
-                      </div>
-                      <div>
-                        <strong>Last Receipt:</strong><br/>
-                        {selectedLoanForHistory.receipts && selectedLoanForHistory.receipts.length > 0 ?
-                          new Date(Math.max(...selectedLoanForHistory.receipts.map(r => new Date(r.date)))).toLocaleDateString('en-IN') :
-                          'No receipts yet'
-                        }
-                      </div>
-                      <div>
-                        <strong>Receipt Progress:</strong><br/>
-                        {Math.round((selectedLoanForHistory.totalReceived / selectedLoanForHistory.amountPaid) * 100)}% completed
-                      </div>
-                    </>
-                  )}
+                <div style={{
+                  marginTop: '20px',
+                  padding: '16px',
+                  backgroundColor: '#f0f9ff',
+                  borderRadius: '8px',
+                  borderLeft: '4px solid #2563EB'
+                }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', fontSize: '14px' }}>
+                    {selectedLoanForHistory.nameOfPerson ? (
+                      // Loan Stats
+                      <>
+                        <div>
+                          <strong>Total Payments:</strong><br />
+                          {selectedLoanForHistory.payments?.length || 0} transactions
+                        </div>
+                        <div>
+                          <strong>Last Payment:</strong><br />
+                          {selectedLoanForHistory.payments && selectedLoanForHistory.payments.length > 0 ?
+                            new Date(Math.max(...selectedLoanForHistory.payments.map(p => new Date(p.date)))).toLocaleDateString('en-IN') :
+                            'No payments yet'
+                          }
+                        </div>
+                        <div>
+                          <strong>Payment Progress:</strong><br />
+                          {Math.round((selectedLoanForHistory.totalPaid / selectedLoanForHistory.amount) * 100)}% completed
+                        </div>
+                      </>
+                    ) : (
+                      // On Behalf Stats
+                      <>
+                        <div>
+                          <strong>Total Receipts:</strong><br />
+                          {selectedLoanForHistory.receipts?.length || 0} transactions
+                        </div>
+                        <div>
+                          <strong>Last Receipt:</strong><br />
+                          {selectedLoanForHistory.receipts && selectedLoanForHistory.receipts.length > 0 ?
+                            new Date(Math.max(...selectedLoanForHistory.receipts.map(r => new Date(r.date)))).toLocaleDateString('en-IN') :
+                            'No receipts yet'
+                          }
+                        </div>
+                        <div>
+                          <strong>Receipt Progress:</strong><br />
+                          {Math.round((selectedLoanForHistory.totalReceived / selectedLoanForHistory.amountPaid) * 100)}% completed
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             <div style={{ textAlign: 'center', marginTop: '24px' }}>
-              <button 
+              <button
                 onClick={() => setShowPaymentHistory(false)}
                 style={{
                   backgroundColor: '#6b7280',

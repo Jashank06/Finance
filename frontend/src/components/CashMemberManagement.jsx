@@ -52,7 +52,8 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
     paymentMethod: 'cash',
     location: '',
     notes: '',
-    narration: ''
+    narration: '',
+    isMilestone: false
   });
 
   useEffect(() => {
@@ -115,6 +116,10 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
       // Prepare transaction data for backend (remove frontend-only fields)
       const dataToSend = { ...transactionForm, memberId: selectedMember._id };
 
+      // Save and remove isMilestone from dataToSend
+      const { isMilestone } = dataToSend;
+      delete dataToSend.isMilestone;
+
       // Clean up empty string values (Mongoose enum fields don't accept empty strings)
       Object.keys(dataToSend).forEach(key => {
         if (dataToSend[key] === '') {
@@ -138,6 +143,24 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
 
         // Sync to Inventory if category is inventory-related
         await syncInventoryFromTransaction(transactionForm, 'cash');
+      }
+
+      // Save milestone if checked (for income transactions)
+      if (isMilestone && transactionForm.type === 'income') {
+        try {
+          await api.post('/budget/milestones', {
+            title: `Transaction: ${transactionForm.description}`,
+            description: transactionForm.notes || `Cash income amount: ${transactionForm.amount}`,
+            startDate: transactionForm.date,
+            endDate: transactionForm.date,
+            status: 'completed',
+            priority: 'medium',
+            progress: 100
+          });
+          console.log('Milestone created successfully');
+        } catch (msError) {
+          console.error('Error saving milestone:', msError);
+        }
       }
 
       setShowTransactionForm(false);
@@ -286,7 +309,8 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
       paymentMethod: 'cash',
       location: '',
       notes: '',
-      narration: ''
+      narration: '',
+      isMilestone: false
     });
     setEditingTransaction(null);
   };
@@ -1091,6 +1115,20 @@ const CashMemberManagement = ({ familyMembers = [] }) => {
                           required
                         ></textarea>
                       </div>
+                      {transactionForm.type === 'income' && (
+                        <div className="form-group checkbox-group" style={{ marginTop: '10px' }}>
+                          <input
+                            type="checkbox"
+                            id="isCashMilestone"
+                            checked={transactionForm.isMilestone}
+                            onChange={(e) => setTransactionForm({ ...transactionForm, isMilestone: e.target.checked })}
+                            style={{ width: 'auto' }}
+                          />
+                          <label htmlFor="isCashMilestone" style={{ cursor: 'pointer', fontSize: '14px' }}>
+                            Mark as Milestone
+                          </label>
+                        </div>
+                      )}
                     </div>
 
                     <div className="form-actions">

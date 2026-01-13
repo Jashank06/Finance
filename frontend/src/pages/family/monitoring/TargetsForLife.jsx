@@ -41,7 +41,7 @@ const TargetsForLife = () => {
     const fetchMonthlyExpenses = async (months = 1) => {
         try {
             setLoadingExpenses(true);
-            const response = await api.get(`/cashflow-analysis/monthly-expenses?months=${months}`);
+            const response = await api.get(`/cashflow/monthly-expenses?months=${months}`);
             if (response.data.success) {
                 setCalculatedMonthlyExpenses(response.data.data);
                 return response.data.data;
@@ -58,7 +58,7 @@ const TargetsForLife = () => {
     const handleAverageMonthsChange = async (months) => {
         setAverageMonths(months);
         const newExpensesData = await fetchMonthlyExpenses(months);
-        
+
         // Update form with new average immediately
         if (newExpensesData && targetForm.goalType === 'Emergency Fund') {
             const avgExpense = newExpensesData.averageExpenses?.toFixed(2) || newExpensesData.lastMonthExpenses?.toFixed(2) || '';
@@ -172,12 +172,31 @@ const TargetsForLife = () => {
         }
     };
 
+    const calculateGoalType = (targetDate) => {
+        if (!targetDate) return '';
+
+        const today = new Date();
+        const target = new Date(targetDate);
+        const diffTime = target - today;
+        const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
+
+        if (diffYears <= 3) {
+            return 'Short Term';
+        } else if (diffYears <= 7) {
+            return 'Medium Term';
+        } else {
+            return 'Long Term';
+        }
+    };
+
     const handleTargetDateChange = (dateValue) => {
         const calculatedHorizon = calculateTimeHorizon(dateValue);
+        const calculatedGoalType = calculateGoalType(dateValue);
         setTargetForm({
             ...targetForm,
             targetDate: dateValue,
-            timeHorizon: calculatedHorizon
+            timeHorizon: calculatedHorizon,
+            goalType: calculatedGoalType
         });
     };
 
@@ -353,17 +372,13 @@ const TargetsForLife = () => {
                         <div className="target-form-premium">
                             <div className="form-grid">
                                 <div className="form-group-premium">
-                                    <label>Goal Type <span className="required">*</span></label>
-                                    <select
-                                        value={targetForm.goalType}
-                                        onChange={handleGoalTypeChange}
-                                        className="form-select"
-                                    >
-                                        <option value="">Select Goal Type</option>
-                                        <option value="Short Term">Short Term</option>
-                                        <option value="Medium Term">Medium Term</option>
-                                        <option value="Long Term">Long Term</option>
-                                    </select>
+                                    <label>Target Date <span className="required">*</span></label>
+                                    <input
+                                        type="date"
+                                        value={targetForm.targetDate}
+                                        onChange={(e) => handleTargetDateChange(e.target.value)}
+                                        className="form-input"
+                                    />
                                 </div>
 
                                 <div className="form-group-premium">
@@ -405,7 +420,7 @@ const TargetsForLife = () => {
                                     </div>
                                 </div>
 
-                                <div className="form-group-premium full-width">
+                                <div className="form-group-premium">
                                     <label>Recommended Investment Vehicle <span className="required">*</span></label>
                                     <input
                                         type="text"
@@ -413,6 +428,18 @@ const TargetsForLife = () => {
                                         onChange={(e) => setTargetForm({ ...targetForm, recommendedInvestmentVehicle: e.target.value })}
                                         placeholder="e.g., High-Yield Savings Account, ETFs"
                                         className="form-input"
+                                    />
+                                </div>
+
+                                <div className="form-group-premium">
+                                    <label>Goal Type <span className="required">*</span></label>
+                                    <input
+                                        type="text"
+                                        value={targetForm.goalType}
+                                        readOnly
+                                        placeholder="Auto-calculated from Target Date"
+                                        className="form-input"
+                                        style={{ backgroundColor: '#f9fafb', cursor: 'not-allowed' }}
                                     />
                                 </div>
 
@@ -431,16 +458,6 @@ const TargetsForLife = () => {
                                         <option value="Medium to High">Medium to High</option>
                                         <option value="High">High</option>
                                     </select>
-                                </div>
-
-                                <div className="form-group-premium">
-                                    <label>Target Date <span className="required">*</span></label>
-                                    <input
-                                        type="date"
-                                        value={targetForm.targetDate}
-                                        onChange={(e) => handleTargetDateChange(e.target.value)}
-                                        className="form-input"
-                                    />
                                 </div>
                             </div>
 
@@ -501,7 +518,24 @@ const TargetsForLife = () => {
                                 </div>
 
                                 <div className="form-group-premium">
-                                    <label>Monthly Expenses <span className="required">*</span></label>
+                                    <label>Present Monthly Average Expenses</label>
+                                    <div className="input-with-prefix">
+                                        <span className="input-prefix">$</span>
+                                        <input
+                                            type="text"
+                                            value={calculatedMonthlyExpenses?.averageExpenses?.toFixed(2) || calculatedMonthlyExpenses?.lastMonthExpenses?.toFixed(2) || '0.00'}
+                                            readOnly
+                                            className="form-input with-prefix"
+                                            style={{ backgroundColor: '#f9fafb', cursor: 'not-allowed' }}
+                                        />
+                                    </div>
+                                    <small style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '4px', display: 'block' }}>
+                                        Average from {averageMonths} month(s) data
+                                    </small>
+                                </div>
+
+                                <div className="form-group-premium">
+                                    <label>Want Monthly Expenses</label>
                                     <div className="input-with-prefix">
                                         <span className="input-prefix">$</span>
                                         <input
@@ -515,15 +549,7 @@ const TargetsForLife = () => {
                                         />
                                     </div>
                                     <small style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '4px', display: 'block' }}>
-                                        {loadingExpenses ? (
-                                            '⏳ Calculating...'
-                                        ) : calculatedMonthlyExpenses ? (
-                                            <>
-                                                💡 {averageMonths === 1 ? 'Last month' : `${averageMonths}-month average`}: <strong>${calculatedMonthlyExpenses.averageExpenses?.toFixed(2) || calculatedMonthlyExpenses.lastMonthExpenses?.toFixed(2) || '0.00'}</strong>
-                                            </>
-                                        ) : (
-                                            'Enter your monthly expenses'
-                                        )}
+                                        Enter monthly expenses as per your need
                                     </small>
                                 </div>
 
@@ -543,7 +569,7 @@ const TargetsForLife = () => {
                                     </small>
                                 </div>
 
-                                {targetForm.monthlyExpenses && targetForm.monthsOfCoverage && (
+                                {targetForm.monthsOfCoverage && (
                                     <div className="form-group-premium full-width" style={{
                                         background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
                                         padding: '16px',
@@ -559,10 +585,21 @@ const TargetsForLife = () => {
                                             color: '#047857',
                                             marginTop: '8px'
                                         }}>
-                                            {formatCurrency(parseFloat(targetForm.monthlyExpenses) * parseFloat(targetForm.monthsOfCoverage))}
+                                            {(() => {
+                                                const manualExpenses = parseFloat(targetForm.monthlyExpenses) || 0;
+                                                const autoExpenses = calculatedMonthlyExpenses?.averageExpenses || calculatedMonthlyExpenses?.lastMonthExpenses || 0;
+                                                const finalExpenses = Math.max(manualExpenses, autoExpenses);
+                                                return formatCurrency(finalExpenses * parseFloat(targetForm.monthsOfCoverage || 0));
+                                            })()}
                                         </div>
                                         <small style={{ color: '#059669', display: 'block', marginTop: '8px' }}>
-                                            ${parseFloat(targetForm.monthlyExpenses).toFixed(2)} × {targetForm.monthsOfCoverage} months
+                                            {(() => {
+                                                const manualExpenses = parseFloat(targetForm.monthlyExpenses) || 0;
+                                                const autoExpenses = calculatedMonthlyExpenses?.averageExpenses || calculatedMonthlyExpenses?.lastMonthExpenses || 0;
+                                                const finalExpenses = Math.max(manualExpenses, autoExpenses);
+                                                const source = finalExpenses === manualExpenses && manualExpenses > 0 ? 'Using manual input' : 'Using monthly average';
+                                                return `${source} (higher): $${finalExpenses.toFixed(2)} × ${targetForm.monthsOfCoverage} months`;
+                                            })()}
                                         </small>
                                     </div>
                                 )}
@@ -572,16 +609,18 @@ const TargetsForLife = () => {
                                 <button
                                     onClick={async () => {
                                         try {
-                                            if (!targetForm.monthlyExpenses || !targetForm.monthsOfCoverage) {
-                                                alert('Please fill in all required fields');
+                                            const manualExpenses = parseFloat(targetForm.monthlyExpenses) || 0;
+                                            const autoExpenses = calculatedMonthlyExpenses?.averageExpenses || calculatedMonthlyExpenses?.lastMonthExpenses || 0;
+                                            const expenses = Math.max(manualExpenses, autoExpenses);
+                                            const months = parseFloat(targetForm.monthsOfCoverage);
+
+                                            if (!months || months <= 0) {
+                                                alert('Please specify months of coverage');
                                                 return;
                                             }
 
-                                            const expenses = parseFloat(targetForm.monthlyExpenses);
-                                            const months = parseFloat(targetForm.monthsOfCoverage);
-
-                                            if (expenses <= 0 || months <= 0) {
-                                                alert('Values must be greater than 0');
+                                            if (expenses <= 0) {
+                                                alert('Monthly expenses must be greater than 0');
                                                 return;
                                             }
 

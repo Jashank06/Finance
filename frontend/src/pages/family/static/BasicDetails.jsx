@@ -94,9 +94,6 @@ const BasicDetails = () => {
     // Payment Gateway
     paymentGateways: [],
     // Portfolio Details
-    mutualFundsPortfolio: [],
-    sharesPortfolio: [],
-    insurancePortfolio: [],
     // Sub Broker Information
     subBrokers: [],
     // Loans Portfolio
@@ -255,58 +252,7 @@ const BasicDetails = () => {
     goalPurpose: ''
   });
 
-  const [newMutualFundPortfolio, setNewMutualFundPortfolio] = useState({
-    srNo: '',
-    fundHouse: '',
-    investorName: '',
-    fundName: '',
-    goalPurpose: '',
-    folioNumber: '',
-    dateOfPurchase: '',
-    purchaseNAV: '',
-    numberOfUnits: '',
-    purchaseValue: '',
-    currentNAV: '',
-    currentValuation: '',
-    difference: '',
-    percentDifference: '',
-    subBrokerName: ''
-  });
 
-  const [newSharePortfolio, setNewSharePortfolio] = useState({
-    srNo: '',
-    dematCompany: '',
-    investorName: '',
-    scriptName: '',
-    goalPurpose: '',
-    dateOfPurchase: '',
-    purchaseNAV: '',
-    numberOfUnits: '',
-    purchaseValue: '',
-    currentNAV: '',
-    currentValuation: '',
-    difference: '',
-    percentDifference: '',
-    subBrokerName: ''
-  });
-
-  const [newInsurancePortfolio, setNewInsurancePortfolio] = useState({
-    srNo: '',
-    insuranceCompany: '',
-    insurerName: '',
-    policyType: '',
-    goalPurpose: '',
-    policyName: '',
-    policyNumber: '',
-    policyStartDate: '',
-    premiumMode: '',
-    premiumAmount: '',
-    lastPremiumPayingDate: '',
-    maturityDate: '',
-    sumAssured: '',
-    nominee: '',
-    subBrokerName: ''
-  });
 
   const [newLoanPortfolio, setNewLoanPortfolio] = useState({
     srNo: '',
@@ -611,7 +557,7 @@ const BasicDetails = () => {
         ...formData,
         mutualFunds: [...formData.mutualFunds, { ...newMutualFund }]
       };
-      
+
       try {
         setLoading(true);
         await staticAPI.updateBasicDetails(formData._id, updatedData);
@@ -636,7 +582,7 @@ const BasicDetails = () => {
           branchAddress: ''
         });
         setEditingSection(null);
-        
+
         // Sync contacts and customer support
         try {
           await syncContactsFromForm(updatedData, 'BasicDetails');
@@ -644,7 +590,7 @@ const BasicDetails = () => {
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
-        
+
         alert('Mutual Fund added successfully!');
       } catch (error) {
         console.error('Error adding mutual fund:', error);
@@ -679,7 +625,7 @@ const BasicDetails = () => {
         ...formData,
         shares: [...formData.shares, { ...newShare }]
       };
-      
+
       try {
         setLoading(true);
         await staticAPI.updateBasicDetails(formData._id, updatedData);
@@ -704,7 +650,7 @@ const BasicDetails = () => {
           branchAddress: ''
         });
         setEditingSection(null);
-        
+
         // Sync contacts and customer support
         try {
           await syncContactsFromForm(updatedData, 'BasicDetails');
@@ -712,7 +658,7 @@ const BasicDetails = () => {
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
-        
+
         alert('Share added successfully!');
       } catch (error) {
         console.error('Error adding share:', error);
@@ -747,7 +693,7 @@ const BasicDetails = () => {
         ...formData,
         insurance: [...formData.insurance, { ...newInsurance }]
       };
-      
+
       try {
         setLoading(true);
         await staticAPI.updateBasicDetails(formData._id, updatedData);
@@ -772,7 +718,7 @@ const BasicDetails = () => {
           branchAddress: ''
         });
         setEditingSection(null);
-        
+
         // Sync contacts and customer support
         try {
           await syncContactsFromForm(updatedData, 'BasicDetails');
@@ -780,7 +726,7 @@ const BasicDetails = () => {
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
-        
+
         alert('Insurance added successfully!');
       } catch (error) {
         console.error('Error adding insurance:', error);
@@ -815,7 +761,7 @@ const BasicDetails = () => {
         ...formData,
         banks: [...formData.banks, { ...newBank }]
       };
-      
+
       try {
         setLoading(true);
         await staticAPI.updateBasicDetails(formData._id, updatedData);
@@ -838,7 +784,7 @@ const BasicDetails = () => {
           rmEmail: ''
         });
         setEditingSection(null);
-        
+
         // Sync contacts and customer support
         try {
           await syncContactsFromForm(updatedData, 'BasicDetails');
@@ -846,7 +792,7 @@ const BasicDetails = () => {
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
-        
+
         alert('Bank account added successfully!');
       } catch (error) {
         console.error('Error adding bank:', error);
@@ -881,7 +827,7 @@ const BasicDetails = () => {
         ...formData,
         mobileBills: [...formData.mobileBills, { ...newMobileBill }]
       };
-      
+
       try {
         setLoading(true);
         await staticAPI.updateBasicDetails(formData._id, updatedData);
@@ -899,7 +845,7 @@ const BasicDetails = () => {
           customerNumber: ''
         });
         setEditingSection(null);
-        
+
         // Sync contacts and customer support
         try {
           await syncContactsFromForm(updatedData, 'BasicDetails');
@@ -907,7 +853,7 @@ const BasicDetails = () => {
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
-        
+
         alert('Mobile bill added successfully!');
       } catch (error) {
         console.error('Error adding mobile bill:', error);
@@ -942,7 +888,7 @@ const BasicDetails = () => {
         ...formData,
         cards: [...formData.cards, { ...newCard }]
       };
-      
+
       try {
         setLoading(true);
         await staticAPI.updateBasicDetails(formData._id, updatedData);
@@ -962,7 +908,7 @@ const BasicDetails = () => {
           cardType: ''
         });
         setEditingSection(null);
-        
+
         // Sync contacts and customer support
         try {
           await syncContactsFromForm(updatedData, 'BasicDetails');
@@ -970,7 +916,7 @@ const BasicDetails = () => {
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
-        
+
         alert('Card added successfully!');
       } catch (error) {
         console.error('Error adding card:', error);
@@ -1005,7 +951,7 @@ const BasicDetails = () => {
         ...formData,
         paymentGateways: [...formData.paymentGateways, { ...newPaymentGateway }]
       };
-      
+
       try {
         setLoading(true);
         await staticAPI.updateBasicDetails(formData._id, updatedData);
@@ -1020,7 +966,7 @@ const BasicDetails = () => {
           password: ''
         });
         setEditingSection(null);
-        
+
         // Sync contacts and customer support
         try {
           await syncContactsFromForm(updatedData, 'BasicDetails');
@@ -1028,7 +974,7 @@ const BasicDetails = () => {
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
-        
+
         alert('Payment gateway added successfully!');
       } catch (error) {
         console.error('Error adding payment gateway:', error);
@@ -1057,173 +1003,6 @@ const BasicDetails = () => {
     }));
   };
 
-  const addMutualFundPortfolio = async () => {
-    if (newMutualFundPortfolio.fundHouse && newMutualFundPortfolio.fundName) {
-      const updatedData = {
-        ...formData,
-        mutualFundsPortfolio: [...formData.mutualFundsPortfolio, { ...newMutualFundPortfolio }]
-      };
-      
-      try {
-        setLoading(true);
-        await staticAPI.updateBasicDetails(formData._id, updatedData);
-        setFormData(updatedData);
-        setNewMutualFundPortfolio({
-          srNo: '',
-          fundHouse: '',
-          investorName: '',
-          fundName: '',
-          goalPurpose: '',
-          folioNumber: '',
-          dateOfPurchase: '',
-          purchaseNAV: '',
-          numberOfUnits: '',
-          purchaseValue: '',
-          currentNAV: '',
-          currentValuation: '',
-          difference: '',
-          percentDifference: ''
-        });
-        setEditingSection(null);
-        alert('Mutual fund portfolio added successfully!');
-      } catch (error) {
-        console.error('Error adding mutual fund portfolio:', error);
-        alert('Failed to add mutual fund portfolio');
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const removeMutualFundPortfolio = (index) => {
-    setEditingSection('mutualFundsPortfolio');
-    setFormData(prev => ({
-      ...prev,
-      mutualFundsPortfolio: prev.mutualFundsPortfolio.filter((_, i) => i !== index)
-    }));
-  };
-
-  const editMutualFundPortfolio = (index) => {
-    setEditingSection('mutualFundsPortfolio');
-    const item = formData.mutualFundsPortfolio[index];
-    setNewMutualFundPortfolio(item);
-    setFormData(prev => ({
-      ...prev,
-      mutualFundsPortfolio: prev.mutualFundsPortfolio.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addSharePortfolio = async () => {
-    if (newSharePortfolio.dematCompany && newSharePortfolio.scriptName) {
-      const updatedData = {
-        ...formData,
-        sharesPortfolio: [...formData.sharesPortfolio, { ...newSharePortfolio }]
-      };
-      
-      try {
-        setLoading(true);
-        await staticAPI.updateBasicDetails(formData._id, updatedData);
-        setFormData(updatedData);
-        setNewSharePortfolio({
-          srNo: '',
-          dematCompany: '',
-          investorName: '',
-          scriptName: '',
-          goalPurpose: '',
-          dateOfPurchase: '',
-          purchaseNAV: '',
-          numberOfUnits: '',
-          purchaseValue: '',
-          currentNAV: '',
-          currentValuation: '',
-          difference: '',
-          percentDifference: ''
-        });
-        setEditingSection(null);
-        alert('Share portfolio added successfully!');
-      } catch (error) {
-        console.error('Error adding share portfolio:', error);
-        alert('Failed to add share portfolio');
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const removeSharePortfolio = (index) => {
-    setEditingSection('sharesPortfolio');
-    setFormData(prev => ({
-      ...prev,
-      sharesPortfolio: prev.sharesPortfolio.filter((_, i) => i !== index)
-    }));
-  };
-
-  const editSharePortfolio = (index) => {
-    setEditingSection('sharesPortfolio');
-    const item = formData.sharesPortfolio[index];
-    setNewSharePortfolio(item);
-    setFormData(prev => ({
-      ...prev,
-      sharesPortfolio: prev.sharesPortfolio.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addInsurancePortfolio = async () => {
-    if (newInsurancePortfolio.insuranceCompany && newInsurancePortfolio.policyName) {
-      const updatedData = {
-        ...formData,
-        insurancePortfolio: [...formData.insurancePortfolio, { ...newInsurancePortfolio }]
-      };
-      
-      try {
-        setLoading(true);
-        await staticAPI.updateBasicDetails(formData._id, updatedData);
-        setFormData(updatedData);
-        setNewInsurancePortfolio({
-          srNo: '',
-          insuranceCompany: '',
-          insurerName: '',
-          policyType: '',
-          goalPurpose: '',
-          policyName: '',
-          policyNumber: '',
-          policyStartDate: '',
-          premiumMode: '',
-          premiumAmount: '',
-          lastPremiumPayingDate: '',
-          maturityDate: '',
-          sumAssured: '',
-          nominee: ''
-        });
-        setEditingSection(null);
-        alert('Insurance portfolio added successfully!');
-      } catch (error) {
-        console.error('Error adding insurance portfolio:', error);
-        alert('Failed to add insurance portfolio');
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const removeInsurancePortfolio = (index) => {
-    setEditingSection('insurancePortfolio');
-    setFormData(prev => ({
-      ...prev,
-      insurancePortfolio: prev.insurancePortfolio.filter((_, i) => i !== index)
-    }));
-  };
-
-  const editInsurancePortfolio = (index) => {
-    setEditingSection('insurancePortfolio');
-    const item = formData.insurancePortfolio[index];
-    setNewInsurancePortfolio(item);
-    setFormData(prev => ({
-      ...prev,
-      insurancePortfolio: prev.insurancePortfolio.filter((_, i) => i !== index)
-    }));
-  };
-
   const addSubBroker = async () => {
     console.log('Attempting to add Sub Broker:', newSubBroker);
     if (newSubBroker.nameOfCompany && newSubBroker.contactNumber) {
@@ -1232,7 +1011,7 @@ const BasicDetails = () => {
         ...formData,
         subBrokers: [...(formData.subBrokers || []), { ...newSubBroker }]
       };
-      
+
       try {
         setLoading(true);
         await staticAPI.updateBasicDetails(formData._id, updatedData);
@@ -1251,7 +1030,7 @@ const BasicDetails = () => {
           customerCareEmailId: ''
         });
         setEditingSection(null);
-        
+
         // Sync contacts and customer support
         try {
           await syncContactsFromForm(updatedData, 'BasicDetails');
@@ -1259,7 +1038,7 @@ const BasicDetails = () => {
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
-        
+
         alert('Sub Broker added successfully!');
       } catch (error) {
         console.error('Error adding sub broker:', error);
@@ -1340,8 +1119,7 @@ const BasicDetails = () => {
       // Trigger sync for relevant sections
       const sectionsToSync = [
         'mutualFunds', 'shares', 'insurance', 'banks',
-        'mobileBills', 'cards', 'subBrokers',
-        'mutualFundsPortfolio', 'sharesPortfolio', 'insurancePortfolio'
+        'mobileBills', 'cards', 'subBrokers'
       ];
 
       if (sectionsToSync.includes(sectionName)) {
@@ -1467,8 +1245,12 @@ const BasicDetails = () => {
               <h3>Mutual Funds Information</h3>
             </div>
             <div className="section-actions">
-              <button className="btn-section-edit" onClick={() => toggleSectionEdit('mutualFunds')} title="Add new entry">
-                <FiPlus /> New
+              <button
+                className={editingSection === 'mutualFunds' ? "btn-section-cancel" : "btn-section-edit"}
+                onClick={() => toggleSectionEdit('mutualFunds')}
+                title={editingSection === 'mutualFunds' ? "Cancel" : "Add new entry"}
+              >
+                {editingSection === 'mutualFunds' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
             </div>
           </div>
@@ -1722,9 +1504,14 @@ const BasicDetails = () => {
                     />
                   </div>
                 </div>
-                <button className="btn-primary" onClick={addMutualFund}>
-                  <FiPlus /> Add Mutual Fund
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="btn-primary" onClick={addMutualFund}>
+                    <FiPlus /> Add Mutual Fund
+                  </button>
+                  <button className="btn-secondary" onClick={() => toggleSectionEdit('mutualFunds')}>
+                    <FiX /> Cancel
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1741,8 +1528,12 @@ const BasicDetails = () => {
               <h3>Shares Information</h3>
             </div>
             <div className="section-actions">
-              <button className="btn-section-edit" onClick={() => toggleSectionEdit('shares')} title="Add new entry">
-                <FiPlus /> New
+              <button
+                className={editingSection === 'shares' ? "btn-section-cancel" : "btn-section-edit"}
+                onClick={() => toggleSectionEdit('shares')}
+                title={editingSection === 'shares' ? "Cancel" : "Add new entry"}
+              >
+                {editingSection === 'shares' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
             </div>
           </div>
@@ -1996,9 +1787,14 @@ const BasicDetails = () => {
                     />
                   </div>
                 </div>
-                <button className="btn-primary" onClick={addShare}>
-                  <FiPlus /> Add Share
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="btn-primary" onClick={addShare}>
+                    <FiPlus /> Add Share
+                  </button>
+                  <button className="btn-secondary" onClick={() => toggleSectionEdit('shares')}>
+                    <FiX /> Cancel
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -2013,8 +1809,12 @@ const BasicDetails = () => {
               <h3>Insurance Information</h3>
             </div>
             <div className="section-actions">
-              <button className="btn-section-edit" onClick={() => toggleSectionEdit('insurance')} title="Add new entry">
-                <FiPlus /> New
+              <button
+                className={editingSection === 'insurance' ? "btn-section-cancel" : "btn-section-edit"}
+                onClick={() => toggleSectionEdit('insurance')}
+                title={editingSection === 'insurance' ? "Cancel" : "Add new entry"}
+              >
+                {editingSection === 'insurance' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
             </div>
           </div>
@@ -2266,9 +2066,14 @@ const BasicDetails = () => {
                     />
                   </div>
                 </div>
-                <button className="btn-primary" onClick={addInsurance}>
-                  <FiPlus /> Add Insurance Policy
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="btn-primary" onClick={addInsurance}>
+                    <FiPlus /> Add Insurance Policy
+                  </button>
+                  <button className="btn-secondary" onClick={() => toggleSectionEdit('insurance')}>
+                    <FiX /> Cancel
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -2283,8 +2088,12 @@ const BasicDetails = () => {
               <h3>Bank Accounts Information</h3>
             </div>
             <div className="section-actions">
-              <button className="btn-section-edit" onClick={() => toggleSectionEdit('banks')} title="Add new entry">
-                <FiPlus /> New
+              <button
+                className={editingSection === 'banks' ? "btn-section-cancel" : "btn-section-edit"}
+                onClick={() => toggleSectionEdit('banks')}
+                title={editingSection === 'banks' ? "Cancel" : "Add new entry"}
+              >
+                {editingSection === 'banks' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
             </div>
           </div>
@@ -2503,9 +2312,14 @@ const BasicDetails = () => {
                     />
                   </div>
                 </div>
-                <button className="btn-primary" onClick={addBank}>
-                  <FiPlus /> Add Bank Account
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="btn-primary" onClick={addBank}>
+                    <FiPlus /> Add Bank Account
+                  </button>
+                  <button className="btn-secondary" onClick={() => toggleSectionEdit('banks')}>
+                    <FiX /> Cancel
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -2520,8 +2334,12 @@ const BasicDetails = () => {
               <h3>Mobile Bill Information</h3>
             </div>
             <div className="section-actions">
-              <button className="btn-section-edit" onClick={() => toggleSectionEdit('mobileBills')} title="Add new entry">
-                <FiPlus /> New
+              <button
+                className={editingSection === 'mobileBills' ? "btn-section-cancel" : "btn-section-edit"}
+                onClick={() => toggleSectionEdit('mobileBills')}
+                title={editingSection === 'mobileBills' ? "Cancel" : "Add new entry"}
+              >
+                {editingSection === 'mobileBills' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
             </div>
           </div>
@@ -2709,9 +2527,14 @@ const BasicDetails = () => {
                     />
                   </div>
                 </div>
-                <button className="btn-primary" onClick={addMobileBill}>
-                  <FiPlus /> Add Mobile Bill
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="btn-primary" onClick={addMobileBill}>
+                    <FiPlus /> Add Mobile Bill
+                  </button>
+                  <button className="btn-secondary" onClick={() => toggleSectionEdit('mobileBills')}>
+                    <FiX /> Cancel
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -2726,8 +2549,12 @@ const BasicDetails = () => {
               <h3>Card Details</h3>
             </div>
             <div className="section-actions">
-              <button className="btn-section-edit" onClick={() => toggleSectionEdit('cards')} title="Add new entry">
-                <FiPlus /> New
+              <button
+                className={editingSection === 'cards' ? "btn-section-cancel" : "btn-section-edit"}
+                onClick={() => toggleSectionEdit('cards')}
+                title={editingSection === 'cards' ? "Cancel" : "Add new entry"}
+              >
+                {editingSection === 'cards' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
             </div>
           </div>
@@ -2911,9 +2738,14 @@ const BasicDetails = () => {
                     />
                   </div>
                 </div>
-                <button className="btn-primary" onClick={addCard}>
-                  <FiPlus /> Add Card
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="btn-primary" onClick={addCard}>
+                    <FiPlus /> Add Card
+                  </button>
+                  <button className="btn-secondary" onClick={() => toggleSectionEdit('cards')}>
+                    <FiX /> Cancel
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -2928,8 +2760,12 @@ const BasicDetails = () => {
               <h3>Payment Gateway</h3>
             </div>
             <div className="section-actions">
-              <button className="btn-section-edit" onClick={() => toggleSectionEdit('paymentGateways')} title="Add new entry">
-                <FiPlus /> New
+              <button
+                className={editingSection === 'paymentGateways' ? "btn-section-cancel" : "btn-section-edit"}
+                onClick={() => toggleSectionEdit('paymentGateways')}
+                title={editingSection === 'paymentGateways' ? "Cancel" : "Add new entry"}
+              >
+                {editingSection === 'paymentGateways' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
             </div>
           </div>
@@ -3057,689 +2893,24 @@ const BasicDetails = () => {
                     />
                   </div>
                 </div>
-                <button className="btn-primary" onClick={addPaymentGateway}>
-                  <FiPlus /> Add Payment Gateway
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-
-        {/* Portfolio Details - Mutual Funds */}
-        <div className="static-section">
-          <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <FiTrendingUp className="section-icon" />
-              <h3>Portfolio Details - Mutual Funds</h3>
-            </div>
-            <div className="section-actions">
-              <button className="btn-section-edit" onClick={() => toggleSectionEdit('mutualFundsPortfolio')} title="Add new entry">
-                <FiPlus /> New
-              </button>
-            </div>
-          </div>
-          <div className="section-content">
-            <div className="records-table">
-              {formData.mutualFundsPortfolio && formData.mutualFundsPortfolio.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Sr. No.</th>
-                      <th>Fund Name</th>
-                      <th>Fund House</th>
-                      <th>Sub Broker Name</th>
-                      <th>Folio Number</th>
-                      <th>Purchase Date</th>
-                      <th>NAV</th>
-                      <th>Units</th>
-                      <th>Purchase Value</th>
-                      <th>Current Value</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {formData.mutualFundsPortfolio.map((fund, index) => (
-                      <tr key={index}>
-                        <td>{fund.srNo || '-'}</td>
-                        <td>{fund.fundName || '-'}</td>
-                        <td>{fund.fundHouse || '-'}</td>
-                        <td>{fund.subBrokerName || '-'}</td>
-                        <td>{fund.folioNumber || '-'}</td>
-                        <td>{fund.dateOfPurchase || '-'}</td>
-                        <td>{fund.purchaseNAV || '-'}</td>
-                        <td>{fund.numberOfUnits || '-'}</td>
-                        <td>{fund.purchaseValue || '-'}</td>
-                        <td>{fund.currentValuation || '-'}</td>
-                        <td>
-                          <div className="table-actions">
-                            <button
-                              className="btn-edit"
-                              onClick={() => editMutualFundPortfolio(index)}
-                              title="Edit"
-                            >
-                              <FiEdit2 />
-                            </button>
-                            <button
-                              className="btn-remove"
-                              onClick={() => removeMutualFundPortfolio(index)}
-                              title="Delete"
-                            >
-                              <FiX />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="no-data" style={{ padding: '20px', textAlign: 'center' }}>No mutual fund portfolios added yet.</p>
-              )}
-            </div>
-
-            {isSectionEditing('mutualFundsPortfolio') && (
-              <div className="add-family-member">
-                <h5>Add Mutual Fund Portfolio</h5>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Sr. No.</label>
-                    <input
-                      type="text"
-                      value={newMutualFundPortfolio.srNo}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, srNo: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Fund House *</label>
-                    <input
-                      type="text"
-                      value={newMutualFundPortfolio.fundHouse}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, fundHouse: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Name of Investor</label>
-                    <select
-                      value={newMutualFundPortfolio.investorName}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, investorName: e.target.value })}
-                    >
-                      <option value="">Select family member...</option>
-                      {familyMembers && familyMembers.map((member, index) => (
-                        <option key={index} value={member.name}>{member.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Sub Broker Name</label>
-                    <select
-                      value={newMutualFundPortfolio.subBrokerName}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, subBrokerName: e.target.value })}
-                    >
-                      <option value="">Select Sub Broker</option>
-                      {formData.subBrokers && formData.subBrokers.map((sb, index) => (
-                        <option key={index} value={sb.nameOfCompany}>{sb.nameOfCompany}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Sub Broker Name</label>
-                    <select
-                      value={newMutualFundPortfolio.subBrokerName}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, subBrokerName: e.target.value })}
-                    >
-                      <option value="">Select Sub Broker</option>
-                      {formData.subBrokers && formData.subBrokers.map((sb, index) => (
-                        <option key={index} value={sb.nameOfCompany}>{sb.nameOfCompany}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Name of Fund *</label>
-                    <input
-                      type="text"
-                      value={newMutualFundPortfolio.fundName}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, fundName: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Goal / Purpose</label>
-                    <input
-                      type="text"
-                      value={newMutualFundPortfolio.goalPurpose}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, goalPurpose: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Folio Number</label>
-                    <input
-                      type="text"
-                      value={newMutualFundPortfolio.folioNumber}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, folioNumber: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Date of Purchase</label>
-                    <input
-                      type="date"
-                      value={newMutualFundPortfolio.dateOfPurchase}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, dateOfPurchase: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Purchase NAV</label>
-                    <input
-                      type="number"
-                      value={newMutualFundPortfolio.purchaseNAV}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, purchaseNAV: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Number of Units</label>
-                    <input
-                      type="number"
-                      value={newMutualFundPortfolio.numberOfUnits}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, numberOfUnits: e.target.value })}
-                      step="0.001"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Purchase Value</label>
-                    <input
-                      type="number"
-                      value={newMutualFundPortfolio.purchaseValue}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, purchaseValue: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Current NAV</label>
-                    <input
-                      type="number"
-                      value={newMutualFundPortfolio.currentNAV}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, currentNAV: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Current Valuation</label>
-                    <input
-                      type="number"
-                      value={newMutualFundPortfolio.currentValuation}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, currentValuation: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Difference</label>
-                    <input
-                      type="number"
-                      value={newMutualFundPortfolio.difference}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, difference: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>% Difference</label>
-                    <input
-                      type="number"
-                      value={newMutualFundPortfolio.percentDifference}
-                      onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, percentDifference: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="btn-primary" onClick={addPaymentGateway}>
+                    <FiPlus /> Add Payment Gateway
+                  </button>
+                  <button className="btn-secondary" onClick={() => toggleSectionEdit('paymentGateways')}>
+                    <FiX /> Cancel
+                  </button>
                 </div>
-                <button className="btn-primary" onClick={addMutualFundPortfolio}>
-                  <FiPlus /> Add Mutual Fund Portfolio
-                </button>
               </div>
             )}
           </div>
         </div>
 
 
-        {/* Portfolio Details - Shares */}
-        <div className="static-section">
-          <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <FiTrendingUp className="section-icon" />
-              <h3>Portfolio Details - Shares</h3>
-            </div>
-            <div className="section-actions">
-              <button className="btn-section-edit" onClick={() => toggleSectionEdit('sharesPortfolio')} title="Add new entry">
-                <FiPlus /> New
-              </button>
-            </div>
-          </div>
-          <div className="section-content">
-            <div className="records-table">
-              {formData.sharesPortfolio && formData.sharesPortfolio.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Sr. No.</th>
-                      <th>Script Name</th>
-                      <th>Demat Company</th>
-                      <th>Sub Broker Name</th>
-                      <th>Date of Purchase</th>
-                      <th>Purchase NAV</th>
-                      <th>Purchase Value</th>
-                      <th>Units</th>
-                      <th>Market Value</th>
-                      <th>Current Value</th>
-                      <th>Diff</th>
-                      <th>% Diff</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {formData.sharesPortfolio.map((share, index) => (
-                      <tr key={index}>
-                        <td>{share.srNo || '-'}</td>
-                        <td>{share.scriptName || '-'}</td>
-                        <td>{share.dematCompany || '-'}</td>
-                        <td>{share.subBrokerName || '-'}</td>
-                        <td>{share.dateOfPurchase || '-'}</td>
-                        <td>{share.purchaseNAV || '-'}</td>
-                        <td>{share.purchaseValue || '-'}</td>
-                        <td>{share.numberOfUnits || '-'}</td>
-                        <td>{share.marketValue || '-'}</td>
-                        <td>{share.currentValuation || '-'}</td>
-                        <td>{share.difference || '-'}</td>
-                        <td>{share.percentDifference || '-'}</td>
-                        <td>
-                          <div className="table-actions">
-                            <button
-                              className="btn-edit"
-                              onClick={() => editSharePortfolio(index)}
-                              title="Edit"
-                            >
-                              <FiEdit2 />
-                            </button>
-                            <button
-                              className="btn-remove"
-                              onClick={() => removeSharePortfolio(index)}
-                              title="Delete"
-                            >
-                              <FiX />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="no-data" style={{ padding: '20px', textAlign: 'center' }}>No share portfolio added yet.</p>
-              )}
-            </div>
-
-            {isSectionEditing('sharesPortfolio') && (
-              <div className="add-family-member">
-                <h5>Add Share Portfolio</h5>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Sr. No.</label>
-                    <input
-                      type="text"
-                      value={newSharePortfolio.srNo}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, srNo: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Demat Company *</label>
-                    <input
-                      type="text"
-                      value={newSharePortfolio.dematCompany}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, dematCompany: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Name of Investor</label>
-                    <select
-                      value={newSharePortfolio.investorName}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, investorName: e.target.value })}
-                    >
-                      <option value="">Select family member...</option>
-                      {familyMembers && familyMembers.map((member, index) => (
-                        <option key={index} value={member.name}>{member.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Sub Broker Name</label>
-                    <select
-                      value={newSharePortfolio.subBrokerName}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, subBrokerName: e.target.value })}
-                    >
-                      <option value="">Select Sub Broker</option>
-                      {formData.subBrokers && formData.subBrokers.map((sb, index) => (
-                        <option key={index} value={sb.nameOfCompany}>{sb.nameOfCompany}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Name of Script *</label>
-                    <input
-                      type="text"
-                      value={newSharePortfolio.scriptName}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, scriptName: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Goal / Purpose</label>
-                    <input
-                      type="text"
-                      value={newSharePortfolio.goalPurpose}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, goalPurpose: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Date of Purchase</label>
-                    <input
-                      type="date"
-                      value={newSharePortfolio.dateOfPurchase}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, dateOfPurchase: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Purchase NAV</label>
-                    <input
-                      type="number"
-                      value={newSharePortfolio.purchaseNAV}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, purchaseNAV: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Number of Units</label>
-                    <input
-                      type="number"
-                      value={newSharePortfolio.numberOfUnits}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, numberOfUnits: e.target.value })}
-                      step="1"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Purchase Value</label>
-                    <input
-                      type="number"
-                      value={newSharePortfolio.purchaseValue}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, purchaseValue: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Current NAV</label>
-                    <input
-                      type="number"
-                      value={newSharePortfolio.currentNAV}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, currentNAV: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Current Valuation</label>
-                    <input
-                      type="number"
-                      value={newSharePortfolio.currentValuation}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, currentValuation: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Difference</label>
-                    <input
-                      type="number"
-                      value={newSharePortfolio.difference}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, difference: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>% Difference</label>
-                    <input
-                      type="number"
-                      value={newSharePortfolio.percentDifference}
-                      onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, percentDifference: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                </div>
-                <button className="btn-primary" onClick={addSharePortfolio}>
-                  <FiPlus /> Add Share Portfolio
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
 
 
-        {/* Portfolio Details - Insurance */}
-        <div className="static-section">
-          <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <FiHome className="section-icon" />
-              <h3>Portfolio Details - Insurance</h3>
-            </div>
-            <div className="section-actions">
-              <button className="btn-section-edit" onClick={() => toggleSectionEdit('insurancePortfolio')} title="Add new entry">
-                <FiPlus /> New
-              </button>
-            </div>
-          </div>
-          <div className="section-content">
-            <div className="records-table">
-              {formData.insurancePortfolio && formData.insurancePortfolio.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Sr. No.</th>
-                      <th>Insurance Company</th>
-                      <th>Sub Broker Name</th>
-                      <th>Insurer Name</th>
-                      <th>Type of Policy</th>
-                      <th>Goal/Purpose</th>
-                      <th>Policy Number</th>
-                      <th>Policy Start Date</th>
-                      <th>Premium Mode</th>
-                      <th>Premium Amount</th>
-                      <th>Last Premium Date</th>
-                      <th>Maturity Date</th>
-                      <th>Sum Assured</th>
-                      <th>Nominee</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {formData.insurancePortfolio.map((policy, index) => (
-                      <tr key={index}>
-                        <td>{policy.srNo || '-'}</td>
-                        <td>{policy.insuranceCompany || '-'}</td>
-                        <td>{policy.subBrokerName || '-'}</td>
-                        <td>{policy.insurerName || '-'}</td>
-                        <td>{policy.policyType || '-'}</td>
-                        <td>{policy.goalPurpose || '-'}</td>
-                        <td>{policy.policyNumber || '-'}</td>
-                        <td>{policy.policyStartDate || '-'}</td>
-                        <td>{policy.premiumMode || '-'}</td>
-                        <td>{policy.premiumAmount || '-'}</td>
-                        <td>{policy.lastPremiumPayingDate || '-'}</td>
-                        <td>{policy.maturityDate || '-'}</td>
-                        <td>{policy.sumAssured || '-'}</td>
-                        <td>{policy.nominee || '-'}</td>
-                        <td>
-                          <div className="table-actions">
-                            <button
-                              className="btn-edit"
-                              onClick={() => editInsurancePortfolio(index)}
-                              title="Edit"
-                            >
-                              <FiEdit2 />
-                            </button>
-                            <button
-                              className="btn-remove"
-                              onClick={() => removeInsurancePortfolio(index)}
-                              title="Delete"
-                            >
-                              <FiX />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="no-data" style={{ padding: '20px', textAlign: 'center' }}>No insurance portfolio added yet.</p>
-              )}
-            </div>
 
-            {isSectionEditing('insurancePortfolio') && (
-              <div className="add-family-member">
-                <h5>Add Insurance Portfolio</h5>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Sr. No.</label>
-                    <input
-                      type="text"
-                      value={newInsurancePortfolio.srNo}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, srNo: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Insurance Company *</label>
-                    <input
-                      type="text"
-                      value={newInsurancePortfolio.insuranceCompany}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, insuranceCompany: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Name of Insurer</label>
-                    <input
-                      type="text"
-                      value={newInsurancePortfolio.insurerName}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, insurerName: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Sub Broker Name</label>
-                    <select
-                      value={newInsurancePortfolio.subBrokerName}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, subBrokerName: e.target.value })}
-                    >
-                      <option value="">Select Sub Broker</option>
-                      {formData.subBrokers && formData.subBrokers.map((sb, index) => (
-                        <option key={index} value={sb.nameOfCompany}>{sb.nameOfCompany}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Type of Policy</label>
-                    <input
-                      type="text"
-                      value={newInsurancePortfolio.policyType}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, policyType: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Goal / Purpose</label>
-                    <input
-                      type="text"
-                      value={newInsurancePortfolio.goalPurpose}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, goalPurpose: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Name of Policy *</label>
-                    <input
-                      type="text"
-                      value={newInsurancePortfolio.policyName}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, policyName: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Policy Number</label>
-                    <input
-                      type="text"
-                      value={newInsurancePortfolio.policyNumber}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, policyNumber: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Date of Policy Start</label>
-                    <input
-                      type="date"
-                      value={newInsurancePortfolio.policyStartDate}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, policyStartDate: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Mode of Premium</label>
-                    <select
-                      value={newInsurancePortfolio.premiumMode}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, premiumMode: e.target.value })}
-                    >
-                      <option value="">Select Mode</option>
-                      <option value="Monthly">Monthly</option>
-                      <option value="Quarterly">Quarterly</option>
-                      <option value="Half-Yearly">Half-Yearly</option>
-                      <option value="Yearly">Yearly</option>
-                      <option value="Single Premium">Single Premium</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Premium Amount</label>
-                    <input
-                      type="number"
-                      value={newInsurancePortfolio.premiumAmount}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, premiumAmount: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Last Premium Paying Date</label>
-                    <input
-                      type="date"
-                      value={newInsurancePortfolio.lastPremiumPayingDate}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, lastPremiumPayingDate: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Date of Maturity</label>
-                    <input
-                      type="date"
-                      value={newInsurancePortfolio.maturityDate}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, maturityDate: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Sum Assured</label>
-                    <input
-                      type="number"
-                      value={newInsurancePortfolio.sumAssured}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, sumAssured: e.target.value })}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Nominee</label>
-                    <input
-                      type="text"
-                      value={newInsurancePortfolio.nominee}
-                      onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, nominee: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <button className="btn-primary" onClick={addInsurancePortfolio}>
-                  <FiPlus /> Add Insurance Portfolio
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+
 
         {/* Sub Broker Information */}
         <div className="static-section">
@@ -3749,8 +2920,12 @@ const BasicDetails = () => {
               <h3>Sub Broker Information</h3>
             </div>
             <div className="section-actions">
-              <button className="btn-section-edit" onClick={() => toggleSectionEdit('subBrokers')} title="Add new entry">
-                <FiPlus /> New
+              <button
+                className={editingSection === 'subBrokers' ? "btn-section-cancel" : "btn-section-edit"}
+                onClick={() => toggleSectionEdit('subBrokers')}
+                title={editingSection === 'subBrokers' ? "Cancel" : "Add new entry"}
+              >
+                {editingSection === 'subBrokers' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
             </div>
           </div>
@@ -3926,9 +3101,14 @@ const BasicDetails = () => {
                     />
                   </div>
                 </div>
-                <button className="btn-primary" onClick={addSubBroker}>
-                  <FiPlus /> Add Sub Broker
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="btn-primary" onClick={addSubBroker}>
+                    <FiPlus /> Add Sub Broker
+                  </button>
+                  <button className="btn-secondary" onClick={() => toggleSectionEdit('subBrokers')}>
+                    <FiX /> Cancel
+                  </button>
+                </div>
               </div>
             )}
           </div>

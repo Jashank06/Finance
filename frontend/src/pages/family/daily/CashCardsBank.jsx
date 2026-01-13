@@ -40,7 +40,7 @@ const CashCardsBank = () => {
   const bankFileInputRef = useRef(null);
   const [bankTransactionForm, setBankTransactionForm] = useState({
     accountId: '',
-    type: 'debit',
+    type: 'credit',
     amount: '',
     merchant: '',
     category: 'other',
@@ -57,7 +57,8 @@ const CashCardsBank = () => {
       module: '',
       referenceId: '',
       referenceName: ''
-    }
+    },
+    isMilestone: false
   });
   const [showBankTransactionForm, setShowBankTransactionForm] = useState(false);
   const [editingBankTransaction, setEditingBankTransaction] = useState(null);
@@ -195,7 +196,8 @@ const CashCardsBank = () => {
       module: '',
       referenceId: '',
       referenceName: ''
-    }
+    },
+    isMilestone: false
   });
 
   useEffect(() => {
@@ -343,14 +345,15 @@ const CashCardsBank = () => {
       date: new Date().toISOString().split('T')[0],
       currency: 'INR',
       transactionType: '',
-      expenseType: ''
+      expenseType: '',
+      isMilestone: false
     });
   };
 
   const resetBankTransactionForm = () => {
     setBankTransactionForm({
       accountId: '',
-      type: 'debit',
+      type: 'credit',
       amount: '',
       merchant: '',
       category: 'other',
@@ -362,7 +365,8 @@ const CashCardsBank = () => {
       date: new Date().toISOString().split('T')[0],
       currency: 'INR',
       transactionType: '',
-      expenseType: ''
+      expenseType: '',
+      isMilestone: false
     });
   };
 
@@ -504,6 +508,10 @@ const CashCardsBank = () => {
       // Prepare transaction data for backend (remove frontend-only fields)
       const dataToSend = { ...transactionForm };
 
+      // Save and remove isMilestone from dataToSend
+      const { isMilestone } = dataToSend;
+      delete dataToSend.isMilestone;
+
       // Clean up empty string values (Mongoose enum fields don't accept empty strings)
       Object.keys(dataToSend).forEach(key => {
         if (dataToSend[key] === '') {
@@ -513,8 +521,8 @@ const CashCardsBank = () => {
 
       // Clean up payingFor object if all fields are empty
       if (dataToSend.payingFor) {
-        const hasValidPayingFor = dataToSend.payingFor.module && 
-                                  dataToSend.payingFor.module !== '';
+        const hasValidPayingFor = dataToSend.payingFor.module &&
+          dataToSend.payingFor.module !== '';
         if (!hasValidPayingFor) {
           delete dataToSend.payingFor;
         }
@@ -554,6 +562,24 @@ const CashCardsBank = () => {
         }
       }
 
+      // Save milestone if checked (for credit transactions)
+      if (isMilestone && transactionForm.type === 'credit') {
+        try {
+          await api.post('/budget/milestones', {
+            title: `Transaction: ${transactionForm.merchant}`,
+            description: transactionForm.description || `Card transaction amount: ${transactionForm.amount}`,
+            startDate: transactionForm.date,
+            endDate: transactionForm.date,
+            status: 'completed',
+            priority: 'medium',
+            progress: 100
+          });
+          console.log('Milestone created successfully');
+        } catch (msError) {
+          console.error('Error saving milestone:', msError);
+        }
+      }
+
       resetTransactionForm();
       setShowTransactionForm(false);
       setEditingTransaction(null);
@@ -575,6 +601,10 @@ const CashCardsBank = () => {
       // Prepare transaction data for backend (remove frontend-only fields)
       const dataToSend = { ...bankTransactionForm };
 
+      // Save and remove isMilestone from dataToSend
+      const { isMilestone } = dataToSend;
+      delete dataToSend.isMilestone;
+
       // Clean up empty string values (Mongoose enum fields don't accept empty strings)
       Object.keys(dataToSend).forEach(key => {
         if (dataToSend[key] === '') {
@@ -582,10 +612,15 @@ const CashCardsBank = () => {
         }
       });
 
+      // If type is credit, remove expenseType
+      if (dataToSend.type === 'credit') {
+        delete dataToSend.expenseType;
+      }
+
       // Clean up payingFor object if all fields are empty
       if (dataToSend.payingFor) {
-        const hasValidPayingFor = dataToSend.payingFor.module && 
-                                  dataToSend.payingFor.module !== '';
+        const hasValidPayingFor = dataToSend.payingFor.module &&
+          dataToSend.payingFor.module !== '';
         if (!hasValidPayingFor) {
           delete dataToSend.payingFor;
         }
@@ -622,6 +657,24 @@ const CashCardsBank = () => {
         // Sync to target module if payingFor is specified
         if (bankTransactionForm.payingFor && bankTransactionForm.payingFor.module) {
           await syncPaymentToModule(newTransaction, bankTransactionForm.payingFor, 'bank');
+        }
+      }
+
+      // Save milestone if checked (for credit transactions)
+      if (isMilestone && bankTransactionForm.type === 'credit') {
+        try {
+          await api.post('/budget/milestones', {
+            title: `Transaction: ${bankTransactionForm.merchant}`,
+            description: bankTransactionForm.description || `Transaction amount: ${bankTransactionForm.amount}`,
+            startDate: bankTransactionForm.date,
+            endDate: bankTransactionForm.date,
+            status: 'completed',
+            priority: 'medium',
+            progress: 100
+          });
+          console.log('Milestone created successfully');
+        } catch (msError) {
+          console.error('Error saving milestone:', msError);
         }
       }
 
@@ -1083,11 +1136,11 @@ const CashCardsBank = () => {
       // Credit transactions add to balance
       if (transaction.type === 'credit' || transaction.type === 'deposit' || transaction.type === 'refund' || transaction.type === 'income') {
         return total + amount;
-      } 
+      }
       // Debit transactions subtract from balance
       else if (transaction.type === 'debit' || transaction.type === 'withdrawal' || transaction.type === 'payment' || transaction.type === 'transfer') {
         return total - amount;
-      } 
+      }
       else {
         return total; // For other types like fee, interest, etc.
       }
@@ -1639,6 +1692,20 @@ const CashCardsBank = () => {
                           rows="3"
                         ></textarea>
                       </div>
+                      {transactionForm.type === 'credit' && (
+                        <div className="form-group checkbox-group" style={{ marginTop: '10px' }}>
+                          <input
+                            type="checkbox"
+                            id="isCardMilestone"
+                            checked={transactionForm.isMilestone}
+                            onChange={(e) => setTransactionForm({ ...transactionForm, isMilestone: e.target.checked })}
+                            style={{ width: 'auto' }}
+                          />
+                          <label htmlFor="isCardMilestone" style={{ cursor: 'pointer', fontSize: '14px' }}>
+                            Mark as Milestone
+                          </label>
+                        </div>
+                      )}
                     </div>
 
                     {/* Paying For Dropdown */}
@@ -1944,8 +2011,6 @@ const CashCardsBank = () => {
                         >
                           <option value="savings">Savings</option>
                           <option value="current">Current</option>
-                          <option value="fixed-deposit">Fixed Deposit</option>
-                          <option value="recurring-deposit">Recurring Deposit</option>
                           <option value="nri-account">NRI Account</option>
                           <option value="joint-account">Joint Account</option>
                         </select>
@@ -2409,20 +2474,22 @@ const CashCardsBank = () => {
                           <option value="debit">Debit (Withdrawal)</option>
                         </select>
                       </div> */}
-                      <div className="form-group">
-                        <label>Expense Type:</label>
-                        <select
-                          value={bankTransactionForm.expenseType}
-                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, expenseType: e.target.value })}
-                        >
-                          <option value="">Select type...</option>
-                          <option value="important-necessary">Important & Necessary</option>
-                          <option value="less-important">Less Important</option>
-                          <option value="avoidable-loss">Avoidable & Loss</option>
-                          <option value="unnecessary">Un-necessary</option>
-                          <option value="basic-necessity">Basic Necessity</option>
-                        </select>
-                      </div>
+                      {bankTransactionForm.type !== 'credit' && (
+                        <div className="form-group">
+                          <label>Expense Type:</label>
+                          <select
+                            value={bankTransactionForm.expenseType}
+                            onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, expenseType: e.target.value })}
+                          >
+                            <option value="">Select type...</option>
+                            <option value="important-necessary">Important & Necessary</option>
+                            <option value="less-important">Less Important</option>
+                            <option value="avoidable-loss">Avoidable & Loss</option>
+                            <option value="unnecessary">Un-necessary</option>
+                            <option value="basic-necessity">Basic Necessity</option>
+                          </select>
+                        </div>
+                      )}
                       <div className="form-group">
                         <label>Description (Optional):</label>
                         <textarea
@@ -2445,6 +2512,20 @@ const CashCardsBank = () => {
                           <option value="JPY">JPY</option>
                         </select>
                       </div>
+                      {bankTransactionForm.type === 'credit' && (
+                        <div className="form-group checkbox-group" style={{ marginTop: '10px' }}>
+                          <input
+                            type="checkbox"
+                            id="isMilestone"
+                            checked={bankTransactionForm.isMilestone}
+                            onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, isMilestone: e.target.checked })}
+                            style={{ width: 'auto' }}
+                          />
+                          <label htmlFor="isMilestone" style={{ cursor: 'pointer', fontSize: '14px' }}>
+                            Mark as Milestone
+                          </label>
+                        </div>
+                      )}
                     </div>
 
                     {/* Paying For Dropdown */}
