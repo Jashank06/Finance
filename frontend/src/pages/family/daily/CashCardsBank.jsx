@@ -1692,20 +1692,18 @@ const CashCardsBank = () => {
                           rows="3"
                         ></textarea>
                       </div>
-                      {transactionForm.type === 'credit' && (
-                        <div className="form-group checkbox-group" style={{ marginTop: '10px' }}>
-                          <input
-                            type="checkbox"
-                            id="isCardMilestone"
-                            checked={transactionForm.isMilestone}
-                            onChange={(e) => setTransactionForm({ ...transactionForm, isMilestone: e.target.checked })}
-                            style={{ width: 'auto' }}
-                          />
-                          <label htmlFor="isCardMilestone" style={{ cursor: 'pointer', fontSize: '14px' }}>
-                            Mark as Milestone
-                          </label>
-                        </div>
-                      )}
+                      <div className="form-group checkbox-group" style={{ marginTop: '10px' }}>
+                        <input
+                          type="checkbox"
+                          id="isCardMilestone"
+                          checked={transactionForm.isMilestone}
+                          onChange={(e) => setTransactionForm({ ...transactionForm, isMilestone: e.target.checked })}
+                          style={{ width: 'auto' }}
+                        />
+                        <label htmlFor="isCardMilestone" style={{ cursor: 'pointer', fontSize: '14px' }}>
+                          Mark as Milestone
+                        </label>
+                      </div>
                     </div>
 
                     {/* Paying For Dropdown */}
@@ -2512,20 +2510,18 @@ const CashCardsBank = () => {
                           <option value="JPY">JPY</option>
                         </select>
                       </div>
-                      {bankTransactionForm.type === 'credit' && (
-                        <div className="form-group checkbox-group" style={{ marginTop: '10px' }}>
-                          <input
-                            type="checkbox"
-                            id="isMilestone"
-                            checked={bankTransactionForm.isMilestone}
-                            onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, isMilestone: e.target.checked })}
-                            style={{ width: 'auto' }}
-                          />
-                          <label htmlFor="isMilestone" style={{ cursor: 'pointer', fontSize: '14px' }}>
-                            Mark as Milestone
-                          </label>
-                        </div>
-                      )}
+                      <div className="form-group checkbox-group" style={{ marginTop: '10px' }}>
+                        <input
+                          type="checkbox"
+                          id="isMilestone"
+                          checked={bankTransactionForm.isMilestone}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, isMilestone: e.target.checked })}
+                          style={{ width: 'auto' }}
+                        />
+                        <label htmlFor="isMilestone" style={{ cursor: 'pointer', fontSize: '14px' }}>
+                          Mark as Milestone
+                        </label>
+                      </div>
                     </div>
 
                     {/* Paying For Dropdown */}

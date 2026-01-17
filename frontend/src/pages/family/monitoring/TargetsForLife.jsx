@@ -3,6 +3,9 @@ import api from '../../../utils/api';
 import BudgetPlanTab from './BudgetPlanTab';
 import './TargetsForLife.css';
 import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+import { staticAPI } from '../../../utils/staticAPI';
+import { investmentProfileAPI } from '../../../utils/investmentProfileAPI';
+import { investmentAPI } from '../../../utils/investmentAPI';
 
 const TargetsForLife = () => {
     const [loading, setLoading] = useState(false);
@@ -22,7 +25,7 @@ const TargetsForLife = () => {
         specificGoal: '',
         timeHorizon: '',
         estimatedCost: '',
-        recommendedInvestmentVehicle: '',
+        recommendedInvestmentVehicle: [],
         riskTolerance: '',
         targetDate: '',
         monthlyExpenses: '',
@@ -31,12 +34,143 @@ const TargetsForLife = () => {
     const [calculatedMonthlyExpenses, setCalculatedMonthlyExpenses] = useState(null);
     const [loadingExpenses, setLoadingExpenses] = useState(false);
     const [averageMonths, setAverageMonths] = useState(1); // Default to 1 month
+    const [investmentVehicleOptions, setInvestmentVehicleOptions] = useState([]);
+    const [showDropdown, setShowDropdown] = useState(false);
 
     useEffect(() => {
         trackFeatureUsage('/family/monitoring/targets-for-life', 'view');
         fetchData();
         fetchMonthlyExpenses(1); // Fetch with default 1 month
+        fetchInvestmentVehicleOptions();
     }, []);
+
+    const fetchInvestmentVehicleOptions = async () => {
+        try {
+            const options = [
+                { category: 'NPS / Post Office / PPF Investments', items: [] },
+                { category: 'Gold / SGB / Silver / Bonds Investments', items: [] },
+                { category: 'Bank Schemes - RD, FD & Other Deposits', items: [] },
+                { category: 'Mutual Funds', items: [] },
+                { category: 'Shares Information', items: [] }
+            ];
+
+            // Fetch data from Basic Details
+            const basicDetailsResponse = await staticAPI.getBasicDetails();
+            if (basicDetailsResponse.data && basicDetailsResponse.data.length > 0) {
+                const basicData = basicDetailsResponse.data[0];
+                
+                // Add mutual funds from basic details
+                if (basicData.mutualFunds && basicData.mutualFunds.length > 0) {
+                    basicData.mutualFunds.forEach(mf => {
+                        if (mf.mfName) {
+                            options[3].items.push({
+                                label: `${mf.mfName} (${mf.fundHouse || 'N/A'})`,
+                                value: `MF: ${mf.mfName}`
+                            });
+                        }
+                    });
+                }
+
+                // Add shares from basic details
+                if (basicData.shares && basicData.shares.length > 0) {
+                    basicData.shares.forEach(share => {
+                        if (share.scriptName) {
+                            options[4].items.push({
+                                label: `${share.scriptName} (${share.dematCompany || 'N/A'})`,
+                                value: `Share: ${share.scriptName}`
+                            });
+                        }
+                    });
+                }
+            }
+
+            // Fetch data from Investment API (Gold/SGB and Bank Schemes)
+            try {
+                const [goldSgbRes, bankSchemesRes, npsPpfRes] = await Promise.all([
+                    investmentAPI.getAll('gold-sgb'),
+                    investmentAPI.getAll('bank-schemes'),
+                    investmentAPI.getAll('nps-ppf')
+                ]);
+
+                // Add NPS/PPF items from Investment API
+                if (npsPpfRes.data && npsPpfRes.data.investments && npsPpfRes.data.investments.length > 0) {
+                    npsPpfRes.data.investments.forEach(item => {
+                        if (item.name) {
+                            options[0].items.push({
+                                label: `${item.name} (${item.type || 'N/A'})`,
+                                value: `${item.type}: ${item.name}`
+                            });
+                        }
+                    });
+                }
+
+                // Add Gold/SGB items from Investment API
+                if (goldSgbRes.data && goldSgbRes.data.investments && goldSgbRes.data.investments.length > 0) {
+                    goldSgbRes.data.investments.forEach(item => {
+                        if (item.name) {
+                            const displayType = item.purity || item.type || 'Gold';
+                            options[1].items.push({
+                                label: `${item.name} - ${displayType} (${item.provider || 'N/A'})`,
+                                value: `Gold/SGB: ${item.name}`
+                            });
+                        }
+                    });
+                }
+
+                // Add Bank Schemes from Investment API
+                if (bankSchemesRes.data && bankSchemesRes.data.investments && bankSchemesRes.data.investments.length > 0) {
+                    bankSchemesRes.data.investments.forEach(item => {
+                        if (item.name) {
+                            options[2].items.push({
+                                label: `${item.name} - ${item.type || 'Bank Scheme'} (${item.source || 'N/A'})`,
+                                value: `Bank Scheme: ${item.name}`
+                            });
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching investment data:', error);
+            }
+
+            // Fetch data from Investment Profile API
+            try {
+                const [mutualFundsRes, sharesRes] = await Promise.all([
+                    investmentProfileAPI.getMutualFunds(),
+                    investmentProfileAPI.getShares()
+                ]);
+
+                // Add mutual funds from investment profile
+                if (mutualFundsRes.data && mutualFundsRes.data.length > 0) {
+                    mutualFundsRes.data.forEach(mf => {
+                        if (mf.fundName) {
+                            options[3].items.push({
+                                label: `${mf.fundName} (${mf.fundHouse || 'N/A'})`,
+                                value: `MF: ${mf.fundName}`
+                            });
+                        }
+                    });
+                }
+
+                // Add shares from investment profile
+                if (sharesRes.data && sharesRes.data.length > 0) {
+                    sharesRes.data.forEach(share => {
+                        if (share.companyName) {
+                            options[4].items.push({
+                                label: `${share.companyName} (${share.exchange || 'N/A'})`,
+                                value: `Share: ${share.companyName}`
+                            });
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching investment profile data:', error);
+            }
+
+            setInvestmentVehicleOptions(options);
+        } catch (error) {
+            console.error('Error fetching investment vehicle options:', error);
+        }
+    };
 
     const fetchMonthlyExpenses = async (months = 1) => {
         try {
@@ -91,7 +225,7 @@ const TargetsForLife = () => {
             updates = {
                 ...updates,
                 specificGoal: 'Emergency Fund',
-                recommendedInvestmentVehicle: 'High Yield Savings Account / Liquid Funds',
+                recommendedInvestmentVehicle: ['High Yield Savings Account / Liquid Funds'],
                 riskTolerance: 'Very Low',
                 // Auto-populate monthly expenses from calculated data
                 monthlyExpenses: calculatedMonthlyExpenses?.averageExpenses?.toFixed(2) || calculatedMonthlyExpenses?.lastMonthExpenses?.toFixed(2) || '',
@@ -112,7 +246,7 @@ const TargetsForLife = () => {
             ...prev,
             goalType: 'Emergency Fund',
             specificGoal: 'Emergency Fund',
-            recommendedInvestmentVehicle: 'High Yield Savings Account / Liquid Funds',
+            recommendedInvestmentVehicle: ['High Yield Savings Account / Liquid Funds'],
             riskTolerance: 'Very Low',
             monthlyExpenses: calculatedMonthlyExpenses?.averageExpenses?.toFixed(2) || calculatedMonthlyExpenses?.lastMonthExpenses?.toFixed(2) || '',
             monthsOfCoverage: '6'
@@ -138,13 +272,14 @@ const TargetsForLife = () => {
             specificGoal: '',
             timeHorizon: '',
             estimatedCost: '',
-            recommendedInvestmentVehicle: '',
+            recommendedInvestmentVehicle: [],
             riskTolerance: '',
             targetDate: '',
             monthlyExpenses: '',
             monthsOfCoverage: ''
         });
         setEditingTarget(null);
+        setShowDropdown(false);
     };
 
     const calculateTimeHorizon = (targetDate) => {
@@ -205,7 +340,9 @@ const TargetsForLife = () => {
         try {
             // Validate required fields
             if (!targetForm.goalType || !targetForm.specificGoal || !targetForm.timeHorizon ||
-                !targetForm.estimatedCost || !targetForm.recommendedInvestmentVehicle ||
+                !targetForm.estimatedCost || 
+                !targetForm.recommendedInvestmentVehicle || 
+                (Array.isArray(targetForm.recommendedInvestmentVehicle) && targetForm.recommendedInvestmentVehicle.length === 0) ||
                 !targetForm.riskTolerance || !targetForm.targetDate) {
                 alert('All fields are required');
                 return;
@@ -221,7 +358,9 @@ const TargetsForLife = () => {
                 specificGoal: targetForm.specificGoal.trim(),
                 timeHorizon: targetForm.timeHorizon.trim(),
                 estimatedCost: parseFloat(targetForm.estimatedCost),
-                recommendedInvestmentVehicle: targetForm.recommendedInvestmentVehicle.trim(),
+                recommendedInvestmentVehicle: Array.isArray(targetForm.recommendedInvestmentVehicle) 
+                    ? targetForm.recommendedInvestmentVehicle 
+                    : [targetForm.recommendedInvestmentVehicle].filter(Boolean),
                 riskTolerance: targetForm.riskTolerance,
                 targetDate: targetForm.targetDate,
                 monthlyExpenses: targetForm.goalType === 'Emergency Fund' ? parseFloat(targetForm.monthlyExpenses) : undefined,
@@ -246,6 +385,9 @@ const TargetsForLife = () => {
     const handleTargetEdit = (target) => {
         setTargetForm({
             ...target,
+            recommendedInvestmentVehicle: Array.isArray(target.recommendedInvestmentVehicle) 
+                ? target.recommendedInvestmentVehicle 
+                : [target.recommendedInvestmentVehicle].filter(Boolean),
             targetDate: target.targetDate ? new Date(target.targetDate).toISOString().split('T')[0] : ''
         });
         setEditingTarget(target);
@@ -422,13 +564,73 @@ const TargetsForLife = () => {
 
                                 <div className="form-group-premium">
                                     <label>Recommended Investment Vehicle <span className="required">*</span></label>
-                                    <input
-                                        type="text"
-                                        value={targetForm.recommendedInvestmentVehicle}
-                                        onChange={(e) => setTargetForm({ ...targetForm, recommendedInvestmentVehicle: e.target.value })}
-                                        placeholder="e.g., High-Yield Savings Account, ETFs"
-                                        className="form-input"
-                                    />
+                                    <div className="multi-select-dropdown">
+                                        <div 
+                                            className="multi-select-input"
+                                            onClick={() => setShowDropdown(!showDropdown)}
+                                        >
+                                            <div className="selected-items">
+                                                {targetForm.recommendedInvestmentVehicle && targetForm.recommendedInvestmentVehicle.length > 0 ? (
+                                                    targetForm.recommendedInvestmentVehicle.map((item, index) => (
+                                                        <span key={index} className="selected-tag">
+                                                            {item}
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setTargetForm({
+                                                                        ...targetForm,
+                                                                        recommendedInvestmentVehicle: targetForm.recommendedInvestmentVehicle.filter((_, i) => i !== index)
+                                                                    });
+                                                                }}
+                                                                className="remove-tag"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </span>
+                                                    ))
+                                                ) : (
+                                                    <span className="placeholder">Select investment vehicles...</span>
+                                                )}
+                                            </div>
+                                            <span className="dropdown-arrow">{showDropdown ? '▲' : '▼'}</span>
+                                        </div>
+                                        {showDropdown && (
+                                            <div className="dropdown-options">
+                                                {investmentVehicleOptions.map((category, catIndex) => (
+                                                    <div key={catIndex} className="option-category">
+                                                        <div className="category-header">{category.category}</div>
+                                                        {category.items.length > 0 ? (
+                                                            category.items.map((item, itemIndex) => (
+                                                                <label key={itemIndex} className="option-item">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={targetForm.recommendedInvestmentVehicle.includes(item.value)}
+                                                                        onChange={(e) => {
+                                                                            if (e.target.checked) {
+                                                                                setTargetForm({
+                                                                                    ...targetForm,
+                                                                                    recommendedInvestmentVehicle: [...targetForm.recommendedInvestmentVehicle, item.value]
+                                                                                });
+                                                                            } else {
+                                                                                setTargetForm({
+                                                                                    ...targetForm,
+                                                                                    recommendedInvestmentVehicle: targetForm.recommendedInvestmentVehicle.filter(v => v !== item.value)
+                                                                                });
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    <span>{item.label}</span>
+                                                                </label>
+                                                            ))
+                                                        ) : (
+                                                            <div className="no-items">No items available</div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="form-group-premium">
@@ -488,7 +690,7 @@ const TargetsForLife = () => {
 
                         <div className="target-form-premium">
                             <div className="form-grid">
-                                <div className="form-group-premium full-width">
+                                <div className="form-group-premium">
                                     <label>Calculate Average From <span className="required">*</span></label>
                                     <select
                                         value={averageMonths}
@@ -514,6 +716,22 @@ const TargetsForLife = () => {
                                         ) : (
                                             'Select how many months to average'
                                         )}
+                                    </small>
+                                </div>
+
+                                <div className="form-group-premium">
+                                    <label>Months of Coverage <span className="required">*</span></label>
+                                    <input
+                                        type="number"
+                                        value={targetForm.monthsOfCoverage}
+                                        onChange={(e) => setTargetForm({ ...targetForm, monthsOfCoverage: e.target.value })}
+                                        placeholder="e.g. 6"
+                                        className="form-input"
+                                        step="1"
+                                        min="1"
+                                    />
+                                    <small style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '4px', display: 'block' }}>
+                                        Recommended: 3-6 months
                                     </small>
                                 </div>
 
@@ -550,22 +768,6 @@ const TargetsForLife = () => {
                                     </div>
                                     <small style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '4px', display: 'block' }}>
                                         Enter monthly expenses as per your need
-                                    </small>
-                                </div>
-
-                                <div className="form-group-premium">
-                                    <label>Months of Coverage <span className="required">*</span></label>
-                                    <input
-                                        type="number"
-                                        value={targetForm.monthsOfCoverage}
-                                        onChange={(e) => setTargetForm({ ...targetForm, monthsOfCoverage: e.target.value })}
-                                        placeholder="e.g. 6"
-                                        className="form-input"
-                                        step="1"
-                                        min="1"
-                                    />
-                                    <small style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '4px', display: 'block' }}>
-                                        Recommended: 3-6 months
                                     </small>
                                 </div>
 
@@ -749,7 +951,11 @@ const TargetsForLife = () => {
                                                     <td className="specific-goal">{target.specificGoal || 'N/A'}</td>
                                                     <td>{target.timeHorizon || 'N/A'}</td>
                                                     <td className="cost-cell">{target.estimatedCost ? formatCurrency(target.estimatedCost) : '$0.00'}</td>
-                                                    <td className="investment-cell">{target.recommendedInvestmentVehicle || 'N/A'}</td>
+                                                    <td className="investment-cell">
+                                                        {Array.isArray(target.recommendedInvestmentVehicle) 
+                                                            ? target.recommendedInvestmentVehicle.join(', ') 
+                                                            : target.recommendedInvestmentVehicle || 'N/A'}
+                                                    </td>
                                                     <td>
                                                         <span className={`risk-badge ${target.riskTolerance?.toLowerCase().replace(/\s+/g, '-').replace('to', '') || ''}`}>
                                                             {target.riskTolerance || 'N/A'}

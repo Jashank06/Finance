@@ -207,6 +207,98 @@ const BankSchemesInvestment = () => {
     setShowForm(false);
   };
 
+  // Helper to get live rate for a bank
+  const getLiveRateForBank = (bankName) => {
+    if (!bankRates || !bankName) return null;
+
+    // Normalize bank name for matching
+    const normalizedInput = bankName.toLowerCase();
+
+    // Find matching bank key
+    const bankKey = Object.keys(bankRates).find(key =>
+      normalizedInput.includes(key.toLowerCase()) ||
+      (key.toLowerCase().includes(normalizedInput) && normalizedInput.length > 3)
+    );
+
+    if (bankKey && bankRates[bankKey]) {
+      return bankRates[bankKey].fd1Year; // Default to 1 Year FD rate
+    }
+    return null;
+  };
+
+  // Auto-populate Interest Rate based on Bank Name
+  useEffect(() => {
+    if (showForm && !editingId && formData.bankName && bankRates) {
+      const liveRate = getLiveRateForBank(formData.bankName);
+      if (liveRate && !formData.interestRate) {
+        setFormData(prev => ({ ...prev, interestRate: liveRate }));
+      }
+    }
+  }, [formData.bankName, showForm, editingId, bankRates]);
+
+  // Auto-calculate Current Value based on inputs
+  useEffect(() => {
+    if (showForm && formData.amount && formData.interestRate && formData.startDate) {
+      const principal = parseFloat(formData.amount);
+      const rate = parseFloat(formData.interestRate);
+      const start = new Date(formData.startDate);
+      const end = formData.maturityDate ? new Date(formData.maturityDate) : new Date();
+
+      // Ensure valid dates
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
+        const timeInYears = (end - start) / (1000 * 60 * 60 * 24 * 365.25);
+
+        // Compound Interest Formula (assuming yearly compounding for simplicity/standard)
+        // A = P(1 + r/n)^(nt)
+        const calculatedValue = principal * Math.pow((1 + rate / 100), timeInYears);
+
+        // Only update if it's not manually edited (we can't easily track manual edit state here, 
+        // so we'll update if the difference is significant or if it's empty, 
+        // but to avoid overwriting user manual changes, maybe we only do it if currentValue is empty?
+        // User asked for "same isme bhi", suggesting aggressive auto-population)
+        // Let's rely on the "Auto-Calculated" badge approach like we did for Live Price
+
+        /* 
+           We won't aggressively overwrite if user is typing, 
+           but we can start with it. 
+           Better: just calculate it and lets user click a badge to apply it, 
+           OR apply it if currentValue is empty.
+        */
+        if (!formData.currentValue || editingId === null) {
+          // setFormData(prev => ({ ...prev, currentValue: calculatedValue.toFixed(2) }));
+          // Actually, let's just do it.
+        }
+      }
+    }
+  }, [formData.amount, formData.interestRate, formData.startDate, formData.maturityDate]);
+
+  // Refined Auto-Calculate Effect
+  useEffect(() => {
+    if (showForm && formData.amount && formData.interestRate && formData.startDate) {
+      const principal = parseFloat(formData.amount);
+      const rate = parseFloat(formData.interestRate);
+      const start = new Date(formData.startDate);
+      // Calculate till today if maturity date is not set or in future, else till maturity
+      const maturityForCalc = formData.maturityDate ? new Date(formData.maturityDate) : new Date();
+      const calcEndDate = maturityForCalc < new Date() ? maturityForCalc : new Date();
+
+      if (!isNaN(start.getTime()) && !isNaN(calcEndDate.getTime()) && calcEndDate >= start) {
+        const timeInYears = (calcEndDate - start) / (1000 * 60 * 60 * 24 * 365.25);
+        const calculatedValue = principal * Math.pow((1 + rate / 100), timeInYears);
+
+        // Helper to check if we should update
+        // If we are creating new (editingId null), always update
+        // If editing, only update if the current value seems stale (heuristic) or let user decide
+
+        if (!editingId) {
+          setFormData(prev => ({ ...prev, currentValue: calculatedValue.toFixed(2) }));
+        }
+      }
+    }
+  }, [formData.amount, formData.interestRate, formData.startDate, formData.maturityDate, showForm, editingId]);
+
+
+
   const calculateTotals = () => {
     const totalInvested = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
     const totalCurrent = investments.reduce((sum, inv) => sum + (inv.currentValue || inv.amount || 0), 0);
@@ -493,7 +585,7 @@ const BankSchemesInvestment = () => {
                 <th>Frequency</th>
                 <th>Start</th>
                 <th>Maturity</th>
-                <th>Actions</th>
+                <th className="sticky-actions">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -525,7 +617,7 @@ const BankSchemesInvestment = () => {
                     <td>{investment.frequency || 'one-time'}</td>
                     <td>{new Date(investment.startDate).toLocaleDateString('en-IN')}</td>
                     <td>{investment.maturityDate ? new Date(investment.maturityDate).toLocaleDateString('en-IN') : 'N/A'}</td>
-                    <td>
+                    <td className="sticky-actions">
                       <div className="investment-actions">
                         <button onClick={() => handleEdit(investment)} className="btn-icon">
                           <FiEdit2 />
@@ -639,25 +731,59 @@ const BankSchemesInvestment = () => {
 
               <div className="form-field">
                 <label>Current Value</label>
-                <input
-                  type="number"
-                  value={formData.currentValue}
-                  onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
-                  placeholder="₹"
-                />
+                <div className="input-with-live-indicator">
+                  <input
+                    type="number"
+                    value={formData.currentValue}
+                    onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
+                    placeholder="₹"
+                  />
+                  {/* Calculate theoretical value for badge */}
+                  {(() => {
+                    if (formData.amount && formData.interestRate && formData.startDate) {
+                      const principal = parseFloat(formData.amount);
+                      const rate = parseFloat(formData.interestRate);
+                      const start = new Date(formData.startDate);
+                      const end = new Date();
+                      if (!isNaN(start.getTime()) && end > start) {
+                        const timeInYears = (end - start) / (1000 * 60 * 60 * 24 * 365.25);
+                        const calcVal = (principal * Math.pow((1 + rate / 100), timeInYears)).toFixed(2);
+                        return (
+                          <span className="live-badge" onClick={() => setFormData({ ...formData, currentValue: calcVal })}>
+                            Auto: ₹{parseFloat(calcVal).toLocaleString('en-IN')}
+                          </span>
+                        );
+                      }
+                    }
+                    return null;
+                  })()}
+                </div>
+                <small style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                  Auto-calculated based on interest rate & time.
+                </small>
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-field">
                 <label>Interest Rate (%)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.interestRate}
-                  onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })}
-                  placeholder="e.g., 7.25"
-                />
+                <div className="input-with-live-indicator">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.interestRate}
+                    onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })}
+                    placeholder="e.g., 7.25"
+                  />
+                  {getLiveRateForBank(formData.bankName) && (
+                    <span className="live-badge" onClick={() => setFormData({ ...formData, interestRate: getLiveRateForBank(formData.bankName) })}>
+                      Live: {getLiveRateForBank(formData.bankName)}%
+                    </span>
+                  )}
+                </div>
+                <small style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                  Current 1Y FD rate for {formData.bankName || 'bank'}
+                </small>
               </div>
 
               <div className="form-field">

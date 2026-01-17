@@ -551,6 +551,14 @@ const BasicDetails = () => {
     }));
   };
 
+  const saveOrUpdateDetails = async (updatedData) => {
+    if (formData._id) {
+      return await staticAPI.updateBasicDetails(formData._id, updatedData);
+    } else {
+      return await staticAPI.createBasicDetails(updatedData);
+    }
+  };
+
   const addMutualFund = async () => {
     if (newMutualFund.fundHouse && newMutualFund.mfName) {
       const updatedData = {
@@ -560,8 +568,8 @@ const BasicDetails = () => {
 
       try {
         setLoading(true);
-        await staticAPI.updateBasicDetails(formData._id, updatedData);
-        setFormData(updatedData);
+        const response = await saveOrUpdateDetails(updatedData);
+        setFormData(response.data);
         setNewMutualFund({
           fundHouse: '',
           modeOfHolding: '',
@@ -585,8 +593,8 @@ const BasicDetails = () => {
 
         // Sync contacts and customer support
         try {
-          await syncContactsFromForm(updatedData, 'BasicDetails');
-          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+          await syncContactsFromForm(response.data, 'BasicDetails');
+          await syncCustomerSupportFromForm(response.data, 'BasicDetails');
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
@@ -628,8 +636,8 @@ const BasicDetails = () => {
 
       try {
         setLoading(true);
-        await staticAPI.updateBasicDetails(formData._id, updatedData);
-        setFormData(updatedData);
+        const response = await saveOrUpdateDetails(updatedData);
+        setFormData(response.data);
         setNewShare({
           dematCompany: '',
           modeOfHolding: '',
@@ -653,8 +661,8 @@ const BasicDetails = () => {
 
         // Sync contacts and customer support
         try {
-          await syncContactsFromForm(updatedData, 'BasicDetails');
-          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+          await syncContactsFromForm(response.data, 'BasicDetails');
+          await syncCustomerSupportFromForm(response.data, 'BasicDetails');
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
@@ -696,8 +704,8 @@ const BasicDetails = () => {
 
       try {
         setLoading(true);
-        await staticAPI.updateBasicDetails(formData._id, updatedData);
-        setFormData(updatedData);
+        const response = await saveOrUpdateDetails(updatedData);
+        setFormData(response.data);
         setNewInsurance({
           insuranceCompany: '',
           insuranceType: '',
@@ -721,8 +729,8 @@ const BasicDetails = () => {
 
         // Sync contacts and customer support
         try {
-          await syncContactsFromForm(updatedData, 'BasicDetails');
-          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+          await syncContactsFromForm(response.data, 'BasicDetails');
+          await syncCustomerSupportFromForm(response.data, 'BasicDetails');
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
@@ -764,8 +772,8 @@ const BasicDetails = () => {
 
       try {
         setLoading(true);
-        await staticAPI.updateBasicDetails(formData._id, updatedData);
-        setFormData(updatedData);
+        const response = await saveOrUpdateDetails(updatedData);
+        setFormData(response.data);
         setNewBank({
           bankName: '',
           accountType: '',
@@ -781,14 +789,15 @@ const BasicDetails = () => {
           registeredEmail: '',
           rmName: '',
           rmMobile: '',
-          rmEmail: ''
+          rmEmail: '',
+          goalPurpose: ''
         });
         setEditingSection(null);
 
         // Sync contacts and customer support
         try {
-          await syncContactsFromForm(updatedData, 'BasicDetails');
-          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+          await syncContactsFromForm(response.data, 'BasicDetails');
+          await syncCustomerSupportFromForm(response.data, 'BasicDetails');
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
@@ -830,8 +839,8 @@ const BasicDetails = () => {
 
       try {
         setLoading(true);
-        await staticAPI.updateBasicDetails(formData._id, updatedData);
-        setFormData(updatedData);
+        const response = await saveOrUpdateDetails(updatedData);
+        setFormData(response.data);
         setNewMobileBill({
           mobileNumber: '',
           usedBy: '',
@@ -842,14 +851,15 @@ const BasicDetails = () => {
           alternateNo: '',
           address: '',
           planNo: '',
-          customerNumber: ''
+          customerNumber: '',
+          goalPurpose: ''
         });
         setEditingSection(null);
 
         // Sync contacts and customer support
         try {
-          await syncContactsFromForm(updatedData, 'BasicDetails');
-          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+          await syncContactsFromForm(response.data, 'BasicDetails');
+          await syncCustomerSupportFromForm(response.data, 'BasicDetails');
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
@@ -891,8 +901,8 @@ const BasicDetails = () => {
 
       try {
         setLoading(true);
-        await staticAPI.updateBasicDetails(formData._id, updatedData);
-        setFormData(updatedData);
+        const response = await saveOrUpdateDetails(updatedData);
+        setFormData(response.data);
         setNewCard({
           bankName: '',
           cardHolderName: '',
@@ -905,14 +915,15 @@ const BasicDetails = () => {
           password: '',
           customerCareNumber: '',
           customerCareEmail: '',
-          cardType: ''
+          cardType: '',
+          goalPurpose: ''
         });
         setEditingSection(null);
 
         // Sync contacts and customer support
         try {
-          await syncContactsFromForm(updatedData, 'BasicDetails');
-          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+          await syncContactsFromForm(response.data, 'BasicDetails');
+          await syncCustomerSupportFromForm(response.data, 'BasicDetails');
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
@@ -954,8 +965,8 @@ const BasicDetails = () => {
 
       try {
         setLoading(true);
-        await staticAPI.updateBasicDetails(formData._id, updatedData);
-        setFormData(updatedData);
+        const response = await saveOrUpdateDetails(updatedData);
+        setFormData(response.data);
         setNewPaymentGateway({
           company: '',
           companyName: '',
@@ -963,14 +974,15 @@ const BasicDetails = () => {
           accountNumber: '',
           url: '',
           userId: '',
-          password: ''
+          password: '',
+          goalPurpose: ''
         });
         setEditingSection(null);
 
         // Sync contacts and customer support
         try {
-          await syncContactsFromForm(updatedData, 'BasicDetails');
-          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+          await syncContactsFromForm(response.data, 'BasicDetails');
+          await syncCustomerSupportFromForm(response.data, 'BasicDetails');
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }
@@ -1014,8 +1026,8 @@ const BasicDetails = () => {
 
       try {
         setLoading(true);
-        await staticAPI.updateBasicDetails(formData._id, updatedData);
-        setFormData(updatedData);
+        const response = await saveOrUpdateDetails(updatedData);
+        setFormData(response.data);
         setNewSubBroker({
           nameOfCompany: '',
           website: '',
@@ -1033,8 +1045,8 @@ const BasicDetails = () => {
 
         // Sync contacts and customer support
         try {
-          await syncContactsFromForm(updatedData, 'BasicDetails');
-          await syncCustomerSupportFromForm(updatedData, 'BasicDetails');
+          await syncContactsFromForm(response.data, 'BasicDetails');
+          await syncCustomerSupportFromForm(response.data, 'BasicDetails');
         } catch (syncError) {
           console.error('Error syncing contacts/support:', syncError);
         }

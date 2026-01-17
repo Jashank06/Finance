@@ -389,8 +389,8 @@
   border-collapse: separate;
   border-spacing: 0;
   background: white;
-  border-radius: 12px;
-  overflow: hidden;
+  /* border-radius: 12px; */
+  /* Moved to container or handled via first/last child to avoid overflow:hidden affecting sticky */
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   table-layout: auto;
 }
@@ -453,8 +453,36 @@
   transform: scale(1.01);
 }
 
-.investments-table tbody tr:last-child td {
-  border-bottom: none;
+/* Sticky Actions Column */
+.investments-table th.sticky-actions,
+.investments-table td.sticky-actions {
+  position: sticky !important;
+  /* Force sticky */
+  right: 0;
+  z-index: 100;
+  /* Ensure it stays on top */
+  width: 80px;
+  /* Fixed width */
+  min-width: 80px;
+}
+
+.investments-table th.sticky-actions {
+  background: #0A0A0A;
+  /* Match header background */
+  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.investments-table td.sticky-actions {
+  background: white;
+  /* Match row background */
+  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.05);
+  border-left: 1px solid #f1f5f9;
+  /* Subtle separator */
+}
+
+.investments-table tbody tr:hover td.sticky-actions {
+  background: #f8fafc;
+  /* Slightly different hover to indicate interaction zone */
 }
 
 .investment-type-badge {
@@ -2991,4 +3019,61 @@
 .btn-add-investment svg {
   font-size: 18px;
   stroke-width: 2.5px;
+}
+
+/* Live Indicator Styles for Form */
+.input-with-live-indicator {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-with-live-indicator input {
+  width: 100%;
+  padding-right: 140px;
+  /* Make space for the badge */
+}
+
+.live-badge {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(16, 185, 129, 0.1);
+  color: #10B981;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  animation: pulse 2s infinite;
+}
+
+.live-badge:hover {
+  background: #10B981;
+  color: white;
+  transform: translateY(-50%) scale(1.02);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
 }

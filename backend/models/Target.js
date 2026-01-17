@@ -28,8 +28,14 @@ const targetSchema = new mongoose.Schema({
     min: 0
   },
   recommendedInvestmentVehicle: {
-    type: String,
-    required: true
+    type: [String],
+    required: true,
+    validate: {
+      validator: function(v) {
+        return Array.isArray(v) && v.length > 0;
+      },
+      message: 'At least one investment vehicle must be selected'
+    }
   },
   riskTolerance: {
     type: String,

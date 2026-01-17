@@ -625,24 +625,38 @@
 
 .loan-summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
   margin-bottom: 40px;
+  width: 100%;
 }
 
 .summary-card {
   background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-  padding: 20px;
-  border-radius: 10px;
+  padding: 25px 20px;
+  border-radius: 12px;
   text-align: center;
-  border: 2px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 110px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
 }
 
 .summary-card span {
   display: block;
   font-size: 13px;
-  color: #666;
-  margin-bottom: 8px;
+  color: #64748b;
+  margin-bottom: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -713,70 +727,71 @@
   .loan-calculator-container {
     padding: 20px 10px;
   }
-  
+
   .loan-main-title {
     font-size: 24px;
   }
-  
+
   .view-tabs {
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .tab-btn {
     width: 100%;
     padding: 10px 20px;
   }
-  
+
   .save-loan-section {
     flex-direction: column;
   }
-  
+
   .save-loan-btn {
     width: 100%;
   }
-  
+
   .loans-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .loan-summary-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
   }
-  
+
   .section-title {
     font-size: 18px;
     padding: 15px 20px;
   }
-  
+
   .loan-form,
   .summary-content {
     padding: 20px;
   }
-  
+
   .schedule-header {
     flex-direction: column;
     gap: 15px;
     align-items: flex-start;
   }
-  
+
   .schedule-title {
     font-size: 20px;
   }
-  
+
   .clear-extra-btn {
     width: 100%;
   }
-  
+
   .schedule-table {
     font-size: 12px;
   }
-  
+
   .schedule-table th,
   .schedule-table td {
     padding: 10px 8px;
   }
-  
+
   .extra-payment-input {
     max-width: 80px;
     font-size: 12px;
@@ -812,6 +827,7 @@
     transform: translateY(-50px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -917,17 +933,34 @@
     padding: 20px;
     margin: 20px;
   }
-  
+
   .dialog-options {
     flex-direction: column;
   }
-  
+
   .dialog-actions {
     flex-direction: column;
   }
-  
+
   .cancel-btn,
   .confirm-btn {
     width: 100%;
+  }
+
+  .loan-summary-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .summary-card {
+    padding: 15px;
+  }
+
+  .summary-card span {
+    font-size: 12px;
+  }
+
+  .summary-card strong {
+    font-size: 18px;
   }
 }

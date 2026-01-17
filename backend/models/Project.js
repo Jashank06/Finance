@@ -9,8 +9,8 @@ const projectSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    trim: true,
-    unique: true // Ensure project names are unique per user
+    trim: true
+    // unique: true - REMOVED: This creates a global unique index, but we want unique per user
   },
   description: {
     type: String,
@@ -61,15 +61,15 @@ const projectSchema = new mongoose.Schema({
   }
 });
 
-projectSchema.pre('save', function(next) {
+projectSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   if (typeof next === 'function') {
     next();
   }
 });
 
-// Index for better query performance
-projectSchema.index({ userId: 1, name: 1 });
+// Index for better query performance and per-user uniqueness
+projectSchema.index({ userId: 1, name: 1 }, { unique: true });
 projectSchema.index({ userId: 1, status: 1 });
 
 module.exports = mongoose.model('Project', projectSchema);

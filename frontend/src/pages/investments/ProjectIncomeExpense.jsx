@@ -305,6 +305,9 @@ const ProjectIncomeExpense = () => {
       <div className="investment-header">
         <h1>Project Wise Income / Expense</h1>
         <div className="header-actions">
+          <button className="btn-add-investment secondary" onClick={handleAddProject} style={{ marginRight: '10px' }}>
+            <FiFolder /> New Project
+          </button>
           <button className="btn-add-investment" onClick={() => setShowForm(!showForm)}>
             <FiPlus /> {showForm ? 'Cancel' : 'Add Record'}
           </button>

@@ -185,9 +185,23 @@ const GoldSgbInvestment = () => {
       storageType: investment.storageType || 'digital',
       notes: investment.notes || '',
     });
+
     setEditingId(investment._id);
     setShowForm(true);
   };
+
+  // Auto-update Current Value in Form when Type/Purity changes or Live Prices update
+  useEffect(() => {
+    if (showForm && !editingId && livePrices) {
+      const liveRate = getLivePriceForType(formData.type, formData.purity);
+      if (liveRate) {
+        setFormData(prev => ({
+          ...prev,
+          currentValue: liveRate
+        }));
+      }
+    }
+  }, [formData.type, formData.purity, showForm, editingId, livePrices]);
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this investment?')) {
@@ -221,9 +235,50 @@ const GoldSgbInvestment = () => {
     setShowForm(false);
   };
 
+  /* Helper to get live price for a specific investment type */
+  const getLivePriceForType = (type, purity) => {
+    if (!livePrices) return null;
+
+    // Map investment types to price keys
+    if (type === 'Silver') {
+      // Silver is usually per kg in API, but investments might be in grams unless specified
+      // Assuming quantity is in grams for consistency, so return price per gram
+      return livePrices.silver?.pricePerGram || (livePrices.silver?.pricePerKg / 1000);
+    }
+
+    if (type === 'SGB') {
+      // SGB usually tracks 24K gold
+      return livePrices.sgb?.issuePrice || livePrices.gold?.price24K;
+    }
+
+    if (type.includes('Gold')) {
+      // Check purity if available
+      if (type === 'Physical Gold' || type === 'Gold Jewelry') {
+        if (purity === '22K') return livePrices.gold?.price22K;
+        if (purity === '18K') return livePrices.gold?.price18K;
+      }
+      // Default to 24K for Digital Gold and ETFs
+      return livePrices.gold?.price24K;
+    }
+
+    if (type.includes('Bond') || type === 'Government Bonds' || type === 'Corporate Bonds') {
+      // Bonds are tricky without specific ticker. Return null to fallback to manual value.
+      return null;
+    }
+
+    return livePrices.gold?.price24K; // Default fallback
+  };
+
   const calculateTotals = () => {
     const totalInvested = investments.reduce((sum, inv) => sum + (inv.purchasePrice * inv.quantity), 0);
-    const totalCurrent = investments.reduce((sum, inv) => sum + (inv.currentValue * inv.quantity), 0);
+
+    // Calculate current value dynamically if live price exists, else use stored currentValue
+    const totalCurrent = investments.reduce((sum, inv) => {
+      const liveRate = getLivePriceForType(inv.type, inv.purity);
+      const effectivePrice = liveRate || inv.currentValue || inv.purchasePrice;
+      return sum + (effectivePrice * inv.quantity);
+    }, 0);
+
     const totalReturns = totalCurrent - totalInvested;
     const returnsPercent = totalInvested > 0 ? ((totalReturns / totalInvested) * 100).toFixed(2) : 0;
     const totalQuantity = investments.reduce((sum, inv) => sum + inv.quantity, 0);
@@ -234,7 +289,11 @@ const GoldSgbInvestment = () => {
   const getChartData = () => {
     const typeData = investments.reduce((acc, inv) => {
       const existing = acc.find(item => item.name === inv.type);
-      const value = inv.currentValue * inv.quantity;
+
+      const liveRate = getLivePriceForType(inv.type, inv.purity);
+      const effectivePrice = liveRate || inv.currentValue || inv.purchasePrice;
+      const value = effectivePrice * inv.quantity;
+
       if (existing) {
         existing.value += value;
       } else {
@@ -246,19 +305,28 @@ const GoldSgbInvestment = () => {
   };
 
   const getPerformanceData = () => {
-    return investments.map(inv => ({
-      name: inv.name.length > 15 ? inv.name.substring(0, 15) + '...' : inv.name,
-      invested: inv.purchasePrice * inv.quantity,
-      current: inv.currentValue * inv.quantity,
-      returns: (inv.currentValue - inv.purchasePrice) * inv.quantity,
-      returnsPercent: inv.purchasePrice > 0 ? ((inv.currentValue - inv.purchasePrice) / inv.purchasePrice * 100).toFixed(2) : 0
-    }));
+    return investments.map(inv => {
+      const liveRate = getLivePriceForType(inv.type, inv.purity);
+      const currentPrice = liveRate || inv.currentValue || inv.purchasePrice;
+
+      return {
+        name: inv.name.length > 15 ? inv.name.substring(0, 15) + '...' : inv.name,
+        invested: inv.purchasePrice * inv.quantity,
+        current: currentPrice * inv.quantity,
+        returns: (currentPrice - inv.purchasePrice) * inv.quantity,
+        returnsPercent: inv.purchasePrice > 0 ? ((currentPrice - inv.purchasePrice) / inv.purchasePrice * 100).toFixed(2) : 0
+      };
+    });
   };
 
   const getProviderData = () => {
     const providerData = investments.reduce((acc, inv) => {
       const existing = acc.find(item => item.name === inv.provider);
-      const value = inv.currentValue * inv.quantity;
+
+      const liveRate = getLivePriceForType(inv.type, inv.purity);
+      const effectivePrice = liveRate || inv.currentValue || inv.purchasePrice;
+      const value = effectivePrice * inv.quantity;
+
       if (existing) {
         existing.value += value;
         existing.quantity += inv.quantity;
@@ -603,8 +671,12 @@ const GoldSgbInvestment = () => {
             </thead>
             <tbody>
               {investments.map((investment) => {
+                const liveRate = getLivePriceForType(investment.type, investment.purity);
+                const isLive = !!liveRate;
+                const effectivePrice = liveRate || investment.currentValue || investment.purchasePrice;
+
                 const investedAmount = investment.purchasePrice * investment.quantity;
-                const currentAmount = investment.currentValue * investment.quantity;
+                const currentAmount = effectivePrice * investment.quantity;
                 const returns = currentAmount - investedAmount;
                 const returnsPercent = investedAmount > 0 ? ((returns / investedAmount) * 100).toFixed(2) : 0;
 
@@ -623,9 +695,16 @@ const GoldSgbInvestment = () => {
                     <td>{investment.provider}</td>
                     <td>{investment.quantity} {investment.type.includes('Gold') || investment.type.includes('Silver') ? 'gms' : 'units'}</td>
                     <td>₹{investedAmount.toLocaleString('en-IN')}</td>
-                    <td>₹{currentAmount.toLocaleString('en-IN')}</td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontWeight: 'bold' }}>₹{currentAmount.toLocaleString('en-IN')}</span>
+                        <span style={{ fontSize: '0.75rem', color: isLive ? '#10B981' : '#6b7280' }}>
+                          {isLive ? '● Live Price' : '○ Manual Price'}
+                        </span>
+                      </div>
+                    </td>
                     <td style={{ color: returns >= 0 ? '#32CD32' : '#FF6347', fontWeight: 600 }}>
-                      ₹{returns.toLocaleString('en-IN')} ({returnsPercent}%)
+                      ₹{returns.toLocaleString('en-IN')} ({Math.abs(returnsPercent)}% {returns >= 0 ? '▲' : '▼'})
                     </td>
                     <td>{investment.purity || 'N/A'}</td>
                     <td>{new Date(investment.startDate).toLocaleDateString('en-IN')}</td>
@@ -753,13 +832,23 @@ const GoldSgbInvestment = () => {
 
               <div className="form-field">
                 <label>Current Value per Unit</label>
-                <input
-                  type="number"
-                  value={formData.currentValue}
-                  onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
-                  placeholder="Current market price"
-                  step="0.01"
-                />
+                <div className="input-with-live-indicator">
+                  <input
+                    type="number"
+                    value={formData.currentValue}
+                    onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
+                    placeholder="Current market price"
+                    step="0.01"
+                  />
+                  {getLivePriceForType(formData.type, formData.purity) && (
+                    <span className="live-badge" onClick={() => setFormData({ ...formData, currentValue: getLivePriceForType(formData.type, formData.purity) })}>
+                      Live: ₹{getLivePriceForType(formData.type, formData.purity)}
+                    </span>
+                  )}
+                </div>
+                <small style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                  Auto-filled from live market rates. You can edit if needed.
+                </small>
               </div>
             </div>
 
