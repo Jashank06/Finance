@@ -76,7 +76,7 @@ const bankSchema = new mongoose.Schema({
     required: true,
     uppercase: true,
     validate: {
-      validator: function(v) {
+      validator: function (v) {
         return /^[A-Z]{4}0[A-Z0-9]{6}$/.test(v);
       },
       message: 'Invalid IFSC code format'
@@ -92,8 +92,9 @@ const bankSchema = new mongoose.Schema({
   state: String,
   pincode: {
     type: String,
+    required: true,
     validate: {
-      validator: function(v) {
+      validator: function (v) {
         return /^\d{6}$/.test(v);
       },
       message: 'Pincode must be 6 digits'
@@ -150,17 +151,17 @@ const bankSchema = new mongoose.Schema({
   lastTransactionDate: Date,
 });
 
-bankSchema.pre('save', function(next) {
+bankSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
-  
+
   // Calculate maturity date for FD/RD
-  if ((this.type === 'fixed-deposit' || this.type === 'recurring-deposit') && 
-      this.tenure && !this.maturityDate) {
+  if ((this.type === 'fixed-deposit' || this.type === 'recurring-deposit') &&
+    this.tenure && !this.maturityDate) {
     const maturityDate = new Date(this.createdAt);
     maturityDate.setMonth(maturityDate.getMonth() + this.tenure);
     this.maturityDate = maturityDate;
   }
-  
+
   if (typeof next === 'function') {
     next();
   }

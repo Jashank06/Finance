@@ -67,7 +67,7 @@ router.post('/', auth, async (req, res) => {
     } = req.body;
 
     // Validation
-    if (!type || !name || !bankName || !accountNumber || !accountHolderName || !ifscCode || !branchName) {
+    if (!type || !name || !bankName || !accountNumber || !accountHolderName || !ifscCode || !branchName || !pincode) {
       return res.status(400).json({ message: 'Required fields are missing' });
     }
 
@@ -125,25 +125,37 @@ router.post('/', auth, async (req, res) => {
 
     // Sync with Basic Details
     try {
-      const basicDetails = await BasicDetails.findOne({ userId: req.user.id });
-      if (basicDetails) {
+      let basicDetails = await BasicDetails.findOne({ userId: req.user.id });
+
+      if (!basicDetails) {
+        // Create new BasicDetails if it doesn't exist
+        basicDetails = new BasicDetails({
+          userId: req.user.id,
+          banks: []
+        });
+      }
+
+      // Check if account already exists in basicDetails to avoid duplicates
+      const exists = basicDetails.banks.some(b => b.accountNumber === savedAccount.accountNumber);
+
+      if (!exists) {
         basicDetails.banks.push({
           bankName: savedAccount.bankName,
           accountType: savedAccount.type,
-          holdingType: '', // Not in Bank model explicitly
+          holdingType: '',
           accountHolderName: savedAccount.accountHolderName,
-          customerId: '', // Not in Bank model
+          customerId: '',
           accountNumber: savedAccount.accountNumber,
           ifscCode: savedAccount.ifscCode,
           branchAddress: savedAccount.branchAddress,
-          registeredMobile: '', // Not in Bank model
-          registeredAddress: '', // Not in Bank model
+          registeredMobile: '',
+          registeredAddress: '',
           nominee: savedAccount.nomineeName,
-          registeredEmail: '', // Not in Bank model
-          rmName: '', // Not in Bank model
-          rmMobile: '', // Not in Bank model
-          rmEmail: '', // Not in Bank model
-          goalPurpose: '' // Not in Bank model
+          registeredEmail: '',
+          rmName: '',
+          rmMobile: '',
+          rmEmail: '',
+          goalPurpose: ''
         });
         await basicDetails.save();
       }
@@ -183,7 +195,7 @@ router.put('/:id', auth, async (req, res) => {
 
     // Sync updates with Basic Details
     try {
-      const basicDetails = await BasicDetails.findOne({ userId: req.user.id });
+      let basicDetails = await BasicDetails.findOne({ userId: req.user.id });
       if (basicDetails) {
         // Find by account number
         const accountIndex = basicDetails.banks.findIndex(b => b.accountNumber === bankAccount.accountNumber);
@@ -211,6 +223,21 @@ router.put('/:id', auth, async (req, res) => {
           });
           await basicDetails.save();
         }
+      } else {
+        // Create if it doesn't exist
+        basicDetails = new BasicDetails({
+          userId: req.user.id,
+          banks: [{
+            bankName: bankAccount.bankName,
+            accountType: bankAccount.type,
+            accountHolderName: bankAccount.accountHolderName,
+            accountNumber: bankAccount.accountNumber,
+            ifscCode: bankAccount.ifscCode,
+            branchAddress: bankAccount.branchAddress,
+            nominee: bankAccount.nomineeName
+          }]
+        });
+        await basicDetails.save();
       }
     } catch (syncError) {
       console.error('Error syncing bank update to Basic Details:', syncError);
@@ -233,6 +260,19 @@ router.delete('/:id', auth, async (req, res) => {
 
     if (!bankAccount) {
       return res.status(404).json({ message: 'Bank account not found' });
+    }
+
+    if (bankAccount) {
+      // Sync deletion with Basic Details
+      try {
+        const basicDetails = await BasicDetails.findOne({ userId: req.user.id });
+        if (basicDetails) {
+          basicDetails.banks = basicDetails.banks.filter(b => b.accountNumber !== bankAccount.accountNumber);
+          await basicDetails.save();
+        }
+      } catch (syncError) {
+        console.error('Error syncing bank deletion to Basic Details:', syncError);
+      }
     }
 
     res.json({ message: 'Bank account deleted successfully' });

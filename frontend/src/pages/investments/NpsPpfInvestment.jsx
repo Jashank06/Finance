@@ -156,6 +156,105 @@ const NpsPpfInvestment = () => {
     }
   };
 
+  const calculateInvestmentDetails = (amount, rate, startDate, frequency, maturityDate) => {
+    if (!amount || !startDate) return { totalInvested: 0, currentValue: 0, count: 0 };
+
+    const start = new Date(startDate);
+    const now = new Date();
+    const maturity = maturityDate ? new Date(maturityDate) : null;
+    const calcEndDate = (maturity && maturity < now) ? maturity : now;
+
+    if (isNaN(start.getTime())) return { totalInvested: 0, currentValue: 0, count: 0 };
+
+    const principal = parseFloat(amount);
+    const r_annual = (parseFloat(rate) || 0) / 100;
+
+    let count = 0;
+    let totalInvested = 0;
+    let currentValue = 0;
+
+    if (frequency === 'one-time') {
+      count = 1;
+      totalInvested = principal;
+      const timeInYears = (calcEndDate - start) / (1000 * 60 * 60 * 24 * 365.25);
+      currentValue = principal * Math.pow(1 + r_annual, timeInYears);
+    } else {
+      // Recurring Calculation
+      let monthsDiff = (calcEndDate.getFullYear() - start.getFullYear()) * 12 + (calcEndDate.getMonth() - start.getMonth()) + 1;
+
+      if (frequency === 'monthly') {
+        count = monthsDiff;
+        totalInvested = principal * count;
+        if (r_annual > 0) {
+          const r_monthly = r_annual / 12;
+          currentValue = principal * ((Math.pow(1 + r_monthly, count) - 1) / r_monthly) * (1 + r_monthly);
+        } else {
+          currentValue = totalInvested;
+        }
+      } else if (frequency === 'quarterly') {
+        count = Math.ceil(monthsDiff / 3);
+        totalInvested = principal * count;
+        if (r_annual > 0) {
+          const r_q = r_annual / 4;
+          currentValue = principal * ((Math.pow(1 + r_q, count) - 1) / r_q) * (1 + r_q);
+        } else {
+          currentValue = totalInvested;
+        }
+      } else if (frequency === 'yearly') {
+        count = Math.ceil(monthsDiff / 12);
+        totalInvested = principal * count;
+        if (r_annual > 0) {
+          currentValue = principal * ((Math.pow(1 + r_annual, count) - 1) / r_annual) * (1 + r_annual);
+        } else {
+          currentValue = totalInvested;
+        }
+      }
+    }
+
+    return {
+      totalInvested: Math.round(totalInvested),
+      currentValue: Math.round(currentValue),
+      count
+    };
+  };
+
+  // Auto-populate Interest Rate based on Type
+  useEffect(() => {
+    if (showForm && !editingId && liveRates) {
+      let rate = '';
+      if (formData.type === 'PPF') rate = liveRates.ppf?.currentRate;
+      else if (formData.type === 'SSY') rate = liveRates.postOffice?.SSY?.rate;
+      else if (formData.type === 'NSC') rate = liveRates.postOffice?.NSC?.rate;
+      else if (formData.type === 'NPS') rate = liveRates.nps?.tier1?.avgReturn;
+
+      if (rate && !formData.interestRate) {
+        setFormData(prev => ({ ...prev, interestRate: rate.toString() }));
+      }
+    }
+  }, [formData.type, showForm, editingId, liveRates]);
+
+  // Proactive Auto-Calculate Effect for Form
+  useEffect(() => {
+    if (showForm && formData.amount && formData.interestRate && formData.startDate) {
+      const { totalInvested, currentValue } = calculateInvestmentDetails(
+        formData.amount,
+        formData.interestRate,
+        formData.startDate,
+        formData.frequency,
+        formData.maturityDate
+      );
+
+      const currentValNum = parseFloat(formData.currentValue) || 0;
+      const shouldUpdate = !editingId ||
+        currentValNum === 0 ||
+        (formData.frequency !== 'one-time' && currentValNum < totalInvested);
+
+      if (shouldUpdate && currentValue > 0) {
+        setFormData(prev => ({ ...prev, currentValue: currentValue.toString() }));
+      }
+    }
+  }, [formData.amount, formData.interestRate, formData.startDate, formData.maturityDate, formData.frequency, showForm, editingId]);
+
   const resetForm = () => {
     setFormData({
       category: 'nps-ppf',
@@ -175,20 +274,53 @@ const NpsPpfInvestment = () => {
   };
 
   const calculateTotals = () => {
-    const total = investments.reduce((sum, inv) => sum + inv.amount, 0);
-    const currentTotal = investments.reduce((sum, inv) => sum + (inv.currentValue || inv.amount), 0);
-    const returns = currentTotal - total;
-    const returnsPercent = total > 0 ? ((returns / total) * 100).toFixed(2) : 0;
-    return { total, currentTotal, returns, returnsPercent };
+    const totals = investments.reduce((acc, inv) => {
+      const { totalInvested, currentValue: calculatedCurrent } = calculateInvestmentDetails(
+        inv.amount,
+        inv.interestRate,
+        inv.startDate,
+        inv.frequency,
+        inv.maturityDate
+      );
+
+      // Proactive Sync: Use calculated value if saved value is clearly wrong
+      const current = (inv.frequency !== 'one-time' && (inv.currentValue || 0) < totalInvested)
+        ? calculatedCurrent
+        : (inv.currentValue || totalInvested || 0);
+
+      acc.total += totalInvested;
+      acc.currentTotal += current;
+      return acc;
+    }, { total: 0, currentTotal: 0 });
+
+    const returns = totals.currentTotal - totals.total;
+    const returnsPercent = totals.total > 0 ? ((returns / totals.total) * 100).toFixed(2) : 0;
+    return {
+      total: totals.total,
+      currentTotal: totals.currentTotal,
+      returns,
+      returnsPercent
+    };
   };
 
   const getChartData = () => {
     const typeData = investments.reduce((acc, inv) => {
+      const { totalInvested, currentValue: calculatedCurrent } = calculateInvestmentDetails(
+        inv.amount,
+        inv.interestRate,
+        inv.startDate,
+        inv.frequency,
+        inv.maturityDate
+      );
+      const current = (inv.frequency !== 'one-time' && (inv.currentValue || 0) < totalInvested)
+        ? calculatedCurrent
+        : (inv.currentValue || totalInvested || 0);
+
       const existing = acc.find(item => item.name === inv.type);
       if (existing) {
-        existing.value += inv.amount;
+        existing.value += current;
       } else {
-        acc.push({ name: inv.type, value: inv.amount });
+        acc.push({ name: inv.type, value: current });
       }
       return acc;
     }, []);
@@ -485,13 +617,35 @@ const NpsPpfInvestment = () => {
             <div className="form-row">
               <div className="form-field">
                 <label>Current Value</label>
-                <input
-                  type="number"
-                  value={formData.currentValue}
-                  onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
-                  placeholder="Current market value"
-                  step="0.01"
-                />
+                <div className="input-with-live-indicator">
+                  <input
+                    type="number"
+                    value={formData.currentValue}
+                    onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
+                    placeholder="Current market value"
+                    step="0.01"
+                  />
+                  {(() => {
+                    const { totalInvested, currentValue } = calculateInvestmentDetails(
+                      formData.amount,
+                      formData.interestRate,
+                      formData.startDate,
+                      formData.frequency,
+                      formData.maturityDate
+                    );
+                    if (totalInvested > 0) {
+                      return (
+                        <span className="live-badge" onClick={() => setFormData({ ...formData, currentValue: currentValue.toString() })}>
+                          Auto Val: ₹{currentValue.toLocaleString('en-IN')} (Invested: ₹{totalInvested.toLocaleString('en-IN')})
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+                <small style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                  Auto-calculated based on interest rate & time.
+                </small>
               </div>
             </div>
 
@@ -545,8 +699,21 @@ const NpsPpfInvestment = () => {
               </thead>
               <tbody>
                 {investments.map((investment) => {
-                  const returns = (investment.currentValue || investment.amount) - investment.amount;
-                  const returnsPercent = investment.amount > 0 ? ((returns / investment.amount) * 100).toFixed(2) : 0;
+                  const { totalInvested, currentValue: calculatedCurrent } = calculateInvestmentDetails(
+                    investment.amount,
+                    investment.interestRate,
+                    investment.startDate,
+                    investment.frequency,
+                    investment.maturityDate
+                  );
+
+                  // Proactive Sync for Table
+                  const currentAmount = (investment.frequency !== 'one-time' && (investment.currentValue || 0) < totalInvested)
+                    ? calculatedCurrent
+                    : (investment.currentValue || totalInvested || 0);
+
+                  const returns = currentAmount - totalInvested;
+                  const returnsPercent = totalInvested > 0 ? ((returns / totalInvested) * 100).toFixed(2) : 0;
 
                   return (
                     <tr key={investment._id}>
@@ -557,10 +724,10 @@ const NpsPpfInvestment = () => {
                         <strong>{investment.name}</strong>
                       </td>
                       <td title={investment.accountNumber}>{investment.accountNumber || '-'}</td>
-                      <td>₹{(investment.amount / 1000).toFixed(0)}k</td>
-                      <td>₹{((investment.currentValue || investment.amount) / 1000).toFixed(0)}k</td>
+                      <td>₹{totalInvested.toLocaleString('en-IN')} {investment.frequency !== 'one-time' && <small title="Estimated contributions">(Auto)</small>}</td>
+                      <td>₹{currentAmount.toLocaleString('en-IN')}</td>
                       <td style={{ color: returns >= 0 ? '#10B981' : '#ff6b6b', fontWeight: 'bold' }}>
-                        ₹{(returns / 1000).toFixed(0)}k ({returnsPercent}%)
+                        ₹{returns.toLocaleString('en-IN')} ({returnsPercent}%)
                       </td>
                       <td>{investment.interestRate ? `${investment.interestRate}%` : '-'}</td>
                       <td>{new Date(investment.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</td>

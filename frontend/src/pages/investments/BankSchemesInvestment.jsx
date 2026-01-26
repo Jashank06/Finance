@@ -236,89 +236,124 @@ const BankSchemesInvestment = () => {
     }
   }, [formData.bankName, showForm, editingId, bankRates]);
 
-  // Auto-calculate Current Value based on inputs
-  useEffect(() => {
-    if (showForm && formData.amount && formData.interestRate && formData.startDate) {
-      const principal = parseFloat(formData.amount);
-      const rate = parseFloat(formData.interestRate);
-      const start = new Date(formData.startDate);
-      const end = formData.maturityDate ? new Date(formData.maturityDate) : new Date();
+  // Unified Calculation Helper
+  const calculateInvestmentDetails = (amount, rate, startDate, frequency, maturityDate) => {
+    if (!amount || !startDate) return { totalInvested: 0, currentValue: 0, months: 0 };
 
-      // Ensure valid dates
-      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
-        const timeInYears = (end - start) / (1000 * 60 * 60 * 24 * 365.25);
+    const start = new Date(startDate);
+    const now = new Date();
+    // For calculation, treat maturity date as the boundary if it's in the past
+    const maturity = maturityDate ? new Date(maturityDate) : null;
+    const calcEndDate = (maturity && maturity < now) ? maturity : now;
 
-        // Compound Interest Formula (assuming yearly compounding for simplicity/standard)
-        // A = P(1 + r/n)^(nt)
-        const calculatedValue = principal * Math.pow((1 + rate / 100), timeInYears);
+    if (isNaN(start.getTime())) return { totalInvested: 0, currentValue: 0, months: 0 };
 
-        // Only update if it's not manually edited (we can't easily track manual edit state here, 
-        // so we'll update if the difference is significant or if it's empty, 
-        // but to avoid overwriting user manual changes, maybe we only do it if currentValue is empty?
-        // User asked for "same isme bhi", suggesting aggressive auto-population)
-        // Let's rely on the "Auto-Calculated" badge approach like we did for Live Price
+    const principal = parseFloat(amount) || 0;
+    const r_annual = (parseFloat(rate) || 0) / 100;
 
-        /* 
-           We won't aggressively overwrite if user is typing, 
-           but we can start with it. 
-           Better: just calculate it and lets user click a badge to apply it, 
-           OR apply it if currentValue is empty.
-        */
-        if (!formData.currentValue || editingId === null) {
-          // setFormData(prev => ({ ...prev, currentValue: calculatedValue.toFixed(2) }));
-          // Actually, let's just do it.
-        }
+    if (frequency === 'monthly') {
+      // Calculate months elapsed (including current month)
+      const months = (calcEndDate.getFullYear() - start.getFullYear()) * 12 + (calcEndDate.getMonth() - start.getMonth()) + 1;
+      const totalInvested = principal * months;
+
+      // RD Formula: A = P * [(1 + r)^n - 1] / (1 - (1 + r)^-1/3) -- simplified or standard approx
+      // Standard RD formula: A = P * ((1+r)^n - 1) / (1 - (1+r)^-1/3) is complex for different compounding.
+      // Simple Monthly Compounding: A = P * ((1 + r/12)^n - 1) / (r/12) * (1 + r/12)
+      if (r_annual > 0) {
+        const r_monthly = r_annual / 12;
+        const currentValue = principal * ((Math.pow(1 + r_monthly, months) - 1) / r_monthly) * (1 + r_monthly);
+        return { totalInvested, currentValue: Math.round(currentValue), months };
       }
+      return { totalInvested, currentValue: totalInvested, months };
+    } else {
+      // FD / One-time
+      const timeInYears = (calcEndDate - start) / (1000 * 60 * 60 * 24 * 365.25);
+      // Standard Compound Interest: A = P * (1 + r)^t
+      const currentValue = principal * Math.pow((1 + r_annual), timeInYears);
+      return { totalInvested: principal, currentValue: Math.round(currentValue), months: 0 };
     }
-  }, [formData.amount, formData.interestRate, formData.startDate, formData.maturityDate]);
+  };
 
   // Refined Auto-Calculate Effect
   useEffect(() => {
     if (showForm && formData.amount && formData.interestRate && formData.startDate) {
-      const principal = parseFloat(formData.amount);
-      const rate = parseFloat(formData.interestRate);
-      const start = new Date(formData.startDate);
-      // Calculate till today if maturity date is not set or in future, else till maturity
-      const maturityForCalc = formData.maturityDate ? new Date(formData.maturityDate) : new Date();
-      const calcEndDate = maturityForCalc < new Date() ? maturityForCalc : new Date();
+      const { totalInvested, currentValue } = calculateInvestmentDetails(
+        formData.amount,
+        formData.interestRate,
+        formData.startDate,
+        formData.frequency,
+        formData.maturityDate
+      );
 
-      if (!isNaN(start.getTime()) && !isNaN(calcEndDate.getTime()) && calcEndDate >= start) {
-        const timeInYears = (calcEndDate - start) / (1000 * 60 * 60 * 24 * 365.25);
-        const calculatedValue = principal * Math.pow((1 + rate / 100), timeInYears);
+      // Auto-update Current Value if:
+      // 1. It's a new investment
+      // 2. It's an RD and current value is less than total invested (mathematically incorrect)
+      // 3. Current value is empty or 0
+      const currentValNum = parseFloat(formData.currentValue) || 0;
+      const shouldUpdate = !editingId ||
+        currentValNum === 0 ||
+        (formData.frequency === 'monthly' && currentValNum < totalInvested);
 
-        // Helper to check if we should update
-        // If we are creating new (editingId null), always update
-        // If editing, only update if the current value seems stale (heuristic) or let user decide
-
-        if (!editingId) {
-          setFormData(prev => ({ ...prev, currentValue: calculatedValue.toFixed(2) }));
-        }
+      if (shouldUpdate && currentValue > 0) {
+        setFormData(prev => ({ ...prev, currentValue: currentValue.toString() }));
       }
     }
-  }, [formData.amount, formData.interestRate, formData.startDate, formData.maturityDate, showForm, editingId]);
+  }, [formData.amount, formData.interestRate, formData.startDate, formData.maturityDate, formData.frequency, showForm, editingId]);
 
 
 
   const calculateTotals = () => {
-    const totalInvested = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
-    const totalCurrent = investments.reduce((sum, inv) => sum + (inv.currentValue || inv.amount || 0), 0);
-    const totalReturns = totalCurrent - totalInvested;
-    const returnsPercent = totalInvested > 0 ? ((totalReturns / totalInvested) * 100).toFixed(2) : 0;
-    const averageRate = investments.length > 0
-      ? (investments.reduce((sum, inv) => sum + (inv.interestRate || 0), 0) / investments.length).toFixed(2)
-      : 0;
+    const totals = investments.reduce((acc, inv) => {
+      const { totalInvested, currentValue: calculatedCurrent } = calculateInvestmentDetails(
+        inv.amount,
+        inv.interestRate,
+        inv.startDate,
+        inv.frequency,
+        inv.maturityDate
+      );
 
-    return { totalInvested, totalCurrent, totalReturns, returnsPercent, averageRate };
+      // Use calculated value for totals if saved value is suspicious for an RD
+      const current = (inv.frequency === 'monthly' && (inv.currentValue || 0) < totalInvested)
+        ? calculatedCurrent
+        : (inv.currentValue || totalInvested || 0);
+
+      acc.totalInvested += totalInvested;
+      acc.totalCurrent += current;
+      acc.totalRateSum += (inv.interestRate || 0);
+      return acc;
+    }, { totalInvested: 0, totalCurrent: 0, totalRateSum: 0 });
+
+    const totalReturns = totals.totalCurrent - totals.totalInvested;
+    const returnsPercent = totals.totalInvested > 0 ? ((totalReturns / totals.totalInvested) * 100).toFixed(2) : 0;
+    const averageRate = investments.length > 0 ? (totals.totalRateSum / investments.length).toFixed(2) : 0;
+
+    return {
+      totalInvested: totals.totalInvested,
+      totalCurrent: totals.totalCurrent,
+      totalReturns,
+      returnsPercent,
+      averageRate
+    };
   };
 
   const getChartData = () => {
     const typeData = investments.reduce((acc, inv) => {
+      const { totalInvested, currentValue: calculatedCurrent } = calculateInvestmentDetails(
+        inv.amount,
+        inv.interestRate,
+        inv.startDate,
+        inv.frequency,
+        inv.maturityDate
+      );
+      const current = (inv.frequency === 'monthly' && (inv.currentValue || 0) < totalInvested)
+        ? calculatedCurrent
+        : (inv.currentValue || totalInvested || 0);
+
       const existing = acc.find(item => item.name === inv.type);
-      const value = inv.currentValue || inv.amount || 0;
       if (existing) {
-        existing.value += value;
+        existing.value += current;
       } else {
-        acc.push({ name: inv.type, value });
+        acc.push({ name: inv.type, value: current });
       }
       return acc;
     }, []);
@@ -327,12 +362,22 @@ const BankSchemesInvestment = () => {
 
   const getBankData = () => {
     const bankData = investments.reduce((acc, inv) => {
+      const { totalInvested, currentValue: calculatedCurrent } = calculateInvestmentDetails(
+        inv.amount,
+        inv.interestRate,
+        inv.startDate,
+        inv.frequency,
+        inv.maturityDate
+      );
+      const current = (inv.frequency === 'monthly' && (inv.currentValue || 0) < totalInvested)
+        ? calculatedCurrent
+        : (inv.currentValue || totalInvested || 0);
+
       const existing = acc.find(item => item.name === (inv.provider || inv.bankName));
-      const value = inv.currentValue || inv.amount || 0;
       if (existing) {
-        existing.value += value;
+        existing.value += current;
       } else {
-        acc.push({ name: inv.provider || inv.bankName, value });
+        acc.push({ name: inv.provider || inv.bankName, value: current });
       }
       return acc;
     }, []);
@@ -340,13 +385,26 @@ const BankSchemesInvestment = () => {
   };
 
   const getPerformanceData = () => {
-    return investments.map(inv => ({
-      name: (inv.name || `${inv.provider} ${inv.type}` || 'Deposit'),
-      invested: inv.amount || 0,
-      current: inv.currentValue || inv.amount || 0,
-      returns: (inv.currentValue || inv.amount || 0) - (inv.amount || 0),
-      returnsPercent: (inv.amount || 0) > 0 ? ((((inv.currentValue || inv.amount || 0) - (inv.amount || 0)) / (inv.amount || 1)) * 100).toFixed(2) : 0,
-    }));
+    return investments.map(inv => {
+      const { totalInvested } = calculateInvestmentDetails(
+        inv.amount,
+        inv.interestRate,
+        inv.startDate,
+        inv.frequency,
+        inv.maturityDate
+      );
+      const current = inv.currentValue || totalInvested || 0;
+      const returns = current - totalInvested;
+      const returnsPercent = totalInvested > 0 ? ((returns / totalInvested) * 100).toFixed(2) : 0;
+
+      return {
+        name: (inv.name || `${inv.provider} ${inv.type}` || 'Deposit'),
+        invested: totalInvested,
+        current: current,
+        returns: returns,
+        returnsPercent: returnsPercent,
+      };
+    });
   };
 
   const totals = calculateTotals();
@@ -590,10 +648,21 @@ const BankSchemesInvestment = () => {
             </thead>
             <tbody>
               {investments.map((investment) => {
-                const investedAmount = investment.amount || 0;
-                const currentAmount = investment.currentValue || investment.amount || 0;
-                const returns = currentAmount - investedAmount;
-                const returnsPercent = investedAmount > 0 ? ((returns / investedAmount) * 100).toFixed(2) : 0;
+                const { totalInvested, currentValue: calculatedCurrent } = calculateInvestmentDetails(
+                  investment.amount,
+                  investment.interestRate,
+                  investment.startDate,
+                  investment.frequency,
+                  investment.maturityDate
+                );
+
+                // Prioritize calculated value if saved value is clearly wrong for RD
+                const currentAmount = (investment.frequency === 'monthly' && (investment.currentValue || 0) < totalInvested)
+                  ? calculatedCurrent
+                  : (investment.currentValue || totalInvested || 0);
+
+                const returns = currentAmount - totalInvested;
+                const returnsPercent = totalInvested > 0 ? ((returns / totalInvested) * 100).toFixed(2) : 0;
 
                 return (
                   <tr key={investment._id}>
@@ -608,7 +677,7 @@ const BankSchemesInvestment = () => {
                     <td>{investment.name}</td>
                     <td>{investment.provider || investment.bankName}</td>
                     <td>{investment.accountNumber || 'N/A'}</td>
-                    <td>₹{investedAmount.toLocaleString('en-IN')}</td>
+                    <td>₹{totalInvested.toLocaleString('en-IN')} {investment.frequency === 'monthly' && <small title="Estimated installments">(Auto)</small>}</td>
                     <td>₹{currentAmount.toLocaleString('en-IN')}</td>
                     <td style={{ color: returns >= 0 ? '#10B981' : '#EF4444', fontWeight: 600 }}>
                       ₹{returns.toLocaleString('en-IN')} ({returnsPercent}%)
@@ -740,20 +809,19 @@ const BankSchemesInvestment = () => {
                   />
                   {/* Calculate theoretical value for badge */}
                   {(() => {
-                    if (formData.amount && formData.interestRate && formData.startDate) {
-                      const principal = parseFloat(formData.amount);
-                      const rate = parseFloat(formData.interestRate);
-                      const start = new Date(formData.startDate);
-                      const end = new Date();
-                      if (!isNaN(start.getTime()) && end > start) {
-                        const timeInYears = (end - start) / (1000 * 60 * 60 * 24 * 365.25);
-                        const calcVal = (principal * Math.pow((1 + rate / 100), timeInYears)).toFixed(2);
-                        return (
-                          <span className="live-badge" onClick={() => setFormData({ ...formData, currentValue: calcVal })}>
-                            Auto: ₹{parseFloat(calcVal).toLocaleString('en-IN')}
-                          </span>
-                        );
-                      }
+                    const { totalInvested, currentValue } = calculateInvestmentDetails(
+                      formData.amount,
+                      formData.interestRate,
+                      formData.startDate,
+                      formData.frequency,
+                      formData.maturityDate
+                    );
+                    if (totalInvested > 0) {
+                      return (
+                        <span className="live-badge" onClick={() => setFormData({ ...formData, currentValue: currentValue.toString() })}>
+                          Auto Val: ₹{currentValue.toLocaleString('en-IN')} (Invested: ₹{totalInvested.toLocaleString('en-IN')})
+                        </span>
+                      );
                     }
                     return null;
                   })()}

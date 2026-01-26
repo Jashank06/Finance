@@ -562,8 +562,8 @@ const CashCardsBank = () => {
         }
       }
 
-      // Save milestone if checked (for credit transactions)
-      if (isMilestone && transactionForm.type === 'credit') {
+      // Save milestone if checked
+      if (isMilestone) {
         try {
           await api.post('/budget/milestones', {
             title: `Transaction: ${transactionForm.merchant}`,
@@ -660,8 +660,8 @@ const CashCardsBank = () => {
         }
       }
 
-      // Save milestone if checked (for credit transactions)
-      if (isMilestone && bankTransactionForm.type === 'credit') {
+      // Save milestone if checked
+      if (isMilestone) {
         try {
           await api.post('/budget/milestones', {
             title: `Transaction: ${bankTransactionForm.merchant}`,
@@ -1273,7 +1273,7 @@ const CashCardsBank = () => {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Card Name:</label>
+                        <label>Card Name: *</label>
                         <input
                           type="text"
                           value={cardForm.name}
@@ -1282,7 +1282,7 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Issuer:</label>
+                        <label>Issuer: *</label>
                         <input
                           type="text"
                           value={cardForm.issuer}
@@ -1291,7 +1291,7 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Card Number:</label>
+                        <label>Card Number: *</label>
                         <input
                           type="text"
                           autoComplete="off"
@@ -1299,12 +1299,15 @@ const CashCardsBank = () => {
                           autoCapitalize="off"
                           spellCheck="false"
                           value={cardForm.cardNumber}
-                          onChange={(e) => setCardForm({ ...cardForm, cardNumber: e.target.value })}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+                            setCardForm({ ...cardForm, cardNumber: val.substring(0, 19) });
+                          }}
                           required
                         />
                       </div>
                       <div className="form-group">
-                        <label>Cardholder Name:</label>
+                        <label>Cardholder Name: *</label>
                         <select
                           value={cardForm.cardholderName}
                           onChange={(e) => setCardForm({ ...cardForm, cardholderName: e.target.value })}
@@ -1317,17 +1320,23 @@ const CashCardsBank = () => {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Expiry Date (MM/YY):</label>
+                        <label>Expiry Date (MM/YY): *</label>
                         <input
                           type="text"
                           placeholder="MM/YY"
                           value={cardForm.expiryDate}
-                          onChange={(e) => setCardForm({ ...cardForm, expiryDate: e.target.value })}
+                          onChange={(e) => {
+                            let val = e.target.value.replace(/\D/g, '');
+                            if (val.length > 2) {
+                              val = val.substring(0, 2) + '/' + val.substring(2, 4);
+                            }
+                            setCardForm({ ...cardForm, expiryDate: val });
+                          }}
                           required
                         />
                       </div>
                       <div className="form-group">
-                        <label>CVV:</label>
+                        <label>CVV: *</label>
                         <input
                           type="text"
                           autoComplete="off"
@@ -1343,7 +1352,7 @@ const CashCardsBank = () => {
                       {cardForm.type === 'credit-card' && (
                         <>
                           <div className="form-group">
-                            <label>Credit Limit:</label>
+                            <label>Credit Limit: *</label>
                             <input
                               type="number"
                               step="0.01"
@@ -1386,7 +1395,7 @@ const CashCardsBank = () => {
                       {cardForm.type === 'debit-card' && (
                         <>
                           <div className="form-group">
-                            <label>Linked Account:</label>
+                            <label>Linked Account: *</label>
                             <input
                               type="text"
                               value={cardForm.linkedAccount}
@@ -1479,7 +1488,7 @@ const CashCardsBank = () => {
                   <form onSubmit={handleTransactionSubmit} autoComplete="off">
                     <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
                       <div className="form-group">
-                        <label>Select Card:</label>
+                        <label>Select Card: *</label>
                         <select
                           value={transactionForm.cardId}
                           onChange={(e) => setTransactionForm({ ...transactionForm, cardId: e.target.value })}
@@ -1504,7 +1513,7 @@ const CashCardsBank = () => {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Amount:</label>
+                        <label>Amount: *</label>
                         <input
                           type="number"
                           step="0.01"
@@ -1526,7 +1535,7 @@ const CashCardsBank = () => {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Merchant/Description:</label>
+                        <label>Merchant/Description: *</label>
                         <input
                           type="text"
                           value={transactionForm.merchant}
@@ -1536,7 +1545,7 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Broader Category:</label>
+                        <label>Broader Category: *</label>
                         <select
                           value={transactionForm.broaderCategory}
                           onChange={(e) => {
@@ -1570,7 +1579,7 @@ const CashCardsBank = () => {
                       {/* Main Category - shown only when Broader Category is selected */}
                       {transactionForm.broaderCategory && (
                         <div className="form-group">
-                          <label>Main Category:</label>
+                          <label>Main Category: *</label>
                           <select
                             value={transactionForm.mainCategory}
                             onChange={(e) => {
@@ -1599,7 +1608,7 @@ const CashCardsBank = () => {
                       {/* Sub Category - shown only when Main Category is selected */}
                       {transactionForm.mainCategory && (
                         <div className="form-group">
-                          <label>Sub Category:</label>
+                          <label>Sub Category: *</label>
                           <select
                             value={transactionForm.subCategory}
                             onChange={(e) => {
@@ -1639,7 +1648,7 @@ const CashCardsBank = () => {
                       {/* Custom Sub Category - shown only when "Other" is selected */}
                       {transactionForm.subCategory === 'Other' && (
                         <div className="form-group">
-                          <label>Custom Sub Category:</label>
+                          <label>Custom Sub Category: *</label>
                           <input
                             type="text"
                             value={transactionForm.customSubCategory}
@@ -1650,7 +1659,7 @@ const CashCardsBank = () => {
                         </div>
                       )}
                       <div className="form-group">
-                        <label>Date:</label>
+                        <label>Date: *</label>
                         <input
                           type="date"
                           value={transactionForm.date}
@@ -2014,7 +2023,7 @@ const CashCardsBank = () => {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Account Name:</label>
+                        <label>Account Name: *</label>
                         <input
                           type="text"
                           value={bankForm.name}
@@ -2023,7 +2032,7 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Bank Name:</label>
+                        <label>Bank Name: *</label>
                         <input
                           type="text"
                           value={bankForm.bankName}
@@ -2032,7 +2041,7 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Account Number:</label>
+                        <label>Account Number: *</label>
                         <input
                           type="text"
                           value={bankForm.accountNumber}
@@ -2041,7 +2050,7 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Account Holder Name:</label>
+                        <label>Account Holder Name: *</label>
                         <select
                           value={bankForm.accountHolderName}
                           onChange={(e) => setBankForm({ ...bankForm, accountHolderName: e.target.value })}
@@ -2067,7 +2076,7 @@ const CashCardsBank = () => {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Balance:</label>
+                        <label>Balance: *</label>
                         <input
                           type="number"
                           step="0.01"
@@ -2080,7 +2089,7 @@ const CashCardsBank = () => {
                       {(bankForm.type === 'fixed-deposit' || bankForm.type === 'recurring-deposit') && (
                         <>
                           <div className="form-group">
-                            <label>Deposit Amount:</label>
+                            <label>Deposit Amount: *</label>
                             <input
                               type="number"
                               step="0.01"
@@ -2090,7 +2099,7 @@ const CashCardsBank = () => {
                             />
                           </div>
                           <div className="form-group">
-                            <label>Interest Rate (%):</label>
+                            <label>Interest Rate (%): *</label>
                             <input
                               type="number"
                               step="0.01"
@@ -2100,7 +2109,7 @@ const CashCardsBank = () => {
                             />
                           </div>
                           <div className="form-group">
-                            <label>Tenure (months):</label>
+                            <label>Tenure (months): *</label>
                             <input
                               type="number"
                               value={bankForm.tenure}
@@ -2122,7 +2131,7 @@ const CashCardsBank = () => {
                       )}
 
                       <div className="form-group">
-                        <label>IFSC Code:</label>
+                        <label>IFSC Code: *</label>
                         <input
                           type="text"
                           value={bankForm.ifscCode}
@@ -2139,7 +2148,7 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Branch Name:</label>
+                        <label>Branch Name: *</label>
                         <input
                           type="text"
                           value={bankForm.branchName}
@@ -2172,11 +2181,12 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Pincode:</label>
+                        <label>Pincode: *</label>
                         <input
                           type="text"
                           value={bankForm.pincode}
                           onChange={(e) => setBankForm({ ...bankForm, pincode: e.target.value })}
+                          required
                         />
                       </div>
 
@@ -2294,7 +2304,7 @@ const CashCardsBank = () => {
                   <form onSubmit={handleBankTransactionSubmit} autoComplete="off">
                     <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
                       <div className="form-group">
-                        <label>Select Account:</label>
+                        <label>Select Account: *</label>
                         <select
                           value={bankTransactionForm.accountId}
                           onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, accountId: e.target.value })}
@@ -2309,7 +2319,7 @@ const CashCardsBank = () => {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Transaction Type:</label>
+                        <label>Transaction Type: *</label>
                         <select
                           value={bankTransactionForm.type}
                           onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, type: e.target.value })}
@@ -2320,7 +2330,7 @@ const CashCardsBank = () => {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Amount:</label>
+                        <label>Amount: *</label>
                         <input
                           type="number"
                           step="0.01"
@@ -2330,7 +2340,7 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Merchant/Payee:</label>
+                        <label>Merchant/Payee: *</label>
                         <input
                           type="text"
                           value={bankTransactionForm.merchant}
@@ -2339,7 +2349,7 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Broader Category:</label>
+                        <label>Broader Category: *</label>
                         <select
                           value={bankTransactionForm.broaderCategory}
                           onChange={(e) => {
@@ -2373,7 +2383,7 @@ const CashCardsBank = () => {
                       {/* Main Category - shown only when Broader Category is selected */}
                       {bankTransactionForm.broaderCategory && (
                         <div className="form-group">
-                          <label>Main Category:</label>
+                          <label>Main Category: *</label>
                           <select
                             value={bankTransactionForm.mainCategory}
                             onChange={(e) => {
@@ -2402,7 +2412,7 @@ const CashCardsBank = () => {
                       {/* Sub Category - shown only when Main Category is selected */}
                       {bankTransactionForm.mainCategory && (
                         <div className="form-group">
-                          <label>Sub Category:</label>
+                          <label>Sub Category: *</label>
                           <select
                             value={bankTransactionForm.subCategory}
                             onChange={(e) => {
@@ -2442,7 +2452,7 @@ const CashCardsBank = () => {
                       {/* Custom Sub Category - shown only when "Other" is selected */}
                       {bankTransactionForm.subCategory === 'Other' && (
                         <div className="form-group">
-                          <label>Custom Sub Category:</label>
+                          <label>Custom Sub Category: *</label>
                           <input
                             type="text"
                             value={bankTransactionForm.customSubCategory}
@@ -2453,7 +2463,7 @@ const CashCardsBank = () => {
                         </div>
                       )}
                       <div className="form-group">
-                        <label>Date:</label>
+                        <label>Date: *</label>
                         <input
                           type="date"
                           value={bankTransactionForm.date}

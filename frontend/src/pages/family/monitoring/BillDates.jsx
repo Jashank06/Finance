@@ -28,9 +28,9 @@ const BillDates = () => {
   const convertDayToDate = (day, cycle, baseDate = new Date()) => {
     const dayNum = parseInt(day);
     if (!dayNum || dayNum < 1 || dayNum > 31) return '';
-    
+
     const date = new Date(baseDate);
-    
+
     if (cycle === 'monthly') {
       // For monthly, use current month and year
       date.setDate(dayNum);
@@ -46,7 +46,7 @@ const BillDates = () => {
       // For one-time, use current date
       date.setDate(dayNum);
     }
-    
+
     return date.toISOString().slice(0, 10);
   };
 
@@ -61,13 +61,11 @@ const BillDates = () => {
   const handleDayChange = (field, value) => {
     const dayValue = value.replace(/\D/g, '').slice(0, 2); // Only allow numbers, max 2 digits
     const cycle = inputs.cycle || 'monthly';
-    
+
     if (field === 'dueDate') {
       setInputs({ ...inputs, dueDate: convertDayToDate(dayValue, cycle) });
     } else if (field === 'payableDate') {
       setInputs({ ...inputs, payableDate: convertDayToDate(dayValue, cycle) });
-    } else if (field === 'paymentDate') {
-      setInputs({ ...inputs, paymentDate: convertDayToDate(dayValue, cycle) });
     }
   };
 
@@ -92,7 +90,6 @@ const BillDates = () => {
     billingUnit: '',
     nameOnBill: '',
     paidAmount: '',
-    paymentDate: '',
     description: '',
     // Water specific fields
     meterNumber: '',
@@ -143,7 +140,6 @@ const BillDates = () => {
       amount: inv.amount || notes.amount || 0,
       dueDate: inv.maturityDate?.slice(0, 10) || notes.dueDate || '',
       payableDate: inv.payableDate?.slice(0, 10) || notes.payableDate || '',
-      paymentDate: inv.paymentDate?.slice(0, 10) || notes.paymentDate || '',
       billingCycle: notes.billingCycle || '',
       billGenerationDate: notes.billGenerationDate || '',
       autoDebit: notes.autoDebit || false,
@@ -319,7 +315,6 @@ const BillDates = () => {
       billingUnit: billToEdit.billingUnit || '',
       nameOnBill: billToEdit.nameOnBill || '',
       paidAmount: billToEdit.paidAmount || '',
-      paymentDate: billToEdit.paymentDate || '',
       description: billToEdit.description || '',
       // Water specific fields
       meterNumber: billToEdit.meterNumber || '',
@@ -388,7 +383,6 @@ const BillDates = () => {
     startDate: data.startDate || new Date().toISOString().slice(0, 10),
     maturityDate: data.dueDate || undefined,
     payableDate: data.payableDate || undefined,
-    paymentDate: data.paymentDate || undefined,
     frequency: data.cycle || 'monthly',
     notes: JSON.stringify({ ...data }),
   });
@@ -625,8 +619,7 @@ const BillDates = () => {
                       ...savedData,
                       billType: newBillType,
                       dueDate: '', // Clear due date for new bill
-                      paidAmount: '', // Clear paid amount for new bill
-                      paymentDate: '' // Clear payment date for new bill
+                      paidAmount: '' // Clear paid amount for new bill
                     });
                   } else {
                     // Reset to defaults for new bill type
@@ -647,7 +640,6 @@ const BillDates = () => {
                       billingUnit: '',
                       nameOnBill: '',
                       paidAmount: '',
-                      paymentDate: '',
                       description: '',
                       meterNumber: '',
                       connectionType: 'Domestic',
@@ -704,9 +696,9 @@ const BillDates = () => {
                   const newCycle = e.target.value;
                   const currentDueDay = extractDayFromDate(inputs.dueDate);
                   const currentPayableDay = extractDayFromDate(inputs.payableDate);
-                  
-                  setInputs({ 
-                    ...inputs, 
+
+                  setInputs({
+                    ...inputs,
                     cycle: newCycle,
                     dueDate: currentDueDay ? convertDayToDate(currentDueDay, newCycle) : '',
                     payableDate: currentPayableDay ? convertDayToDate(currentPayableDay, newCycle) : ''
@@ -720,10 +712,10 @@ const BillDates = () => {
               </div>
               <div className="form-field">
                 <label>Billing Cycle</label>
-                <input 
-                  type="text" 
-                  value={inputs.billingCycle} 
-                  onChange={(e) => setInputs({ ...inputs, billingCycle: e.target.value })} 
+                <input
+                  type="text"
+                  value={inputs.billingCycle}
+                  onChange={(e) => setInputs({ ...inputs, billingCycle: e.target.value })}
                   placeholder="e.g., 15-20"
                   style={{ textTransform: 'lowercase' }}
                 />
@@ -733,10 +725,10 @@ const BillDates = () => {
               </div>
               <div className="form-field">
                 <label>Bill Generation Date</label>
-                <input 
-                  type="text" 
-                  value={inputs.billGenerationDate} 
-                  onChange={(e) => setInputs({ ...inputs, billGenerationDate: e.target.value })} 
+                <input
+                  type="text"
+                  value={inputs.billGenerationDate}
+                  onChange={(e) => setInputs({ ...inputs, billGenerationDate: e.target.value })}
                   placeholder="e.g., 1"
                   maxLength={2}
                 />
@@ -750,13 +742,13 @@ const BillDates = () => {
               </div>
               <div className="form-field">
                 <label>Due Date *</label>
-                <input 
-                  type="text" 
-                  value={extractDayFromDate(inputs.dueDate)} 
-                  onChange={(e) => handleDayChange('dueDate', e.target.value)} 
-                  placeholder="Day (1-31)" 
+                <input
+                  type="text"
+                  value={extractDayFromDate(inputs.dueDate)}
+                  onChange={(e) => handleDayChange('dueDate', e.target.value)}
+                  placeholder="Day (1-31)"
                   maxLength={2}
-                  required 
+                  required
                 />
                 <small style={{ color: '#666', fontSize: '12px' }}>
                   Enter day only (e.g., 15). {inputs.cycle === 'monthly' ? 'Monthly cycle applies' : inputs.cycle === 'yearly' ? 'Yearly cycle applies' : inputs.cycle === 'quarterly' ? 'Quarterly cycle applies' : 'One-time'}
@@ -764,11 +756,11 @@ const BillDates = () => {
               </div>
               <div className="form-field">
                 <label>Payable Date</label>
-                <input 
-                  type="text" 
-                  value={extractDayFromDate(inputs.payableDate)} 
-                  onChange={(e) => handleDayChange('payableDate', e.target.value)} 
-                  placeholder="Day (1-31)" 
+                <input
+                  type="text"
+                  value={extractDayFromDate(inputs.payableDate)}
+                  onChange={(e) => handleDayChange('payableDate', e.target.value)}
+                  placeholder="Day (1-31)"
                   maxLength={2}
                 />
                 <small style={{ color: '#666', fontSize: '12px' }}>
@@ -797,16 +789,6 @@ const BillDates = () => {
 
             {inputs.billType === 'Electricity' && (
               <div className="form-row">
-                <div className="form-field">
-                  <label>Payment Date</label>
-                  <input 
-                    type="text" 
-                    value={extractDayFromDate(inputs.paymentDate)} 
-                    onChange={(e) => handleDayChange('paymentDate', e.target.value)} 
-                    placeholder="Day (1-31)" 
-                    maxLength={2}
-                  />
-                </div>
                 <div className="form-field">
                   <label>Description</label>
                   <input type="text" value={inputs.description} onChange={(e) => setInputs({ ...inputs, description: e.target.value })} />
