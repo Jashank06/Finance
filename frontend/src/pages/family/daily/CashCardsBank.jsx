@@ -15,6 +15,7 @@ import { getBroaderCategories, getMainCategories, getSubCategories } from '../..
 import PayingForDropdown from '../../../components/PayingForDropdown';
 import { syncPaymentToModule } from '../../../utils/payingForSync';
 import { trackFeatureUsage, trackAction } from '../../../utils/featureTracking';
+import { investmentAPI } from '../../../utils/investmentAPI';
 
 const ModalPortal = ({ children }) => {
   if (typeof document === 'undefined') return null;
@@ -58,7 +59,18 @@ const CashCardsBank = () => {
       referenceId: '',
       referenceName: ''
     },
-    isMilestone: false
+    isMilestone: false,
+    // Udhar Lena Dena fields
+    createAsUdhar: false,
+    udharPersonName: '',
+    udharPurpose: '',
+    udharReturnDate: '',
+    // On Behalf fields
+    createAsOnBehalf: false,
+    onBehalfPersonName: '',
+    onBehalfPurpose: '',
+    onBehalfReceivedAmount: '',
+    onBehalfReceiptDate: ''
   });
   const [showBankTransactionForm, setShowBankTransactionForm] = useState(false);
   const [editingBankTransaction, setEditingBankTransaction] = useState(null);
@@ -366,7 +378,18 @@ const CashCardsBank = () => {
       currency: 'INR',
       transactionType: '',
       expenseType: '',
-      isMilestone: false
+      isMilestone: false,
+      // Udhar Lena Dena fields
+      createAsUdhar: false,
+      udharPersonName: '',
+      udharPurpose: '',
+      udharReturnDate: '',
+      // On Behalf fields
+      createAsOnBehalf: false,
+      onBehalfPersonName: '',
+      onBehalfPurpose: '',
+      onBehalfReceivedAmount: '',
+      onBehalfReceiptDate: ''
     });
   };
 
@@ -602,8 +625,18 @@ const CashCardsBank = () => {
       const dataToSend = { ...bankTransactionForm };
 
       // Save and remove isMilestone from dataToSend
-      const { isMilestone } = dataToSend;
+      const { isMilestone, createAsUdhar, udharPersonName, udharPurpose, udharReturnDate,
+        createAsOnBehalf, onBehalfPersonName, onBehalfPurpose, onBehalfReceivedAmount, onBehalfReceiptDate } = dataToSend;
       delete dataToSend.isMilestone;
+      delete dataToSend.createAsUdhar;
+      delete dataToSend.udharPersonName;
+      delete dataToSend.udharPurpose;
+      delete dataToSend.udharReturnDate;
+      delete dataToSend.createAsOnBehalf;
+      delete dataToSend.onBehalfPersonName;
+      delete dataToSend.onBehalfPurpose;
+      delete dataToSend.onBehalfReceivedAmount;
+      delete dataToSend.onBehalfReceiptDate;
 
       // Clean up empty string values (Mongoose enum fields don't accept empty strings)
       Object.keys(dataToSend).forEach(key => {
@@ -658,6 +691,71 @@ const CashCardsBank = () => {
         if (bankTransactionForm.payingFor && bankTransactionForm.payingFor.module) {
           await syncPaymentToModule(newTransaction, bankTransactionForm.payingFor, 'bank');
         }
+
+        // Create loan record if "Create as Udhar Lena Dena" is checked
+        if (createAsUdhar) {
+          try {
+            // Determine loan type based on transaction type
+            // Credit (Deposit) = Borrowed (Udhar Lia)
+            // Debit (Withdrawal) = Lent (Udhar Dia)
+            const loanType = bankTransactionForm.type === 'credit' ? 'Borrowed' : 'Lent';
+
+            const loanPayload = {
+              category: 'loan-ledger',
+              type: loanType,
+              name: udharPersonName || bankTransactionForm.merchant,
+              amount: Number(bankTransactionForm.amount),
+              startDate: bankTransactionForm.date,
+              maturityDate: udharReturnDate || bankTransactionForm.date,
+              frequency: 'one-time',
+              source: `Bank: ${bankRecords.find(b => b._id === bankTransactionForm.accountId)?.name || 'Bank Transfer'}`,
+              notes: JSON.stringify({
+                forPurpose: udharPurpose || bankTransactionForm.description || 'Bank Transaction',
+                comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
+                totalPaid: 0,
+                balanceAmount: Number(bankTransactionForm.amount),
+                payments: [],
+                bankTransactionId: newTransaction._id
+              })
+            };
+
+            await investmentAPI.create(loanPayload);
+            console.log('Loan record created successfully');
+          } catch (loanError) {
+            console.error('Error creating loan record:', loanError);
+            alert('Bank transaction created but failed to create loan record: ' + (loanError.response?.data?.message || loanError.message));
+          }
+        }
+
+        // Create On Behalf record if "Create as On Behalf Payment" is checked
+        if (createAsOnBehalf) {
+          try {
+            const onBehalfPayload = {
+              category: 'on-behalf',
+              type: 'On Behalf',
+              name: onBehalfPersonName || bankTransactionForm.merchant,
+              amount: Number(bankTransactionForm.amount),
+              startDate: bankTransactionForm.date,
+              maturityDate: onBehalfReceiptDate || bankTransactionForm.date,
+              frequency: 'one-time',
+              source: `Bank: ${bankRecords.find(b => b._id === bankTransactionForm.accountId)?.name || 'Bank Transfer'}`,
+              notes: JSON.stringify({
+                forPurpose: onBehalfPurpose || bankTransactionForm.description || 'Bank Transaction',
+                receivedAmount: Number(onBehalfReceivedAmount || 0),
+                totalReceived: Number(onBehalfReceivedAmount || 0),
+                dateOfReceipt: onBehalfReceiptDate,
+                comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
+                bankTransactionId: newTransaction._id
+              })
+            };
+
+            await investmentAPI.create(onBehalfPayload);
+            console.log('On Behalf record created successfully');
+          } catch (onBehalfError) {
+            console.error('Error creating on behalf record:', onBehalfError);
+            alert('Bank transaction created but failed to create on behalf record: ' + (onBehalfError.response?.data?.message || onBehalfError.message));
+          }
+        }
       }
 
       // Save milestone if checked
@@ -684,6 +782,15 @@ const CashCardsBank = () => {
 
       // Refresh data to update chart
       fetchData();
+
+      // Show success message
+      if (createAsUdhar && createAsOnBehalf) {
+        alert('✅ Bank transaction, Loan record, and On Behalf record saved successfully!');
+      } else if (createAsUdhar) {
+        alert('✅ Bank transaction and Loan record saved successfully!');
+      } else if (createAsOnBehalf) {
+        alert('✅ Bank transaction and On Behalf record saved successfully!');
+      }
     } catch (error) {
       console.error('Error saving bank transaction:', error);
       console.error('Error details:', error.response?.data);
@@ -2532,6 +2639,111 @@ const CashCardsBank = () => {
                           Mark as Milestone
                         </label>
                       </div>
+
+                      {/* Udhar Lena Dena Checkbox */}
+                      <div className="form-group checkbox-group" style={{ marginTop: '10px' }}>
+                        <input
+                          type="checkbox"
+                          id="createAsUdhar"
+                          checked={bankTransactionForm.createAsUdhar}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, createAsUdhar: e.target.checked })}
+                          style={{ width: 'auto' }}
+                        />
+                        <label htmlFor="createAsUdhar" style={{ cursor: 'pointer', fontSize: '14px' }}>
+                          Create as Udhar Lena Dena (
+                          {bankTransactionForm.type === 'credit' ? 'Udhar Lia - Borrowed' : 'Udhar Dia - Lent'}
+                          )
+                        </label>
+                      </div>
+
+                      {/* Conditional Udhar Fields */}
+                      {bankTransactionForm.createAsUdhar && (
+                        <>
+                          <div className="form-group">
+                            <label>Person Name: *</label>
+                            <input
+                              type="text"
+                              value={bankTransactionForm.udharPersonName}
+                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, udharPersonName: e.target.value })}
+                              placeholder={bankTransactionForm.merchant || 'Enter person name'}
+                              required={bankTransactionForm.createAsUdhar}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Purpose:</label>
+                            <input
+                              type="text"
+                              value={bankTransactionForm.udharPurpose}
+                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, udharPurpose: e.target.value })}
+                              placeholder={bankTransactionForm.description || 'Enter purpose'}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Return Date (Optional):</label>
+                            <input
+                              type="date"
+                              value={bankTransactionForm.udharReturnDate}
+                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, udharReturnDate: e.target.value })}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {/* On Behalf Checkbox */}
+                      <div className="form-group checkbox-group" style={{ marginTop: '10px' }}>
+                        <input
+                          type="checkbox"
+                          id="createAsOnBehalf"
+                          checked={bankTransactionForm.createAsOnBehalf}
+                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, createAsOnBehalf: e.target.checked })}
+                          style={{ width: 'auto' }}
+                        />
+                        <label htmlFor="createAsOnBehalf" style={{ cursor: 'pointer', fontSize: '14px' }}>
+                          Create as On Behalf Payment
+                        </label>
+                      </div>
+
+                      {/* Conditional On Behalf Fields */}
+                      {bankTransactionForm.createAsOnBehalf && (
+                        <>
+                          <div className="form-group">
+                            <label>Paid On Behalf Of: *</label>
+                            <input
+                              type="text"
+                              value={bankTransactionForm.onBehalfPersonName}
+                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, onBehalfPersonName: e.target.value })}
+                              placeholder={bankTransactionForm.merchant || 'Enter person name'}
+                              required={bankTransactionForm.createAsOnBehalf}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Purpose:</label>
+                            <input
+                              type="text"
+                              value={bankTransactionForm.onBehalfPurpose}
+                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, onBehalfPurpose: e.target.value })}
+                              placeholder={bankTransactionForm.description || 'Enter purpose'}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Received Amount (Optional):</label>
+                            <input
+                              type="number"
+                              value={bankTransactionForm.onBehalfReceivedAmount}
+                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, onBehalfReceivedAmount: e.target.value })}
+                              placeholder="Amount received back"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Receipt Date (Optional):</label>
+                            <input
+                              type="date"
+                              value={bankTransactionForm.onBehalfReceiptDate}
+                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, onBehalfReceiptDate: e.target.value })}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     {/* Paying For Dropdown */}

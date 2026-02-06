@@ -21,6 +21,21 @@ const PayingForDropdown = ({ value, onChange, disabled }) => {
                 }));
             }
         },
+        'on-behalf': {
+            label: 'On Behalf Payments',
+            fetchFunction: async () => {
+                const response = await investmentAPI.getAll('on-behalf');
+                return (response.data.investments || []).map(entry => {
+                    const notes = JSON.parse(entry.notes || '{}');
+                    const balanceAmount = entry.amount - (notes.totalReceived || notes.receivedAmount || 0);
+                    return {
+                        id: entry._id,
+                        name: `${entry.name} - ₹${entry.amount.toLocaleString('en-IN')} (Balance: ₹${balanceAmount.toLocaleString('en-IN')})`,
+                        amount: entry.amount
+                    };
+                });
+            }
+        },
         'loan-amortization': {
             label: 'Loan Management',
             fetchFunction: async () => {
