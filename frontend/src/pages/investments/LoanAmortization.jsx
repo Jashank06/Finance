@@ -16,9 +16,15 @@ const LoanAmortization = () => {
   const [managedExtraPayments, setManagedExtraPayments] = useState({});
   const [editingInterestRate, setEditingInterestRate] = useState(false);
   const [newInterestRate, setNewInterestRate] = useState(0);
-  const [managedRateType, setManagedRateType] = useState('annual'); // Rate type for the loaded loan
+  const [managedRateType, setManagedRateType] = useState('annual');
   const [showLoanTypeDialog, setShowLoanTypeDialog] = useState(false);
   const [loanType, setLoanType] = useState('');
+  const [editingPrincipal, setEditingPrincipal] = useState(false);
+  const [newPrincipal, setNewPrincipal] = useState(0);
+  const [editingTenure, setEditingTenure] = useState(false);
+  const [newTenure, setNewTenure] = useState(0);
+  const [editingFrequency, setEditingFrequency] = useState(false);
+  const [newFrequency, setNewFrequency] = useState('monthly');
 
   const [inputs, setInputs] = useState({
     principal: 10000,
@@ -212,17 +218,119 @@ const LoanAmortization = () => {
       setSelectedLoan(loan);
       setManagedExtraPayments({});
       setEditingInterestRate(false);
+      setEditingPrincipal(false);
+      setEditingTenure(false);
+      setEditingFrequency(false);
       setNewInterestRate(loan.interestRate);
+      setNewPrincipal(loan.amount);
+      setNewFrequency(loan.frequency || 'monthly');
 
-      // Load saved rate type from notes
+      // Load saved rate type and tenure from notes
       try {
         const notes = JSON.parse(loan.notes || '{}');
         setManagedRateType(notes.rateType || 'annual');
+        setNewTenure(notes.tenureMonths || loan.paymentSchedule?.length || 0);
       } catch {
         setManagedRateType('annual');
+        setNewTenure(loan.paymentSchedule?.length || 0);
       }
     } catch (error) {
       alert('Error loading loan: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  // Update loan details (principal, tenure, frequency) and regenerate schedule
+  const updateLoanDetails = async (field) => {
+    if (!selectedLoan) return;
+
+    let principal = selectedLoan.amount;
+    let rate = selectedLoan.interestRate;
+    let frequency = selectedLoan.frequency || 'monthly';
+    let existingNotes = {};
+    try { existingNotes = JSON.parse(selectedLoan.notes || '{}'); } catch { }
+    let tenureMonths = existingNotes.tenureMonths || selectedLoan.paymentSchedule?.length || 0;
+
+    // Apply the field being edited
+    if (field === 'principal') principal = newPrincipal;
+    if (field === 'tenure') tenureMonths = newTenure;
+    if (field === 'frequency') frequency = newFrequency;
+
+    if (tenureMonths <= 0 || principal <= 0) {
+      alert('Principal and Tenure must be greater than 0');
+      return;
+    }
+
+    const rType = existingNotes.rateType || managedRateType || 'annual';
+    const r = rType === 'monthly' ? rate / 100 : rate / 100 / 12;
+    const n = tenureMonths;
+    const emi = r === 0 ? principal / n : principal * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+
+    // Regenerate payment schedule
+    let balance = principal;
+    const startDate = new Date(selectedLoan.startDate || new Date());
+    const newSchedule = [];
+
+    for (let m = 1; m <= n; m++) {
+      const interest = balance * r;
+      let principalPaid = emi - interest;
+      if (principalPaid > balance) principalPaid = balance;
+      const beginningBalance = balance;
+      balance = balance - principalPaid;
+
+      const paymentDate = new Date(startDate);
+      paymentDate.setMonth(paymentDate.getMonth() + m);
+
+      newSchedule.push({
+        paymentNumber: m,
+        paymentDate: paymentDate,
+        beginningBalance: beginningBalance,
+        payment: emi,
+        extraPayment: 0,
+        principal: principalPaid,
+        interest: interest,
+        endingBalance: Math.max(balance, 0),
+        isPaid: false,
+        paidDate: null,
+        paidAmount: null
+      });
+
+      if (balance <= 0) break;
+    }
+
+    try {
+      const updateData = {
+        amount: principal,
+        frequency: frequency,
+        paymentSchedule: newSchedule,
+        notes: JSON.stringify({
+          ...existingNotes,
+          tenureMonths: tenureMonths,
+          emiAmount: emi
+        })
+      };
+
+      await investmentAPI.update(selectedLoan._id, updateData);
+
+      // Sync to linked bank transactions
+      try {
+        const notes = JSON.parse(selectedLoan.notes || '{}');
+        if (notes.bankTransactionId) {
+          const { default: api } = await import('../../utils/api');
+          await api.put(`/bank-transactions/${notes.bankTransactionId}`, {
+            amount: emi
+          });
+        }
+      } catch (syncErr) {
+        console.error('Bank transaction sync skipped:', syncErr);
+      }
+
+      alert(`Loan updated! New EMI: ₹${emi.toFixed(2)}`);
+      setEditingPrincipal(false);
+      setEditingTenure(false);
+      setEditingFrequency(false);
+      await loadLoan(selectedLoan._id);
+    } catch (error) {
+      alert('Error updating loan: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -820,7 +928,25 @@ const LoanAmortization = () => {
                     <div className="loan-summary-grid">
                       <div className="summary-card">
                         <span>Principal Amount</span>
-                        <strong>₹{selectedLoan.amount.toLocaleString('en-IN')}</strong>
+                        {editingPrincipal ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                            <input
+                              type="number"
+                              value={newPrincipal}
+                              onChange={(e) => setNewPrincipal(parseFloat(e.target.value) || 0)}
+                              style={{ width: '120px', padding: '4px 8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
+                            />
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button onClick={() => updateLoanDetails('principal')} style={{ padding: '4px 12px', fontSize: '12px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save</button>
+                              <button onClick={() => { setEditingPrincipal(false); setNewPrincipal(selectedLoan.amount); }} style={{ padding: '4px 12px', fontSize: '12px', background: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <strong>₹{selectedLoan.amount.toLocaleString('en-IN')}</strong>
+                            <button onClick={() => { setEditingPrincipal(true); setNewPrincipal(selectedLoan.amount); }} style={{ padding: '4px 8px', fontSize: '11px', background: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', width: 'fit-content' }}>Edit</button>
+                          </div>
+                        )}
                       </div>
                       <div className="summary-card">
                         <span>Rate of Interest</span>
@@ -922,19 +1048,58 @@ const LoanAmortization = () => {
                       </div>
                       <div className="summary-card">
                         <span>Tenure in Months</span>
-                        <strong>{(() => {
-                          try {
-                            const notes = JSON.parse(selectedLoan.notes || '{}');
-                            const tenureYears = notes.tenureYears || 0;
-                            return tenureYears * 12;
-                          } catch {
-                            return originalPayments;
-                          }
-                        })()}</strong>
+                        {editingTenure ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                            <input
+                              type="number"
+                              value={newTenure}
+                              onChange={(e) => setNewTenure(parseInt(e.target.value) || 0)}
+                              style={{ width: '80px', padding: '4px 8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
+                            />
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button onClick={() => updateLoanDetails('tenure')} style={{ padding: '4px 12px', fontSize: '12px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save</button>
+                              <button onClick={() => { setEditingTenure(false); try { const n = JSON.parse(selectedLoan.notes || '{}'); setNewTenure(n.tenureMonths || selectedLoan.paymentSchedule?.length || 0); } catch { setNewTenure(selectedLoan.paymentSchedule?.length || 0); } }} style={{ padding: '4px 12px', fontSize: '12px', background: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <strong>{(() => {
+                              try {
+                                const notes = JSON.parse(selectedLoan.notes || '{}');
+                                return notes.tenureMonths || selectedLoan.paymentSchedule?.length || 0;
+                              } catch {
+                                return selectedLoan.paymentSchedule?.length || 0;
+                              }
+                            })()}</strong>
+                            <button onClick={() => { setEditingTenure(true); try { const n = JSON.parse(selectedLoan.notes || '{}'); setNewTenure(n.tenureMonths || selectedLoan.paymentSchedule?.length || 0); } catch { setNewTenure(selectedLoan.paymentSchedule?.length || 0); } }} style={{ padding: '4px 8px', fontSize: '11px', background: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', width: 'fit-content' }}>Edit</button>
+                          </div>
+                        )}
                       </div>
                       <div className="summary-card">
                         <span>Frequency of EMI Payment</span>
-                        <strong>{selectedLoan.frequency?.charAt(0).toUpperCase() + selectedLoan.frequency?.slice(1) || 'Monthly'}</strong>
+                        {editingFrequency ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                            <select
+                              value={newFrequency}
+                              onChange={(e) => setNewFrequency(e.target.value)}
+                              style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px', cursor: 'pointer' }}
+                            >
+                              <option value="monthly">Monthly</option>
+                              <option value="quarterly">Quarterly</option>
+                              <option value="yearly">Yearly</option>
+                              <option value="one-time">One-time</option>
+                            </select>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button onClick={() => updateLoanDetails('frequency')} style={{ padding: '4px 12px', fontSize: '12px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save</button>
+                              <button onClick={() => { setEditingFrequency(false); setNewFrequency(selectedLoan.frequency || 'monthly'); }} style={{ padding: '4px 12px', fontSize: '12px', background: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <strong>{selectedLoan.frequency?.charAt(0).toUpperCase() + selectedLoan.frequency?.slice(1) || 'Monthly'}</strong>
+                            <button onClick={() => { setEditingFrequency(true); setNewFrequency(selectedLoan.frequency || 'monthly'); }} style={{ padding: '4px 8px', fontSize: '11px', background: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', width: 'fit-content' }}>Edit</button>
+                          </div>
+                        )}
                       </div>
                       <div className="summary-card">
                         <span>EMI Amount</span>
@@ -1011,26 +1176,76 @@ const LoanAmortization = () => {
                               return (
                                 <tr key={payment.paymentNumber} className={payment.isPaid ? 'paid-row' : ''}>
                                   <td>
-                                    <input
-                                      type="checkbox"
-                                      className="payment-checkbox"
-                                      checked={payment.isPaid}
-                                      onChange={() => togglePaymentStatus(selectedLoan._id, payment.paymentNumber, payment.isPaid)}
-                                      disabled={!isCurrentOrPast}
-                                    />
+                                    {payment.paid || payment.isPaid ? (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                          <input type="checkbox" checked disabled />
+                                          <span style={{ color: '#27ae60', fontSize: '11px', fontWeight: '500' }}>
+                                            ✓ Paid
+                                          </span>
+                                        </div>
+                                        {payment.paidDate && (
+                                          <span style={{ fontSize: '10px', color: '#7f8c8d', marginLeft: '22px' }}>
+                                            {new Date(payment.paidDate).toLocaleDateString('en-IN')}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : payment.partiallyPaid && payment.paidAmount > 0 ? (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                          <input type="checkbox" checked={false} disabled />
+                                          <span style={{ fontSize: '10px', color: '#f39c12', fontWeight: '500' }}>
+                                            🔶 Partial
+                                          </span>
+                                        </div>
+                                        <div style={{ marginLeft: '22px' }}>
+                                          <div style={{ fontSize: '10px', color: '#f39c12', marginBottom: '4px' }}>
+                                            ₹{payment.paidAmount?.toLocaleString('en-IN') || 0} / ₹{payment.payment?.toLocaleString('en-IN') || 0}
+                                          </div>
+                                          <div style={{
+                                            width: '80px',
+                                            height: '4px',
+                                            background: '#e0e0e0',
+                                            borderRadius: '2px',
+                                            overflow: 'hidden'
+                                          }}>
+                                            <div style={{
+                                              width: `${Math.min((payment.paidAmount / payment.payment) * 100, 100)}%`,
+                                              height: '100%',
+                                              background: 'linear-gradient(90deg, #f39c12, #e67e22)',
+                                              transition: 'width 0.3s ease'
+                                            }} />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <input
+                                        type="checkbox"
+                                        className="payment-checkbox"
+                                        checked={false}
+                                        onChange={() => togglePaymentStatus(selectedLoan._id, payment.paymentNumber, payment.isPaid)}
+                                        disabled={!isCurrentOrPast}
+                                      />
+                                    )}
                                   </td>
                                   <td>{payment.paymentNumber}</td>
                                   <td>{paymentDate.toLocaleDateString('en-IN')}</td>
                                   <td>₹{payment.beginningBalance.toFixed(2)}</td>
                                   <td>₹{payment.payment.toFixed(2)}</td>
                                   <td className="extra-payment-cell">
-                                    <input
-                                      type="number"
-                                      className="extra-payment-input"
-                                      placeholder="0"
-                                      value={managedExtraPayments[payment.paymentNumber] || payment.extraPayment || ''}
-                                      onChange={(e) => handleManagedExtraPaymentChange(payment.paymentNumber, e.target.value)}
-                                    />
+                                    {payment.extraPayment > 0 ? (
+                                      <span style={{ color: '#27ae60', fontWeight: 'bold', fontSize: '13px' }}>
+                                        +₹{payment.extraPayment.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      </span>
+                                    ) : (
+                                      <input
+                                        type="number"
+                                        className="extra-payment-input"
+                                        placeholder="0"
+                                        value={managedExtraPayments[payment.paymentNumber] || payment.extraPayment || ''}
+                                        onChange={(e) => handleManagedExtraPaymentChange(payment.paymentNumber, e.target.value)}
+                                      />
+                                    )}
                                   </td>
                                   <td>₹{payment.principal.toFixed(2)}</td>
                                   <td>₹{payment.interest.toFixed(2)}</td>

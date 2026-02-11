@@ -79,7 +79,25 @@ const bankTransactionSchema = new mongoose.Schema({
     enum: ['INR', 'USD', 'EUR', 'GBP', 'JPY'],
     default: 'INR'
   },
+  // Category-based linking system (replaces checkbox-based linking)
+  categoryLink: {
+    broaderCategory: {
+      type: String,
+      enum: ['Loan', 'Udhar Liya', 'Wallet', 'On Behalf']
+    },
+    mainCategory: {
+      type: String // Loan name, Person name, or Wallet name
+    },
+    referenceId: {
+      type: mongoose.Schema.Types.ObjectId // Link to actual record in Investment or Cash collection
+    },
+    referenceModule: {
+      type: String,
+      enum: ['loan-amortization', 'loan-ledger', 'cash', 'on-behalf']
+    }
+  },
   user: {
+
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true

@@ -247,16 +247,6 @@ function App() {
             }
           />
 
-          <Route
-            path="/family/investments/loan-amortization"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <LoanAmortization />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
 
           <Route
             path="/family/investments/retirement"
@@ -441,6 +431,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <LoanLedger />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/family/daily/loan-amortization"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <LoanAmortization />
                 </Layout>
               </ProtectedRoute>
             }

@@ -59,19 +59,22 @@ const CashCardsBank = () => {
       referenceId: '',
       referenceName: ''
     },
-    isMilestone: false,
-    // Udhar Lena Dena fields
-    createAsUdhar: false,
-    udharPersonName: '',
-    udharPurpose: '',
-    udharReturnDate: '',
-    // On Behalf fields
-    createAsOnBehalf: false,
-    onBehalfPersonName: '',
-    onBehalfPurpose: '',
-    onBehalfReceivedAmount: '',
-    onBehalfReceiptDate: ''
+    isMilestone: false
   });
+
+  // Category dropdown state
+  const [categoryDropdownData, setCategoryDropdownData] = useState({
+    broaderCategory: '',
+    mainCategory: '',
+    createNew: false,
+    newRecordData: {}
+  });
+
+  // Category dropdown data
+  const [savedLoans, setSavedLoans] = useState([]);
+  const [udharPersons, setUdharPersons] = useState([]);
+  const [onBehalfPersons, setOnBehalfPersons] = useState([]);
+  const [walletRecords, setWalletRecords] = useState([]);
   const [showBankTransactionForm, setShowBankTransactionForm] = useState(false);
   const [editingBankTransaction, setEditingBankTransaction] = useState(null);
   const [bankTransactions, setBankTransactions] = useState([]);
@@ -242,18 +245,37 @@ const CashCardsBank = () => {
         setFamilyMembers(familyRes.data[0].members || []);
       }
 
-      // Correctly set company records from the 6th response (index 5 in Promise.all array if we added one, but wait, let's check array index)
-      // Original Promise.all had 6 items before my edit? No, it had 6 items: cash, card, bank, trans, bankTrans, family.
-      // I added one more. So it should be 7 items.
-      // cashRes (0), cardRes (1), bankRes (2), transactionRes (3), bankTransactionRes (4), familyRes (5), companyRes (6)
-
-      // Re-doing the fetch block properly in next chunk to avoid confusion
-
-
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
       setLoading(false);
+    }
+  };
+
+  // Fetch category dropdown data
+  const fetchCategoryData = async (category) => {
+    try {
+      if (category === 'Loan') {
+        const response = await investmentAPI.getLoans();
+        setSavedLoans(response.data.loans || []);
+      } else if (category === 'Udhar Liya') {
+        const response = await investmentAPI.getLoanPersons();
+        setUdharPersons(response.data.persons.filter(p => p.type === 'Borrowed') || []);
+      } else if (category === 'Udhar Diya') {
+        const response = await investmentAPI.getLoanPersons();
+        setUdharPersons(response.data.persons.filter(p => p.type === 'Lent') || []);
+        // Also fetch on-behalf persons as they are grouped here for Debit
+        const obResponse = await investmentAPI.getOnBehalfPersons();
+        setOnBehalfPersons(obResponse.data.persons || []);
+      } else if (category === 'Wallet' || category === 'Wallet Recharge') {
+        const response = await api.get('/cash?type=digital-wallet');
+        setWalletRecords(response.data || []);
+      } else if (category === 'On Behalf') {
+        const response = await investmentAPI.getOnBehalfPersons();
+        setOnBehalfPersons(response.data.persons || []);
+      }
+    } catch (error) {
+      console.error('Error fetching category data:', error);
     }
   };
 
@@ -378,18 +400,15 @@ const CashCardsBank = () => {
       currency: 'INR',
       transactionType: '',
       expenseType: '',
-      isMilestone: false,
-      // Udhar Lena Dena fields
-      createAsUdhar: false,
-      udharPersonName: '',
-      udharPurpose: '',
-      udharReturnDate: '',
-      // On Behalf fields
-      createAsOnBehalf: false,
-      onBehalfPersonName: '',
-      onBehalfPurpose: '',
-      onBehalfReceivedAmount: '',
-      onBehalfReceiptDate: ''
+      isMilestone: false
+    });
+
+    // Reset category dropdown state
+    setCategoryDropdownData({
+      broaderCategory: '',
+      mainCategory: '',
+      createNew: false,
+      newRecordData: {}
     });
   };
 
@@ -616,6 +635,41 @@ const CashCardsBank = () => {
     }
   };
 
+  // Category dropdown handlers
+  const handleBroaderCategoryChange = async (e) => {
+    const value = e.target.value;
+    setCategoryDropdownData({
+      broaderCategory: value,
+      mainCategory: '',
+      createNew: false,
+      newRecordData: {}
+    });
+
+    // Fetch relevant data based on category
+    if (value) {
+      await fetchCategoryData(value);
+    }
+  };
+
+  const handleMainCategoryChange = (e) => {
+    const value = e.target.value;
+    if (value === '__CREATE_NEW__') {
+      setCategoryDropdownData({
+        ...categoryDropdownData,
+        mainCategory: '',
+        createNew: true,
+        newRecordData: {}
+      });
+    } else {
+      setCategoryDropdownData({
+        ...categoryDropdownData,
+        mainCategory: value,
+        createNew: false,
+        newRecordData: {}
+      });
+    }
+  };
+
   const handleBankTransactionSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -625,18 +679,8 @@ const CashCardsBank = () => {
       const dataToSend = { ...bankTransactionForm };
 
       // Save and remove isMilestone from dataToSend
-      const { isMilestone, createAsUdhar, udharPersonName, udharPurpose, udharReturnDate,
-        createAsOnBehalf, onBehalfPersonName, onBehalfPurpose, onBehalfReceivedAmount, onBehalfReceiptDate } = dataToSend;
+      const { isMilestone } = dataToSend;
       delete dataToSend.isMilestone;
-      delete dataToSend.createAsUdhar;
-      delete dataToSend.udharPersonName;
-      delete dataToSend.udharPurpose;
-      delete dataToSend.udharReturnDate;
-      delete dataToSend.createAsOnBehalf;
-      delete dataToSend.onBehalfPersonName;
-      delete dataToSend.onBehalfPurpose;
-      delete dataToSend.onBehalfReceivedAmount;
-      delete dataToSend.onBehalfReceiptDate;
 
       // Clean up empty string values (Mongoose enum fields don't accept empty strings)
       Object.keys(dataToSend).forEach(key => {
@@ -692,68 +736,365 @@ const CashCardsBank = () => {
           await syncPaymentToModule(newTransaction, bankTransactionForm.payingFor, 'bank');
         }
 
-        // Create loan record if "Create as Udhar Lena Dena" is checked
-        if (createAsUdhar) {
+        // Create linked records based on category dropdown selection
+        if (categoryDropdownData.createNew && categoryDropdownData.broaderCategory) {
           try {
-            // Determine loan type based on transaction type
-            // Credit (Deposit) = Borrowed (Udhar Lia)
-            // Debit (Withdrawal) = Lent (Udhar Dia)
-            const loanType = bankTransactionForm.type === 'credit' ? 'Borrowed' : 'Lent';
+            const accountName = bankRecords.find(b => b._id === bankTransactionForm.accountId)?.name || 'Bank Transfer';
 
-            const loanPayload = {
-              category: 'loan-ledger',
-              type: loanType,
-              name: udharPersonName || bankTransactionForm.merchant,
-              amount: Number(bankTransactionForm.amount),
-              startDate: bankTransactionForm.date,
-              maturityDate: udharReturnDate || bankTransactionForm.date,
-              frequency: 'one-time',
-              source: `Bank: ${bankRecords.find(b => b._id === bankTransactionForm.accountId)?.name || 'Bank Transfer'}`,
-              notes: JSON.stringify({
-                forPurpose: udharPurpose || bankTransactionForm.description || 'Bank Transaction',
-                comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
-                totalPaid: 0,
-                balanceAmount: Number(bankTransactionForm.amount),
-                payments: [],
-                bankTransactionId: newTransaction._id
-              })
-            };
+            if (categoryDropdownData.broaderCategory === 'Loan') {
+              // Create new loan amortization record
+              const loanData = categoryDropdownData.newRecordData;
+              const principal = Number(loanData.principal || bankTransactionForm.amount);
+              const annualRate = Number(loanData.interestRate || 0);
+              const tenureMonths = Number(loanData.tenureMonths || 0);
+              const frequency = loanData.frequency || 'monthly';
+              const startDate = loanData.startDate || bankTransactionForm.date;
 
-            await investmentAPI.create(loanPayload);
-            console.log('Loan record created successfully');
-          } catch (loanError) {
-            console.error('Error creating loan record:', loanError);
-            alert('Bank transaction created but failed to create loan record: ' + (loanError.response?.data?.message || loanError.message));
+              // Generate payment schedule if tenure is provided
+              let paymentSchedule = [];
+              let emiAmount = 0;
+
+              if (tenureMonths > 0 && principal > 0) {
+                const r = annualRate / 100 / 12; // Monthly interest rate
+                const n = tenureMonths;
+                emiAmount = r === 0
+                  ? principal / n
+                  : principal * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+
+                let balance = principal;
+                const start = new Date(startDate);
+
+                for (let m = 1; m <= n; m++) {
+                  const interest = balance * r;
+                  let principalPaid = emiAmount - interest;
+                  if (principalPaid > balance) principalPaid = balance;
+
+                  const beginningBalance = balance;
+                  balance = balance - principalPaid;
+
+                  const paymentDate = new Date(start);
+                  paymentDate.setMonth(paymentDate.getMonth() + m);
+
+                  paymentSchedule.push({
+                    paymentNumber: m,
+                    paymentDate: paymentDate,
+                    beginningBalance: beginningBalance,
+                    payment: emiAmount,
+                    extraPayment: 0,
+                    principal: principalPaid,
+                    interest: interest,
+                    endingBalance: Math.max(balance, 0),
+                    isPaid: false,
+                    paidDate: null,
+                    paidAmount: null
+                  });
+
+                  if (balance <= 0) break;
+                }
+              }
+
+              const loanPayload = {
+                category: 'loan-amortization',
+                name: loanData.name || bankTransactionForm.merchant,
+                type: loanData.type || (bankTransactionForm.type === 'credit' ? 'Borrowed' : 'Lent'),
+                amount: principal,
+                interestRate: annualRate,
+                frequency: frequency,
+                startDate: startDate,
+                maturityDate: loanData.maturityDate, // Added maturity date
+                paymentSchedule: paymentSchedule,
+                notes: JSON.stringify({
+                  forPurpose: loanData.purpose || bankTransactionForm.description || 'Bank Transaction', // Added purpose
+                  comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
+                  bankTransactionId: newTransaction._id,
+                  rateType: 'annual',
+                  tenureMonths: tenureMonths,
+                  emiAmount: emiAmount,
+                  milestone: bankTransactionForm.isMilestone ? 'Yes' : 'No' // Saved milestone status
+                })
+              };
+
+              const loanResponse = await investmentAPI.create(loanPayload);
+              console.log('Loan amortization record created successfully');
+
+              // Link transaction to new loan
+              await api.put(`/bank-transactions/${newTransaction._id}`, {
+                ...newTransaction,
+                categoryLink: {
+                  broaderCategory: 'Loan',
+                  mainCategory: loanData.name,
+                  referenceId: loanResponse.data.investment._id,
+                  referenceModule: 'loan-amortization'
+                }
+              });
+
+            } else if (categoryDropdownData.broaderCategory === 'Udhar Liya' || categoryDropdownData.broaderCategory === 'Udhar Diya') {
+              // Create new Udhar (Liya/Diya) record
+              const udharData = categoryDropdownData.newRecordData;
+              const isLent = categoryDropdownData.broaderCategory === 'Udhar Diya' && udharData.type !== 'On Behalf';
+              const isOnBehalfFromUdhar = categoryDropdownData.broaderCategory === 'Udhar Diya' && udharData.type === 'On Behalf';
+
+              if (isOnBehalfFromUdhar) {
+                // Handle On Behalf created through Udhar Diya grouping
+                const onBehalfPayload = {
+                  category: 'on-behalf',
+                  type: 'On Behalf',
+                  name: udharData.personName || bankTransactionForm.merchant,
+                  amount: Number(bankTransactionForm.amount),
+                  startDate: bankTransactionForm.date,
+                  maturityDate: udharData.returnDate || bankTransactionForm.date,
+                  frequency: 'one-time',
+                  source: `Bank: ${accountName}`,
+                  notes: JSON.stringify({
+                    forPurpose: udharData.purpose || bankTransactionForm.description || 'Bank Transaction',
+                    comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
+                    bankTransactionId: newTransaction._id
+                  })
+                };
+                const response = await investmentAPI.create(onBehalfPayload);
+                await api.put(`/bank-transactions/${newTransaction._id}`, {
+                  ...newTransaction,
+                  categoryLink: {
+                    broaderCategory: 'On Behalf',
+                    mainCategory: udharData.personName,
+                    referenceId: response.data.investment._id,
+                    referenceModule: 'on-behalf'
+                  }
+                });
+              } else {
+                const loanType = isLent ? 'Lent' : 'Borrowed';
+                const loanPayload = {
+                  category: 'loan-ledger',
+                  type: loanType,
+                  name: udharData.personName || bankTransactionForm.merchant,
+                  amount: Number(bankTransactionForm.amount),
+                  startDate: bankTransactionForm.date,
+                  maturityDate: udharData.returnDate || bankTransactionForm.date,
+                  frequency: 'one-time',
+                  source: `Bank: ${accountName}`,
+                  notes: JSON.stringify({
+                    forPurpose: udharData.purpose || bankTransactionForm.description || 'Bank Transaction',
+                    comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
+                    totalPaid: 0,
+                    balanceAmount: Number(bankTransactionForm.amount),
+                    payments: [],
+                    bankTransactionId: newTransaction._id
+                  })
+                };
+
+                const udharResponse = await investmentAPI.create(loanPayload);
+                console.log(`Udhar ${loanType} record created successfully`);
+
+                await api.put(`/bank-transactions/${newTransaction._id}`, {
+                  ...newTransaction,
+                  categoryLink: {
+                    broaderCategory: categoryDropdownData.broaderCategory,
+                    mainCategory: udharData.personName,
+                    referenceId: udharResponse.data.investment._id,
+                    referenceModule: 'loan-ledger'
+                  }
+                });
+              }
+            } else if (categoryDropdownData.broaderCategory === 'Wallet Recharge') {
+              // Create new Wallet record
+              const walletData = categoryDropdownData.newRecordData;
+              const walletPayload = {
+                name: walletData.name,
+                walletProvider: walletData.walletProvider,
+                walletNumber: walletData.walletNumber,
+                amount: Number(bankTransactionForm.amount),
+                type: 'digital-wallet',
+                notes: JSON.stringify({
+                  forPurpose: walletData.purpose || bankTransactionForm.description || 'Bank Transaction', // Added purpose
+                  comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
+                  bankTransactionId: newTransaction._id,
+                  transactions: [{
+                    date: bankTransactionForm.date,
+                    amount: Number(bankTransactionForm.amount),
+                    type: 'Initial Deposit (Recharge)',
+                    source: `Bank: ${accountName}`
+                  }]
+                })
+              };
+
+              const walletResponse = await api.post('/cash', walletPayload);
+              console.log('Wallet record created successfully');
+
+              await api.put(`/bank-transactions/${newTransaction._id}`, {
+                ...newTransaction,
+                categoryLink: {
+                  broaderCategory: 'Wallet Recharge',
+                  mainCategory: walletData.name,
+                  referenceId: walletResponse.data._id,
+                  referenceModule: 'cash'
+                }
+              });
+
+            } else if (categoryDropdownData.broaderCategory === 'On Behalf') {
+              // ... existing On Behalf logic ...
+              // Create new On Behalf record
+              const onBehalfData = categoryDropdownData.newRecordData;
+
+              const onBehalfPayload = {
+                category: 'on-behalf',
+                type: 'On Behalf',
+                name: onBehalfData.personName || bankTransactionForm.merchant,
+                amount: Number(bankTransactionForm.amount),
+                startDate: bankTransactionForm.date,
+                maturityDate: onBehalfData.receiptDate || bankTransactionForm.date,
+                frequency: 'one-time',
+                source: `Bank: ${accountName}`,
+                notes: JSON.stringify({
+                  forPurpose: onBehalfData.purpose || bankTransactionForm.description || 'Bank Transaction',
+                  receivedAmount: Number(onBehalfData.receivedAmount || 0),
+                  totalReceived: Number(onBehalfData.receivedAmount || 0),
+                  dateOfReceipt: onBehalfData.receiptDate,
+                  comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
+                  bankTransactionId: newTransaction._id
+                })
+              };
+
+              const onBehalfResponse = await investmentAPI.create(onBehalfPayload);
+              console.log('On Behalf record created successfully');
+
+              // Link transaction
+              await api.put(`/bank-transactions/${newTransaction._id}`, {
+                ...newTransaction,
+                categoryLink: {
+                  broaderCategory: 'On Behalf',
+                  mainCategory: onBehalfData.personName,
+                  referenceId: onBehalfResponse.data.investment._id,
+                  referenceModule: 'on-behalf'
+                }
+              });
+            }
+          } catch (linkedRecordError) {
+            console.error('Error creating linked record:', linkedRecordError);
+            alert(`Bank transaction created but failed to create ${categoryDropdownData.broaderCategory} record: ` +
+              (linkedRecordError.response?.data?.message || linkedRecordError.message));
           }
-        }
-
-        // Create On Behalf record if "Create as On Behalf Payment" is checked
-        if (createAsOnBehalf) {
+        } else if (categoryDropdownData.mainCategory && categoryDropdownData.broaderCategory) {
+          // Link to existing record
           try {
-            const onBehalfPayload = {
-              category: 'on-behalf',
-              type: 'On Behalf',
-              name: onBehalfPersonName || bankTransactionForm.merchant,
-              amount: Number(bankTransactionForm.amount),
-              startDate: bankTransactionForm.date,
-              maturityDate: onBehalfReceiptDate || bankTransactionForm.date,
-              frequency: 'one-time',
-              source: `Bank: ${bankRecords.find(b => b._id === bankTransactionForm.accountId)?.name || 'Bank Transfer'}`,
-              notes: JSON.stringify({
-                forPurpose: onBehalfPurpose || bankTransactionForm.description || 'Bank Transaction',
-                receivedAmount: Number(onBehalfReceivedAmount || 0),
-                totalReceived: Number(onBehalfReceivedAmount || 0),
-                dateOfReceipt: onBehalfReceiptDate,
-                comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
-                bankTransactionId: newTransaction._id
-              })
-            };
+            let referenceId = null;
+            let referenceModule = '';
 
-            await investmentAPI.create(onBehalfPayload);
-            console.log('On Behalf record created successfully');
-          } catch (onBehalfError) {
-            console.error('Error creating on behalf record:', onBehalfError);
-            alert('Bank transaction created but failed to create on behalf record: ' + (onBehalfError.response?.data?.message || onBehalfError.message));
+            if (categoryDropdownData.broaderCategory === 'Loan') {
+              referenceId = categoryDropdownData.mainCategory; // This is the loan _id
+              referenceModule = 'loan-amortization';
+            } else if (categoryDropdownData.broaderCategory === 'Udhar Liya') {
+              // Find the person's loan record _id
+              const person = udharPersons.find(p => p.name === categoryDropdownData.mainCategory);
+              referenceModule = 'loan-ledger';
+              // Note: This won't have a specific _id from dropdown, we'll store name only
+            } else if (categoryDropdownData.broaderCategory === 'Wallet') {
+              referenceId = categoryDropdownData.mainCategory; // This is the wallet _id
+              referenceModule = 'cash';
+            } else if (categoryDropdownData.broaderCategory === 'On Behalf') {
+              // Find the person's on-behalf record _id
+              const person = onBehalfPersons.find(p => p.name === categoryDropdownData.mainCategory);
+              referenceModule = 'on-behalf';
+              // Note: This won't have a specific _id from dropdown, we'll store name only
+            }
+
+            // Update transaction with category link
+            await api.put(`/bank-transactions/${newTransaction._id}`, {
+              ...newTransaction,
+              categoryLink: {
+                broaderCategory: categoryDropdownData.broaderCategory,
+                mainCategory: categoryDropdownData.mainCategory,
+                referenceId: referenceId,
+                referenceModule: referenceModule
+              }
+            });
+
+            console.log('Transaction linked to existing record successfully');
+
+            // If loan category, record payment in amortization schedule ONLY for Debit transactions
+            if (categoryDropdownData.broaderCategory === 'Loan' && referenceId) {
+              if (bankTransactionForm.type === 'Debit (Withdrawal)') {
+                try {
+                  await investmentAPI.recordLoanPayment({
+                    loanId: referenceId,
+                    amount: Number(bankTransactionForm.amount),
+                    paymentDate: bankTransactionForm.date,
+                    bankTransactionId: newTransaction._id,
+                    source: 'Bank Transaction'
+                  });
+                  console.log('Loan payment recorded in amortization schedule');
+                } catch (paymentError) {
+                  console.error('Error recording loan payment:', paymentError);
+                }
+              } else {
+                console.log('Loan transaction is Credit (Deposit), skipping payment recording (Disbursement linked).');
+              }
+            } else if (['Udhar Liya', 'Udhar Diya', 'Lent'].includes(categoryDropdownData.broaderCategory)) {
+              try {
+                // If nested under Udhar Diya, check if it's actually On Behalf
+                if (categoryDropdownData.broaderCategory === 'Udhar Diya' && categoryDropdownData.mainCategory === 'On Behalf') {
+                  const account = bankRecords.find(a => a._id === bankTransactionForm.accountId);
+                  await investmentAPI.recordOnBehalfTransaction({
+                    personName: categoryDropdownData.subCategory,
+                    amount: bankTransactionForm.amount,
+                    type: bankTransactionForm.type,
+                    date: bankTransactionForm.date,
+                    bankTransactionId: newTransaction._id,
+                    description: bankTransactionForm.description || bankTransactionForm.merchant,
+                    accountName: account?.name || 'Bank'
+                  });
+                  console.log('On behalf transaction recorded (from Udhar Diya group)');
+                } else {
+                  const account = bankRecords.find(a => a._id === bankTransactionForm.accountId);
+                  await investmentAPI.recordUdharTransaction({
+                    personName: categoryDropdownData.subCategory, // Person name is in subCategory for person linking
+                    amount: bankTransactionForm.amount,
+                    type: bankTransactionForm.type,
+                    broaderCategory: categoryDropdownData.broaderCategory,
+                    date: bankTransactionForm.date,
+                    bankTransactionId: newTransaction._id,
+                    description: bankTransactionForm.description || bankTransactionForm.merchant,
+                    accountName: account?.name || 'Bank'
+                  });
+                  console.log('Udhar transaction recorded in ledger');
+                }
+              } catch (udharError) {
+                console.error('Error recording udhar transaction:', udharError);
+              }
+            } else if (categoryDropdownData.broaderCategory === 'On Behalf') {
+              try {
+                const account = bankRecords.find(a => a._id === bankTransactionForm.accountId);
+                await investmentAPI.recordOnBehalfTransaction({
+                  personName: categoryDropdownData.subCategory, // Person name is in subCategory
+                  amount: bankTransactionForm.amount,
+                  type: bankTransactionForm.type,
+                  date: bankTransactionForm.date,
+                  bankTransactionId: newTransaction._id,
+                  description: bankTransactionForm.description || bankTransactionForm.merchant,
+                  accountName: account?.name || 'Bank'
+                });
+                console.log('On behalf transaction recorded');
+              } catch (onBehalfError) {
+                console.error('Error recording on behalf transaction:', onBehalfError);
+              }
+            } else if (['Wallet', 'Wallet Recharge'].includes(categoryDropdownData.broaderCategory)) {
+              try {
+                const account = bankRecords.find(a => a._id === bankTransactionForm.accountId);
+                await investmentAPI.recordWalletTransaction({
+                  walletId: categoryDropdownData.mainCategory,
+                  amount: Number(bankTransactionForm.amount),
+                  type: bankTransactionForm.type,
+                  date: bankTransactionForm.date,
+                  bankTransactionId: newTransaction._id,
+                  description: bankTransactionForm.description || bankTransactionForm.merchant,
+                  accountName: account?.name || 'Bank'
+                });
+                console.log('Wallet transaction recorded');
+              } catch (walletError) {
+                console.error('Error recording wallet transaction:', walletError);
+              }
+            }
+          } catch (linkError) {
+            console.error('Error linking transaction:', linkError);
           }
         }
       }
@@ -784,12 +1125,8 @@ const CashCardsBank = () => {
       fetchData();
 
       // Show success message
-      if (createAsUdhar && createAsOnBehalf) {
-        alert('✅ Bank transaction, Loan record, and On Behalf record saved successfully!');
-      } else if (createAsUdhar) {
-        alert('✅ Bank transaction and Loan record saved successfully!');
-      } else if (createAsOnBehalf) {
-        alert('✅ Bank transaction and On Behalf record saved successfully!');
+      if (categoryDropdownData.createNew && categoryDropdownData.broaderCategory) {
+        alert(`✅ Bank transaction and ${categoryDropdownData.broaderCategory} record saved successfully!`);
       }
     } catch (error) {
       console.error('Error saving bank transaction:', error);
@@ -2442,7 +2779,18 @@ const CashCardsBank = () => {
                           type="number"
                           step="0.01"
                           value={bankTransactionForm.amount}
-                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, amount: e.target.value })}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setBankTransactionForm({ ...bankTransactionForm, amount: val });
+
+                            // Auto-sync with principal for new loans
+                            if (categoryDropdownData.createNew && bankTransactionForm.broaderCategory === 'Loan') {
+                              setCategoryDropdownData(prev => ({
+                                ...prev,
+                                newRecordData: { ...prev.newRecordData, principal: val }
+                              }));
+                            }
+                          }}
                           required
                         />
                       </div>
@@ -2468,6 +2816,19 @@ const CashCardsBank = () => {
                               subCategory: '',
                               customSubCategory: ''
                             });
+
+                            // Reset category dropdown data
+                            setCategoryDropdownData({
+                              broaderCategory: '',
+                              mainCategory: '',
+                              createNew: false,
+                              newRecordData: {}
+                            });
+
+                            // Fetch category data for linking categories
+                            if (['Loan', 'Udhar Liya', 'Udhar Diya', 'Wallet', 'Wallet Recharge', 'On Behalf'].includes(broader)) {
+                              handleBroaderCategoryChange({ target: { value: broader } });
+                            }
                           }}
                           required
                         >
@@ -2484,6 +2845,22 @@ const CashCardsBank = () => {
                               <option value="Investment to Business">Investment to Business</option>
                             </>
                           )}
+
+                          {/* Add linking categories as normal options */}
+                          {bankTransactionForm.type === 'credit' ? (
+                            <>
+                              <option value="Loan">Loan (Repayment Received)</option>
+                              <option value="Udhar Liya">Udhar Liya (Borrowed)</option>
+                              <option value="Wallet">Wallet (Receipt)</option>
+                              <option value="On Behalf">On Behalf</option>
+                            </>
+                          ) : (
+                            <>
+                              <option value="Loan">Loan (Repayment Made)</option>
+                              <option value="Udhar Diya">Udhar Diya (Lent / On Behalf)</option>
+                              <option value="Wallet Recharge">Wallet Recharge</option>
+                            </>
+                          )}
                         </select>
                       </div>
 
@@ -2495,19 +2872,103 @@ const CashCardsBank = () => {
                             value={bankTransactionForm.mainCategory}
                             onChange={(e) => {
                               const main = e.target.value;
-                              setBankTransactionForm({
-                                ...bankTransactionForm,
-                                mainCategory: main,
-                                subCategory: '',
-                                customSubCategory: ''
-                              });
+
+                              // Check if it's a linking category
+                              if (['Loan', 'Udhar Liya', 'Wallet', 'Wallet Recharge', 'On Behalf'].includes(bankTransactionForm.broaderCategory)) {
+                                // Always update the form state first
+                                setBankTransactionForm({
+                                  ...bankTransactionForm,
+                                  mainCategory: main,
+                                  subCategory: '',
+                                  customSubCategory: ''
+                                });
+
+                                // Handle create new logic
+                                handleMainCategoryChange(e);
+
+                                // Auto-fill amount for Loan entries - use EMI amount, not principal
+                                if (bankTransactionForm.broaderCategory === 'Loan' && main !== '__CREATE_NEW__' && main !== '') {
+                                  const selectedLoan = savedLoans.find(loan => loan._id === main);
+                                  if (selectedLoan) {
+                                    // Use EMI amount if available, otherwise leave empty for user to enter
+                                    const amountToFill = selectedLoan.monthlyPayment || selectedLoan.emiAmount || '';
+                                    if (amountToFill) {
+                                      setTimeout(() => {
+                                        setBankTransactionForm(prev => ({
+                                          ...prev,
+                                          amount: amountToFill.toString()
+                                        }));
+                                      }, 0);
+                                    }
+                                  }
+                                }
+                              } else {
+                                setBankTransactionForm({
+                                  ...bankTransactionForm,
+                                  mainCategory: main,
+                                  subCategory: '',
+                                  customSubCategory: ''
+                                });
+                              }
                             }}
                             required
                           >
                             <option value="">Select main category...</option>
+
+                            {/* For linking categories, show dynamic options */}
+                            {bankTransactionForm.broaderCategory === 'Loan' && (
+                              <>
+                                {savedLoans.map(loan => (
+                                  <option key={loan._id} value={loan._id}>
+                                    {loan.name} - ₹{(loan.monthlyPayment || 0).toLocaleString('en-IN')}/month
+                                  </option>
+                                ))}
+                                <option value="__CREATE_NEW__">➕ Create New Loan</option>
+                              </>
+                            )}
+
+                            {bankTransactionForm.broaderCategory === 'Udhar Diya' && (
+                              <>
+                                <option value="Udhar Diya">Udhar Diya (Lent)</option>
+                                <option value="On Behalf">On Behalf</option>
+                              </>
+                            )}
+
+                            {bankTransactionForm.broaderCategory === 'Udhar Liya' && (
+                              <>
+                                {udharPersons.map((person, idx) => (
+                                  <option key={idx} value={person.name}>{person.name}</option>
+                                ))}
+                                <option value="__CREATE_NEW__">➕ Create New Person</option>
+                              </>
+                            )}
+
+                            {(bankTransactionForm.broaderCategory === 'Wallet' || bankTransactionForm.broaderCategory === 'Wallet Recharge') && (
+                              <>
+                                {walletRecords.map(wallet => (
+                                  <option key={wallet._id} value={wallet._id}>
+                                    {wallet.name} ({wallet.walletProvider})
+                                  </option>
+                                ))}
+                                {bankTransactionForm.broaderCategory === 'Wallet Recharge' && (
+                                  <option value="__CREATE_NEW__">➕ Create New Wallet</option>
+                                )}
+                              </>
+                            )}
+
+                            {bankTransactionForm.broaderCategory === 'On Behalf' && (
+                              <>
+                                {onBehalfPersons.map((person, idx) => (
+                                  <option key={idx} value={person.name}>{person.name}</option>
+                                ))}
+                                <option value="__CREATE_NEW__">➕ Create New Person</option>
+                              </>
+                            )}
+
+                            {/* For expense categories */}
                             {bankTransactionForm.broaderCategory === 'Investment to Business' ? (
                               <option value="Business">Business</option>
-                            ) : (
+                            ) : !['Loan', 'Udhar Liya', 'Wallet', 'On Behalf'].includes(bankTransactionForm.broaderCategory) && (
                               getMainCategories(bankTransactionForm.broaderCategory).map(cat => (
                                 <option key={cat} value={cat}>{cat}</option>
                               ))
@@ -2516,48 +2977,69 @@ const CashCardsBank = () => {
                         </div>
                       )}
 
-                      {/* Sub Category - shown only when Main Category is selected */}
-                      {bankTransactionForm.mainCategory && (
-                        <div className="form-group">
-                          <label>Sub Category: *</label>
-                          <select
-                            value={bankTransactionForm.subCategory}
-                            onChange={(e) => {
-                              const sub = e.target.value;
-                              setBankTransactionForm({
-                                ...bankTransactionForm,
-                                subCategory: sub,
-                                customSubCategory: sub === 'Other' ? '' : bankTransactionForm.customSubCategory
-                              });
-                            }}
-                            required
-                          >
-                            <option value="">Select sub category...</option>
-                            {/* For Income -> Salary or Business, show company names */}
-                            {bankTransactionForm.broaderCategory === 'Income' && (bankTransactionForm.mainCategory === 'Salary' || bankTransactionForm.mainCategory === 'Business') ? (
-                              <>
-                                {companyRecords.map(company => (
-                                  <option key={company._id || company.id} value={company.companyName}>{company.companyName}</option>
-                                ))}
-                                <option value="Other">Other</option>
-                              </>
-                            ) : bankTransactionForm.broaderCategory === 'Investment to Business' && bankTransactionForm.mainCategory === 'Business' ? (
-                              <>
-                                {companyRecords.map(company => (
-                                  <option key={company._id || company.id} value={company.companyName}>{company.companyName}</option>
-                                ))}
-                              </>
-                            ) : (
-                              getSubCategories(bankTransactionForm.broaderCategory, bankTransactionForm.mainCategory).map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                              ))
-                            )}
-                          </select>
-                        </div>
-                      )}
+                      {/* Sub Category - shown only when Main Category is selected AND not a linking category (except Udhar Diya which needs person sub-cat) */}
+                      {bankTransactionForm.mainCategory &&
+                        (!['Loan', 'Udhar Liya', 'Wallet', 'On Behalf', 'Wallet Recharge'].includes(bankTransactionForm.broaderCategory) ||
+                          bankTransactionForm.broaderCategory === 'Udhar Diya') && (
+                          <div className="form-group">
+                            <label>Sub Category: *</label>
+                            <select
+                              value={bankTransactionForm.subCategory}
+                              onChange={(e) => {
+                                const sub = e.target.value;
+                                setBankTransactionForm({
+                                  ...bankTransactionForm,
+                                  subCategory: sub,
+                                  customSubCategory: sub === 'Other' ? '' : bankTransactionForm.customSubCategory
+                                });
+                                // Set createNew if 'Other' is selected (for Udhar Diya sub-category creation)
+                                if (sub === 'Other') {
+                                  setCategoryDropdownData(prev => ({ ...prev, createNew: true, newRecordData: {} }));
+                                } else {
+                                  setCategoryDropdownData(prev => ({ ...prev, createNew: false, newRecordData: {} }));
+                                }
+                              }}
+                              required
+                            >
+                              <option value="">Select sub category...</option>
+                              {/* For Income -> Salary or Business, show company names */}
+                              {bankTransactionForm.broaderCategory === 'Income' && (bankTransactionForm.mainCategory === 'Salary' || bankTransactionForm.mainCategory === 'Business') ? (
+                                <>
+                                  {companyRecords.map(company => (
+                                    <option key={company._id || company.id} value={company.companyName}>{company.companyName}</option>
+                                  ))}
+                                  <option value="Other">Other</option>
+                                </>
+                              ) : bankTransactionForm.broaderCategory === 'Investment to Business' && bankTransactionForm.mainCategory === 'Business' ? (
+                                <>
+                                  {companyRecords.map(company => (
+                                    <option key={company._id || company.id} value={company.companyName}>{company.companyName}</option>
+                                  ))}
+                                </>
+                              ) : bankTransactionForm.broaderCategory === 'Udhar Diya' ? (
+                                <>
+                                  {bankTransactionForm.mainCategory === 'Udhar Diya' ? (
+                                    udharPersons.map((person, idx) => (
+                                      <option key={idx} value={person.name}>{person.name}</option>
+                                    ))
+                                  ) : (
+                                    onBehalfPersons.map((person, idx) => (
+                                      <option key={idx} value={person.name}>{person.name}</option>
+                                    ))
+                                  )}
+                                  <option value="Other">Other (Create New Person)</option>
+                                </>
+                              ) : (
+                                getSubCategories(bankTransactionForm.broaderCategory, bankTransactionForm.mainCategory).map(cat => (
+                                  <option key={cat} value={cat}>{cat}</option>
+                                ))
+                              )}
+                            </select>
+                          </div>
+                        )}
 
-                      {/* Custom Sub Category - shown only when "Other" is selected */}
-                      {bankTransactionForm.subCategory === 'Other' && (
+                      {/* Custom Sub Category - shown only when "Other" is selected AND not in create new mode for special categories */}
+                      {bankTransactionForm.subCategory === 'Other' && !categoryDropdownData.createNew && (
                         <div className="form-group">
                           <label>Custom Sub Category: *</label>
                           <input
@@ -2640,41 +3122,162 @@ const CashCardsBank = () => {
                         </label>
                       </div>
 
-                      {/* Udhar Lena Dena Checkbox */}
-                      <div className="form-group checkbox-group" style={{ marginTop: '10px' }}>
-                        <input
-                          type="checkbox"
-                          id="createAsUdhar"
-                          checked={bankTransactionForm.createAsUdhar}
-                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, createAsUdhar: e.target.checked })}
-                          style={{ width: 'auto' }}
-                        />
-                        <label htmlFor="createAsUdhar" style={{ cursor: 'pointer', fontSize: '14px' }}>
-                          Create as Udhar Lena Dena (
-                          {bankTransactionForm.type === 'credit' ? 'Udhar Lia - Borrowed' : 'Udhar Dia - Lent'}
-                          )
-                        </label>
-                      </div>
-
-                      {/* Conditional Udhar Fields */}
-                      {bankTransactionForm.createAsUdhar && (
+                      {/* Create New Form - shown when user selects "Create New" option from linking categories */}
+                      {categoryDropdownData.createNew && bankTransactionForm.broaderCategory === 'Loan' && (
                         <>
+                          <div className="form-group">
+                            <label>Loan Name: *</label>
+                            <input
+                              type="text"
+                              value={categoryDropdownData.newRecordData.name || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, name: e.target.value }
+                              })}
+                              placeholder={bankTransactionForm.merchant || 'Enter loan name'}
+                              required
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Loan Type: *</label>
+                            <select
+                              value={categoryDropdownData.newRecordData.type || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, type: e.target.value }
+                              })}
+                              required
+                            >
+                              <option value="">Select type...</option>
+                              <option value="Lent">Lent (Given)</option>
+                              <option value="Borrowed">Borrowed (Taken)</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Principal Amount: *</label>
+                            <input
+                              type="number"
+                              value={categoryDropdownData.newRecordData.principal || bankTransactionForm.amount}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setCategoryDropdownData({
+                                  ...categoryDropdownData,
+                                  newRecordData: { ...categoryDropdownData.newRecordData, principal: val }
+                                });
+                                // Auto-sync back to main amount
+                                setBankTransactionForm(prev => ({ ...prev, amount: val }));
+                              }}
+                              placeholder="Principal amount"
+                              required
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Interest Rate (%):</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={categoryDropdownData.newRecordData.interestRate || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, interestRate: e.target.value }
+                              })}
+                              placeholder="0"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Tenure (Months): *</label>
+                            <input
+                              type="number"
+                              value={categoryDropdownData.newRecordData.tenureMonths || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, tenureMonths: e.target.value }
+                              })}
+                              placeholder="e.g. 12, 24, 36"
+                              required
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>EMI Frequency:</label>
+                            <select
+                              value={categoryDropdownData.newRecordData.frequency || 'monthly'}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, frequency: e.target.value }
+                              })}
+                            >
+                              <option value="monthly">Monthly</option>
+                              <option value="quarterly">Quarterly</option>
+                              <option value="yearly">Yearly</option>
+                              <option value="one-time">One-time</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Purpose:</label>
+                            <input
+                              type="text"
+                              value={categoryDropdownData.newRecordData.purpose || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, purpose: e.target.value }
+                              })}
+                              placeholder={bankTransactionForm.description || 'Enter purpose'}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Maturity Date (Optional):</label>
+                            <input
+                              type="date"
+                              value={categoryDropdownData.newRecordData.maturityDate || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, maturityDate: e.target.value }
+                              })}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {categoryDropdownData.createNew && (bankTransactionForm.broaderCategory === 'Udhar Liya' || bankTransactionForm.broaderCategory === 'Udhar Diya') && (
+                        <>
+                          {bankTransactionForm.broaderCategory === 'Udhar Diya' && (
+                            <div className="form-group">
+                              <label>Lending Type: *</label>
+                              <select
+                                value={categoryDropdownData.newRecordData.type || 'Udhar Diya'}
+                                onChange={(e) => setCategoryDropdownData({
+                                  ...categoryDropdownData,
+                                  newRecordData: { ...categoryDropdownData.newRecordData, type: e.target.value }
+                                })}
+                                required
+                              >
+                                <option value="Udhar Diya">Udhar Diya (Lent)</option>
+                                <option value="On Behalf">On Behalf</option>
+                              </select>
+                            </div>
+                          )}
                           <div className="form-group">
                             <label>Person Name: *</label>
                             <input
                               type="text"
-                              value={bankTransactionForm.udharPersonName}
-                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, udharPersonName: e.target.value })}
+                              value={categoryDropdownData.newRecordData.personName || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, personName: e.target.value }
+                              })}
                               placeholder={bankTransactionForm.merchant || 'Enter person name'}
-                              required={bankTransactionForm.createAsUdhar}
+                              required
                             />
                           </div>
                           <div className="form-group">
                             <label>Purpose:</label>
                             <input
                               type="text"
-                              value={bankTransactionForm.udharPurpose}
-                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, udharPurpose: e.target.value })}
+                              value={categoryDropdownData.newRecordData.purpose || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, purpose: e.target.value }
+                              })}
                               placeholder={bankTransactionForm.description || 'Enter purpose'}
                             />
                           </div>
@@ -2682,46 +3285,95 @@ const CashCardsBank = () => {
                             <label>Return Date (Optional):</label>
                             <input
                               type="date"
-                              value={bankTransactionForm.udharReturnDate}
-                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, udharReturnDate: e.target.value })}
+                              value={categoryDropdownData.newRecordData.returnDate || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, returnDate: e.target.value }
+                              })}
                             />
                           </div>
                         </>
                       )}
 
-                      {/* On Behalf Checkbox */}
-                      <div className="form-group checkbox-group" style={{ marginTop: '10px' }}>
-                        <input
-                          type="checkbox"
-                          id="createAsOnBehalf"
-                          checked={bankTransactionForm.createAsOnBehalf}
-                          onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, createAsOnBehalf: e.target.checked })}
-                          style={{ width: 'auto' }}
-                        />
-                        <label htmlFor="createAsOnBehalf" style={{ cursor: 'pointer', fontSize: '14px' }}>
-                          Create as On Behalf Payment
-                        </label>
-                      </div>
-
-                      {/* Conditional On Behalf Fields */}
-                      {bankTransactionForm.createAsOnBehalf && (
+                      {categoryDropdownData.createNew && bankTransactionForm.broaderCategory === 'Wallet Recharge' && (
                         <>
                           <div className="form-group">
-                            <label>Paid On Behalf Of: *</label>
+                            <label>Wallet Name: *</label>
                             <input
                               type="text"
-                              value={bankTransactionForm.onBehalfPersonName}
-                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, onBehalfPersonName: e.target.value })}
-                              placeholder={bankTransactionForm.merchant || 'Enter person name'}
-                              required={bankTransactionForm.createAsOnBehalf}
+                              value={categoryDropdownData.newRecordData.name || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, name: e.target.value }
+                              })}
+                              placeholder="e.g. PhonePe, Paytm"
+                              required
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Wallet Provider: *</label>
+                            <input
+                              type="text"
+                              value={categoryDropdownData.newRecordData.walletProvider || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, walletProvider: e.target.value }
+                              })}
+                              placeholder="e.g. UPI, Bank"
+                              required
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Wallet Number/ID:</label>
+                            <input
+                              type="text"
+                              value={categoryDropdownData.newRecordData.walletNumber || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, walletNumber: e.target.value }
+                              })}
+                              placeholder="Mobile or UPI ID"
                             />
                           </div>
                           <div className="form-group">
                             <label>Purpose:</label>
                             <input
                               type="text"
-                              value={bankTransactionForm.onBehalfPurpose}
-                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, onBehalfPurpose: e.target.value })}
+                              value={categoryDropdownData.newRecordData.purpose || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, purpose: e.target.value }
+                              })}
+                              placeholder={bankTransactionForm.description || 'Enter purpose'}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {categoryDropdownData.createNew && bankTransactionForm.broaderCategory === 'On Behalf' && (
+                        <>
+                          <div className="form-group">
+                            <label>Paid On Behalf Of: *</label>
+                            <input
+                              type="text"
+                              value={categoryDropdownData.newRecordData.personName || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, personName: e.target.value }
+                              })}
+                              placeholder={bankTransactionForm.merchant || 'Enter person name'}
+                              required
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Purpose:</label>
+                            <input
+                              type="text"
+                              value={categoryDropdownData.newRecordData.purpose || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, purpose: e.target.value }
+                              })}
                               placeholder={bankTransactionForm.description || 'Enter purpose'}
                             />
                           </div>
@@ -2729,8 +3381,11 @@ const CashCardsBank = () => {
                             <label>Received Amount (Optional):</label>
                             <input
                               type="number"
-                              value={bankTransactionForm.onBehalfReceivedAmount}
-                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, onBehalfReceivedAmount: e.target.value })}
+                              value={categoryDropdownData.newRecordData.receivedAmount || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, receivedAmount: e.target.value }
+                              })}
                               placeholder="Amount received back"
                             />
                           </div>
@@ -2738,8 +3393,11 @@ const CashCardsBank = () => {
                             <label>Receipt Date (Optional):</label>
                             <input
                               type="date"
-                              value={bankTransactionForm.onBehalfReceiptDate}
-                              onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, onBehalfReceiptDate: e.target.value })}
+                              value={categoryDropdownData.newRecordData.receiptDate || ''}
+                              onChange={(e) => setCategoryDropdownData({
+                                ...categoryDropdownData,
+                                newRecordData: { ...categoryDropdownData.newRecordData, receiptDate: e.target.value }
+                              })}
                             />
                           </div>
                         </>
@@ -2771,351 +3429,364 @@ const CashCardsBank = () => {
                 </div>
               </div>
             </ModalPortal>
-          )}
+          )
+          }
 
           {/* Bank Transactions Section */}
-          {selectedBank && (
-            <div className="transactions-section">
-              <div className="section-header">
-                <h3>Transactions for {selectedBank.name}</h3>
-                <div className="filter-dropdown">
-                  <label>Expense Type:</label>
-                  <select
-                    value={bankTransactionExpenseTypeFilter}
-                    onChange={(e) => setBankTransactionExpenseTypeFilter(e.target.value)}
-                  >
-                    <option value="all">All Expense Types</option>
-                    <option value="important-necessary">Important & Necessary</option>
-                    <option value="less-important">Less Important</option>
-                    <option value="avoidable-loss">Avoidable & Loss</option>
-                    <option value="unnecessary">Un-necessary</option>
-                    <option value="basic-necessity">Basic Necessity</option>
-                  </select>
+          {
+            selectedBank && (
+              <div className="transactions-section">
+                <div className="section-header">
+                  <h3>Transactions for {selectedBank.name}</h3>
+                  <div className="filter-dropdown">
+                    <label>Expense Type:</label>
+                    <select
+                      value={bankTransactionExpenseTypeFilter}
+                      onChange={(e) => setBankTransactionExpenseTypeFilter(e.target.value)}
+                    >
+                      <option value="all">All Expense Types</option>
+                      <option value="important-necessary">Important & Necessary</option>
+                      <option value="less-important">Less Important</option>
+                      <option value="avoidable-loss">Avoidable & Loss</option>
+                      <option value="unnecessary">Un-necessary</option>
+                      <option value="basic-necessity">Basic Necessity</option>
+                    </select>
 
-                  <label>From Date:</label>
-                  <input
-                    type="date"
-                    value={bankTransactionStartDate}
-                    onChange={(e) => setBankTransactionStartDate(e.target.value)}
-                    style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
-                  />
+                    <label>From Date:</label>
+                    <input
+                      type="date"
+                      value={bankTransactionStartDate}
+                      onChange={(e) => setBankTransactionStartDate(e.target.value)}
+                      style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
+                    />
 
-                  <label>To Date:</label>
-                  <input
-                    type="date"
-                    value={bankTransactionEndDate}
-                    onChange={(e) => setBankTransactionEndDate(e.target.value)}
-                    style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
-                  />
+                    <label>To Date:</label>
+                    <input
+                      type="date"
+                      value={bankTransactionEndDate}
+                      onChange={(e) => setBankTransactionEndDate(e.target.value)}
+                      style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
+                    />
+                  </div>
                 </div>
+                <TransactionTable
+                  transactions={bankTransactions.filter(transaction => {
+                    const transactionAccountId = typeof transaction.accountId === 'object'
+                      ? transaction.accountId._id || transaction.accountId
+                      : transaction.accountId;
+                    if (transactionAccountId !== selectedBank._id) return false;
+                    if (bankTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== bankTransactionExpenseTypeFilter) return false;
+                    const transactionDate = new Date(transaction.date);
+                    if (bankTransactionStartDate && transactionDate < new Date(bankTransactionStartDate)) return false;
+                    if (bankTransactionEndDate) {
+                      const endDate = new Date(bankTransactionEndDate);
+                      endDate.setHours(23, 59, 59, 999);
+                      if (transactionDate > endDate) return false;
+                    }
+                    return true;
+                  })}
+                  currency={selectedBank.currency || 'INR'}
+                  initialBalance={parseFloat(selectedBank.balance) || 0}
+                  onEdit={handleBankTransactionEdit}
+                  onDelete={handleBankTransactionDelete}
+                />
               </div>
-              <TransactionTable
-                transactions={bankTransactions.filter(transaction => {
-                  const transactionAccountId = typeof transaction.accountId === 'object'
-                    ? transaction.accountId._id || transaction.accountId
-                    : transaction.accountId;
-                  if (transactionAccountId !== selectedBank._id) return false;
-                  if (bankTransactionExpenseTypeFilter !== 'all' && transaction.expenseType !== bankTransactionExpenseTypeFilter) return false;
-                  const transactionDate = new Date(transaction.date);
-                  if (bankTransactionStartDate && transactionDate < new Date(bankTransactionStartDate)) return false;
-                  if (bankTransactionEndDate) {
-                    const endDate = new Date(bankTransactionEndDate);
-                    endDate.setHours(23, 59, 59, 999);
-                    if (transactionDate > endDate) return false;
-                  }
-                  return true;
-                })}
-                currency={selectedBank.currency || 'INR'}
-                initialBalance={parseFloat(selectedBank.balance) || 0}
-                onEdit={handleBankTransactionEdit}
-                onDelete={handleBankTransactionDelete}
-              />
-            </div>
-          )}
+            )
+          }
 
           {/* Bank Accounts Table */}
-          {!selectedBank ? (
-            <>
-              <div className="filter-dropdown" style={{ marginBottom: '20px' }}>
-                <label>Account Name:</label>
-                <input
-                  type="text"
-                  placeholder="Search by account name..."
-                  value={accountNameFilter}
-                  onChange={(e) => setAccountNameFilter(e.target.value)}
-                  style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px', minWidth: '200px' }}
-                />
+          {
+            !selectedBank ? (
+              <>
+                <div className="filter-dropdown" style={{ marginBottom: '20px' }}>
+                  <label>Account Name:</label>
+                  <input
+                    type="text"
+                    placeholder="Search by account name..."
+                    value={accountNameFilter}
+                    onChange={(e) => setAccountNameFilter(e.target.value)}
+                    style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px', minWidth: '200px' }}
+                  />
 
-                <label>Account Holder:</label>
-                <input
-                  type="text"
-                  placeholder="Search by account holder..."
-                  value={accountHolderFilter}
-                  onChange={(e) => setAccountHolderFilter(e.target.value)}
-                  style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px', minWidth: '200px' }}
-                />
-              </div>
+                  <label>Account Holder:</label>
+                  <input
+                    type="text"
+                    placeholder="Search by account holder..."
+                    value={accountHolderFilter}
+                    onChange={(e) => setAccountHolderFilter(e.target.value)}
+                    style={{ padding: '8px 12px', border: '2px solid #e5e7eb', borderRadius: '8px', minWidth: '200px' }}
+                  />
+                </div>
 
-              <div className="records-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Account Holder</th>
-                      <th>Account Name</th>
-                      <th>Type</th>
-                      <th>Bank Name</th>
-                      <th>Account Number</th>
-                      <th>Balance</th>
-                      <th>IFSC Code</th>
-                      <th>Branch</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bankRecords
-                      .filter(account => {
-                        // Filter by account name
-                        if (accountNameFilter && !account.name.toLowerCase().includes(accountNameFilter.toLowerCase())) return false;
-                        // Filter by account holder name
-                        if (accountHolderFilter && !account.accountHolderName.toLowerCase().includes(accountHolderFilter.toLowerCase())) return false;
-                        return true;
-                      })
-                      .map(account => (
-                        <tr key={account._id}>
-                          <td>{account.accountHolderName}</td>
-                          <td>
-                            <span
-                              onClick={() => setSelectedBank(account)}
-                              style={{
-                                color: '#007bff',
-                                cursor: 'pointer',
-                                fontWeight: '600',
-                                textDecoration: 'underline'
-                              }}
-                            >
-                              {account.name}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`record-type-badge ${account.type.split('-').join(' ')}`}>
-                              {account.type.replace('-', ' ')}
-                            </span>
-                          </td>
-                          <td>{account.bankName}</td>
-                          <td>****-****-{account.accountNumber ? account.accountNumber.slice(-4) : '****'}</td>
-                          <td className="amount">{account.currency} {calculateAccountBalance(account).toLocaleString()}</td>
-                          <td>{account.ifscCode}</td>
-                          <td>{account.branchName || '-'}</td>
-                          <td>
-                            <div className="table-actions">
-                              <button onClick={() => handleEdit(account, 'bank')} className="edit-btn">Edit</button>
-                              <button onClick={() => handleDelete(account._id, 'bank')} className="delete-btn">Delete</button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-                {bankRecords.filter(account => {
-                  // Filter by account name
-                  if (accountNameFilter && !account.name.toLowerCase().includes(accountNameFilter.toLowerCase())) return false;
-                  // Filter by account holder name
-                  if (accountHolderFilter && !account.accountHolderName.toLowerCase().includes(accountHolderFilter.toLowerCase())) return false;
-                  return true;
-                }).length === 0 && (
-                    <div className="empty-state">
-                      <p>{accountNameFilter || accountHolderFilter ? 'No bank accounts found matching the filters.' : 'No bank accounts added yet. Add your first bank account to get started!'}</p>
-                    </div>
-                  )}
+                <div className="records-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Account Holder</th>
+                        <th>Account Name</th>
+                        <th>Type</th>
+                        <th>Bank Name</th>
+                        <th>Account Number</th>
+                        <th>Balance</th>
+                        <th>IFSC Code</th>
+                        <th>Branch</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bankRecords
+                        .filter(account => {
+                          // Filter by account name
+                          if (accountNameFilter && !account.name.toLowerCase().includes(accountNameFilter.toLowerCase())) return false;
+                          // Filter by account holder name
+                          if (accountHolderFilter && !account.accountHolderName.toLowerCase().includes(accountHolderFilter.toLowerCase())) return false;
+                          return true;
+                        })
+                        .map(account => (
+                          <tr key={account._id}>
+                            <td>{account.accountHolderName}</td>
+                            <td>
+                              <span
+                                onClick={() => setSelectedBank(account)}
+                                style={{
+                                  color: '#007bff',
+                                  cursor: 'pointer',
+                                  fontWeight: '600',
+                                  textDecoration: 'underline'
+                                }}
+                              >
+                                {account.name}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`record-type-badge ${account.type.split('-').join(' ')}`}>
+                                {account.type.replace('-', ' ')}
+                              </span>
+                            </td>
+                            <td>{account.bankName}</td>
+                            <td>****-****-{account.accountNumber ? account.accountNumber.slice(-4) : '****'}</td>
+                            <td className="amount">{account.currency} {calculateAccountBalance(account).toLocaleString()}</td>
+                            <td>{account.ifscCode}</td>
+                            <td>{account.branchName || '-'}</td>
+                            <td>
+                              <div className="table-actions">
+                                <button onClick={() => handleEdit(account, 'bank')} className="edit-btn">Edit</button>
+                                <button onClick={() => handleDelete(account._id, 'bank')} className="delete-btn">Delete</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                  {bankRecords.filter(account => {
+                    // Filter by account name
+                    if (accountNameFilter && !account.name.toLowerCase().includes(accountNameFilter.toLowerCase())) return false;
+                    // Filter by account holder name
+                    if (accountHolderFilter && !account.accountHolderName.toLowerCase().includes(accountHolderFilter.toLowerCase())) return false;
+                    return true;
+                  }).length === 0 && (
+                      <div className="empty-state">
+                        <p>{accountNameFilter || accountHolderFilter ? 'No bank accounts found matching the filters.' : 'No bank accounts added yet. Add your first bank account to get started!'}</p>
+                      </div>
+                    )}
+                </div>
+              </>
+            ) : (
+              <div>
+                <button
+                  onClick={() => setSelectedBank(null)}
+                  className="add-btn"
+                  style={{ marginBottom: '20px' }}
+                >
+                  ← Back to All Banks
+                </button>
+                <div className="selected-card-info" style={{
+                  background: 'linear-gradient(135deg, #1e3c72, #2a5298)',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  color: 'white',
+                  marginBottom: '20px'
+                }}>
+                  <h3 style={{ marginTop: 0 }}>Bank Account: {selectedBank.name}</h3>
+                  <p style={{ margin: '5px 0' }}>Type: {selectedBank.type.replace('-', ' ').toUpperCase()}</p>
+                  <p style={{ margin: '5px 0' }}>Bank: {selectedBank.bankName}</p>
+                  <p style={{ margin: '5px 0' }}>Account Number: ****-****-{selectedBank.accountNumber ? selectedBank.accountNumber.slice(-4) : '****'}</p>
+                  <p style={{ margin: '5px 0' }}>Balance: {selectedBank.currency} {calculateAccountBalance(selectedBank).toLocaleString()}</p>
+                </div>
               </div>
-            </>
-          ) : (
-            <div>
-              <button
-                onClick={() => setSelectedBank(null)}
-                className="add-btn"
-                style={{ marginBottom: '20px' }}
-              >
-                ← Back to All Banks
-              </button>
-              <div className="selected-card-info" style={{
-                background: 'linear-gradient(135deg, #1e3c72, #2a5298)',
-                borderRadius: '12px',
-                padding: '20px',
-                color: 'white',
-                marginBottom: '20px'
-              }}>
-                <h3 style={{ marginTop: 0 }}>Bank Account: {selectedBank.name}</h3>
-                <p style={{ margin: '5px 0' }}>Type: {selectedBank.type.replace('-', ' ').toUpperCase()}</p>
-                <p style={{ margin: '5px 0' }}>Bank: {selectedBank.bankName}</p>
-                <p style={{ margin: '5px 0' }}>Account Number: ****-****-{selectedBank.accountNumber ? selectedBank.accountNumber.slice(-4) : '****'}</p>
-                <p style={{ margin: '5px 0' }}>Balance: {selectedBank.currency} {calculateAccountBalance(selectedBank).toLocaleString()}</p>
-              </div>
-            </div>
-          )}
-        </div>
+            )
+          }
+        </div >
       )}
 
       {/* Financial Overview Chart */}
-      {showChart && (cashRecords.length > 0 || cardRecords.length > 0 || bankRecords.length > 0 || cardTransactions.length > 0 || bankTransactions.length > 0) && (
-        <FinancialOverviewChart
-          cashRecords={cashRecords}
-          cardRecords={cardRecords}
-          bankRecords={bankRecords}
-          cardTransactions={cardTransactions}
-          bankTransactions={bankTransactions}
-        />
-      )}
+      {
+        showChart && (cashRecords.length > 0 || cardRecords.length > 0 || bankRecords.length > 0 || cardTransactions.length > 0 || bankTransactions.length > 0) && (
+          <FinancialOverviewChart
+            cashRecords={cashRecords}
+            cardRecords={cardRecords}
+            bankRecords={bankRecords}
+            cardTransactions={cardTransactions}
+            bankTransactions={bankTransactions}
+          />
+        )
+      }
 
       {/* Card Columns Info Modal */}
-      {showCardColumnsModal && (
-        <ModalPortal>
-          <div className="ccb-modal">
-            <div className="ccb-modal-content" style={{ maxWidth: '800px' }}>
-              <h3>📋 Required Excel Columns for Card Transactions</h3>
-              <p style={{ marginBottom: '20px', color: '#64748b' }}>
-                Your Excel file should have these columns (case-sensitive):
-              </p>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead style={{ background: '#f1f5f9' }}>
-                  <tr>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Column Name</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Required</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Example</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Card</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>John - HDFC or card name</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Transaction Type</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>purchase, payment, withdrawal</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Amount</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>1500.50</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Currency</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>INR, USD</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Merchant/Description</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Amazon, Grocery Store</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Broader Category</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Personal, Business</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Date</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>20/12/25 (DD/MM/YY)</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div className="form-actions" style={{ marginTop: '24px' }}>
-                <button type="button" onClick={() => setShowCardColumnsModal(false)}>
-                  Close
-                </button>
+      {
+        showCardColumnsModal && (
+          <ModalPortal>
+            <div className="ccb-modal">
+              <div className="ccb-modal-content" style={{ maxWidth: '800px' }}>
+                <h3>📋 Required Excel Columns for Card Transactions</h3>
+                <p style={{ marginBottom: '20px', color: '#64748b' }}>
+                  Your Excel file should have these columns (case-sensitive):
+                </p>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead style={{ background: '#f1f5f9' }}>
+                    <tr>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Column Name</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Required</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Example</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Card</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>John - HDFC or card name</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Transaction Type</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>purchase, payment, withdrawal</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Amount</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>1500.50</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Currency</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>INR, USD</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Merchant/Description</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Amazon, Grocery Store</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Broader Category</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Personal, Business</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Date</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>20/12/25 (DD/MM/YY)</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="form-actions" style={{ marginTop: '24px' }}>
+                  <button type="button" onClick={() => setShowCardColumnsModal(false)}>
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </ModalPortal>
-      )}
+          </ModalPortal>
+        )
+      }
 
       {/* Bank Columns Info Modal */}
-      {showBankColumnsModal && (
-        <ModalPortal>
-          <div className="ccb-modal">
-            <div className="ccb-modal-content" style={{ maxWidth: '800px' }}>
-              <h3>📋 Required Excel Columns for Bank Transactions</h3>
-              <p style={{ marginBottom: '20px', color: '#64748b' }}>
-                Your Excel file should have these columns (case-sensitive):
-              </p>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead style={{ background: '#f1f5f9' }}>
-                  <tr>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Column Name</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Required</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Example</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Account</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Account Name OR Account Number (Use Number for unique matching)</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Transaction Type</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>deposit, withdrawal, transfer</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Amount</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>5000.00</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Currency</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>INR, USD</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Merchant/Description</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Salary, Bill Payment</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Broader Category</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Personal, Business</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Date</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>20/12/25 (DD/MM/YY)</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div className="form-actions" style={{ marginTop: '24px' }}>
-                <button type="button" onClick={() => setShowBankColumnsModal(false)}>
-                  Close
-                </button>
+      {
+        showBankColumnsModal && (
+          <ModalPortal>
+            <div className="ccb-modal">
+              <div className="ccb-modal-content" style={{ maxWidth: '800px' }}>
+                <h3>📋 Required Excel Columns for Bank Transactions</h3>
+                <p style={{ marginBottom: '20px', color: '#64748b' }}>
+                  Your Excel file should have these columns (case-sensitive):
+                </p>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead style={{ background: '#f1f5f9' }}>
+                    <tr>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Column Name</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Required</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>Example</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Account</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Account Name OR Account Number (Use Number for unique matching)</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Transaction Type</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>deposit, withdrawal, transfer</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Amount</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>5000.00</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Currency</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>INR, USD</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Merchant/Description</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Salary, Bill Payment</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Broader Category</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Personal, Business</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Date</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>20/12/25 (DD/MM/YY)</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="form-actions" style={{ marginTop: '24px' }}>
+                  <button type="button" onClick={() => setShowBankColumnsModal(false)}>
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </ModalPortal>
-      )}
+          </ModalPortal>
+        )
+      }
 
       {/* Processing Overlay */}
-      {(uploadingCard || uploadingBank) && (
-        <ModalPortal>
-          <div className="processing-overlay">
-            <div className="processing-content">
-              <div className="spinner"></div>
-              <div className="processing-text">Processing Upload...</div>
-              <div className="processing-subtext">Optimizing your data</div>
+      {
+        (uploadingCard || uploadingBank) && (
+          <ModalPortal>
+            <div className="processing-overlay">
+              <div className="processing-content">
+                <div className="spinner"></div>
+                <div className="processing-text">Processing Upload...</div>
+                <div className="processing-subtext">Optimizing your data</div>
 
-              {/* Progress Bar */}
-              <div className="progress-container">
-                <div className="progress-bar" style={{ width: `${uploadProgress}%` }}></div>
+                {/* Progress Bar */}
+                <div className="progress-container">
+                  <div className="progress-bar" style={{ width: `${uploadProgress}%` }}></div>
+                </div>
+                <div className="processing-text progress-text">{uploadProgress}%</div>
               </div>
-              <div className="processing-text progress-text">{uploadProgress}%</div>
             </div>
-          </div>
-        </ModalPortal>
-      )}
-    </div>
+          </ModalPortal>
+        )
+      }
+    </div >
   );
 };
 

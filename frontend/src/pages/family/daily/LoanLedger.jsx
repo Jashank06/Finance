@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiDollarSign, FiTrendingUp, FiActivity, FiUsers, FiArrowUpRight, FiArrowDownLeft, FiCreditCard } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiDollarSign, FiTrendingUp, FiActivity, FiUsers, FiArrowUpRight, FiArrowDownLeft, FiCreditCard, FiSmartphone } from 'react-icons/fi';
 import { investmentAPI } from '../../../utils/investmentAPI';
 import '../../investments/Investment.css';
 
@@ -9,10 +9,12 @@ const LoanLedger = () => {
   const [showForm, setShowForm] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showOnBehalfForm, setShowOnBehalfForm] = useState(false);
+  const [showWalletForm, setShowWalletForm] = useState(false);
   const formRef = useRef(null);
   const [loanEntries, setLoanEntries] = useState([]);
   const [paymentEntries, setPaymentEntries] = useState([]);
   const [onBehalfEntries, setOnBehalfEntries] = useState([]);
+  const [walletEntries, setWalletEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -63,14 +65,22 @@ const LoanLedger = () => {
     comments: ''
   });
 
+  // Wallet Form State
+  const [walletInputs, setWalletInputs] = useState({
+    name: '',
+    walletProvider: '',
+    walletNumber: '',
+    initialBalance: ''
+  });
+
   useEffect(() => {
     trackFeatureUsage('/family/daily/loan-ledger', 'view');
-    if ((showForm || showPaymentForm || showOnBehalfForm || showOnBehalfPaymentForm) && formRef.current) {
+    if ((showForm || showPaymentForm || showOnBehalfForm || showOnBehalfPaymentForm || showWalletForm) && formRef.current) {
       setTimeout(() => {
         formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     }
-  }, [showForm, showPaymentForm, showOnBehalfForm, showOnBehalfPaymentForm]);
+  }, [showForm, showPaymentForm, showOnBehalfForm, showOnBehalfPaymentForm, showWalletForm]);
 
   // Fetch data from database
   useEffect(() => {
@@ -125,10 +135,15 @@ const LoanLedger = () => {
         };
       });
       setOnBehalfEntries(onBehalf);
+
+      // Fetch wallet entries
+      const walletsResponse = await investmentAPI.getWallets();
+      setWalletEntries(walletsResponse.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       setLoanEntries([]);
       setOnBehalfEntries([]);
+      setWalletEntries([]);
     } finally {
       setLoading(false);
     }
@@ -320,7 +335,11 @@ const LoanLedger = () => {
   const handleDelete = async (type, id) => {
     if (window.confirm('Delete this record?')) {
       try {
-        await investmentAPI.delete(id);
+        if (type === 'wallet') {
+          await investmentAPI.deleteWallet(id);
+        } else {
+          await investmentAPI.delete(id);
+        }
         await fetchData(); // Refresh data from database
         alert('Record deleted successfully!');
       } catch (error) {
@@ -392,6 +411,46 @@ const LoanLedger = () => {
     }
   };
 
+  // Wallet form handlers
+  const handleWalletSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSaving(true);
+      const payload = {
+        name: walletInputs.name,
+        walletProvider: walletInputs.walletProvider,
+        walletNumber: walletInputs.walletNumber,
+        amount: Number(walletInputs.initialBalance || 0),
+        type: 'digital-wallet',
+        notes: JSON.stringify({
+          comments: 'Created from Loan/Wallet Ledger',
+          transactions: [{
+            date: new Date().toISOString().slice(0, 10),
+            amount: Number(walletInputs.initialBalance || 0),
+            type: 'Initial Balance',
+            source: 'Manual Entry'
+          }]
+        })
+      };
+
+      await investmentAPI.createWallet(payload);
+
+      setWalletInputs({
+        name: '',
+        walletProvider: '',
+        walletNumber: '',
+        initialBalance: ''
+      });
+      setShowWalletForm(false);
+      alert('Wallet created successfully!');
+    } catch (error) {
+      console.error('Error creating wallet:', error);
+      alert('Error creating wallet: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   return (
     <div className="investment-container">
@@ -406,6 +465,9 @@ const LoanLedger = () => {
           </button> */}
           <button className="btn-primary" onClick={() => setShowOnBehalfForm(!showOnBehalfForm)}>
             <FiCreditCard /> {showOnBehalfForm ? 'Cancel' : 'On Behalf'}
+          </button>
+          <button className="btn-primary" onClick={() => setShowWalletForm(!showWalletForm)}>
+            <FiSmartphone /> {showWalletForm ? 'Cancel' : 'Add Wallet'}
           </button>
           {/* <button className="btn-success" onClick={() => setShowOnBehalfPaymentForm(!showOnBehalfPaymentForm)}>
             <FiDollarSign /> {showOnBehalfPaymentForm ? 'Cancel' : 'Add Receipt'}
@@ -636,6 +698,49 @@ const LoanLedger = () => {
         </div>
       )}
 
+      {/* Wallet Records Table */}
+      {walletEntries.length > 0 && (
+        <div className="investments-table-card">
+          <div className="table-header">
+            <h2>Wallet Records</h2>
+          </div>
+          <div className="table-container">
+            <table className="investments-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Wallet Name</th>
+                  <th>Provider</th>
+                  <th>Wallet Number</th>
+                  <th>Balance</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {walletEntries.map((wallet) => (
+                  <tr key={wallet._id}>
+                    <td>{new Date(wallet.date).toLocaleDateString('en-IN')}</td>
+                    <td>{wallet.name}</td>
+                    <td>{wallet.walletProvider}</td>
+                    <td>{wallet.walletNumber || '-'}</td>
+                    <td style={{ color: '#10B981', fontWeight: 'bold' }}>
+                      ₹{Math.round(wallet.amount || 0).toLocaleString('en-IN')}
+                    </td>
+                    <td>
+                      <div className="investment-actions">
+                        <button onClick={() => handleDelete('wallet', wallet._id)} className="btn-icon btn-danger">
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Loan Form */}
       {showForm && (
         <div ref={formRef} className="investment-form-card">
@@ -763,6 +868,63 @@ const LoanLedger = () => {
             <div className="form-actions">
               <button className="btn-success" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Add Payment'}</button>
               <button type="button" className="btn-secondary" onClick={() => setShowPaymentForm(false)}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Wallet Form */}
+      {showWalletForm && (
+        <div ref={formRef} className="investment-form-card">
+          <h2>Add New Wallet</h2>
+          <form className="investment-form" onSubmit={handleWalletSubmit}>
+            <div className="form-row">
+              <div className="form-field">
+                <label>Wallet Name *</label>
+                <input
+                  type="text"
+                  value={walletInputs.name}
+                  onChange={(e) => setWalletInputs({ ...walletInputs, name: e.target.value })}
+                  placeholder="e.g. Paytm, PhonePe"
+                  required
+                />
+              </div>
+              <div className="form-field">
+                <label>Provider *</label>
+                <input
+                  type="text"
+                  value={walletInputs.walletProvider}
+                  onChange={(e) => setWalletInputs({ ...walletInputs, walletProvider: e.target.value })}
+                  placeholder="e.g. UPI, Bank"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label>Wallet Number/ID</label>
+                <input
+                  type="text"
+                  value={walletInputs.walletNumber}
+                  onChange={(e) => setWalletInputs({ ...walletInputs, walletNumber: e.target.value })}
+                  placeholder="Mobile number or UPI ID"
+                />
+              </div>
+              <div className="form-field">
+                <label>Initial Balance (₹)</label>
+                <input
+                  type="number"
+                  value={walletInputs.initialBalance}
+                  onChange={(e) => setWalletInputs({ ...walletInputs, initialBalance: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button className="btn-success" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Create Wallet'}</button>
+              <button type="button" className="btn-secondary" onClick={() => setShowWalletForm(false)}>Cancel</button>
             </div>
           </form>
         </div>
@@ -1026,22 +1188,46 @@ const LoanLedger = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {(selectedLoanForHistory.payments || selectedLoanForHistory.receipts || []).map((record, index) => (
-                      <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '12px', fontSize: '14px' }}>
-                          {new Date(record.date).toLocaleDateString('en-IN')}
-                        </td>
-                        <td style={{ padding: '12px', fontSize: '14px', color: '#10B981', fontWeight: '500' }}>
-                          ₹{Math.round(record.amount).toLocaleString('en-IN')}
-                        </td>
-                        <td style={{ padding: '12px', fontSize: '14px' }}>
-                          {record.paymentDetails || '-'}
-                        </td>
-                        <td style={{ padding: '12px', fontSize: '14px' }}>
-                          {record.comments || '-'}
-                        </td>
-                      </tr>
-                    ))}
+                    {(selectedLoanForHistory.payments || selectedLoanForHistory.receipts || []).map((record, index) => {
+                      const isBorrowedType = selectedLoanForHistory.loanType === 'Borrowed';
+                      const isLentType = selectedLoanForHistory.loanType === 'Lent';
+                      const isOnBehalf = !selectedLoanForHistory.loanType; // On Behalf entries don't have loanType in this mapping
+
+                      // Determine color and label based on record.type
+                      // Repayment (Borrowed): I pay money (Green)
+                      // Additional Borrowing (Borrowed): I take money (Red)
+                      // Repayment (Lent): They pay me (Green)
+                      // Additional Lending (Lent): I give more (Red)
+                      const isPositiveChange =
+                        record.type === 'Repayment' ||
+                        record.type === 'Receipt' ||
+                        (!record.type && (isBorrowedType || isLentType || isOnBehalf)); // Fallback for old records
+
+                      const color = isPositiveChange ? '#10B981' : '#EF4444';
+                      const typeLabel = record.type ? ` (${record.type})` : '';
+
+                      return (
+                        <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                          <td style={{ padding: '12px', fontSize: '14px' }}>
+                            {new Date(record.date).toLocaleDateString('en-IN')}
+                          </td>
+                          <td style={{ padding: '12px', fontSize: '14px', color: color, fontWeight: '500' }}>
+                            {isPositiveChange ? '+' : '-'} ₹{Math.round(record.amount).toLocaleString('en-IN')}
+                            {typeLabel && (
+                              <span style={{ fontSize: '10px', display: 'block', color: '#64748b' }}>
+                                {record.type}
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ padding: '12px', fontSize: '14px' }}>
+                            {record.paymentDetails || '-'}
+                          </td>
+                          <td style={{ padding: '12px', fontSize: '14px' }}>
+                            {record.comments || '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

@@ -53,7 +53,7 @@ const investmentSchema = new mongoose.Schema({
   quantity: Number, // for gold/silver in grams, for bonds in units
   purchasePrice: Number, // price per unit
   currentValue: Number, // current market price per unit
-  
+
   // Generic fields
   accountNumber: String,
   amount: Number, // total amount (quantity * purchasePrice)
@@ -75,7 +75,7 @@ const investmentSchema = new mongoose.Schema({
     enum: ['monthly', 'quarterly', 'yearly', 'one-time'],
     default: 'one-time',
   },
-  
+
   // Gold/SGB specific fields
   purity: String, // 24K, 22K, Silver, etc.
   storageType: {
@@ -83,11 +83,11 @@ const investmentSchema = new mongoose.Schema({
     enum: ['digital', 'physical', 'bank-locker', 'vault', 'demat'],
     default: 'digital',
   },
-  
+
   // Calculated fields
   returns: Number,
   returnsPercentage: Number,
-  
+
   // Loan amortization specific fields
   paymentSchedule: [{
     paymentNumber: Number,
@@ -102,7 +102,32 @@ const investmentSchema = new mongoose.Schema({
     paidDate: Date,
     paidAmount: Number
   }],
-  
+
+  // Amortization Schedule with Payment Tracking (replaces paymentSchedule eventually)
+  amortizationSchedule: [{
+    paymentNumber: Number,
+    date: Date,
+    beginningBalance: Number,
+    payment: Number,
+    extraPayment: { type: Number, default: 0 },
+    principal: Number,
+    interest: Number,
+    endingBalance: Number,
+
+    // Payment Status Tracking
+    paid: { type: Boolean, default: false },
+    paidAmount: { type: Number, default: 0 },
+    paidDate: Date,
+    partiallyPaid: { type: Boolean, default: false },
+
+    // Linked Bank Transactions
+    linkedTransactions: [{
+      transactionId: { type: mongoose.Schema.Types.ObjectId, ref: 'BankTransaction' },
+      amount: Number,
+      date: Date
+    }]
+  }],
+
   // Generic fields
   notes: String,
   documents: [String],
@@ -123,14 +148,14 @@ const investmentSchema = new mongoose.Schema({
 //     if (this.quantity && this.purchasePrice) {
 //       this.amount = this.quantity * this.purchasePrice;
 //     }
-    
+
 //     // Calculate returns if currentValue is provided
 //     if (this.currentValue && this.quantity) {
 //       const currentTotal = this.quantity * this.currentValue;
 //       this.returns = currentTotal - this.amount;
 //       this.returnsPercentage = this.amount > 0 ? (this.returns / this.amount) * 100 : 0;
 //     }
-    
+
 //     this.updatedAt = Date.now();
 //     next();
 //   } catch (error) {

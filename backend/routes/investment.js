@@ -474,28 +474,28 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
       items: [],
       total: 0,
     }));
-    
+
     // Generate recurring bill instances based on cycle
     for (const e of entries) {
       // Use payableDate if available, otherwise fall back to dueDate
       const dateToUse = e.payableDate || e.dueDate;
       if (!dateToUse) continue;
-      
+
       const billDate = new Date(dateToUse);
       const billDay = billDate.getDate();
       const start = e.startDate ? new Date(e.startDate) : null;
       const startMonth = start && start.getFullYear() === currentYear ? start.getMonth() : 0;
-      
+
       if (e.cycle === 'monthly') {
         // Generate bill for each month starting from startMonth
         for (let m = Math.max(0, startMonth); m < 12; m++) {
           const bucket = byMonth[m];
-          bucket.items.push({ 
-            day: billDay, 
-            provider: e.billName || e.provider || e.billType, 
-            billType: e.billType, 
-            cycle: e.cycle, 
-            amount: Number(e.amount) || 0 
+          bucket.items.push({
+            day: billDay,
+            provider: e.billName || e.provider || e.billType,
+            billType: e.billType,
+            cycle: e.cycle,
+            amount: Number(e.amount) || 0
           });
           bucket.total += Number(e.amount) || 0;
         }
@@ -505,12 +505,12 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
         const first = Math.max(0, baseMonth);
         for (let m = first; m < 12; m += 3) {
           const bucket = byMonth[m];
-          bucket.items.push({ 
-            day: billDay, 
-            provider: e.billName || e.provider || e.billType, 
-            billType: e.billType, 
-            cycle: e.cycle, 
-            amount: Number(e.amount) || 0 
+          bucket.items.push({
+            day: billDay,
+            provider: e.billName || e.provider || e.billType,
+            billType: e.billType,
+            cycle: e.cycle,
+            amount: Number(e.amount) || 0
           });
           bucket.total += Number(e.amount) || 0;
         }
@@ -518,12 +518,12 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
         // Generate bill once for the year
         if (billDate.getFullYear() === currentYear) {
           const bucket = byMonth[billDate.getMonth()];
-          bucket.items.push({ 
-            day: billDay, 
-            provider: e.billName || e.provider || e.billType, 
-            billType: e.billType, 
-            cycle: e.cycle, 
-            amount: Number(e.amount) || 0 
+          bucket.items.push({
+            day: billDay,
+            provider: e.billName || e.provider || e.billType,
+            billType: e.billType,
+            cycle: e.cycle,
+            amount: Number(e.amount) || 0
           });
           bucket.total += Number(e.amount) || 0;
         }
@@ -533,12 +533,12 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
           const daysInMonth = new Date(currentYear, m + 1, 0).getDate();
           for (let day = 1; day <= daysInMonth; day++) {
             const bucket = byMonth[m];
-            bucket.items.push({ 
-              day: day, 
-              provider: e.billName || e.provider || e.billType, 
-              billType: e.billType, 
-              cycle: e.cycle, 
-              amount: Number(e.amount) || 0 
+            bucket.items.push({
+              day: day,
+              provider: e.billName || e.provider || e.billType,
+              billType: e.billType,
+              cycle: e.cycle,
+              amount: Number(e.amount) || 0
             });
             bucket.total += Number(e.amount) || 0;
           }
@@ -548,11 +548,11 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
         // For one-time bills, show them in any year if they fall in that year
         if (billDate.getFullYear() === currentYear) {
           const bucket = byMonth[billDate.getMonth()];
-          bucket.items.push({ 
-            day: billDay, 
-            provider: e.billName || e.provider || e.billType, 
-            billType: e.billType, 
-            cycle: e.cycle || 'one-time', 
+          bucket.items.push({
+            day: billDay,
+            provider: e.billName || e.provider || e.billType,
+            billType: e.billType,
+            cycle: e.cycle || 'one-time',
             amount: Number(e.amount) || 0,
             fullDate: billDate.toISOString().slice(0, 10) // Store full date for one-time bills
           });
@@ -560,34 +560,34 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
         }
       }
     }
-    
+
     for (const m of byMonth) { m.items.sort((a, b) => a.day - b.day); }
     const yearlySchedule = byMonth;
 
     const end = new Date(now);
     end.setDate(end.getDate() + horizonDays);
     const upcoming = [];
-    
+
     // Generate recurring bill instances for upcoming period
     for (const e of entries) {
       // Use payableDate if available, otherwise fall back to dueDate
       const dateToUse = e.payableDate || e.dueDate;
       if (!dateToUse) continue;
-      
+
       const billDate = new Date(dateToUse);
       const billDay = billDate.getDate();
-      
+
       if (e.cycle === 'monthly') {
         // Generate monthly instances within the horizon
         const current = new Date(now.getFullYear(), now.getMonth(), billDay);
         while (current <= end) {
           if (current >= now) {
-            upcoming.push({ 
-              date: current.toISOString().slice(0, 10), 
-              provider: e.billName || e.provider || e.billType, 
-              billType: e.billType, 
-              amount: Number(e.amount) || 0, 
-              cycle: e.cycle 
+            upcoming.push({
+              date: current.toISOString().slice(0, 10),
+              provider: e.billName || e.provider || e.billType,
+              billType: e.billType,
+              amount: Number(e.amount) || 0,
+              cycle: e.cycle
             });
           }
           current.setMonth(current.getMonth() + 1);
@@ -601,12 +601,12 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
         }
         while (current <= end) {
           if (current >= now) {
-            upcoming.push({ 
-              date: current.toISOString().slice(0, 10), 
-              provider: e.billName || e.provider || e.billType, 
-              billType: e.billType, 
-              amount: Number(e.amount) || 0, 
-              cycle: e.cycle 
+            upcoming.push({
+              date: current.toISOString().slice(0, 10),
+              provider: e.billName || e.provider || e.billType,
+              billType: e.billType,
+              amount: Number(e.amount) || 0,
+              cycle: e.cycle
             });
           }
           current.setMonth(current.getMonth() + 3);
@@ -615,23 +615,23 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
         // Check if the yearly bill falls within the horizon
         const yearlyDate = new Date(now.getFullYear(), billDate.getMonth(), billDay);
         if (yearlyDate >= now && yearlyDate <= end) {
-          upcoming.push({ 
-            date: yearlyDate.toISOString().slice(0, 10), 
-            provider: e.billName || e.provider || e.billType, 
-            billType: e.billType, 
-            amount: Number(e.amount) || 0, 
-            cycle: e.cycle 
+          upcoming.push({
+            date: yearlyDate.toISOString().slice(0, 10),
+            provider: e.billName || e.provider || e.billType,
+            billType: e.billType,
+            amount: Number(e.amount) || 0,
+            cycle: e.cycle
           });
         }
         // Check next year if we're near year end
         const nextYearDate = new Date(now.getFullYear() + 1, billDate.getMonth(), billDay);
         if (nextYearDate >= now && nextYearDate <= end) {
-          upcoming.push({ 
-            date: nextYearDate.toISOString().slice(0, 10), 
-            provider: e.billName || e.provider || e.billType, 
-            billType: e.billType, 
-            amount: Number(e.amount) || 0, 
-            cycle: e.cycle 
+          upcoming.push({
+            date: nextYearDate.toISOString().slice(0, 10),
+            provider: e.billName || e.provider || e.billType,
+            billType: e.billType,
+            amount: Number(e.amount) || 0,
+            cycle: e.cycle
           });
         }
       } else if (e.cycle === 'daily') {
@@ -640,12 +640,12 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
         current.setHours(0, 0, 0, 0);
         while (current <= end) {
           if (current >= now) {
-            upcoming.push({ 
-              date: current.toISOString().slice(0, 10), 
-              provider: e.billName || e.provider || e.billType, 
-              billType: e.billType, 
-              amount: Number(e.amount) || 0, 
-              cycle: e.cycle 
+            upcoming.push({
+              date: current.toISOString().slice(0, 10),
+              provider: e.billName || e.provider || e.billType,
+              billType: e.billType,
+              amount: Number(e.amount) || 0,
+              cycle: e.cycle
             });
           }
           current.setDate(current.getDate() + 1);
@@ -654,17 +654,17 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
         // one-time bill
         const d = new Date(dateToUse);
         if (d >= now && d <= end) {
-          upcoming.push({ 
-            date: d.toISOString().slice(0, 10), 
-            provider: e.billName || e.provider || e.billType, 
-            billType: e.billType, 
-            amount: Number(e.amount) || 0, 
+          upcoming.push({
+            date: d.toISOString().slice(0, 10),
+            provider: e.billName || e.provider || e.billType,
+            billType: e.billType,
+            amount: Number(e.amount) || 0,
             cycle: e.cycle || 'one-time'
           });
         }
       }
     }
-    
+
     upcoming.sort((a, b) => (a.date > b.date ? 1 : -1));
     const upcomingTotal = upcoming.reduce((s, i) => s + i.amount, 0);
     const scheduledCount = yearlySchedule.reduce((s, m) => s + m.items.length, 0);
@@ -1153,9 +1153,17 @@ router.get('/loans/list', authMiddleware, async (req, res) => {
       const remainingAmount = loan.paymentSchedule?.filter(p => !p.isPaid)
         .reduce((sum, p) => sum + p.endingBalance, 0) || 0;
 
-      // Get current EMI: first unpaid payment's EMI, or first payment if all paid
+      // Get current EMI: first unpaid payment's EMI, or first payment if all paid, or from notes
       const firstUnpaid = loan.paymentSchedule?.find(p => !p.isPaid);
-      const currentEmi = firstUnpaid?.payment || loan.paymentSchedule?.[0]?.payment || 0;
+      let currentEmi = firstUnpaid?.payment || loan.paymentSchedule?.[0]?.payment || 0;
+
+      // Fallback: read from notes if schedule is empty
+      if (currentEmi === 0) {
+        try {
+          const notes = JSON.parse(loan.notes || '{}');
+          currentEmi = notes.emiAmount || 0;
+        } catch { }
+      }
 
       return {
         _id: loan._id,
@@ -1178,6 +1186,389 @@ router.get('/loans/list', authMiddleware, async (req, res) => {
     res.json({ loans: loansWithSummary });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching loans', error: error.message });
+  }
+});
+
+// Record payment from bank transaction to specific loan
+router.post('/loans/:id/record-payment', authMiddleware, async (req, res) => {
+  try {
+    const { amount, paymentDate, bankTransactionId, source } = req.body;
+
+    const investment = await Investment.findOne({
+      _id: req.params.id,
+      userId: req.userId,
+      category: 'loan-amortization'
+    });
+
+    if (!investment) {
+      return res.status(404).json({ message: 'Loan record not found' });
+    }
+
+    // Find the first unpaid payment in the schedule
+    const firstUnpaidIndex = investment.paymentSchedule.findIndex(p => !p.isPaid);
+
+    if (firstUnpaidIndex === -1) {
+      return res.status(400).json({ message: 'All installments for this loan are already paid' });
+    }
+
+    const emi = investment.paymentSchedule[firstUnpaidIndex];
+
+    // Update the payment details
+    emi.isPaid = true;
+    emi.paidDate = paymentDate || new Date();
+    emi.paidAmount = Number(amount) || emi.payment;
+
+    // Check if there's an extra payment
+    if (Number(amount) > emi.payment) {
+      emi.extraPayment = Number(amount) - emi.payment;
+      // Recalculate the remaining schedule
+      recalculateSchedule(investment.paymentSchedule, firstUnpaidIndex, investment.interestRate);
+    }
+
+    // Add record to notes history
+    let notes = {};
+    try { notes = JSON.parse(investment.notes || '{}'); } catch (e) { }
+    const payments = notes.payments || [];
+    payments.push({
+      date: emi.paidDate,
+      amount: emi.paidAmount,
+      type: 'EMI Payment from Bank',
+      paymentDetails: source || 'Bank Transaction',
+      bankTransactionId,
+      emiNumber: emi.paymentNumber
+    });
+
+    investment.notes = JSON.stringify({ ...notes, payments });
+    investment.updatedAt = Date.now();
+
+    await investment.save();
+
+    res.json({
+      success: true,
+      message: `EMI #${emi.paymentNumber} recorded successfully`,
+      investment
+    });
+  } catch (error) {
+    console.error('Error recording loan payment:', error);
+    res.status(500).json({ message: 'Error recording loan payment', error: error.message });
+  }
+});
+
+// Get unique person names from Udhar Liya (Borrowed) records
+router.get('/loan-ledger/persons', authMiddleware, async (req, res) => {
+  try {
+    const loans = await Investment.find({
+      userId: req.userId,
+      category: 'loan-ledger'
+    }).select('name type').sort({ name: 1 });
+
+    // Extract unique person-type combinations
+    const personMap = new Map();
+    loans.forEach(loan => {
+      const type = loan.type || 'Lent';
+      const key = `${loan.name.trim().toLowerCase()}|${type}`;
+      if (loan.name && !personMap.has(key)) {
+        personMap.set(key, {
+          name: loan.name.trim(),
+          type: type
+        });
+      }
+    });
+
+    const persons = Array.from(personMap.values());
+    res.json({ persons });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching loan ledger persons', error: error.message });
+  }
+});
+
+// Get unique person names from On Behalf records
+router.get('/on-behalf/persons', authMiddleware, async (req, res) => {
+  try {
+    const onBehalfRecords = await Investment.find({
+      userId: req.userId,
+      category: 'on-behalf'
+    }).select('name').sort({ name: 1 });
+
+    // Extract unique person names
+    const personMap = new Map();
+    onBehalfRecords.forEach(record => {
+      if (record.name && !personMap.has(record.name)) {
+        personMap.set(record.name, { name: record.name });
+      }
+    });
+
+    const persons = Array.from(personMap.values());
+    res.json({ persons });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching on behalf persons', error: error.message });
+  }
+});
+
+// Record payment from bank transaction to loan amortization
+// Record a transaction (new entry or payment) for loan-ledger module
+router.post('/loan-ledger/sync-transaction', authMiddleware, async (req, res) => {
+  try {
+    const { personName, amount, type, broaderCategory, date, bankTransactionId, description, accountName } = req.body;
+    const trimmedName = personName?.trim();
+
+    let isRepayment = false;
+    let loanType = broaderCategory === 'Udhar Liya' ? 'Borrowed' : 'Lent';
+
+    // Udhar Liya (Borrowed): Credit = Borrowed more, Debit = Paid back
+    // Udhar Diya (Lent): Debit = Lent more, Credit = Received back
+    if (broaderCategory === 'Udhar Liya' && type === 'debit') isRepayment = true;
+    if ((broaderCategory === 'Udhar Diya' || broaderCategory === 'Lent') && type === 'credit') isRepayment = true;
+
+    // Find existing record for this person
+    const existingRecord = await Investment.findOne({
+      userId: req.userId,
+      category: 'loan-ledger',
+      name: { $regex: new RegExp("^" + trimmedName + "$", "i") },
+      type: loanType
+    }).sort({ createdAt: -1 });
+
+    if (existingRecord) {
+      let notes = {};
+      try { notes = JSON.parse(existingRecord.notes || '{}'); } catch (e) { }
+
+      const transAmount = Number(amount);
+      const isLentMode = loanType === 'Lent';
+
+      if (isRepayment) {
+        // Repayment: Increase totalPaid
+        const totalPaid = (notes.totalPaid || 0) + transAmount;
+        const balanceAmount = existingRecord.amount - totalPaid;
+        const payments = [...(notes.payments || []), {
+          date: date,
+          amount: transAmount,
+          type: 'Repayment',
+          paymentDetails: `Bank: ${accountName}`,
+          comments: description || 'Repayment from Bank Transaction',
+          bankTransactionId
+        }];
+
+        existingRecord.notes = JSON.stringify({
+          ...notes,
+          totalPaid,
+          balanceAmount,
+          payments
+        });
+      } else {
+        // Borrowing More or Lending More: Increase total amount
+        existingRecord.amount = (existingRecord.amount || 0) + transAmount;
+        const totalPaid = notes.totalPaid || 0;
+        const balanceAmount = existingRecord.amount - totalPaid;
+        const payments = [...(notes.payments || []), {
+          date: date,
+          amount: transAmount,
+          type: isLentMode ? 'Additional Lending' : 'Additional Borrowing',
+          paymentDetails: `Bank: ${accountName}`,
+          comments: description || (isLentMode ? 'Additional lending from Bank Transaction' : 'Additional borrowing from Bank Transaction'),
+          bankTransactionId
+        }];
+
+        existingRecord.notes = JSON.stringify({
+          ...notes,
+          totalPaid,
+          balanceAmount,
+          payments
+        });
+      }
+
+      await existingRecord.save();
+      return res.json({ success: true, message: 'Existing record updated successfully', record: existingRecord });
+    }
+
+    // If existing record not found, create NEW record
+    const payload = {
+      userId: req.userId,
+      category: 'loan-ledger',
+      type: loanType,
+      name: personName,
+      amount: Number(amount),
+      startDate: date,
+      maturityDate: date,
+      frequency: 'one-time',
+      source: `Bank: ${accountName}`,
+      notes: JSON.stringify({
+        forPurpose: description || 'Bank Transaction',
+        comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
+        totalPaid: 0,
+        balanceAmount: Number(amount),
+        payments: [],
+        bankTransactionId
+      })
+    };
+
+    const newRecord = new Investment(payload);
+    await newRecord.save();
+    res.json({ success: true, message: 'New loan ledger record created', record: newRecord });
+
+  } catch (error) {
+    console.error('Error in loan-ledger sync:', error);
+    res.status(500).json({ message: 'Error recording transaction', error: error.message });
+  }
+});
+
+// Record a transaction for on-behalf module
+router.post('/on-behalf/sync-transaction', authMiddleware, async (req, res) => {
+  try {
+    const { personName, amount, type, date, bankTransactionId, description, accountName } = req.body;
+    const trimmedName = personName?.trim();
+
+    const existingRecord = await Investment.findOne({
+      userId: req.userId,
+      category: 'on-behalf',
+      name: { $regex: new RegExp("^" + trimmedName + "$", "i") }
+    }).sort({ createdAt: -1 });
+
+    if (existingRecord) {
+      let notes = {};
+      try { notes = JSON.parse(existingRecord.notes || '{}'); } catch (e) { }
+      const transAmount = Number(amount);
+
+      if (type === 'credit') {
+        // Receipt back to me
+        const totalReceived = (notes.totalReceived || notes.receivedAmount || 0) + transAmount;
+        const receipts = [...(notes.receipts || []), {
+          date: date,
+          amount: transAmount,
+          type: 'Receipt',
+          paymentDetails: `Bank: ${accountName}`,
+          comments: description || 'Receipt from Bank Transaction',
+          bankTransactionId
+        }];
+
+        existingRecord.notes = JSON.stringify({
+          ...notes,
+          totalReceived,
+          receivedAmount: totalReceived,
+          receipts
+        });
+      } else {
+        // Paid more on behalf
+        existingRecord.amount = (existingRecord.amount || 0) + transAmount;
+        const totalReceived = notes.totalReceived || notes.receivedAmount || 0;
+        const receipts = [...(notes.receipts || []), {
+          date: date,
+          amount: transAmount,
+          type: 'Additional Payment',
+          paymentDetails: `Bank: ${accountName}`,
+          comments: description || 'Additional payment on behalf from Bank Transaction',
+          bankTransactionId
+        }];
+
+        existingRecord.notes = JSON.stringify({
+          ...notes,
+          totalReceived,
+          receivedAmount: totalReceived,
+          receipts
+        });
+      }
+
+      await existingRecord.save();
+      return res.json({ success: true, message: 'Existing on-behalf record updated', record: existingRecord });
+    }
+
+    // If existing record not found, create NEW record
+    const payload = {
+      userId: req.userId,
+      category: 'on-behalf',
+      type: 'On Behalf',
+      name: trimmedName,
+      amount: Number(amount),
+      startDate: date,
+      maturityDate: date,
+      frequency: 'one-time',
+      source: `Bank: ${accountName}`,
+      notes: JSON.stringify({
+        forPurpose: description || 'Bank Transaction',
+        comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
+        receivedAmount: 0,
+        totalReceived: 0,
+        receipts: [],
+        bankTransactionId
+      })
+    };
+
+    const newRecord = new Investment(payload);
+    await newRecord.save();
+    res.json({ success: true, message: 'New on-behalf record created', record: newRecord });
+
+  } catch (error) {
+    console.error('Error in on-behalf sync:', error);
+    res.status(500).json({ message: 'Error recording transaction', error: error.message });
+  }
+});
+
+// Helper function to recalculate schedule after extra payment
+function recalculateSchedule(schedule, startIndex, annualRate) {
+  const monthlyRate = (annualRate || 0) / 12 / 100;
+
+  for (let i = startIndex; i < schedule.length; i++) {
+    const emi = schedule[i];
+    const prevBalance = i > 0 ? schedule[i - 1].endingBalance : emi.beginningBalance;
+
+    // Adjust beginning balance if previous EMI had extra payment
+    if (i > 0 && schedule[i - 1].extraPayment > 0) {
+      emi.beginningBalance = prevBalance - schedule[i - 1].extraPayment;
+    }
+
+    // Recalculate interest based on adjusted balance
+    emi.interest = emi.beginningBalance * monthlyRate;
+    emi.principal = emi.payment - emi.interest + (emi.extraPayment || 0);
+    emi.endingBalance = Math.max(0, emi.beginningBalance - emi.principal);
+  }
+}
+
+// Record a transaction for wallet module (Recharge)
+router.post('/wallet/sync-transaction', authMiddleware, async (req, res) => {
+  try {
+    const { walletId, amount, type, date, bankTransactionId, description, accountName } = req.body;
+
+    const Cash = require('../models/Cash'); // Local require to avoid circular dependency if any
+    const wallet = await Cash.findOne({ _id: walletId, userId: req.userId });
+
+    if (!wallet) {
+      return res.status(404).json({ message: 'Wallet not found' });
+    }
+
+    const transAmount = Number(amount);
+
+    // For Wallet Recharge (Debit from Bank = Credit to Wallet)
+    // If it's a debit from bank, it's an increase in wallet amount
+    if (type === 'debit') {
+      wallet.amount = (wallet.amount || 0) + transAmount;
+    } else {
+      // If it's a credit to bank from wallet, it's a decrease in wallet amount
+      wallet.amount = (wallet.amount || 0) - transAmount;
+    }
+
+    // Add record to notes for history
+    let notes = {};
+    try { notes = JSON.parse(wallet.notes || '{}'); } catch (e) { }
+
+    const transactions = [...(notes.transactions || []), {
+      date: date,
+      amount: transAmount,
+      type: type === 'debit' ? 'Recharge' : 'Withdrawal',
+      source: `Bank: ${accountName}`,
+      description: description || 'Transfer from Bank',
+      bankTransactionId
+    }];
+
+    wallet.notes = JSON.stringify({
+      ...notes,
+      transactions
+    });
+
+    await wallet.save();
+    res.json({ success: true, message: 'Wallet balance updated successfully', wallet });
+
+  } catch (error) {
+    console.error('Error in wallet sync:', error);
+    res.status(500).json({ message: 'Error recording wallet transaction', error: error.message });
   }
 });
 

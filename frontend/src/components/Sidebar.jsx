@@ -61,6 +61,7 @@ const Sidebar = () => {
                   <div className="nested-submenu">
                     <Link to="/family/daily/cash-cards-bank" className="nested-submenu-item">Cash, Cards & Bank Transactions</Link>
                     <Link to="/family/daily/loan-udhar" className="nested-submenu-item">Udhar Lena / Dena / Credit Card / Loan / Wallet</Link>
+                    <Link to="/family/daily/loan-amortization" className="nested-submenu-item">Loan Management</Link>
                     <Link to="/family/daily/manage-finance" className="nested-submenu-item">Manage Finance</Link>
                     <Link to="/family/daily/income-expenses" className="nested-submenu-item">Income & Expenses</Link>
                     <Link to="/family/daily/cheque-register" className="nested-submenu-item">Cheque Register</Link>
@@ -114,10 +115,9 @@ const Sidebar = () => {
                     <Link to="/family/investments/gold-sgb" className="nested-submenu-item">Gold / SGB / Silver / Bonds</Link>
                     <Link to="/family/investments/bank-schemes" className="nested-submenu-item">Bank Schemes - RD, FD</Link>
                     {/* <Link to="/family/investments/mf-insurance-shares" className="nested-submenu-item">MF, Insurance, Shares</Link> */}
-                    <Link to="/family/investments/valuation-allocation" className="nested-submenu-item">Investment Valuation & Sectoral Allocation</Link>
+                    <Link to="/family/investments/valuation-allocation" className="nested-submenu-item">Investment Valuation</Link>
                     <Link to="/family/investments/project-income-expense" className="nested-submenu-item">Project Wise Income / Expense</Link>
                     <Link to="/family/investments/profile" className="nested-submenu-item">Online Access</Link>
-                    <Link to="/family/investments/loan-amortization" className="nested-submenu-item">Loan Amortization</Link>
                     <Link to="/family/investments/retirement" className="nested-submenu-item">Retirement Financial</Link>
                     <Link to="/family/investments/trading-details" className="nested-submenu-item">Trading Details</Link>
                     <Link to="/family/investments/profit-loss" className="nested-submenu-item">Profit & Loss</Link>
