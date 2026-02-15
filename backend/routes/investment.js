@@ -1309,16 +1309,23 @@ router.get('/on-behalf/persons', authMiddleware, async (req, res) => {
 // Record a transaction (new entry or payment) for loan-ledger module
 router.post('/loan-ledger/sync-transaction', authMiddleware, async (req, res) => {
   try {
-    const { personName, amount, type, broaderCategory, date, bankTransactionId, description, accountName } = req.body;
+    const { personName, amount, type, broaderCategory, description, accountName, date, bankTransactionId } = req.body;
     const trimmedName = personName?.trim();
+
+    console.log('--- Debugging Udhar Sync ---');
+    console.log('Received:', { personName, amount, type, broaderCategory, accountName });
 
     let isRepayment = false;
     let loanType = broaderCategory === 'Udhar Liya' ? 'Borrowed' : 'Lent';
 
     // Udhar Liya (Borrowed): Credit = Borrowed more, Debit = Paid back
     // Udhar Diya (Lent): Debit = Lent more, Credit = Received back
-    if (broaderCategory === 'Udhar Liya' && type === 'debit') isRepayment = true;
-    if ((broaderCategory === 'Udhar Diya' || broaderCategory === 'Lent') && type === 'credit') isRepayment = true;
+    const normalizedType = type?.toLowerCase();
+
+    if (broaderCategory === 'Udhar Liya' && normalizedType === 'debit') isRepayment = true;
+    if ((broaderCategory === 'Udhar Diya' || broaderCategory === 'Lent') && normalizedType === 'credit') isRepayment = true;
+
+    console.log('Calculated:', { normalizedType, isRepayment, loanType });
 
     // Find existing record for this person
     const existingRecord = await Investment.findOne({
@@ -1338,7 +1345,10 @@ router.post('/loan-ledger/sync-transaction', authMiddleware, async (req, res) =>
       if (isRepayment) {
         // Repayment: Increase totalPaid
         const totalPaid = (notes.totalPaid || 0) + transAmount;
-        const balanceAmount = existingRecord.amount - totalPaid;
+
+        // Balance = Original Principal (existingRecord.amount) - Total Paid
+        const balanceAmount = (existingRecord.amount || 0) - totalPaid;
+
         const payments = [...(notes.payments || []), {
           date: date,
           amount: transAmount,
@@ -1354,11 +1364,17 @@ router.post('/loan-ledger/sync-transaction', authMiddleware, async (req, res) =>
           balanceAmount,
           payments
         });
+
+        console.log('Repayment processed. New Balance:', balanceAmount);
       } else {
-        // Borrowing More or Lending More: Increase total amount
-        existingRecord.amount = (existingRecord.amount || 0) + transAmount;
+        // Borrowing More or Lending More: Increase total amount (Principal)
+        const newPrincipal = (existingRecord.amount || 0) + transAmount;
+        existingRecord.amount = newPrincipal;
+
         const totalPaid = notes.totalPaid || 0;
-        const balanceAmount = existingRecord.amount - totalPaid;
+        // Balance = New Principal - Total Paid
+        const balanceAmount = newPrincipal - totalPaid;
+
         const payments = [...(notes.payments || []), {
           date: date,
           amount: transAmount,
@@ -1374,8 +1390,11 @@ router.post('/loan-ledger/sync-transaction', authMiddleware, async (req, res) =>
           balanceAmount,
           payments
         });
+
+        console.log('Additional Load/Udhar processed. New Principal:', newPrincipal);
       }
 
+      existingRecord.markModified('notes');
       await existingRecord.save();
       return res.json({ success: true, message: 'Existing record updated successfully', record: existingRecord });
     }
@@ -1427,10 +1446,16 @@ router.post('/on-behalf/sync-transaction', authMiddleware, async (req, res) => {
       let notes = {};
       try { notes = JSON.parse(existingRecord.notes || '{}'); } catch (e) { }
       const transAmount = Number(amount);
+      const normalizedType = type?.toLowerCase();
 
-      if (type === 'credit') {
-        // Receipt back to me
+      // Case 1: Receipt (Credit) -> Receiving money back
+      // Logic: Total Received increases, Balance decreases
+      if (normalizedType === 'credit') {
         const totalReceived = (notes.totalReceived || notes.receivedAmount || 0) + transAmount;
+
+        // Balance = Principal (existingRecord.amount) - Total Received
+        const balanceToReceive = (existingRecord.amount || 0) - totalReceived;
+
         const receipts = [...(notes.receipts || []), {
           date: date,
           amount: transAmount,
@@ -1444,12 +1469,25 @@ router.post('/on-behalf/sync-transaction', authMiddleware, async (req, res) => {
           ...notes,
           totalReceived,
           receivedAmount: totalReceived,
+          balanceToReceive, // Persist balance
           receipts
         });
-      } else {
-        // Paid more on behalf
-        existingRecord.amount = (existingRecord.amount || 0) + transAmount;
+
+        console.log('On Behalf Receipt processed. New Balance to Receive:', balanceToReceive);
+      }
+
+      // Case 2: Additional Payment (Debit) -> Paying more on behalf
+      // Logic: Principal increases, Balance increases
+      else {
+        // Increase Principal
+        const newPrincipal = (existingRecord.amount || 0) + transAmount;
+        existingRecord.amount = newPrincipal;
+
         const totalReceived = notes.totalReceived || notes.receivedAmount || 0;
+
+        // Balance = New Principal - Total Received
+        const balanceToReceive = newPrincipal - totalReceived;
+
         const receipts = [...(notes.receipts || []), {
           date: date,
           amount: transAmount,
@@ -1463,10 +1501,14 @@ router.post('/on-behalf/sync-transaction', authMiddleware, async (req, res) => {
           ...notes,
           totalReceived,
           receivedAmount: totalReceived,
+          balanceToReceive, // Persist balance
           receipts
         });
+
+        console.log('On Behalf Additional Payment processed. New Principal:', newPrincipal);
       }
 
+      existingRecord.markModified('notes');
       await existingRecord.save();
       return res.json({ success: true, message: 'Existing on-behalf record updated', record: existingRecord });
     }

@@ -106,7 +106,7 @@ const LoanLedger = () => {
           paymentDetails: loan.source || '',
           comments: notes.comments || '',
           totalPaid: notes.totalPaid || 0,
-          balanceAmount: notes.balanceAmount || loan.amount,
+          balanceAmount: notes.balanceAmount ?? loan.amount,
           payments: notes.payments || [],
           notes: loan.notes
         };
@@ -126,7 +126,7 @@ const LoanLedger = () => {
           paymentDetails: entry.source || '',
           receivedAmount: notes.receivedAmount || 0,
           totalReceived: notes.totalReceived || notes.receivedAmount || 0,
-          balanceToReceive: entry.amount - (notes.totalReceived || notes.receivedAmount || 0),
+          balanceToReceive: notes.balanceToReceive ?? (entry.amount - (notes.totalReceived || notes.receivedAmount || 0)),
           dateOfReceipt: notes.dateOfReceipt || entry.maturityDate,
           receiptPaymentDetails: notes.receiptPaymentDetails || '',
           comments: notes.comments || '',

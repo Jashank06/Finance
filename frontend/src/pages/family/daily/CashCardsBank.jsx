@@ -982,11 +982,11 @@ const CashCardsBank = () => {
             if (categoryDropdownData.broaderCategory === 'Loan') {
               referenceId = categoryDropdownData.mainCategory; // This is the loan _id
               referenceModule = 'loan-amortization';
-            } else if (categoryDropdownData.broaderCategory === 'Udhar Liya') {
-              // Find the person's loan record _id
+            } else if (categoryDropdownData.broaderCategory === 'Udhar Liya' || categoryDropdownData.broaderCategory === 'Udhar Diya') {
+              // Find the person's record _id (if we want to store it)
               const person = udharPersons.find(p => p.name === categoryDropdownData.mainCategory);
               referenceModule = 'loan-ledger';
-              // Note: This won't have a specific _id from dropdown, we'll store name only
+              if (person) referenceId = person._id;
             } else if (categoryDropdownData.broaderCategory === 'Wallet') {
               referenceId = categoryDropdownData.mainCategory; // This is the wallet _id
               referenceModule = 'cash';
@@ -994,7 +994,7 @@ const CashCardsBank = () => {
               // Find the person's on-behalf record _id
               const person = onBehalfPersons.find(p => p.name === categoryDropdownData.mainCategory);
               referenceModule = 'on-behalf';
-              // Note: This won't have a specific _id from dropdown, we'll store name only
+              if (person) referenceId = person._id;
             }
 
             // Update transaction with category link
@@ -1010,9 +1010,29 @@ const CashCardsBank = () => {
 
             console.log('Transaction linked to existing record successfully');
 
-            // If loan category, record payment in amortization schedule ONLY for Debit transactions
+            // If loan category, record payment in amortization schedule
             if (categoryDropdownData.broaderCategory === 'Loan' && referenceId) {
-              if (bankTransactionForm.type === 'Debit (Withdrawal)') {
+              const loan = savedLoans.find(l => l._id === referenceId);
+              const isBorrowed = loan?.type === 'Borrowed';
+              const isLent = loan?.type === 'Lent';
+              const isDebit = bankTransactionForm.type === 'debit'; // Money Out
+              const isCredit = bankTransactionForm.type === 'credit'; // Money In
+
+              let shouldRecordPayment = false;
+
+              // Case 1: Borrowed Loan (I owe money)
+              // Payment is recorded when I pay (Debit)
+              if (isBorrowed && isDebit) {
+                shouldRecordPayment = true;
+              }
+
+              // Case 2: Lent Loan (They owe me money)
+              // Payment is recorded when I receive money (Credit)
+              if (isLent && isCredit) {
+                shouldRecordPayment = true;
+              }
+
+              if (shouldRecordPayment) {
                 try {
                   await investmentAPI.recordLoanPayment({
                     loanId: referenceId,
@@ -1026,47 +1046,32 @@ const CashCardsBank = () => {
                   console.error('Error recording loan payment:', paymentError);
                 }
               } else {
-                console.log('Loan transaction is Credit (Deposit), skipping payment recording (Disbursement linked).');
+                console.log(`Loan transaction skipped for EMI schedule. Loan Type: ${loan?.type}, Trans Type: ${bankTransactionForm.type}`);
               }
-            } else if (['Udhar Liya', 'Udhar Diya', 'Lent'].includes(categoryDropdownData.broaderCategory)) {
+            } else if (['Udhar Liya', 'Udhar Diya', 'Lent'].includes(bankTransactionForm.broaderCategory)) {
               try {
-                // If nested under Udhar Diya, check if it's actually On Behalf
-                if (categoryDropdownData.broaderCategory === 'Udhar Diya' && categoryDropdownData.mainCategory === 'On Behalf') {
-                  const account = bankRecords.find(a => a._id === bankTransactionForm.accountId);
-                  await investmentAPI.recordOnBehalfTransaction({
-                    personName: categoryDropdownData.subCategory,
-                    amount: bankTransactionForm.amount,
-                    type: bankTransactionForm.type,
-                    date: bankTransactionForm.date,
-                    bankTransactionId: newTransaction._id,
-                    description: bankTransactionForm.description || bankTransactionForm.merchant,
-                    accountName: account?.name || 'Bank'
-                  });
-                  console.log('On behalf transaction recorded (from Udhar Diya group)');
-                } else {
-                  const account = bankRecords.find(a => a._id === bankTransactionForm.accountId);
-                  await investmentAPI.recordUdharTransaction({
-                    personName: categoryDropdownData.subCategory, // Person name is in subCategory for person linking
-                    amount: bankTransactionForm.amount,
-                    type: bankTransactionForm.type,
-                    broaderCategory: categoryDropdownData.broaderCategory,
-                    date: bankTransactionForm.date,
-                    bankTransactionId: newTransaction._id,
-                    description: bankTransactionForm.description || bankTransactionForm.merchant,
-                    accountName: account?.name || 'Bank'
-                  });
-                  console.log('Udhar transaction recorded in ledger');
-                }
+                const account = bankRecords.find(a => a._id === bankTransactionForm.accountId);
+                await investmentAPI.recordUdharTransaction({
+                  personName: bankTransactionForm.mainCategory, // Person name is in mainCategory for person linking
+                  amount: bankTransactionForm.amount,
+                  type: bankTransactionForm.type?.toLowerCase(),
+                  broaderCategory: bankTransactionForm.broaderCategory,
+                  date: bankTransactionForm.date,
+                  bankTransactionId: newTransaction._id,
+                  description: bankTransactionForm.description || bankTransactionForm.merchant,
+                  accountName: account?.name || 'Bank'
+                });
+                console.log('Udhar transaction recorded in ledger');
               } catch (udharError) {
                 console.error('Error recording udhar transaction:', udharError);
               }
-            } else if (categoryDropdownData.broaderCategory === 'On Behalf') {
+            } else if (bankTransactionForm.broaderCategory === 'On Behalf') {
               try {
                 const account = bankRecords.find(a => a._id === bankTransactionForm.accountId);
                 await investmentAPI.recordOnBehalfTransaction({
-                  personName: categoryDropdownData.subCategory, // Person name is in subCategory
+                  personName: bankTransactionForm.mainCategory, // Person name is in mainCategory
                   amount: bankTransactionForm.amount,
-                  type: bankTransactionForm.type,
+                  type: bankTransactionForm.type?.toLowerCase(),
                   date: bankTransactionForm.date,
                   bankTransactionId: newTransaction._id,
                   description: bankTransactionForm.description || bankTransactionForm.merchant,
@@ -1076,7 +1081,8 @@ const CashCardsBank = () => {
               } catch (onBehalfError) {
                 console.error('Error recording on behalf transaction:', onBehalfError);
               }
-            } else if (['Wallet', 'Wallet Recharge'].includes(categoryDropdownData.broaderCategory)) {
+            }
+            else if (['Wallet', 'Wallet Recharge'].includes(categoryDropdownData.broaderCategory)) {
               try {
                 const account = bankRecords.find(a => a._id === bankTransactionForm.accountId);
                 await investmentAPI.recordWalletTransaction({
@@ -2795,12 +2801,11 @@ const CashCardsBank = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Merchant/Payee: *</label>
+                        <label>Merchant/Payee:</label>
                         <input
                           type="text"
                           value={bankTransactionForm.merchant}
                           onChange={(e) => setBankTransactionForm({ ...bankTransactionForm, merchant: e.target.value })}
-                          required
                         />
                       </div>
                       <div className="form-group">
@@ -2843,6 +2848,7 @@ const CashCardsBank = () => {
                                 <option key={cat} value={cat}>{cat}</option>
                               ))}
                               <option value="Investment to Business">Investment to Business</option>
+                              <option value="On Behalf">On Behalf</option>
                             </>
                           )}
 
@@ -2850,14 +2856,16 @@ const CashCardsBank = () => {
                           {bankTransactionForm.type === 'credit' ? (
                             <>
                               <option value="Loan">Loan (Repayment Received)</option>
-                              <option value="Udhar Liya">Udhar Liya (Borrowed)</option>
+                              <option value="Udhar Liya">Udhar Liya (Borrowing Received)</option>
+                              <option value="Udhar Diya">Udhar Diya (Lent Repayment Received)</option>
                               <option value="Wallet">Wallet (Receipt)</option>
                               <option value="On Behalf">On Behalf</option>
                             </>
                           ) : (
                             <>
                               <option value="Loan">Loan (Repayment Made)</option>
-                              <option value="Udhar Diya">Udhar Diya (Lent / On Behalf)</option>
+                              <option value="Udhar Diya">Udhar Diya (Lent Given)</option>
+                              <option value="Udhar Liya">Udhar Liya (Borrowed Repayment Made)</option>
                               <option value="Wallet Recharge">Wallet Recharge</option>
                             </>
                           )}
@@ -2874,7 +2882,7 @@ const CashCardsBank = () => {
                               const main = e.target.value;
 
                               // Check if it's a linking category
-                              if (['Loan', 'Udhar Liya', 'Wallet', 'Wallet Recharge', 'On Behalf'].includes(bankTransactionForm.broaderCategory)) {
+                              if (['Loan', 'Udhar Liya', 'Wallet', 'Wallet Recharge', 'On Behalf', 'Udhar Diya', 'Lent'].includes(bankTransactionForm.broaderCategory)) {
                                 // Always update the form state first
                                 setBankTransactionForm({
                                   ...bankTransactionForm,
@@ -2927,14 +2935,7 @@ const CashCardsBank = () => {
                               </>
                             )}
 
-                            {bankTransactionForm.broaderCategory === 'Udhar Diya' && (
-                              <>
-                                <option value="Udhar Diya">Udhar Diya (Lent)</option>
-                                <option value="On Behalf">On Behalf</option>
-                              </>
-                            )}
-
-                            {bankTransactionForm.broaderCategory === 'Udhar Liya' && (
+                            {(bankTransactionForm.broaderCategory === 'Udhar Diya' || bankTransactionForm.broaderCategory === 'Udhar Liya') && (
                               <>
                                 {udharPersons.map((person, idx) => (
                                   <option key={idx} value={person.name}>{person.name}</option>
@@ -2977,10 +2978,9 @@ const CashCardsBank = () => {
                         </div>
                       )}
 
-                      {/* Sub Category - shown only when Main Category is selected AND not a linking category (except Udhar Diya which needs person sub-cat) */}
+                      {/* Sub Category - shown only when Main Category is selected AND not a linking category */}
                       {bankTransactionForm.mainCategory &&
-                        (!['Loan', 'Udhar Liya', 'Wallet', 'On Behalf', 'Wallet Recharge'].includes(bankTransactionForm.broaderCategory) ||
-                          bankTransactionForm.broaderCategory === 'Udhar Diya') && (
+                        !['Loan', 'Udhar Liya', 'Udhar Diya', 'Wallet', 'On Behalf', 'Wallet Recharge'].includes(bankTransactionForm.broaderCategory) && (
                           <div className="form-group">
                             <label>Sub Category: *</label>
                             <select
@@ -2992,7 +2992,7 @@ const CashCardsBank = () => {
                                   subCategory: sub,
                                   customSubCategory: sub === 'Other' ? '' : bankTransactionForm.customSubCategory
                                 });
-                                // Set createNew if 'Other' is selected (for Udhar Diya sub-category creation)
+                                // Set createNew if 'Other' is selected
                                 if (sub === 'Other') {
                                   setCategoryDropdownData(prev => ({ ...prev, createNew: true, newRecordData: {} }));
                                 } else {
@@ -3015,19 +3015,6 @@ const CashCardsBank = () => {
                                   {companyRecords.map(company => (
                                     <option key={company._id || company.id} value={company.companyName}>{company.companyName}</option>
                                   ))}
-                                </>
-                              ) : bankTransactionForm.broaderCategory === 'Udhar Diya' ? (
-                                <>
-                                  {bankTransactionForm.mainCategory === 'Udhar Diya' ? (
-                                    udharPersons.map((person, idx) => (
-                                      <option key={idx} value={person.name}>{person.name}</option>
-                                    ))
-                                  ) : (
-                                    onBehalfPersons.map((person, idx) => (
-                                      <option key={idx} value={person.name}>{person.name}</option>
-                                    ))
-                                  )}
-                                  <option value="Other">Other (Create New Person)</option>
                                 </>
                               ) : (
                                 getSubCategories(bankTransactionForm.broaderCategory, bankTransactionForm.mainCategory).map(cat => (
