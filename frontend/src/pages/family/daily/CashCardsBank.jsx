@@ -2848,24 +2848,24 @@ const CashCardsBank = () => {
                                 <option key={cat} value={cat}>{cat}</option>
                               ))}
                               <option value="Investment to Business">Investment to Business</option>
-                              <option value="On Behalf">On Behalf</option>
+                              <option value="On Behalf">Paid On Be-Half</option>
                             </>
                           )}
 
                           {/* Add linking categories as normal options */}
                           {bankTransactionForm.type === 'credit' ? (
                             <>
-                              <option value="Loan">Loan (Repayment Received)</option>
+                              <option value="Loan">Give Loan - Returned (Received From) / Take Loan</option>
                               <option value="Udhar Liya">Udhar Liya (Borrowing Received)</option>
-                              <option value="Udhar Diya">Udhar Diya (Lent Repayment Received)</option>
-                              <option value="Wallet">Wallet (Receipt)</option>
-                              <option value="On Behalf">On Behalf</option>
+                              <option value="Udhar Diya">Udhar Diya - Returned (Received From)</option>
+                              <option value="Wallet">Wallet - Received</option>
+                              <option value="On Behalf">Received - On Be-Half</option>
                             </>
                           ) : (
                             <>
-                              <option value="Loan">Loan (Repayment Made)</option>
-                              <option value="Udhar Diya">Udhar Diya (Lent Given)</option>
-                              <option value="Udhar Liya">Udhar Liya (Borrowed Repayment Made)</option>
+                              <option value="Loan">Give Loan / Take Loan - Returned (Paid To)</option>
+                              <option value="Udhar Diya">Udhar Diya</option>
+                              <option value="Udhar Liya">Udhar Liya - Returned (Paid To)</option>
                               <option value="Wallet Recharge">Wallet Recharge</option>
                             </>
                           )}
