@@ -934,23 +934,37 @@ const CashCardsBank = () => {
               // ... existing On Behalf logic ...
               // Create new On Behalf record
               const onBehalfData = categoryDropdownData.newRecordData;
+              const isCredit = bankTransactionForm.type === 'credit';
+              const transAmount = Number(bankTransactionForm.amount);
+
+              const principal = isCredit ? 0 : transAmount;
+              const received = isCredit ? transAmount : 0;
+              const balance = principal - received;
 
               const onBehalfPayload = {
                 category: 'on-behalf',
                 type: 'On Behalf',
                 name: onBehalfData.personName || bankTransactionForm.merchant,
-                amount: Number(bankTransactionForm.amount),
+                amount: principal,
                 startDate: bankTransactionForm.date,
                 maturityDate: onBehalfData.receiptDate || bankTransactionForm.date,
                 frequency: 'one-time',
                 source: `Bank: ${accountName}`,
                 notes: JSON.stringify({
                   forPurpose: onBehalfData.purpose || bankTransactionForm.description || 'Bank Transaction',
-                  receivedAmount: Number(onBehalfData.receivedAmount || 0),
-                  totalReceived: Number(onBehalfData.receivedAmount || 0),
+                  receivedAmount: received,
+                  totalReceived: received,
+                  balanceToReceive: balance,
                   dateOfReceipt: onBehalfData.receiptDate,
                   comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
-                  bankTransactionId: newTransaction._id
+                  bankTransactionId: newTransaction._id,
+                  receipts: [{
+                    date: bankTransactionForm.date,
+                    amount: transAmount,
+                    type: isCredit ? 'Initial Receipt' : 'Initial Payment',
+                    paymentDetails: `Bank: ${accountName}`,
+                    comments: bankTransactionForm.description || 'Initial entry from Bank Transaction'
+                  }]
                 })
               };
 
@@ -1081,18 +1095,17 @@ const CashCardsBank = () => {
               } catch (onBehalfError) {
                 console.error('Error recording on behalf transaction:', onBehalfError);
               }
-            }
-            else if (['Wallet', 'Wallet Recharge'].includes(categoryDropdownData.broaderCategory)) {
+            } else if (['Wallet', 'Wallet Recharge'].includes(bankTransactionForm.broaderCategory)) {
               try {
-                const account = bankRecords.find(a => a._id === bankTransactionForm.accountId);
+                const walletAccount = bankRecords.find(a => a._id === bankTransactionForm.accountId);
                 await investmentAPI.recordWalletTransaction({
-                  walletId: categoryDropdownData.mainCategory,
+                  walletId: bankTransactionForm.mainCategory,
                   amount: Number(bankTransactionForm.amount),
-                  type: bankTransactionForm.type,
+                  type: bankTransactionForm.type?.toLowerCase(),
                   date: bankTransactionForm.date,
                   bankTransactionId: newTransaction._id,
                   description: bankTransactionForm.description || bankTransactionForm.merchant,
-                  accountName: account?.name || 'Bank'
+                  accountName: walletAccount?.name || 'Bank'
                 });
                 console.log('Wallet transaction recorded');
               } catch (walletError) {
@@ -1134,10 +1147,9 @@ const CashCardsBank = () => {
       if (categoryDropdownData.createNew && categoryDropdownData.broaderCategory) {
         alert(`✅ Bank transaction and ${categoryDropdownData.broaderCategory} record saved successfully!`);
       }
-    } catch (error) {
-      console.error('Error saving bank transaction:', error);
-      console.error('Error details:', error.response?.data);
-      alert(getErrorMessage(error));
+    } catch (saveError) {
+      console.error('Error saving bank transaction:', saveError);
+      alert('Error saving bank transaction: ' + (saveError.response?.data?.message || saveError.message));
     }
   };
 

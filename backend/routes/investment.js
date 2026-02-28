@@ -1400,12 +1400,17 @@ router.post('/loan-ledger/sync-transaction', authMiddleware, async (req, res) =>
     }
 
     // If existing record not found, create NEW record
+    // Logic: If this is a repayment, start with 0 principal and some paid.
+    const principal = isRepayment ? 0 : Number(amount);
+    const paid = isRepayment ? Number(amount) : 0;
+    const balance = principal - paid;
+
     const payload = {
       userId: req.userId,
       category: 'loan-ledger',
       type: loanType,
       name: personName,
-      amount: Number(amount),
+      amount: principal,
       startDate: date,
       maturityDate: date,
       frequency: 'one-time',
@@ -1413,9 +1418,16 @@ router.post('/loan-ledger/sync-transaction', authMiddleware, async (req, res) =>
       notes: JSON.stringify({
         forPurpose: description || 'Bank Transaction',
         comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
-        totalPaid: 0,
-        balanceAmount: Number(amount),
-        payments: [],
+        totalPaid: paid,
+        balanceAmount: balance,
+        payments: [{
+          date: date,
+          amount: Number(amount),
+          type: isRepayment ? 'Initial Repayment' : (loanType === 'Lent' ? 'Initial Lending' : 'Initial Borrowing'),
+          paymentDetails: `Bank: ${accountName}`,
+          comments: description || 'Initial entry from Bank Transaction',
+          bankTransactionId
+        }],
         bankTransactionId
       })
     };
@@ -1435,6 +1447,9 @@ router.post('/on-behalf/sync-transaction', authMiddleware, async (req, res) => {
   try {
     const { personName, amount, type, date, bankTransactionId, description, accountName } = req.body;
     const trimmedName = personName?.trim();
+    const transAmount = Number(amount);
+    const normalizedType = type?.toLowerCase();
+    const isCredit = normalizedType === 'credit';
 
     const existingRecord = await Investment.findOne({
       userId: req.userId,
@@ -1445,15 +1460,11 @@ router.post('/on-behalf/sync-transaction', authMiddleware, async (req, res) => {
     if (existingRecord) {
       let notes = {};
       try { notes = JSON.parse(existingRecord.notes || '{}'); } catch (e) { }
-      const transAmount = Number(amount);
-      const normalizedType = type?.toLowerCase();
 
-      // Case 1: Receipt (Credit) -> Receiving money back
-      // Logic: Total Received increases, Balance decreases
-      if (normalizedType === 'credit') {
+      if (isCredit) {
+        // Case 1: Receipt (Credit) -> Receiving money back
+        // Logic: Total Received increases, Balance decreases
         const totalReceived = (notes.totalReceived || notes.receivedAmount || 0) + transAmount;
-
-        // Balance = Principal (existingRecord.amount) - Total Received
         const balanceToReceive = (existingRecord.amount || 0) - totalReceived;
 
         const receipts = [...(notes.receipts || []), {
@@ -1469,23 +1480,17 @@ router.post('/on-behalf/sync-transaction', authMiddleware, async (req, res) => {
           ...notes,
           totalReceived,
           receivedAmount: totalReceived,
-          balanceToReceive, // Persist balance
+          balanceToReceive,
           receipts
         });
-
         console.log('On Behalf Receipt processed. New Balance to Receive:', balanceToReceive);
-      }
-
-      // Case 2: Additional Payment (Debit) -> Paying more on behalf
-      // Logic: Principal increases, Balance increases
-      else {
-        // Increase Principal
+      } else {
+        // Case 2: Additional Payment (Debit) -> Paying more on behalf
+        // Logic: Principal (amount) increases, Balance increases
         const newPrincipal = (existingRecord.amount || 0) + transAmount;
         existingRecord.amount = newPrincipal;
 
         const totalReceived = notes.totalReceived || notes.receivedAmount || 0;
-
-        // Balance = New Principal - Total Received
         const balanceToReceive = newPrincipal - totalReceived;
 
         const receipts = [...(notes.receipts || []), {
@@ -1501,10 +1506,9 @@ router.post('/on-behalf/sync-transaction', authMiddleware, async (req, res) => {
           ...notes,
           totalReceived,
           receivedAmount: totalReceived,
-          balanceToReceive, // Persist balance
+          balanceToReceive,
           receipts
         });
-
         console.log('On Behalf Additional Payment processed. New Principal:', newPrincipal);
       }
 
@@ -1514,12 +1518,17 @@ router.post('/on-behalf/sync-transaction', authMiddleware, async (req, res) => {
     }
 
     // If existing record not found, create NEW record
+    // Logic: If Credit, start with 0 principal and some received. If Debit, start with principal and 0 received.
+    const principal = isCredit ? 0 : transAmount;
+    const received = isCredit ? transAmount : 0;
+    const balance = principal - received;
+
     const payload = {
       userId: req.userId,
       category: 'on-behalf',
       type: 'On Behalf',
       name: trimmedName,
-      amount: Number(amount),
+      amount: principal,
       startDate: date,
       maturityDate: date,
       frequency: 'one-time',
@@ -1527,10 +1536,17 @@ router.post('/on-behalf/sync-transaction', authMiddleware, async (req, res) => {
       notes: JSON.stringify({
         forPurpose: description || 'Bank Transaction',
         comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
-        receivedAmount: 0,
-        totalReceived: 0,
-        receipts: [],
-        bankTransactionId
+        receivedAmount: received,
+        totalReceived: received,
+        balanceToReceive: balance,
+        receipts: [{
+          date: date,
+          amount: transAmount,
+          type: isCredit ? 'Initial Receipt' : 'Initial Payment',
+          paymentDetails: `Bank: ${accountName}`,
+          comments: description || 'Initial entry from Bank Transaction',
+          bankTransactionId
+        }]
       })
     };
 
@@ -1577,13 +1593,14 @@ router.post('/wallet/sync-transaction', authMiddleware, async (req, res) => {
     }
 
     const transAmount = Number(amount);
+    const normalizedType = type?.toLowerCase();
 
     // For Wallet Recharge (Debit from Bank = Credit to Wallet)
-    // If it's a debit from bank, it's an increase in wallet amount
-    if (type === 'debit') {
+    // If it's a debit from bank, it's an increase in wallet amount (Recharge)
+    // If it's a credit to bank, it's a decrease in wallet amount (Withdrawal/Payment)
+    if (normalizedType === 'debit') {
       wallet.amount = (wallet.amount || 0) + transAmount;
     } else {
-      // If it's a credit to bank from wallet, it's a decrease in wallet amount
       wallet.amount = (wallet.amount || 0) - transAmount;
     }
 
@@ -1592,11 +1609,11 @@ router.post('/wallet/sync-transaction', authMiddleware, async (req, res) => {
     try { notes = JSON.parse(wallet.notes || '{}'); } catch (e) { }
 
     const transactions = [...(notes.transactions || []), {
-      date: date,
+      date: date || new Date().toISOString().slice(0, 10),
       amount: transAmount,
-      type: type === 'debit' ? 'Recharge' : 'Withdrawal',
+      type: normalizedType === 'debit' ? 'Recharge' : 'Withdrawal',
       source: `Bank: ${accountName}`,
-      description: description || 'Transfer from Bank',
+      description: description || (normalizedType === 'debit' ? 'Wallet Recharge' : 'Wallet Payment'),
       bankTransactionId
     }];
 

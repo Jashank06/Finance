@@ -69,6 +69,10 @@ export const investmentAPI = {
   // Record transaction from bank to on-behalf module
   recordOnBehalfTransaction: (data) =>
     api.post('/investments/on-behalf/sync-transaction', data),
+
+  // Record transaction from bank to wallet module
+  recordWalletTransaction: (data) =>
+    api.post('/investments/wallet/sync-transaction', data),
 };
 
 // Gold/SGB specific API endpoints

@@ -23,6 +23,8 @@ const LoanLedger = () => {
   const [selectedLoanForHistory, setSelectedLoanForHistory] = useState(null);
   const [showOnBehalfPaymentForm, setShowOnBehalfPaymentForm] = useState(false);
   const [selectedOnBehalfId, setSelectedOnBehalfId] = useState('');
+  const [showWalletHistory, setShowWalletHistory] = useState(false);
+  const [selectedWalletForHistory, setSelectedWalletForHistory] = useState(null);
 
   // Loan Form State
   const [loanInputs, setLoanInputs] = useState({
@@ -720,7 +722,26 @@ const LoanLedger = () => {
                 {walletEntries.map((wallet) => (
                   <tr key={wallet._id}>
                     <td>{new Date(wallet.date).toLocaleDateString('en-IN')}</td>
-                    <td>{wallet.name}</td>
+                    <td style={{ color: '#10B981', fontWeight: 'bold' }}>
+                      <button
+                        onClick={() => {
+                          setSelectedWalletForHistory(wallet);
+                          setShowWalletHistory(true);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#10B981',
+                          cursor: 'pointer',
+                          textDecoration: 'underline',
+                          fontSize: '14px',
+                          fontWeight: 'bold'
+                        }}
+                        title="View Wallet History"
+                      >
+                        {wallet.name}
+                      </button>
+                    </td>
                     <td>{wallet.walletProvider}</td>
                     <td>{wallet.walletNumber || '-'}</td>
                     <td style={{ color: '#10B981', fontWeight: 'bold' }}>
@@ -1314,6 +1335,86 @@ const LoanLedger = () => {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Wallet History Modal */}
+      {showWalletHistory && selectedWalletForHistory && (
+        <div className="modal-overlay" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex',
+          justifyContent: 'center', alignItems: 'center', zIndex: 1000,
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div className="modal-content" style={{
+            backgroundColor: 'white', padding: '30px', borderRadius: '15px',
+            maxWidth: '800px', width: '90%', maxHeight: '90vh', overflowY: 'auto',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #f3f4f6', paddingBottom: '12px' }}>
+              <h2 style={{ margin: 0, color: '#1f2937', fontSize: '1.5rem', fontWeight: '700' }}>History - {selectedWalletForHistory.name}</h2>
+              <button onClick={() => setShowWalletHistory(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '25px' }}>
+              <div style={{ padding: '15px', backgroundColor: '#f0fdf4', borderRadius: '10px', border: '1px solid #dcfce7' }}>
+                <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Current Balance</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', color: '#15803d' }}>₹{Math.round(selectedWalletForHistory.amount || 0).toLocaleString('en-IN')}</div>
+              </div>
+              <div style={{ padding: '15px', backgroundColor: '#f8fafb', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Wallet Provider</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b' }}>{selectedWalletForHistory.walletProvider}</div>
+              </div>
+            </div>
+
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '15px' }}>Transaction Records</h3>
+            {(() => {
+              const notes = typeof selectedWalletForHistory.notes === 'string' ? JSON.parse(selectedWalletForHistory.notes || '{}') : (selectedWalletForHistory.notes || {});
+              const trans = notes.transactions || [];
+
+              return trans.length > 0 ? (
+                <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead style={{ backgroundColor: '#f9fafb' }}>
+                      <tr>
+                        <th style={{ padding: '12px', fontSize: '12px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase' }}>Date</th>
+                        <th style={{ padding: '12px', fontSize: '12px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase' }}>Type</th>
+                        <th style={{ padding: '12px', fontSize: '12px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase' }}>Amount</th>
+                        <th style={{ padding: '12px', fontSize: '12px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase' }}>Details</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {trans.map((t, idx) => (
+                        <tr key={idx} style={{ borderTop: '1px solid #e5e7eb' }}>
+                          <td style={{ padding: '12px', fontSize: '14px' }}>{new Date(t.date).toLocaleDateString('en-IN')}</td>
+                          <td style={{ padding: '12px', fontSize: '14px' }}>
+                            <span style={{
+                              padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '600',
+                              backgroundColor: t.type === 'Recharge' ? '#dcfce7' : '#fee2e2',
+                              color: t.type === 'Recharge' ? '#16a34a' : '#ef4444'
+                            }}>
+                              {t.type}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px', fontSize: '14px', fontWeight: '600', color: t.type === 'Recharge' ? '#16a34a' : '#ef4444' }}>
+                            {t.type === 'Recharge' ? '+' : '-'} ₹{Math.round(t.amount).toLocaleString('en-IN')}
+                          </td>
+                          <td style={{ padding: '12px', fontSize: '14px', color: '#6b7280' }}>
+                            {t.description || t.source || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '30px', color: '#9ca3af', fontStyle: 'italic' }}>No transactions recorded yet</div>
+              );
+            })()}
+
+            <div style={{ textAlign: 'center', marginTop: '25px' }}>
+              <button onClick={() => setShowWalletHistory(false)} style={{ backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 30px', fontWeight: '600', cursor: 'pointer' }}>Close</button>
             </div>
           </div>
         </div>
