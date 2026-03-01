@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FiDollarSign, FiCalendar, FiCheckSquare, FiUserPlus, FiTrendingUp, FiBox, FiBell, FiPhoneCall, FiArrowUpRight, FiArrowDownLeft, FiActivity, FiLock, FiZap } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { investmentAPI } from '../utils/investmentAPI';
 import { incomeExpenseAPI } from '../utils/incomeExpenseAPI';
 import { staticAPI } from '../utils/staticAPI';
 import reminderAPI from '../utils/reminderAPI';
+import FinancialTipsFeed from '../components/FinancialTipsFeed';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -329,135 +330,139 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="dashboard-container">
-      {/* Left Rail */}
-      <div className="dashboard-sidebar">
-        {renderMetric('Expected Income This Week', financialStats.expectedIncome, '#10b981', <FiArrowUpRight />)}
-        {renderMetric('Expected Expense This Week', financialStats.expectedExpense, '#ef4444', <FiArrowDownLeft />)}
-        {renderMetric('Income & Expenses (Actual)', financialStats.actualIncome - financialStats.actualExpense, '#6366f1', <FiActivity />)}
-        {renderMetric('Target vs Actual', financialStats.budgetActual, '#f59e0b', <FiTrendingUp />)}
-        <div className="budget-progress">
-          <div className="progress-label">
-            <span>Budget Performance</span>
-            <span>{Math.round((financialStats.budgetActual / (financialStats.budgetPlanned || 1)) * 100)}%</span>
-          </div>
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${Math.min(100, (financialStats.budgetActual / (financialStats.budgetPlanned || 1)) * 100)}%` }}
-            ></div>
-          </div>
-        </div>
-      </div>
+    <div className="dashboard-page-wrapper">
+      <FinancialTipsFeed />
 
-      {/* Main Content */}
-      <div className="dashboard-main">
-        <div className="dashboard-header">
-          <h1>Welcome back, {user?.name}!</h1>
-          <p>Here's what's happening this week.</p>
-        </div>
-
-        {/* Subscription Alert Banner */}
-        {(!user?.subscriptionPlan && user?.subscriptionStatus !== 'active' && user?.subscriptionStatus !== 'trial') && (
-          <div className="subscription-alert-banner">
-            <div className="alert-icon">
-              <FiLock size={32} />
+      <div className="dashboard-container">
+        {/* Left Rail */}
+        <div className="dashboard-sidebar">
+          {renderMetric('Expected Income This Week', financialStats.expectedIncome, '#10b981', <FiArrowUpRight />)}
+          {renderMetric('Expected Expense This Week', financialStats.expectedExpense, '#ef4444', <FiArrowDownLeft />)}
+          {renderMetric('Income & Expenses (Actual)', financialStats.actualIncome - financialStats.actualExpense, '#6366f1', <FiActivity />)}
+          {renderMetric('Target vs Actual', financialStats.budgetActual, '#f59e0b', <FiTrendingUp />)}
+          <div className="budget-progress">
+            <div className="progress-label">
+              <span>Budget Performance</span>
+              <span>{Math.round((financialStats.budgetActual / (financialStats.budgetPlanned || 1)) * 100)}%</span>
             </div>
-            <div className="alert-content">
-              <h3>Unlock Full Access</h3>
-              <p>You don't have an active subscription. Subscribe now to unlock all premium features and start managing your finances effectively!</p>
+            <div className="progress-bar">
+              <div
+                className="progress-fill"
+                style={{ width: `${Math.min(100, (financialStats.budgetActual / (financialStats.budgetPlanned || 1)) * 100)}%` }}
+              ></div>
             </div>
-            <button className="alert-upgrade-btn" onClick={() => navigate('/landing/pricing')}>
-              <FiZap size={18} />
-              <span>Choose a Plan</span>
-            </button>
           </div>
-        )}
-
-        {/* Tab Selection */}
-        <div className="tab-container">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <span className="tab-icon">{tab.icon}</span>
-              <span className="tab-label">{tab.label}</span>
-            </button>
-          ))}
         </div>
 
-        {/* Weekly Grid */}
-        <div className="weekly-grid-card">
-          <div className="grid-header">
-            {weekDays.map(day => (
-              <div key={day.iso} className={`grid-col-head ${day.iso === getLocalDateString(new Date()) ? 'today' : ''}`}>
-                <span className="day-name">{day.dayName}</span>
-                <span className="day-date">{day.date}</span>
-                <span className="day-month">{day.month}</span>
+        {/* Main Content */}
+        <div className="dashboard-main">
+          <div className="dashboard-header">
+            <h1>Welcome back, {user?.name}!</h1>
+            <p>Here's what's happening this week.</p>
+          </div>
+
+          {/* Subscription Alert Banner */}
+          {(!user?.subscriptionPlan && user?.subscriptionStatus !== 'active' && user?.subscriptionStatus !== 'trial') && (
+            <div className="subscription-alert-banner">
+              <div className="alert-icon">
+                <FiLock size={32} />
               </div>
+              <div className="alert-content">
+                <h3>Unlock Full Access</h3>
+                <p>You don't have an active subscription. Subscribe now to unlock all premium features and start managing your finances effectively!</p>
+              </div>
+              <button className="alert-upgrade-btn" onClick={() => navigate('/landing/pricing')}>
+                <FiZap size={18} />
+                <span>Choose a Plan</span>
+              </button>
+            </div>
+          )}
+
+          {/* Tab Selection */}
+          <div className="tab-container">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <span className="tab-icon">{tab.icon}</span>
+                <span className="tab-label">{tab.label}</span>
+              </button>
             ))}
           </div>
 
-          <div className="grid-body">
-            {weekDays.map(day => {
-              const dayData = getDayData(day.iso);
-              return (
-                <div key={day.iso} className="grid-col">
-                  {dayData.length > 0 ? (
-                    dayData.map((item, idx) => (
-                      <div key={idx} className="grid-item">
-                        <span className="item-title">{item.title}</span>
-                        {item.subtitle && <span className="item-amount">{item.subtitle}</span>}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="grid-empty">No entries</div>
-                  )}
+          {/* Weekly Grid */}
+          <div className="weekly-grid-card">
+            <div className="grid-header">
+              {weekDays.map(day => (
+                <div key={day.iso} className={`grid-col-head ${day.iso === getLocalDateString(new Date()) ? 'today' : ''}`}>
+                  <span className="day-name">{day.dayName}</span>
+                  <span className="day-date">{day.date}</span>
+                  <span className="day-month">{day.month}</span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              ))}
+            </div>
 
-        {/* Global/List Data for non-calendar tabs */}
-        {(activeTab === 'pl' || activeTab === 'banks') && (
-          <div className="tab-extended-content">
-            {activeTab === 'pl' && plStats && (
-              <div className="pl-summary-grid">
-                <div className="summary-card">Total P/L: <span>₹{Math.round(plStats.totalProfitLoss || 0).toLocaleString('en-IN')}</span></div>
-                <div className="summary-card">Profitable: <span>{plStats.profitableTrades || 0}</span></div>
-                <div className="summary-card">Losing: <span>{plStats.losingTrades || 0}</span></div>
-              </div>
-            )}
-
-            {activeTab === 'banks' && (
-              <div className="bank-list">
-                {bankBalances.map(bank => (
-                  <div key={bank._id} className="bank-item">
-                    <div>
-                      <div style={{ fontWeight: '600', color: '#1e293b' }}>{bank.bankName}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{bank.accountNumber}</div>
-                    </div>
-                    <div style={{ fontWeight: '700', color: '#0f172a' }}>₹{Math.round(Number(bank.balance)).toLocaleString('en-IN')}</div>
+            <div className="grid-body">
+              {weekDays.map(day => {
+                const dayData = getDayData(day.iso);
+                return (
+                  <div key={day.iso} className="grid-col">
+                    {dayData.length > 0 ? (
+                      dayData.map((item, idx) => (
+                        <div key={idx} className="grid-item">
+                          <span className="item-title">{item.title}</span>
+                          {item.subtitle && <span className="item-amount">{item.subtitle}</span>}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="grid-empty">No entries</div>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
-        )}
-        {activeTab === 'reminders' && (
-          <div className="reminder-list">
-            {reminders.length > 0 ? reminders.map(rem => (
-              <div key={rem._id} className="reminder-item">
-                <FiBell />
-                <span>{rem.title || 'Reminder'}</span>
-                <small>{new Date(rem.date).toLocaleDateString()}</small>
-              </div>
-            )) : <div className="no-data">No reminders found</div>}
-          </div>
-        )}
+
+          {/* Global/List Data for non-calendar tabs - MOVED INSIDE main content */}
+          {(activeTab === 'pl' || activeTab === 'banks') && (
+            <div className="tab-extended-content">
+              {activeTab === 'pl' && plStats && (
+                <div className="pl-summary-grid">
+                  <div className="summary-card">Total P/L: <span>₹{Math.round(plStats.totalProfitLoss || 0).toLocaleString('en-IN')}</span></div>
+                  <div className="summary-card">Profitable: <span>{plStats.profitableTrades || 0}</span></div>
+                  <div className="summary-card">Losing: <span>{plStats.losingTrades || 0}</span></div>
+                </div>
+              )}
+
+              {activeTab === 'banks' && (
+                <div className="bank-list">
+                  {bankBalances.map(bank => (
+                    <div key={bank._id} className="bank-item">
+                      <div>
+                        <div style={{ fontWeight: '600', color: '#1e293b' }}>{bank.bankName}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{bank.accountNumber}</div>
+                      </div>
+                      <div style={{ fontWeight: '700', color: '#0f172a' }}>₹{Math.round(Number(bank.balance)).toLocaleString('en-IN')}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab === 'reminders' && (
+            <div className="reminder-list">
+              {reminders.length > 0 ? reminders.map(rem => (
+                <div key={rem._id} className="reminder-item">
+                  <FiBell />
+                  <span>{rem.title || 'Reminder'}</span>
+                  <small>{new Date(rem.date).toLocaleDateString()}</small>
+                </div>
+              )) : <div className="no-data">No reminders found</div>}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

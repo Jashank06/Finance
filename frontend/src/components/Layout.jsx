@@ -1,4 +1,5 @@
 import Sidebar from './Sidebar';
+import AIAdvisorChat from './AIAdvisorChat';
 import './Layout.css';
 
 const Layout = ({ children }) => {
@@ -8,8 +9,10 @@ const Layout = ({ children }) => {
       <main className="main-content">
         {children}
       </main>
+      <AIAdvisorChat />
     </div>
   );
 };
 
 export default Layout;
+

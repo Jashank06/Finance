@@ -31,6 +31,8 @@ const Sidebar = () => {
 
       <nav className="sidebar-nav">
         <Link to="/dashboard" className="nav-item">Dashboard</Link>
+        <Link to="/net-worth" className="nav-item" style={{ color: '#a78bfa', fontWeight: 600 }}>Net Worth</Link>
+        <Link to="/finance-radar" className="nav-item" style={{ color: '#fb923c', fontWeight: 600 }}>Finance Radar</Link>
         <Link to="/family-profile" className="nav-item">Family Profile</Link>
         <Link to="/company-profile" className="nav-item">Company Profile</Link>
 

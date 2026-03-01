@@ -51,6 +51,8 @@ import TargetsForLife from './pages/family/monitoring/TargetsForLife';
 import Portfolio from './pages/family/monitoring/Portfolio';
 import DocumentManager from './pages/documents/DocumentManager';
 import SpaceManagement from './pages/SpaceManagement';
+import NetWorthDashboard from './pages/NetWorthDashboard';
+import FinanceRadar from './pages/FinanceRadar';
 
 // Admin Panel Imports
 import AdminLayout from './components/AdminLayout';
@@ -107,6 +109,28 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/net-worth"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <NetWorthDashboard />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance-radar"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <FinanceRadar />
                 </Layout>
               </ProtectedRoute>
             }

@@ -42,6 +42,9 @@ const Login = () => {
         localStorage.setItem('user', JSON.stringify(adminResponse.data.user));
         setUser(adminResponse.data.user);
 
+        // Ensure AI Intro plays on new login
+        sessionStorage.removeItem('aiSeenIntro');
+
         setSuccess('Admin login successful! Redirecting...');
 
         setTimeout(() => {
@@ -100,6 +103,9 @@ const Login = () => {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         setUser(response.data.user);
+
+        // Ensure AI Intro plays on new login
+        sessionStorage.removeItem('aiSeenIntro');
 
         setSuccess('Login successful! Redirecting...');
 

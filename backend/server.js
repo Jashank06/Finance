@@ -44,6 +44,10 @@ const spacePlansRoutes = require('./routes/spacePlans');
 const uploadRoutes = require('./routes/upload');
 const folderRoutes = require('./routes/folders');
 const documentRoutes = require('./routes/documents');
+const netWorthRoutes = require('./routes/netWorth');
+const aiAdvisorRoutes = require('./routes/aiAdvisor');
+const financeRadarRoutes = require('./routes/financeRadar');
+const marketNewsRoutes = require('./routes/marketNews');
 
 const app = express();
 
@@ -145,6 +149,16 @@ app.use('/api/space-plans', spacePlansRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/folders', folderRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/net-worth', netWorthRoutes);
+app.use('/api/ai', aiAdvisorRoutes);
+app.use('/api/radar', financeRadarRoutes);
+app.use('/api/market-news', marketNewsRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack); // Log the error stack for debugging
+  res.status(500).json({ message: err.message || 'Something went wrong!', status: 'error' });
+});
 
 // Health check route
 app.get('/api/health', (req, res) => {

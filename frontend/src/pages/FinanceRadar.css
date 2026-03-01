@@ -1,0 +1,766 @@
+/* ═══════════════════════════════════════════════════════════════
+   FINANCE RADAR — Next Level Premium UI
+   Apple/Google aesthetic: Animated Mesh Gradients, 3D Glass, Spring Physics
+   ═══════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ── Base ─────────────────────────────────────────────────────── */
+.radar-page {
+    min-height: 100vh;
+    background: radial-gradient(circle at 15% 50%, rgba(200, 210, 255, 0.4), transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(255, 230, 200, 0.3), transparent 40%),
+        radial-gradient(circle at 50% 80%, rgba(200, 255, 220, 0.3), transparent 40%),
+        #f4f7fb;
+    background-size: 200% 200%;
+    animation: ambient-drift 15s ease-in-out infinite alternate;
+    padding: 2.5rem 3rem;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #0f172a;
+    position: relative;
+    overflow-x: hidden;
+}
+
+@keyframes ambient-drift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 50% 100%;
+    }
+}
+
+/* ── Header ───────────────────────────────────────────────────── */
+.radar-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: slide-down-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.radar-header h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, #0A0A0A 0%, #3b4252 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.radar-header p {
+    color: #64748b;
+    font-size: 1.05rem;
+    font-weight: 500;
+    margin: 0;
+    opacity: 0.8;
+}
+
+/* ── Advanced Radar Scan Animation ────────────────────────────── */
+.radar-scan-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 3.5rem;
+    animation: scale-up-elastic 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+.radar-scan {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.05),
+        inset 0 0 20px rgba(255, 255, 255, 0.8),
+        inset 0 0 40px rgba(167, 139, 250, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.radar-circle {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    box-shadow: inset 0 0 10px rgba(167, 139, 250, 0.05);
+}
+
+.radar-circle:nth-child(1) {
+    width: 100%;
+    height: 100%;
+    border-color: rgba(167, 139, 250, 0.4);
+}
+
+.radar-circle:nth-child(2) {
+    width: 66%;
+    height: 66%;
+}
+
+.radar-circle:nth-child(3) {
+    width: 33%;
+    height: 33%;
+}
+
+/* Next Gen Liquid Sweep */
+.radar-sweep {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg,
+            transparent 0%,
+            transparent 50%,
+            rgba(167, 139, 250, 0.1) 75%,
+            rgba(167, 139, 250, 0.6) 98%,
+            rgba(139, 92, 246, 0.9) 100%);
+    animation: advanced-radar-rotate 3s linear infinite;
+    mix-blend-mode: multiply;
+}
+
+.radar-sweep::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 50%;
+    background: radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.8), transparent 60%);
+    border-radius: 0 50% 0 0;
+}
+
+.radar-dot-center {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: linear-gradient(135deg, #a78bfa, #7c3aed);
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 4px rgba(255, 255, 255, 0.8),
+        0 0 20px rgba(124, 58, 237, 0.6);
+    animation: dot-pulse-extreme 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    z-index: 10;
+}
+
+/* Simulated Blips appearing on radar */
+.radar-blip-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #ef4444;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #ef4444;
+    opacity: 0;
+    animation: blip-flash 3s infinite;
+}
+
+.radar-blip-particle:nth-child(5) {
+    top: 30%;
+    left: 70%;
+    animation-delay: 0.5s;
+}
+
+.radar-blip-particle:nth-child(6) {
+    top: 60%;
+    left: 20%;
+    animation-delay: 1.5s;
+    background: #eab308;
+    box-shadow: 0 0 10px #eab308;
+}
+
+@keyframes advanced-radar-rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes dot-pulse-extreme {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4);
+    }
+
+    70% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 15px rgba(124, 58, 237, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
+    }
+}
+
+@keyframes blip-flash {
+
+    0%,
+    90%,
+    100% {
+        opacity: 0;
+        transform: scale(0);
+    }
+
+    95% {
+        opacity: 1;
+        transform: scale(1.5);
+    }
+}
+
+/* ── Summary Strip (3D Apple-style Cards) ─────────────────────── */
+.radar-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    perspective: 1000px;
+}
+
+.radar-stat {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(30px) saturate(200%);
+    -webkit-backdrop-filter: blur(30px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 24px;
+    padding: 1.8rem 1.5rem;
+    text-align: center;
+    box-shadow:
+        0 1px 0 0 rgba(255, 255, 255, 1) inset,
+        0 12px 32px -8px rgba(0, 0, 0, 0.05),
+        inset 0 4px 20px rgba(255, 255, 255, 0.5);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: card-rotate-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.radar-stat:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.radar-stat:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.radar-stat:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+/* Dynamic gradient gloss */
+.radar-stat::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0) 100%);
+    transform: rotate(45deg) translateY(-100%);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+.radar-stat:hover {
+    transform: translateY(-8px) scale(1.02) rotateX(2deg);
+    box-shadow:
+        0 1px 0 0 rgba(255, 255, 255, 1) inset,
+        0 24px 48px -12px rgba(0, 0, 0, 0.1),
+        inset 0 4px 20px rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 1);
+}
+
+.radar-stat:hover::before {
+    transform: rotate(45deg) translateY(100%);
+}
+
+.radar-stat-emoji {
+    font-size: 2.2rem;
+    margin-bottom: 0.8rem;
+    display: block;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.radar-stat:hover .radar-stat-emoji {
+    transform: scale(1.25) translateY(-4px);
+}
+
+.radar-stat-label {
+    font-size: 0.8rem;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.radar-stat-value {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #0A0A0A;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, #0f172a, #334155);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.radar-stat-value.red {
+    background: linear-gradient(135deg, #b91c1c, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.radar-stat-value.yellow {
+    background: linear-gradient(135deg, #b45309, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.radar-stat-value.green {
+    background: linear-gradient(135deg, #047857, #10b981);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* ── Alert Cards (Severity Colored Glass) ─────────────────────── */
+.radar-section-title {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    animation: fade-in 0.5s ease both;
+}
+
+.radar-alerts {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 3rem;
+    perspective: 1000px;
+}
+
+.radar-alert {
+    border-radius: 20px;
+    padding: 1.4rem 1.6rem;
+    border: 1px solid;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.2rem;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: alert-slide-spring 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+@keyframes alert-slide-spring {
+    0% {
+        transform: translateX(-40px) scale(0.9);
+        opacity: 0;
+    }
+
+    70% {
+        transform: translateX(5px) scale(1.02);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.radar-alert:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.radar-alert:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.radar-alert:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.radar-alert:hover {
+    transform: translateX(8px) scale(1.01);
+    z-index: 2;
+}
+
+/* Severity Styling */
+.radar-alert.critical {
+    background: linear-gradient(135deg, rgba(254, 242, 242, 0.8), rgba(254, 226, 226, 0.5));
+    border-color: rgba(239, 68, 68, 0.3);
+    box-shadow: 0 8px 24px -6px rgba(239, 68, 68, 0.15);
+}
+
+.radar-alert.critical:hover {
+    box-shadow: 0 16px 32px -8px rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.6);
+}
+
+.radar-alert.warning {
+    background: linear-gradient(135deg, rgba(255, 251, 235, 0.8), rgba(254, 243, 199, 0.5));
+    border-color: rgba(245, 158, 11, 0.3);
+    box-shadow: 0 8px 24px -6px rgba(245, 158, 11, 0.12);
+}
+
+.radar-alert.warning:hover {
+    box-shadow: 0 16px 32px -8px rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.5);
+}
+
+.radar-alert.good {
+    background: linear-gradient(135deg, rgba(240, 253, 244, 0.8), rgba(220, 252, 231, 0.5));
+    border-color: rgba(16, 185, 129, 0.3);
+    box-shadow: 0 8px 24px -6px rgba(16, 185, 129, 0.1);
+}
+
+.radar-alert.good:hover {
+    box-shadow: 0 16px 32px -8px rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.5);
+}
+
+.radar-alert-emoji {
+    font-size: 1.8rem;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 0.8rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.radar-alert:hover .radar-alert-emoji {
+    transform: scale(1.15) rotate(10deg);
+}
+
+.radar-alert-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.01em;
+}
+
+.radar-alert.critical .radar-alert-title {
+    color: #991b1b;
+}
+
+.radar-alert.warning .radar-alert-title {
+    color: #92400e;
+}
+
+.radar-alert.good .radar-alert-title {
+    color: #065f46;
+}
+
+.radar-alert-msg {
+    font-size: 0.9rem;
+    color: #475569;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+.radar-alert-badge {
+    margin-left: auto;
+    padding: 0.4rem 0.9rem;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.radar-alert:hover .radar-alert-badge {
+    transform: scale(1.05);
+}
+
+.radar-alert.critical .radar-alert-badge {
+    background: rgba(239, 68, 68, 0.15);
+    color: #b91c1c;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.radar-alert.warning .radar-alert-badge {
+    background: rgba(245, 158, 11, 0.15);
+    color: #b45309;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* ── Cards for Charts & Subscriptions ─────────────────────────── */
+.radar-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 24px;
+    padding: 2rem;
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.05),
+        0 10px 30px -5px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 1);
+    margin-bottom: 2rem;
+    animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.radar-card:hover {
+    box-shadow:
+        0 10px 15px -3px rgba(0, 0, 0, 0.05),
+        0 20px 40px -10px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+.radar-chart-container {
+    width: 100%;
+    height: 280px;
+    margin-top: 1rem;
+}
+
+/* ── Subscriptions ────────────────────────────────────────────── */
+.radar-subs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.radar-sub-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.7), rgba(248, 250, 252, 0.5));
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.radar-sub-item:hover {
+    background: #ffffff;
+    transform: scale(1.02) translateX(5px);
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08);
+    border-color: rgba(148, 163, 184, 0.3);
+}
+
+.radar-sub-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.radar-sub-info {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.radar-sub-amount {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #0A0A0A;
+    background: rgba(241, 245, 249, 0.8);
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+}
+
+/* ── Empty State ──────────────────────────────────────────────── */
+.radar-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: linear-gradient(135deg, rgba(240, 253, 244, 0.6), rgba(255, 255, 255, 0.8));
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(5, 150, 105, 0.2);
+    border-radius: 28px;
+    box-shadow: 0 20px 40px -10px rgba(5, 150, 105, 0.05);
+    margin-bottom: 2rem;
+    animation: scale-up-elastic 1s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.radar-empty-emoji {
+    font-size: 4.5rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+    animation: float-idle 3s ease-in-out infinite;
+}
+
+@keyframes float-idle {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0);
+    }
+
+    50% {
+        transform: translateY(-10px) rotate(5deg);
+    }
+}
+
+.radar-empty h3 {
+    color: #047857;
+    font-size: 1.5rem;
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.radar-empty p {
+    color: #475569;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* ── Loading ──────────────────────────────────────────────────── */
+.radar-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    animation: fade-in 0.5s ease both;
+}
+
+.radar-loading-anim {
+    width: 100px;
+    height: 100px;
+    position: relative;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 60%, rgba(139, 92, 246, 0.8) 100%);
+    animation: spin 1s linear infinite;
+    margin-bottom: 2rem;
+}
+
+.radar-loading-anim::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    background: #f8fafc;
+    border-radius: 50%;
+}
+
+.radar-loading p {
+    color: #475569;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    animation: pulse-opacity 1.5s ease-in-out infinite;
+}
+
+/* ── Utils & Keyframes ────────────────────────────────────────── */
+@keyframes slide-down-fade {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes card-rotate-in {
+    from {
+        transform: translateY(30px) rotateX(-10deg);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0) rotateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes scale-up-elastic {
+    0% {
+        transform: scale(0.85);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes fade-up {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse-opacity {
+
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Rescan Button */
+.radar-rescan-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.8rem 2rem;
+    border-radius: 100px;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: #fff;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.4);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: 'Outfit', sans-serif;
+}
+
+.radar-rescan-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 15px 25px -5px rgba(15, 23, 42, 0.5);
+    background: linear-gradient(135deg, #334155, #1e293b);
+}
