@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const MutualFund = require('../models/MutualFund');
+const SIPTransaction = require('../models/SIPTransaction');
 const Share = require('../models/Share');
 const Insurance = require('../models/Insurance');
 const Loan = require('../models/Loan');
+const navFetchService = require('../services/navFetchService');
 
 // Summary endpoint - get all investment valuation data
 router.get('/summary', auth, async (req, res) => {
@@ -532,6 +534,351 @@ router.delete('/loans/:id', auth, async (req, res) => {
       message: 'Error deleting loan',
       error: error.message
     });
+  }
+});
+
+// ============================================================
+// SIP TRANSACTION ROUTES
+// ============================================================
+
+// GET /sip-transactions?folioNumber=X&mutualFundId=Y
+router.get('/sip-transactions', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { folioNumber, mutualFundId } = req.query;
+    const query = { userId };
+    if (folioNumber) query.folioNumber = folioNumber;
+    if (mutualFundId) query.mutualFundId = mutualFundId;
+
+    const transactions = await SIPTransaction.find(query).sort({ installmentDate: 1 });
+    res.json({ success: true, data: { transactions, count: transactions.length } });
+  } catch (error) {
+    console.error('Error fetching SIP transactions:', error);
+    res.status(500).json({ success: false, message: 'Error fetching SIP transactions', error: error.message });
+  }
+});
+
+// POST /sip-transactions — add a single installment manually
+router.post('/sip-transactions', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const data = { ...req.body, userId };
+    const tx = new SIPTransaction(data);
+    await tx.save();
+    res.status(201).json({ success: true, message: 'SIP transaction created', data: tx });
+  } catch (error) {
+    console.error('Error creating SIP transaction:', error);
+    res.status(400).json({ success: false, message: 'Error creating SIP transaction', error: error.message });
+  }
+});
+
+// POST /sip-transactions/generate/:mutualFundId — generate all past installments from sipStartDate → today
+router.post('/sip-transactions/generate/:mutualFundId', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { mutualFundId } = req.params;
+
+    const mf = await MutualFund.findOne({ _id: mutualFundId, userId });
+    if (!mf) return res.status(404).json({ success: false, message: 'Mutual fund not found' });
+    if (mf.investmentType !== 'sip') return res.status(400).json({ success: false, message: 'Not a SIP investment' });
+    if (!mf.sipStartDate) return res.status(400).json({ success: false, message: 'SIP start date not set' });
+
+    const sipDayOfMonth = parseInt(mf.sipDate) || 5;
+    const startDate = new Date(mf.sipStartDate);
+    const today = new Date();
+
+    // Build list of installment dates: every month from startDate → today on sipDayOfMonth
+    const installmentDates = [];
+    let cursor = new Date(startDate.getFullYear(), startDate.getMonth(), sipDayOfMonth);
+    // If start month's sipDay hasn't happened yet in startDate month, start from it
+    // Otherwise start from first full month
+    while (cursor <= today) {
+      installmentDates.push(new Date(cursor));
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, sipDayOfMonth);
+    }
+
+    // Fetch current NAV once, and also get schemeCode for historical NAV lookups
+    let currentNAV = mf.currentNAV || 0;
+    let currentNAVDate = null;
+    let schemeCode = mf.schemeCode || null;
+
+    if (mf.fundName) {
+      try {
+        const navData = await navFetchService.getCurrentNAVByName(mf.fundName, mf.isin);
+        if (navData && navData.nav > 0) {
+          currentNAV = navData.nav;
+          currentNAVDate = navData.navDate;
+          if (navData.schemeCode) schemeCode = navData.schemeCode;
+          // Update MF record with current NAV and schemeCode for future use
+          await MutualFund.findByIdAndUpdate(mutualFundId, {
+            currentNAV,
+            schemeCode: schemeCode || mf.schemeCode,
+            updatedAt: Date.now(),
+          });
+        }
+      } catch (navErr) {
+        console.warn('Could not fetch NAV from mfapi.in:', navErr.message);
+      }
+    }
+
+    // If NAV fetch failed, use the user-provided purchaseNAV as currentNAV fallback
+    if (!currentNAV || currentNAV <= 0) {
+      currentNAV = mf.purchaseNAV || 0;
+      if (currentNAV > 0) {
+        console.log(`Using stored purchaseNAV (${currentNAV}) as currentNAV fallback since mfapi fetch failed`);
+      } else {
+        console.warn(`Warning: No NAV available for fund "${mf.fundName}" — all installments will be skipped. Please add a Purchase NAV to the fund.`);
+        return res.status(400).json({
+          success: false,
+          message: `Could not determine NAV for fund "${mf.fundName}". Please edit the SIP and enter a Purchase NAV as fallback, then try again.`,
+        });
+      }
+    }
+
+    // Delete existing auto-generated transactions for this fund (regenerate fresh)
+    await SIPTransaction.deleteMany({ mutualFundId, userId });
+
+    // Batch-fetch ALL historical NAV once (much faster than per-installment API calls)
+    const created = [];
+    const fundType = navFetchService.deriveFundType(mf.fundName);
+    let historicalNavLookup = null;
+    if (schemeCode) {
+      try {
+        const hist = await navFetchService.getAllHistoricalNAV(schemeCode);
+        if (hist && hist.findNavForDate) {
+          historicalNavLookup = hist.findNavForDate;
+          console.log(`Historical NAV loaded for scheme ${schemeCode}: ${hist.entries.length} entries`);
+        }
+      } catch (e) {
+        console.warn('Could not load historical NAV batch:', e.message);
+      }
+    }
+
+    for (const date of installmentDates) {
+      // Look up the historical NAV from batch data, fallback to currentNAV
+      let purchaseNAV = currentNAV > 0 ? currentNAV : (mf.purchaseNAV || 0);
+      let navDate = currentNAVDate;
+
+      if (historicalNavLookup) {
+        try {
+          const hist = historicalNavLookup(date);
+          if (hist && hist.nav && hist.nav > 0) {
+            purchaseNAV = hist.nav;
+            navDate = hist.navDate;
+          }
+        } catch (e) {
+          // use fallback
+        }
+      }
+
+      // Guard: skip installment if purchaseNAV is still 0 (would cause NaN)
+      if (!purchaseNAV || purchaseNAV <= 0) {
+        console.warn(`Skipping installment ${date.toISOString().split('T')[0]} — purchaseNAV is 0 or missing`);
+        continue;
+      }
+
+      const rawUnits = mf.sipAmount / purchaseNAV;
+      const units = isNaN(rawUnits) ? 0 : Math.round(rawUnits * 1000) / 1000;
+
+      const rawCurrentValue = units * (currentNAV || 0);
+      const currentValue = isNaN(rawCurrentValue) ? 0 : Math.round(rawCurrentValue * 1000) / 1000;
+
+      const transactionDays = Math.max(0, Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)));
+
+      const rawAbsReturn = mf.sipAmount > 0 ? ((currentValue - mf.sipAmount) / mf.sipAmount) * 10000 : 0;
+      const absReturn = isNaN(rawAbsReturn) ? 0 : Math.round(rawAbsReturn) / 100;
+
+      let annReturn = null;
+      const years = transactionDays / 365;
+      if (years > 0 && mf.sipAmount > 0 && currentValue > 0) {
+        const rawAnn = (Math.pow(currentValue / mf.sipAmount, 1 / years) - 1) * 10000;
+        annReturn = isNaN(rawAnn) ? null : Math.round(rawAnn) / 100;
+      }
+
+      // Safe navDate parsing
+      let parsedNavDate = date;
+      if (navDate) {
+        try {
+          const parts = navDate.split('-');
+          // mfapi returns DD-MM-YYYY
+          parsedNavDate = parts.length === 3 && parts[2].length === 4
+            ? new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
+            : new Date(navDate);
+          if (isNaN(parsedNavDate.getTime())) parsedNavDate = date;
+        } catch (e) {
+          parsedNavDate = date;
+        }
+      }
+
+      let parsedNavDate2 = today;
+      if (currentNAVDate) {
+        try {
+          const parts = currentNAVDate.split('-');
+          parsedNavDate2 = parts.length === 3 && parts[2].length === 4
+            ? new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
+            : new Date(currentNAVDate);
+          if (isNaN(parsedNavDate2.getTime())) parsedNavDate2 = today;
+        } catch (e) {
+          parsedNavDate2 = today;
+        }
+      }
+
+      const tx = new SIPTransaction({
+        userId,
+        mutualFundId,
+        folioNumber: mf.folioNumber,
+        fundName: mf.fundName,
+        fundType,
+        investorName: mf.investorName,
+        broker: mf.broker,
+        isin: mf.isin || '',
+        installmentDate: date,
+        sipAmount: mf.sipAmount,
+        purchaseNAV,
+        navDate: parsedNavDate,
+        units,
+        currentNAV: currentNAV || 0,
+        currentNAVDate: parsedNavDate2,
+        currentValue,
+        transactionDays,
+        absoluteReturn: absReturn,
+        annualizedReturn: annReturn,
+      });
+      // Skip pre-save recalc (we already calculated above)
+      tx.$skipMiddleware = true;
+      await tx.save();
+      created.push(tx);
+    }
+
+    // Update MutualFund with total units and purchase value
+    const totalUnits = Math.round(created.reduce((s, t) => s + t.units, 0) * 1000) / 1000;
+    const totalInvested = mf.sipAmount * created.length;
+    await MutualFund.findByIdAndUpdate(mutualFundId, {
+      units: totalUnits,
+      purchaseValue: totalInvested,
+      marketValue: Math.round(totalUnits * currentNAV * 100) / 100,
+      currentNAV,
+      updatedAt: Date.now(),
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Generated ${created.length} SIP installments`,
+      data: { count: created.length, transactions: created, currentNAV },
+    });
+  } catch (error) {
+    console.error('Error generating SIP transactions:', error);
+    res.status(500).json({ success: false, message: 'Error generating SIP transactions', error: error.message });
+  }
+});
+
+// PUT /sip-transactions/:id — edit an installment
+router.put('/sip-transactions/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const tx = await SIPTransaction.findOneAndUpdate(
+      { _id: id, userId },
+      { ...req.body, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    );
+    if (!tx) return res.status(404).json({ success: false, message: 'SIP transaction not found' });
+    res.json({ success: true, message: 'SIP transaction updated', data: tx });
+  } catch (error) {
+    console.error('Error updating SIP transaction:', error);
+    res.status(400).json({ success: false, message: 'Error updating SIP transaction', error: error.message });
+  }
+});
+
+// DELETE /sip-transactions/:id
+router.delete('/sip-transactions/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const tx = await SIPTransaction.findOneAndDelete({ _id: id, userId });
+    if (!tx) return res.status(404).json({ success: false, message: 'SIP transaction not found' });
+    res.json({ success: true, message: 'SIP transaction deleted' });
+  } catch (error) {
+    console.error('Error deleting SIP transaction:', error);
+    res.status(500).json({ success: false, message: 'Error deleting SIP transaction', error: error.message });
+  }
+});
+
+// POST /mutual-funds/refresh-nav/:id — fetch latest NAV and update all transactions for this fund
+router.post('/mutual-funds/refresh-nav/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const mf = await MutualFund.findOne({ _id: id, userId });
+    if (!mf) return res.status(404).json({ success: false, message: 'Mutual fund not found' });
+
+    // Fetch latest NAV, but self-heal if the saved schemeCode belongs to a different ISIN
+    let navData = null;
+    if (mf.schemeCode) {
+      navData = await navFetchService.getLatestNAVByCode(mf.schemeCode);
+      // If the user provided an ISIN, and the saved schemeCode has a different ISIN, force a fresh search
+      if (mf.isin && navData && navData.isin && !navData.isin.includes(mf.isin)) {
+        console.log(`Self-healing needed: saved schemeCode ${mf.schemeCode} has ISIN ${navData.isin}, but user expects ${mf.isin}`);
+        navData = null; 
+      }
+    }
+    
+    if (!navData && mf.fundName) {
+      navData = await navFetchService.getCurrentNAVByName(mf.fundName, mf.isin);
+      if (navData && navData.schemeCode && navData.schemeCode !== mf.schemeCode) {
+        console.log(`Updated schemeCode for ${mf.fundName}: ${mf.schemeCode} -> ${navData.schemeCode}`);
+        mf.schemeCode = navData.schemeCode; // Stage for save below
+      }
+    }
+
+    if (!navData) return res.status(422).json({ success: false, message: 'Could not fetch NAV for this fund from mfapi.in' });
+
+    const { nav: currentNAV, navDate } = navData;
+    const today = new Date();
+
+    // Update all SIP transactions for this fund
+    const transactions = await SIPTransaction.find({ mutualFundId: id, userId });
+    let totalUnits = 0;
+    for (const tx of transactions) {
+      const units = tx.units;
+      const currentValue = Math.round(units * currentNAV * 1000) / 1000;
+      const transactionDays = Math.floor((today.getTime() - new Date(tx.installmentDate).getTime()) / (1000 * 60 * 60 * 24));
+      const absReturn = tx.sipAmount > 0 ? Math.round(((currentValue - tx.sipAmount) / tx.sipAmount) * 10000) / 100 : 0;
+      let annReturn = null;
+      const years = transactionDays / 365;
+      if (years > 0 && tx.sipAmount > 0 && currentValue > 0) {
+        annReturn = Math.round((Math.pow(currentValue / tx.sipAmount, 1 / years) - 1) * 10000) / 100;
+      }
+      await SIPTransaction.findByIdAndUpdate(tx._id, {
+        currentNAV,
+        currentNAVDate: today,
+        currentValue,
+        transactionDays,
+        absoluteReturn: absReturn,
+        annualizedReturn: annReturn,
+        updatedAt: Date.now(),
+      });
+      totalUnits += units;
+    }
+
+    // Update MutualFund record
+    totalUnits = Math.round(totalUnits * 1000) / 1000;
+    await MutualFund.findByIdAndUpdate(id, {
+      currentNAV,
+      marketValue: Math.round(totalUnits * currentNAV * 100) / 100,
+      units: totalUnits,
+      updatedAt: Date.now(),
+    });
+
+    res.json({
+      success: true,
+      message: 'NAV refreshed successfully',
+      data: { currentNAV, navDate, totalUnits, updatedTransactions: transactions.length },
+    });
+  } catch (error) {
+    console.error('Error refreshing NAV:', error);
+    res.status(500).json({ success: false, message: 'Error refreshing NAV', error: error.message });
   }
 });
 

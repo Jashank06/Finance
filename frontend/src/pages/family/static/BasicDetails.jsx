@@ -2138,7 +2138,7 @@ const BasicDetails = () => {
                       <tr key={index}>
                         <td>{bank.bankName || '-'}</td>
                         <td>{bank.accountNumber || '-'}</td>
-                        <td>{bank.accountType || '-'}</td>
+                        <td>{bank.accountType ? bank.accountType.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : '-'}</td>
                         <td>{bank.ifscCode || '-'}</td>
                         <td>{bank.holdingType || '-'}</td>
                         <td>{bank.accountHolderName || '-'}</td>
@@ -2198,11 +2198,12 @@ const BasicDetails = () => {
                       onChange={(e) => setNewBank({ ...newBank, accountType: e.target.value })}
                     >
                       <option value="">Select Type</option>
-                      <option value="Savings">Savings</option>
-                      <option value="Current">Current</option>
-                      <option value="Fixed Deposit">Fixed Deposit</option>
-                      <option value="Recurring Deposit">Recurring Deposit</option>
-                      <option value="NRI">NRI</option>
+                      <option value="savings">Savings</option>
+                      <option value="current">Current</option>
+                      <option value="fixed-deposit">Fixed Deposit</option>
+                      <option value="recurring-deposit">Recurring Deposit</option>
+                      <option value="nri-account">NRI Account</option>
+                      <option value="joint-account">Joint Account</option>
                     </select>
                   </div>
                   <div className="form-group">

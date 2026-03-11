@@ -22,35 +22,11 @@ router.get('/analysis', auth, async (req, res) => {
     // Fetch all active scheduled expenses
     const scheduledExpenses = await ScheduledExpense.find({ userId: req.user.id, isActive: true });
 
-    // Fetch all bank transactions
-    const bankTransactions = await BankTransaction.find({ user: req.user.id });
 
     // Calculate cash flow for each bank
     const cashFlowData = banks.map(bank => {
-      // Calculate actual balance including transactions
+      // Use real-time balance
       let actualBalance = parseFloat(bank.balance || 0);
-
-      // Get transactions for this bank
-      const accountTransactions = bankTransactions.filter(transaction => {
-        const transactionAccountId = typeof transaction.accountId === 'object'
-          ? transaction.accountId._id?.toString() || transaction.accountId.toString()
-          : transaction.accountId?.toString();
-
-        return transactionAccountId === bank._id.toString();
-      });
-
-      // Apply transaction adjustments
-      const netTransactionAmount = accountTransactions.reduce((total, transaction) => {
-        const amount = parseFloat(transaction.amount || 0);
-        if (transaction.type === 'deposit') {
-          return total + amount;
-        } else if (transaction.type === 'withdrawal' || transaction.type === 'payment' || transaction.type === 'transfer') {
-          return total - amount;
-        }
-        return total;
-      }, 0);
-
-      actualBalance += netTransactionAmount;
 
       // Calculate total monthly expenses for this bank
       const bankExpenses = scheduledExpenses.filter(

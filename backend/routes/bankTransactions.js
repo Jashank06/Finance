@@ -50,6 +50,23 @@ router.post('/', auth, async (req, res) => {
 
     const savedTransaction = await newTransaction.save();
 
+    // Update Bank balance - Ensure amount is treated as a Number to avoid string concatenation
+    const amountNum = parseFloat(amount || 0);
+    const currentBalance = parseFloat(account.balance || 0);
+    const isDebit = ['withdrawal', 'payment', 'transfer', 'fee', 'expense', 'debit'].includes(type.toLowerCase());
+    const isCredit = ['deposit', 'refund', 'income', 'interest', 'credit'].includes(type.toLowerCase());
+    
+    console.log(`[BANK_TRACE] POST ${account.name}: old=${currentBalance}, amount=${amountNum}, type=${type}`);
+
+    if (isDebit) {
+      account.balance = currentBalance - amountNum;
+    } else if (isCredit) {
+      account.balance = currentBalance + amountNum;
+    }
+    
+    console.log(`[BANK_TRACE] POST ${account.name}: new=${account.balance}`);
+    await account.save();
+
     // Return the transaction with populated account details
     const populatedTransaction = await BankTransaction.findById(savedTransaction._id)
       .populate({ path: 'accountId', select: 'name bankName type' });
@@ -86,13 +103,44 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Bank transaction not found' });
     }
 
-    // If accountId is being changed, validate the new account
-    if (accountId && accountId !== transaction.accountId.toString()) {
-      const account = await Bank.findOne({ _id: accountId, userId: req.user.id });
-      if (!account) {
-        return res.status(404).json({ message: 'Bank account not found' });
-      }
+    // ALWAYS fetch the account to avoid ReferenceError if accountId hasn't changed
+    const account = await Bank.findById(transaction.accountId);
+    if (!account) {
+      return res.status(404).json({ message: 'Bank account not found' });
     }
+
+    // Calculate balance adjustment
+    const oldAmount = parseFloat(transaction.amount || 0);
+    const newAmount = parseFloat(amount || 0);
+    const oldType = transaction.type.toLowerCase();
+    const newType = type.toLowerCase();
+    const currentBalance = parseFloat(account.balance || 0);
+
+    const wasDebit = ['withdrawal', 'payment', 'transfer', 'fee', 'expense', 'debit'].includes(oldType);
+    const isDebit = ['withdrawal', 'payment', 'transfer', 'fee', 'expense', 'debit'].includes(newType);
+    const wasCredit = ['deposit', 'refund', 'income', 'interest', 'credit'].includes(oldType);
+    const isCredit = ['deposit', 'refund', 'income', 'interest', 'credit'].includes(newType);
+
+    console.log(`[BANK_TRACE] PUT ${account.name}: old_bal=${currentBalance}, old_amt=${oldAmount}, new_amt=${newAmount}`);
+
+    let tempBalance = currentBalance;
+    // Revert old transaction effect
+    if (wasDebit) {
+      tempBalance = tempBalance + oldAmount;
+    } else if (wasCredit) {
+      tempBalance = tempBalance - oldAmount;
+    }
+
+    // Apply new transaction effect
+    if (isDebit) {
+      tempBalance = tempBalance - newAmount;
+    } else if (isCredit) {
+      tempBalance = tempBalance + newAmount;
+    }
+
+    account.balance = tempBalance;
+    console.log(`[BANK_TRACE] PUT ${account.name}: new_bal=${account.balance}`);
+    await account.save();
 
     // Update the transaction
     const updatedTransaction = await BankTransaction.findByIdAndUpdate(
@@ -114,6 +162,20 @@ router.delete('/:id', auth, async (req, res) => {
     const transaction = await BankTransaction.findOne({ _id: req.params.id, user: req.user.id });
     if (!transaction) {
       return res.status(404).json({ message: 'Bank transaction not found' });
+    }
+
+    // Update Bank balance before deleting
+    const account = await Bank.findById(transaction.accountId);
+    if (account) {
+      const isDebit = ['withdrawal', 'payment', 'transfer', 'fee', 'expense', 'debit'].includes(transaction.type.toLowerCase());
+      const isCredit = ['deposit', 'refund', 'income', 'interest', 'credit'].includes(transaction.type.toLowerCase());
+      
+      if (isDebit) {
+        account.balance = Number(account.balance) + Number(transaction.amount);
+      } else if (isCredit) {
+        account.balance = Number(account.balance) - Number(transaction.amount);
+      }
+      await account.save();
     }
 
     await BankTransaction.findByIdAndDelete(req.params.id);

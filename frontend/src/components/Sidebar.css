@@ -16,22 +16,26 @@
 }
 
 .sidebar-header {
-  padding: 30px 20px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  padding: 25px 15px;
+  background: #ffffff;
   text-align: center;
-  position: relative;
-  box-shadow:
-    0 10px 30px -5px rgba(0, 0, 0, 0.05),
-    0 5px 15px -3px rgba(0, 0, 0, 0.02),
-    inset 0 0 0 1px rgba(255, 255, 255, 1);
-  z-index: 10;
-  margin: 15px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  overflow: hidden;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  margin: 0;
+  border-bottom: 2px solid #f1f5f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  text-decoration: none;
+  display: block;
+  transition: all 0.3s ease;
 }
+
+.sidebar-header:hover {
+  transform: translateY(-2px);
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
 
 /* 3D Shine Effect */
 .sidebar-header::before {

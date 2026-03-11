@@ -6,9 +6,12 @@ const TransactionTable = ({
   currency = 'INR',
   initialBalance = 0,
   onEdit,
-  onDelete
+  onDelete,
+  currentPage = 1,
+  itemsPerPage = 10,
+  onPageChange
 }) => {
-  if (transactions.length === 0) {
+  if (!transactions || transactions.length === 0) {
     return (
       <div className="empty-state">
         <p>No transactions yet. Click "Add Transaction" to record an expense or income.</p>
@@ -16,8 +19,35 @@ const TransactionTable = ({
     );
   }
 
-  // Calculate running balance
-  let runningBalance = initialBalance;
+  const totalPages = Math.ceil(transactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentTransactions = transactions.slice(startIndex, endIndex);
+
+  // For newest-first sorting (standard for latest transactions)
+  // We calculate the total net amount of ALL transactions to find the current total balance
+  const totalNetAmount = transactions.reduce((total, t) => {
+    const isDebit = t.type === 'debit' || t.type === 'withdrawal' || t.type === 'purchase' || t.type === 'payment' || t.type === 'fee' || t.type === 'expense' || t.type === 'transfer';
+    const isCredit = t.type === 'credit' || t.type === 'deposit' || t.type === 'refund' || t.type === 'income' || t.type === 'interest';
+    const amount = parseFloat(t.amount || 0);
+    if (isDebit) return total - amount;
+    if (isCredit) return total + amount;
+    return total;
+  }, 0);
+
+  // Starting balance for the entire list (current balance)
+  let currentRunningBalance = initialBalance + totalNetAmount;
+
+  // For the current page, we need to subtract transactions that occurred AFTER the items on this page
+  // (i.e., items from index 0 to startIndex - 1)
+  for (let i = 0; i < startIndex; i++) {
+    const t = transactions[i];
+    const isDebit = t.type === 'debit' || t.type === 'withdrawal' || t.type === 'purchase' || t.type === 'payment' || t.type === 'fee' || t.type === 'expense' || t.type === 'transfer';
+    const isCredit = t.type === 'credit' || t.type === 'deposit' || t.type === 'refund' || t.type === 'income' || t.type === 'interest';
+    const amount = parseFloat(t.amount || 0);
+    if (isDebit) currentRunningBalance += amount; // Add back debit to go back in time
+    else if (isCredit) currentRunningBalance -= amount; // Subtract credit to go back in time
+  }
 
   return (
     <div className="transaction-table-wrapper">
@@ -41,9 +71,8 @@ const TransactionTable = ({
           </tr>
         </thead>
         <tbody>
-          {transactions.map((transaction, index) => {
-            // Determine if it's debit or credit
-            // Card/Bank transactions use 'debit' or 'credit' directly
+          {currentTransactions.map((transaction, index) => {
+            const absoluteIndex = startIndex + index;
             const isDebit = transaction.type === 'debit' ||
               transaction.type === 'withdrawal' ||
               transaction.type === 'purchase' ||
@@ -61,16 +90,20 @@ const TransactionTable = ({
             const debit = isDebit ? transaction.amount : 0;
             const credit = isCredit ? transaction.amount : 0;
 
-            // Update running balance
+            const rowBalance = currentRunningBalance;
+            
+            const amt = parseFloat(transaction.amount || 0);
+            
+            // Update running balance for NEXT row (going back in time)
             if (isDebit) {
-              runningBalance -= transaction.amount;
+              currentRunningBalance += amt;
             } else if (isCredit) {
-              runningBalance += transaction.amount;
+              currentRunningBalance -= amt;
             }
 
             return (
               <tr key={transaction._id}>
-                <td className="sr-no">{index + 1}</td>
+                <td className="sr-no">{absoluteIndex + 1}</td>
                 <td className="date-col">{new Date(transaction.date).toLocaleDateString('en-IN')}</td>
                 <td className="transaction-type-col">
                   <span className={`type-badge ${transaction.type === 'debit' || isDebit ? 'debit-badge' : 'credit-badge'}`}>
@@ -94,8 +127,8 @@ const TransactionTable = ({
                 <td className="credit-amount">
                   {credit > 0 ? `${currency} ${credit.toLocaleString('en-IN')}` : '-'}
                 </td>
-                <td className={`balance-amount ${runningBalance < 0 ? 'negative' : ''}`}>
-                  {currency} {runningBalance.toLocaleString('en-IN')}
+                <td className={`balance-amount ${rowBalance < 0 ? 'negative' : ''}`}>
+                  {currency} {rowBalance.toLocaleString('en-IN')}
                 </td>
                 <td className="category-col">
                   {transaction.broaderCategory || '-'}
@@ -138,6 +171,36 @@ const TransactionTable = ({
           })}
         </tbody>
       </table>
+
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button 
+            onClick={() => onPageChange(currentPage - 1)} 
+            disabled={currentPage === 1}
+            className="pagination-btn"
+          >
+            Previous
+          </button>
+          <div className="pagination-pages">
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i + 1}
+                onClick={() => onPageChange(i + 1)}
+                className={`pagination-page ${currentPage === i + 1 ? 'active' : ''}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+          <button 
+            onClick={() => onPageChange(currentPage + 1)} 
+            disabled={currentPage === totalPages}
+            className="pagination-btn"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

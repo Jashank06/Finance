@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiX, FiSave, FiLoader } from 'react-icons/fi';
 import { investmentValuationAPI } from '../utils/investmentValuationAPI';
+import { staticAPI } from '../utils/staticAPI';
 import './Modal.css';
 
 const ShareModal = ({ isOpen, onClose, onSuccess, editData }) => {
@@ -118,6 +119,41 @@ const ShareModal = ({ isOpen, onClose, onSuccess, editData }) => {
     
     if (!validateForm()) return;
 
+    const syncToBasicDetails = async (itemData) => {
+      try {
+        const res = await staticAPI.getBasicDetails();
+        const list = Array.isArray(res.data) ? res.data : (res.data?.data ? (Array.isArray(res.data.data) ? res.data.data : [res.data.data]) : []);
+        let basicDetails = list.length > 0 ? list[0] : null;
+
+        // If no BasicDetails record, create one first
+        if (!basicDetails?._id) {
+          const created = await staticAPI.createBasicDetails({ shares: [] });
+          basicDetails = created.data;
+        }
+
+        const shares = basicDetails.shares || [];
+        const existingIdx = shares.findIndex(s => s.scriptName === itemData.scripName && s.dpId === itemData.dpId);
+        const mapped = {
+          scriptName: itemData.scripName || '',
+          dematCompany: itemData.broker || '',
+          investorName: itemData.investorName || '',
+          dpId: itemData.dpId || '',
+          tradingId: itemData.tradingId || '',
+          holdingType: 'Single'
+        };
+
+        if (existingIdx >= 0) {
+          shares[existingIdx] = { ...shares[existingIdx], ...mapped };
+        } else {
+          shares.push(mapped);
+        }
+
+        await staticAPI.updateBasicDetails(basicDetails._id, { ...basicDetails, shares });
+      } catch (err) {
+        console.warn('Failed to auto-sync Share to Basic Details:', err);
+      }
+    };
+
     try {
       setLoading(true);
       
@@ -132,10 +168,12 @@ const ShareModal = ({ isOpen, onClose, onSuccess, editData }) => {
         currentPrice: parseFloat(formData.currentPrice) || parseFloat(formData.purchasePrice)
       };
 
-      if (editData) {
+      if (editData && !(editData._id && editData._id.toString().startsWith('basic-'))) {
         await investmentValuationAPI.updateShare(editData._id, submitData);
-      } else {
+        await syncToBasicDetails(submitData);
+      } else if (!editData || !(editData._id && editData._id.toString().startsWith('basic-'))) {
         await investmentValuationAPI.createShare(submitData);
+        await syncToBasicDetails(submitData);
       }
 
       onSuccess();

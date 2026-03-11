@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import api from '../utils/api';
-import { TrendingUp, HandCoins, CalendarClock, PieChart, CreditCard } from 'lucide-react';
+import { TrendingUp, HandCoins, CalendarClock, PieChart, CreditCard, Maximize2, Minimize2 } from 'lucide-react';
 import aiAvatarImg from '../assets/Finance_Chatbot.png';
 import './AIAdvisorChat.css';
 
@@ -33,6 +33,7 @@ function renderMessage(text) {
 
 export default function AIAdvisorChat() {
     const [isOpen, setIsOpen] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [messages, setMessages] = useState([
         {
             role: 'ai',
@@ -198,7 +199,7 @@ export default function AIAdvisorChat() {
 
             {/* Chat Panel */}
             {isOpen && (
-                <div className="ai-panel">
+                <div className={`ai-panel ${isExpanded ? 'expanded' : ''}`}>
                     {/* Header */}
                     <div className="ai-panel-header">
                         <div className="ai-header-left">
@@ -215,7 +216,12 @@ export default function AIAdvisorChat() {
                                 </div>
                             </div>
                         </div>
-                        <button className="ai-close-btn" onClick={() => setIsOpen(false)}>✕</button>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button className="ai-close-btn" onClick={() => setIsExpanded(!isExpanded)} title={isExpanded ? "Restore" : "Maximize"}>
+                                {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                            </button>
+                            <button className="ai-close-btn" onClick={() => setIsOpen(false)} title="Close">✕</button>
+                        </div>
                     </div>
 
                     {/* Messages */}

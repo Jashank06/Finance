@@ -40,6 +40,7 @@ export const authAPI = {
 
     return { ...response, data: { user: userData } };
   },
+  updateProfile: (data) => api.put('/auth/update-profile', data),
 };
 
 // Folder API

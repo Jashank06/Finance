@@ -117,6 +117,16 @@ export default function FinancialTipsFeed() {
                 {activeType === 'news' ? 'LIVE NEWS' : 'MARKET TIPS'}
             </div>
 
+            <button
+                className="ask-ai-global-btn"
+                onClick={() => handleAskAI(feedItems[activeIndex]?.text)}
+                title="Ask AI Advisor about this tip"
+            >
+                <span className="btn-glow-point"></span>
+                <FiZap className="btn-icon" />
+                <span>Ask AI</span>
+            </button>
+
             <div className="tips-slide-container">
                 {feedItems.map((item, idx) => (
                     <div key={idx} className={`tip-slide ${idx === activeIndex ? 'active' : ''}`}>
@@ -127,14 +137,6 @@ export default function FinancialTipsFeed() {
                                     <span className="tip-text-content">{item.formattedText}</span>
                                 </div>
                             </div>
-                            <button
-                                className="ask-ai-btn"
-                                onClick={() => handleAskAI(item.text)}
-                                title="Ask AI Advisor for more details"
-                            >
-                                <FiZap className="btn-icon" />
-                                <span>Ask AI Advisor</span>
-                            </button>
                         </div>
                     </div>
                 ))}

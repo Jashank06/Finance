@@ -21,42 +21,56 @@ export const fetchLiveMetalPrices = async () => {
       return priceCache;
     }
 
-    // Try multiple free APIs
     let goldPricePerGram = null;
-    let silverPricePerKg = null;
+    let silverPricePerGram = null;
+    let usdToInr = 83.5;
 
-    // Method 1: Use exchangerate-api or similar free service
-    // For Indian prices, we'll use a calculation based on international prices
+    // 1. Fetch current exchange rate
     try {
-      // Fetch from a free forex/commodity API
-      const response = await axios.get(
-        'https://api.exchangerate-api.com/v4/latest/USD',
-        { timeout: 5000 }
-      );
-      const usdToInr = response.data?.rates?.INR || 83.5;
-      
-      // International gold price approx (can be updated)
-      // Gold ~$70/gram internationally, Silver ~$0.85/gram
-      const intlGoldPerGram = 70; // USD
-      const intlSilverPerGram = 0.85; // USD
-      
-      goldPricePerGram = Math.round(intlGoldPerGram * usdToInr);
-      silverPricePerKg = Math.round(intlSilverPerGram * 1000 * usdToInr);
+      const exchangeRes = await axios.get('https://api.exchangerate-api.com/v4/latest/USD', { timeout: 5000 });
+      usdToInr = exchangeRes.data?.rates?.INR || 83.5;
     } catch (err) {
-      console.log('Primary API failed, using fallback prices');
+      console.warn('Exchange rate API failed, using fallback 83.5');
     }
 
-    // Fallback to fetching from Indian financial websites (scraping alternative)
-    if (!goldPricePerGram) {
-      try {
-        // Use a CORS proxy or backend endpoint for Indian gold prices
-        // For now, use realistic mock based on current market
-        goldPricePerGram = 7200; // Approx INR per gram (24K) as of Dec 2024
-        silverPricePerKg = 88000; // Approx INR per kg as of Dec 2024
-      } catch (err) {
-        console.error('Fallback also failed:', err);
+    // 2. Fetch Spot Prices (Real-time)
+    try {
+      const [goldRes, silverRes] = await Promise.all([
+        axios.get('https://api.gold-api.com/price/XAU', { timeout: 5000 }),
+        axios.get('https://api.gold-api.com/price/XAG', { timeout: 5000 })
+      ]);
+
+      // Prices are per TROY OUNCE in USD from this API
+      const spotGoldOunceUsd = goldRes.data?.price;
+      const spotSilverOunceUsd = silverRes.data?.price;
+
+      if (spotGoldOunceUsd && spotSilverOunceUsd) {
+        // Convert Ounce to Grams (1 Troy Ounce = 31.1035 grams)
+        const spotGoldUsd = spotGoldOunceUsd / 31.1035;
+        const spotSilverUsd = spotSilverOunceUsd / 31.1035;
+
+        // Indian Market adjustment: ~6-9% (Import Duty + GST + Premium)
+        const indianMarkup = 1.07; 
+        
+        goldPricePerGram = Math.round(spotGoldUsd * usdToInr * indianMarkup);
+        silverPricePerGram = spotSilverUsd * usdToInr * indianMarkup;
       }
+    } catch (err) {
+      console.error('Real-time Metal API failed:', err);
     }
+
+    // Fallback/Safety Check
+    if (!goldPricePerGram) {
+      // Historical/Estimated calculation if APIs fail
+      const intlGoldPerGram = 165; // Realistic USD for early 2026
+      const intlSilverPerGram = 2.85; 
+      const indianMarkup = 1.15;
+
+      goldPricePerGram = Math.round(intlGoldPerGram * usdToInr * indianMarkup);
+      silverPricePerGram = intlSilverPerGram * usdToInr * indianMarkup;
+    }
+
+    const silverPricePerKg = Math.round(silverPricePerGram * 1000);
 
     priceCache = {
       gold: {
@@ -68,7 +82,7 @@ export const fetchLiveMetalPrices = async () => {
       },
       silver: {
         pricePerKg: silverPricePerKg,
-        pricePerGram: Math.round(silverPricePerKg / 1000),
+        pricePerGram: Math.round(silverPricePerGram),
         unit: 'per kg',
         currency: 'INR',
       },
@@ -78,10 +92,9 @@ export const fetchLiveMetalPrices = async () => {
     return priceCache;
   } catch (error) {
     console.error('Error fetching live prices:', error);
-    // Return last cached values or defaults
     return priceCache.gold ? priceCache : {
-      gold: { price24K: 7200, price22K: 6595, price18K: 5400, unit: 'per gram', currency: 'INR' },
-      silver: { pricePerKg: 88000, pricePerGram: 88, unit: 'per kg', currency: 'INR' },
+      gold: { price24K: 15500, price22K: 14200, price18K: 11625, unit: 'per gram', currency: 'INR' },
+      silver: { pricePerKg: 275000, pricePerGram: 275, unit: 'per kg', currency: 'INR' },
       lastUpdated: Date.now(),
       isDefault: true,
     };

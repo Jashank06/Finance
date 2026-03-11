@@ -246,6 +246,15 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Card not found' });
     }
 
+    // Cascade delete: Remove all associated transactions
+    try {
+      const Transaction = require('../models/Transaction');
+      await Transaction.deleteMany({ cardId: req.params.id });
+      console.log(`Cascade deleted transactions for card: ${req.params.id}`);
+    } catch (cascadeError) {
+      console.error('Error in cascade delete for card transactions:', cascadeError);
+    }
+
     if (card) {
       // Sync deletion with Basic Details
       try {

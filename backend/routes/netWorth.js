@@ -21,12 +21,14 @@ router.get('/snapshot', auth, async (req, res) => {
             Investment.find({ userId, isActive: { $ne: false } })
         ]);
 
+        console.log(`[NW_DEBUG] User: ${userId} | Banks: ${banks.length} | Cash: ${cashes.length} | Invs: ${investments.length}`);
+
         // ── ASSETS ──────────────────────────────────────────────
         // 1) Bank balances
         const bankBalance = banks.reduce((sum, b) => sum + toNum(b.balance), 0);
 
         // 2) Cash balances
-        const cashBalance = cashes.reduce((sum, c) => sum + toNum(c.balance || c.openingBalance), 0);
+        const cashBalance = cashes.reduce((sum, c) => sum + toNum(c.amount), 0);
 
         // 3) Investments by category
         const investmentCategories = {
@@ -44,7 +46,22 @@ router.get('/snapshot', auth, async (req, res) => {
 
         investments.forEach(inv => {
             const category = (inv.category || inv.investmentType || '').toLowerCase();
-            const amount = toNum(inv.currentValue || inv.maturityAmount || inv.amount || inv.investedAmount);
+            
+            // Valuation Logic:
+            // 1. If quantity-based (like Gold/SGB), use quantity * currentValue
+            // 2. Otherwise use currentValue, maturityAmount, amount, or investedAmount as fallback
+            let amount = 0;
+            const q = parseFloat(inv.quantity);
+            const cv = toNum(inv.currentValue);
+            const amt = toNum(inv.amount);
+            
+            if (q > 0) {
+                amount = (cv || amt) * q;
+                console.log(`[NW_TRACE] ${inv.name} (qty-based): q=${q}, cv=${cv}, amt=${amt} => result=${amount}`);
+            } else {
+                amount = toNum(inv.currentValue || inv.maturityAmount || inv.amount || inv.investedAmount);
+                console.log(`[NW_TRACE] ${inv.name} (direct): cv=${cv}, result=${amount}`);
+            }
 
             // Separate gold from other investments
             if (investmentCategories.gold.some(k => category.includes(k))) {

@@ -50,6 +50,10 @@ const userSchema = new mongoose.Schema({
     type: Number, // in GB
     default: 0
   },
+  avatar: {
+    type: String, // URL/Base64 of the logo
+    default: null
+  },
   purchasedSpacePlans: [{
     spacePlan: {
       type: mongoose.Schema.Types.ObjectId,

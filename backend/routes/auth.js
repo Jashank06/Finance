@@ -8,7 +8,7 @@ const router = express.Router();
 // Register new user
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, mobile } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -17,7 +17,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Create new user
-    const user = new User({ email, password, name });
+    const user = new User({ email, password, name, mobile });
     await user.save();
 
     // Generate JWT token
@@ -109,6 +109,38 @@ router.get('/me', authMiddleware, async (req, res) => {
     res.json({ user });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching user', error: error.message });
+  }
+});
+
+// Update user profile (protected route)
+router.put('/update-profile', authMiddleware, async (req, res) => {
+  try {
+    const { name, avatar } = req.body;
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (name) user.name = name;
+    if (avatar) user.avatar = avatar;
+
+    await user.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        subscriptionStatus: user.subscriptionStatus,
+        subscriptionPlan: user.subscriptionPlan
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating profile', error: error.message });
   }
 });
 

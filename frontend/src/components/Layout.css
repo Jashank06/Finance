@@ -5,6 +5,17 @@
   overflow-y: auto;
 }
 
+/* Fixed floating top-right profile bar */
+.layout-topbar {
+  position: fixed;
+  top: 6px;
+  right: 8px;
+  z-index: 8000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .main-content {
   flex: 1;
   margin-left: 260px;
@@ -22,5 +33,9 @@
   .main-content {
     margin-left: 0;
     padding: 20px;
+  }
+  .layout-topbar {
+    top: 10px;
+    right: 12px;
   }
 }

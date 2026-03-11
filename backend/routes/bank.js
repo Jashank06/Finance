@@ -95,6 +95,7 @@ router.post('/', auth, async (req, res) => {
       accountHolderName,
       currency,
       balance,
+      openingBalance: balance, // Set initial opening balance
       depositAmount,
       interestRate,
       tenure,
@@ -142,7 +143,7 @@ router.post('/', auth, async (req, res) => {
         basicDetails.banks.push({
           bankName: savedAccount.bankName,
           accountType: savedAccount.type,
-          holdingType: '',
+          holdingType: savedAccount.type === 'joint-account' ? 'Joint' : 'Single',
           accountHolderName: savedAccount.accountHolderName,
           customerId: '',
           accountNumber: savedAccount.accountNumber,
@@ -215,6 +216,7 @@ router.put('/:id', auth, async (req, res) => {
           basicDetails.banks.push({
             bankName: bankAccount.bankName,
             accountType: bankAccount.type,
+            holdingType: bankAccount.type === 'joint-account' ? 'Joint' : 'Single',
             accountHolderName: bankAccount.accountHolderName,
             accountNumber: bankAccount.accountNumber,
             ifscCode: bankAccount.ifscCode,
@@ -260,6 +262,17 @@ router.delete('/:id', auth, async (req, res) => {
 
     if (!bankAccount) {
       return res.status(404).json({ message: 'Bank account not found' });
+    }
+
+    // Cascade delete: Remove all associated transactions
+    try {
+      const BankTransaction = require('../models/BankTransaction');
+      await BankTransaction.deleteMany({ accountId: req.params.id });
+      console.log(`Cascade deleted transactions for bank: ${req.params.id}`);
+    } catch (cascadeError) {
+      console.error('Error in cascade delete for bank transactions:', cascadeError);
+      // We don't return error here because the bank is already deleted, 
+      // but we log it for debugging.
     }
 
     if (bankAccount) {

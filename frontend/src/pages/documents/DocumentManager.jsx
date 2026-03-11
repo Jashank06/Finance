@@ -19,7 +19,8 @@ import {
     FiFileText,
     FiDownload,
     FiTrash2,
-    FiEye
+    FiEye,
+    FiArrowLeft
 } from 'react-icons/fi';
 import './DocumentManager.css';
 
@@ -34,8 +35,6 @@ const DocumentManager = () => {
     const [showPreview, setShowPreview] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterType, setFilterType] = useState('');
     const [breadcrumbs, setBreadcrumbs] = useState([{ name: 'All Files', _id: null }]);
 
     useEffect(() => {
@@ -128,6 +127,17 @@ const DocumentManager = () => {
         }
     };
 
+    const handleBack = () => {
+        if (!currentFolder) return;
+        
+        if (!currentFolder.parentFolder) {
+            setCurrentFolder(null);
+        } else {
+            const parent = folders.find(f => f._id === currentFolder.parentFolder);
+            setCurrentFolder(parent || null);
+        }
+    };
+
     const handleUploadSuccess = () => {
         setShowUpload(false);
         if (currentFolder) {
@@ -173,35 +183,6 @@ const DocumentManager = () => {
         }
     };
 
-    const handleSearch = async () => {
-        if (!searchQuery && !filterType) {
-            if (currentFolder) {
-                fetchFolderContents(currentFolder._id);
-            } else {
-                showRootFolders();
-            }
-            return;
-        }
-
-        try {
-            setLoading(true);
-            const params = {};
-            if (searchQuery) params.query = searchQuery;
-            if (filterType) params.fileType = filterType;
-            if (currentFolder) params.folderId = currentFolder._id;
-
-            const response = await documentAPI.searchDocuments(params);
-            setCurrentFolderContents(prev => ({
-                folders: [], // Don't show folders in search results
-                documents: response.data
-            }));
-        } catch (error) {
-            console.error('Error searching documents:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleRefresh = () => {
         fetchFolders();
     };
@@ -209,13 +190,13 @@ const DocumentManager = () => {
     const getFileIcon = (fileType) => {
         switch (fileType) {
             case 'pdf':
-                return <FiFile className="file-icon pdf" />;
+                return <FiFileText className="file-icon pdf" />;
             case 'image':
                 return <FiImage className="file-icon image" />;
             case 'document':
                 return <FiFileText className="file-icon document" />;
             case 'spreadsheet':
-                return <FiFileText className="file-icon spreadsheet" />;
+                return <FiGrid className="file-icon spreadsheet" />;
             default:
                 return <FiFile className="file-icon default" />;
         }
@@ -243,10 +224,16 @@ const DocumentManager = () => {
             <div className="doc-header">
                 <div className="doc-header-content">
                     <div className="doc-title-section">
-                        <FiFolder className="header-icon" />
+                        {currentFolder ? (
+                            <button className="btn-back-header" onClick={handleBack} title="Back">
+                                <FiArrowLeft />
+                            </button>
+                        ) : (
+                            <FiFolder className="header-icon" />
+                        )}
                         <div>
-                            <h1>Files & Folders</h1>
-                            <p>Organize and manage your financial documents</p>
+                            <h1>{currentFolder ? currentFolder.name : 'Files & Folders'}</h1>
+                            <p>{currentFolder ? 'Managing folder contents' : 'Organize and manage your financial documents'}</p>
                         </div>
                     </div>
 
@@ -293,58 +280,6 @@ const DocumentManager = () => {
 
             {/* Main Content */}
             <div className="doc-content-full">
-                {/* Toolbar */}
-                <div className="doc-toolbar">
-                    <div className="search-section">
-                        <div className="search-box">
-                            <FiSearch />
-                            <input
-                                type="text"
-                                placeholder="Search documents..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                            />
-                        </div>
-
-                        <select
-                            className="filter-select"
-                            value={filterType}
-                            onChange={(e) => setFilterType(e.target.value)}
-                        >
-                            <option value="">All Types</option>
-                            <option value="pdf">PDF</option>
-                            <option value="image">Images</option>
-                            <option value="document">Documents</option>
-                            <option value="spreadsheet">Spreadsheets</option>
-                            <option value="other">Other</option>
-                        </select>
-
-                        <button
-                            className="btn-search"
-                            onClick={handleSearch}
-                        >
-                            <FiFilter /> Filter
-                        </button>
-                    </div>
-
-                    <div className="view-toggle">
-                        <button
-                            className={`btn-toggle ${viewMode === 'grid' ? 'active' : ''}`}
-                            onClick={() => setViewMode('grid')}
-                            title="Grid View"
-                        >
-                            <FiGrid />
-                        </button>
-                        <button
-                            className={`btn-toggle ${viewMode === 'list' ? 'active' : ''}`}
-                            onClick={() => setViewMode('list')}
-                            title="List View"
-                        >
-                            <FiList />
-                        </button>
-                    </div>
-                </div>
 
                 {/* Content Display */}
                 {loading ? (

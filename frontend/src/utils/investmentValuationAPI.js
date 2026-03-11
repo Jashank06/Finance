@@ -33,4 +33,18 @@ export const investmentValuationAPI = {
   createLoan: (data) => api.post('/investment-valuation/loans', data),
   updateLoan: (id, data) => api.put(`/investment-valuation/loans/${id}`, data),
   deleteLoan: (id) => api.delete(`/investment-valuation/loans/${id}`),
+
+  // SIP Transactions
+  getSIPTransactions: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return api.get(`/investment-valuation/sip-transactions${query ? `?${query}` : ''}`);
+  },
+  generateSIPTransactions: (mutualFundId) =>
+    api.post(`/investment-valuation/sip-transactions/generate/${mutualFundId}`),
+  addSIPTransaction: (data) => api.post('/investment-valuation/sip-transactions', data),
+  updateSIPTransaction: (id, data) => api.put(`/investment-valuation/sip-transactions/${id}`, data),
+  deleteSIPTransaction: (id) => api.delete(`/investment-valuation/sip-transactions/${id}`),
+
+  // NAV Refresh
+  refreshMFNav: (id) => api.post(`/investment-valuation/mutual-funds/refresh-nav/${id}`),
 };

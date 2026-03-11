@@ -106,6 +106,11 @@ const CashCardsBank = () => {
   const [bankTransactionExpenseTypeFilter, setBankTransactionExpenseTypeFilter] = useState('all');
   const [bankTransactionStartDate, setBankTransactionStartDate] = useState('');
   const [bankTransactionEndDate, setBankTransactionEndDate] = useState('');
+  
+  // Pagination state
+  const [bankPage, setBankPage] = useState(1);
+  const [cardPage, setCardPage] = useState(1);
+  const TRANSACTIONS_PER_PAGE = 10;
 
   // Form states
   const [cashForm, setCashForm] = useState({
@@ -220,6 +225,15 @@ const CashCardsBank = () => {
     // Track page view
     trackFeatureUsage('/family/daily/cash-cards-bank', 'view');
   }, []);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setBankPage(1);
+  }, [bankTransactionExpenseTypeFilter, bankTransactionStartDate, bankTransactionEndDate, selectedBank]);
+
+  useEffect(() => {
+    setCardPage(1);
+  }, [cardTransactionExpenseTypeFilter, cardTransactionStartDate, cardTransactionEndDate, selectedCard]);
 
   const fetchData = async () => {
     try {
@@ -1202,6 +1216,14 @@ const CashCardsBank = () => {
       try {
         await api.delete(`/${type}/${id}`);
         trackAction.delete('/family/daily/cash-cards-bank', { type });
+        
+        // Reset selection if the deleted item was selected
+        if (type === 'bank' && selectedBank?._id === id) {
+          setSelectedBank(null);
+        } else if (type === 'card' && selectedCard?._id === id) {
+          setSelectedCard(null);
+        }
+        
         fetchData();
       } catch (error) {
         console.error('Error deleting item:', error);
@@ -1571,48 +1593,6 @@ const CashCardsBank = () => {
     return <div className="loading">Loading...</div>;
   }
 
-  // Function to calculate actual balance including transactions
-  const calculateAccountBalance = (account) => {
-    let balance = parseFloat(account.balance || 0);
-
-    // Debug: Log account and transactions
-    console.log('Account:', account);
-    console.log('All bank transactions:', bankTransactions);
-
-    // Get all transactions for this account
-    const accountTransactions = bankTransactions.filter(transaction => {
-      // Handle both string and object accountId
-      const transactionAccountId = typeof transaction.accountId === 'object'
-        ? transaction.accountId._id || transaction.accountId
-        : transaction.accountId;
-
-      console.log('Comparing:', transactionAccountId, 'with', account._id);
-      return transactionAccountId === account._id;
-    });
-
-    console.log('Account transactions:', accountTransactions);
-
-    // Calculate net transaction amount
-    const netTransactionAmount = accountTransactions.reduce((total, transaction) => {
-      const amount = parseFloat(transaction.amount || 0);
-      // Credit transactions add to balance
-      if (transaction.type === 'credit' || transaction.type === 'deposit' || transaction.type === 'refund' || transaction.type === 'income') {
-        return total + amount;
-      }
-      // Debit transactions subtract from balance
-      else if (transaction.type === 'debit' || transaction.type === 'withdrawal' || transaction.type === 'payment' || transaction.type === 'transfer') {
-        return total - amount;
-      }
-      else {
-        return total; // For other types like fee, interest, etc.
-      }
-    }, 0);
-
-    const finalBalance = balance + netTransactionAmount;
-    console.log('Original balance:', balance, 'Net transactions:', netTransactionAmount, 'Final balance:', finalBalance);
-
-    return finalBalance;
-  };
 
   return (
     <div className="cash-cards-bank">
@@ -2394,6 +2374,9 @@ const CashCardsBank = () => {
                 initialBalance={selectedCard.creditLimit || 0}
                 onEdit={handleTransactionEdit}
                 onDelete={handleTransactionDelete}
+                currentPage={cardPage}
+                itemsPerPage={TRANSACTIONS_PER_PAGE}
+                onPageChange={setCardPage}
               />
             </div>
           )}
@@ -2480,6 +2463,8 @@ const CashCardsBank = () => {
                         >
                           <option value="savings">Savings</option>
                           <option value="current">Current</option>
+                          <option value="fixed-deposit">Fixed Deposit</option>
+                          <option value="recurring-deposit">Recurring Deposit</option>
                           <option value="nri-account">NRI Account</option>
                           <option value="joint-account">Joint Account</option>
                         </select>
@@ -3470,7 +3455,7 @@ const CashCardsBank = () => {
                 </div>
                 <TransactionTable
                   transactions={bankTransactions.filter(transaction => {
-                    const transactionAccountId = typeof transaction.accountId === 'object'
+                    const transactionAccountId = (transaction.accountId && typeof transaction.accountId === 'object')
                       ? transaction.accountId._id || transaction.accountId
                       : transaction.accountId;
                     if (transactionAccountId !== selectedBank._id) return false;
@@ -3485,9 +3470,12 @@ const CashCardsBank = () => {
                     return true;
                   })}
                   currency={selectedBank.currency || 'INR'}
-                  initialBalance={parseFloat(selectedBank.balance) || 0}
+                  initialBalance={parseFloat(selectedBank.openingBalance) || 0}
                   onEdit={handleBankTransactionEdit}
                   onDelete={handleBankTransactionDelete}
+                  currentPage={bankPage}
+                  itemsPerPage={TRANSACTIONS_PER_PAGE}
+                  onPageChange={setBankPage}
                 />
               </div>
             )
@@ -3546,7 +3534,10 @@ const CashCardsBank = () => {
                             <td>{account.accountHolderName}</td>
                             <td>
                               <span
-                                onClick={() => setSelectedBank(account)}
+                                onClick={() => {
+                                  setSelectedBank(account);
+                                  setBankPage(1);
+                                }}
                                 style={{
                                   color: '#007bff',
                                   cursor: 'pointer',
@@ -3564,7 +3555,9 @@ const CashCardsBank = () => {
                             </td>
                             <td>{account.bankName}</td>
                             <td>****-****-{account.accountNumber ? account.accountNumber.slice(-4) : '****'}</td>
-                            <td className="amount">{account.currency} {calculateAccountBalance(account).toLocaleString()}</td>
+                            <td className="amount" style={{ color: (account.balance || 0) < 0 ? '#ef4444' : '#10b981' }}>
+                              {account.currency} {(account.balance || 0).toLocaleString('en-IN')}
+                            </td>
                             <td>{account.ifscCode}</td>
                             <td>{account.branchName || '-'}</td>
                             <td>
@@ -3593,7 +3586,10 @@ const CashCardsBank = () => {
             ) : (
               <div>
                 <button
-                  onClick={() => setSelectedBank(null)}
+                  onClick={() => {
+                    setSelectedBank(null);
+                    setBankPage(1);
+                  }}
                   className="add-btn"
                   style={{ marginBottom: '20px' }}
                 >
@@ -3610,7 +3606,7 @@ const CashCardsBank = () => {
                   <p style={{ margin: '5px 0' }}>Type: {selectedBank.type.replace('-', ' ').toUpperCase()}</p>
                   <p style={{ margin: '5px 0' }}>Bank: {selectedBank.bankName}</p>
                   <p style={{ margin: '5px 0' }}>Account Number: ****-****-{selectedBank.accountNumber ? selectedBank.accountNumber.slice(-4) : '****'}</p>
-                  <p style={{ margin: '5px 0' }}>Balance: {selectedBank.currency} {calculateAccountBalance(selectedBank).toLocaleString()}</p>
+                  <p style={{ margin: '5px 0' }}>Balance: {selectedBank.currency} {(selectedBank.balance || 0).toLocaleString('en-IN')}</p>
                 </div>
               </div>
             )

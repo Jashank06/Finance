@@ -8,6 +8,7 @@ import './Login.css'; // Reusing Login styles for consistent theme
 const Signup = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [mobile, setMobile] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
@@ -20,7 +21,7 @@ const Signup = () => {
         setError('');
         setLoading(true);
 
-        const result = await register({ name, email, password });
+        const result = await register({ name, email, mobile, password });
 
         if (result.success) {
             // Check if user has an active subscription
@@ -111,6 +112,18 @@ const Signup = () => {
                                 onChange={(e) => setName(e.target.value)}
                                 required
                                 placeholder="Enter your full name"
+                                className="form-input"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="mobile" className="form-label">Mobile Number</label>
+                            <input
+                                type="tel"
+                                id="mobile"
+                                value={mobile}
+                                onChange={(e) => setMobile(e.target.value)}
+                                placeholder="Enter your mobile number"
                                 className="form-input"
                             />
                         </div>

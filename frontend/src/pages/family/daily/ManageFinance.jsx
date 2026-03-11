@@ -34,17 +34,15 @@ const ManageFinance = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [banksRes, cardsRes, bankTransactionsRes, expensesRes, cashFlowRes] = await Promise.all([
+      const [banksRes, cardsRes, expensesRes, cashFlowRes] = await Promise.all([
         api.get('/bank'),
         api.get('/cards'),
-        api.get('/bank-transactions'),
         api.get('/scheduled-expenses'),
         api.get('/cashflow/analysis')
       ]);
 
       setBanks(banksRes.data || []);
       setCards(cardsRes.data || []);
-      setBankTransactions(bankTransactionsRes.data || []);
       setScheduledExpenses(expensesRes.data || []);
 
       if (cashFlowRes.data && cashFlowRes.data.success) {
@@ -100,39 +98,9 @@ const ManageFinance = () => {
       .sort((a, b) => a.actualDueDate - b.actualDueDate);
   };
 
-  // Function to calculate actual balance including transactions (same as CashCardsBank)
-  const calculateAccountBalance = (account) => {
-    let balance = parseFloat(account.balance || 0);
 
-    // Get all transactions for this account
-    const accountTransactions = bankTransactions.filter(transaction => {
-      // Handle both string and object accountId
-      const transactionAccountId = typeof transaction.accountId === 'object'
-        ? transaction.accountId._id || transaction.accountId
-        : transaction.accountId;
-
-      return transactionAccountId === account._id;
-    });
-
-    // Calculate net transaction amount
-    const netTransactionAmount = accountTransactions.reduce((total, transaction) => {
-      const amount = parseFloat(transaction.amount || 0);
-      if (transaction.type === 'deposit') {
-        return total + amount;
-      } else if (transaction.type === 'withdrawal' || transaction.type === 'payment' || transaction.type === 'transfer') {
-        return total - amount;
-      } else {
-        return total; // For other types like fee, interest, etc.
-      }
-    }, 0);
-
-    const finalBalance = balance + netTransactionAmount;
-    return finalBalance;
-  };
-
-  // Calculate total balance across all banks (using real-time balances)
   const getTotalBalance = () => {
-    return banks.reduce((total, bank) => total + calculateAccountBalance(bank), 0);
+    return banks.reduce((total, bank) => total + parseFloat(bank.balance || 0), 0);
   };
 
   // Calculate total upcoming expenses
@@ -327,10 +295,10 @@ const ManageFinance = () => {
                     <div className="bank-details">
                       <div className="account-info">
                         <span>A/C: ****{bank.accountNumber?.slice(-4)}</span>
-                        <span className="account-type">{bank.accountType}</span>
+                        <span className="account-type">{bank.type}</span>
                       </div>
                       <div className="balance">
-                        ₹{calculateAccountBalance(bank).toLocaleString('en-IN')}
+                        ₹{(bank.balance || 0).toLocaleString('en-IN')}
                       </div>
                     </div>
                     <div className="bank-expenses">

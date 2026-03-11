@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiX, FiSave, FiLoader } from 'react-icons/fi';
 import { investmentValuationAPI } from '../utils/investmentValuationAPI';
+import { staticAPI } from '../utils/staticAPI';
 import './Modal.css';
 
 const InsuranceModal = ({ isOpen, onClose, onSuccess, editData, insuranceType }) => {
@@ -97,6 +98,41 @@ const InsuranceModal = ({ isOpen, onClose, onSuccess, editData, insuranceType })
     
     if (!validateForm()) return;
 
+    const syncToBasicDetails = async (itemData) => {
+      try {
+        const res = await staticAPI.getBasicDetails();
+        const list = Array.isArray(res.data) ? res.data : (res.data?.data ? (Array.isArray(res.data.data) ? res.data.data : [res.data.data]) : []);
+        let basicDetails = list.length > 0 ? list[0] : null;
+
+        // If no BasicDetails record, create one first
+        if (!basicDetails?._id) {
+          const created = await staticAPI.createBasicDetails({ insurance: [] });
+          basicDetails = created.data;
+        }
+
+        const ins = basicDetails.insurance || [];
+        const existingIdx = ins.findIndex(i => i.policyNumber === itemData.policyNumber && i.policyName === itemData.policyName);
+        const mapped = {
+          insuranceCompany: itemData.companyName || '',
+          insurerName: itemData.customerName || '',
+          policyName: itemData.policyName || '',
+          policyNumber: itemData.policyNumber || '',
+          insuranceType: itemData.insuranceType || '',
+          policyPurpose: ''
+        };
+
+        if (existingIdx >= 0) {
+          ins[existingIdx] = { ...ins[existingIdx], ...mapped };
+        } else {
+          ins.push(mapped);
+        }
+
+        await staticAPI.updateBasicDetails(basicDetails._id, { ...basicDetails, insurance: ins });
+      } catch (err) {
+        console.warn('Failed to auto-sync Insurance to Basic Details:', err);
+      }
+    };
+
     try {
       setLoading(true);
       
@@ -108,10 +144,12 @@ const InsuranceModal = ({ isOpen, onClose, onSuccess, editData, insuranceType })
         maturityAmount: formData.maturityAmount ? parseFloat(formData.maturityAmount) : undefined
       };
 
-      if (editData) {
+      if (editData && !(editData._id && editData._id.toString().startsWith('basic-'))) {
         await investmentValuationAPI.updateInsurance(editData._id, submitData);
-      } else {
+        await syncToBasicDetails(submitData);
+      } else if (!editData || !(editData._id && editData._id.toString().startsWith('basic-'))) {
         await investmentValuationAPI.createInsurance(submitData);
+        await syncToBasicDetails(submitData);
       }
 
       onSuccess();

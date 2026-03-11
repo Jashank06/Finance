@@ -1,0 +1,700 @@
+/* ============================================================
+   PROFILE DROPDOWN — Monochrome Liquid Glass UI
+   Apple / Google Luxury Aesthetics
+   ============================================================ */
+
+:root {
+  --lp-bg-glass: rgba(13, 10, 24, 0.75); /* Deep vibrant indigo base */
+  --lp-bg-panel: rgba(18, 14, 34, 0.85); /* Darker violet/blue for panel */
+  --lp-border: rgba(255, 255, 255, 0.15); /* Slightly stronger border */
+  --lp-text-primary: #ffffff;
+  --lp-text-secondary: rgba(255, 255, 255, 0.65);
+  --lp-accent-vibrant: #7C3AED; /* Vibrant Purple */
+  --lp-accent-glow: rgba(124, 58, 237, 0.4);
+  --lp-liquid-blur: 60px; /* Stronger blur for smoother neon liquid */
+  --pd-transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* ── Wrapper ─────────────────────────────────────────────── */
+.pd-wrapper {
+  position: relative;
+  z-index: 9000;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  perspective: 1200px; /* Enhanced 3D perspective */
+}
+
+/* ── Trigger Button (Vibrant Pillar) ──────────────────── */
+.pd-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px 6px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 100px;
+  cursor: pointer;
+  background: linear-gradient(135deg, rgba(20, 16, 40, 0.9), rgba(10, 8, 20, 0.95)); /* Rich dark gradient */
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2),
+    0 0 15px var(--lp-accent-glow); /* Outer neon glow */
+  transition: var(--pd-transition);
+  outline: none;
+  white-space: nowrap;
+  transform-style: preserve-3d;
+}
+
+.pd-trigger:hover {
+  background: linear-gradient(135deg, rgba(30, 24, 56, 0.95), rgba(15, 12, 30, 0.98));
+  transform: translateY(-2px) translateZ(10px);
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.5),
+    inset 0 1px 3px rgba(255, 255, 255, 0.3),
+    0 0 25px rgba(124, 58, 237, 0.6); /* Intensified hover glow */
+  border-color: rgba(124, 58, 237, 0.5); /* Purple hint on hover border */
+}
+
+.pd-trigger.pd-active {
+  background: #ffffff;
+  border-color: #ffffff;
+  transform: translateY(-1px) scale(1.02);
+}
+
+.pd-trigger.pd-active .pd-trigger-name { color: #000; }
+.pd-trigger.pd-active .pd-trigger-role { color: rgba(0, 0, 0, 0.6); }
+.pd-trigger.pd-active .pd-trigger-chevron { color: #000; }
+
+/* ── Trigger Avatar ──────────────────────────────────────── */
+.pd-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  transition: var(--pd-transition);
+}
+
+.pd-avatar-initials {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  z-index: 2;
+  line-height: 1;
+}
+
+.pd-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.pd-avatar-glow {
+  position: absolute;
+  inset: -20%;
+  filter: blur(8px);
+  opacity: 0.5;
+  animation: pd-liquid-pulse 4s infinite ease-in-out;
+}
+
+@keyframes pd-liquid-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+/* ── Trigger Info ────────────────────────────────────────── */
+.pd-trigger-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.pd-trigger-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  transition: color 0.3s ease;
+}
+
+.pd-trigger-role {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
+}
+
+.pd-trigger-chevron {
+  color: rgba(255, 255, 255, 0.3);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pd-rotated { transform: rotate(180deg); }
+
+/* ── Dropdown Panel (Vibrant Liquid Glass) ────────────── */
+.pd-panel {
+  position: absolute;
+  top: calc(100% + 20px);
+  right: -5px;
+  width: 380px;
+  background: var(--lp-bg-panel);
+  backdrop-filter: blur(50px) saturate(220%);
+  -webkit-backdrop-filter: blur(50px) saturate(220%);
+  border: 1px solid var(--lp-border);
+  border-top: 1px solid rgba(255, 255, 255, 0.25); /* Stronger top rim light */
+  border-radius: 32px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow:
+    0 50px 100px -20px rgba(0, 0, 0, 0.8),
+    0 20px 40px -10px rgba(124, 58, 237, 0.3), /* Deep purple ambient shadow */
+    inset 0 1px 2px rgba(255, 255, 255, 0.15);
+  animation: pd-liquidReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top right;
+  z-index: 10000;
+}
+
+@keyframes pd-liquidReveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.92) rotateX(-15deg);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateX(0);
+    filter: blur(0);
+  }
+}
+
+/* ── Liquid Background Container ─────────────────────────── */
+.pd-liquid-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: overlay;
+  opacity: 0.6;
+}
+
+.pd-liquid {
+  position: absolute;
+  /* Replacing plain white/black with vibrant neon splashes */
+  filter: blur(var(--lp-liquid-blur));
+  border-radius: 50%;
+  animation: pd-liquid-float 15s infinite ease-in-out;
+  mix-blend-mode: color-dodge; /* Makes colors pop heavily against dark bg */
+}
+
+.pd-liquid-1 {
+  width: 350px;
+  height: 350px;
+  top: -150px;
+  right: -100px;
+  background: radial-gradient(circle at center, rgba(124, 58, 237, 0.6) 0%, transparent 70%); /* Electric Purple */
+  animation-duration: 20s;
+}
+
+.pd-liquid-2 {
+  width: 300px;
+  height: 300px;
+  bottom: -100px;
+  left: -80px;
+  background: radial-gradient(circle at center, rgba(14, 165, 233, 0.5) 0%, transparent 70%); /* Neon Blue */
+  animation-duration: 24s;
+  animation-delay: -5s;
+}
+
+.pd-liquid-3 {
+  width: 250px;
+  height: 250px;
+  top: 30%;
+  left: 20%;
+  background: radial-gradient(circle at center, rgba(236, 72, 153, 0.4) 0%, transparent 70%); /* Hot Pink */
+  animation-duration: 28s;
+  animation-delay: -12s;
+}
+
+@keyframes pd-liquid-float {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  33% { transform: translate(30px, -40px) scale(1.1) rotate(10deg); }
+  66% { transform: translate(-20px, 30px) scale(0.9) rotate(-5deg); }
+}
+
+/* ── Header Section ───────────────────────────────────────── */
+.pd-header {
+  padding: 30px 24px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.pd-panel-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 20px; /* Squircle style */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 800;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  transform: rotateZ(-3deg);
+  transition: transform 0.4s ease;
+}
+
+.pd-panel-avatar:hover {
+  transform: rotateZ(2deg) scale(1.05);
+}
+
+.pd-upload-trigger {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.pd-avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 5;
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+
+.pd-upload-trigger:hover .pd-avatar-overlay {
+  opacity: 1;
+}
+
+.pd-logo-actions-menu {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  transform: scale(0.95);
+}
+
+.pd-upload-trigger:hover .pd-logo-actions-menu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.pd-logo-actions-menu button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 20px;
+  padding: 0;
+  outline: none;
+}
+
+.pd-logo-actions-menu button:hover {
+  background: #ffffff;
+  color: #000;
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+.pd-logo-actions-menu .pd-delete-icon:hover {
+  background: #ff4d4d;
+  color: #fff;
+  border-color: #ff4d4d;
+}
+
+.pd-panel-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  z-index: 1;
+}
+
+.pd-avatar-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,0.15);
+  transition: var(--pd-transition);
+}
+
+.pd-header:hover .pd-avatar-ring {
+  inset: -2px;
+  border-color: rgba(255,255,255,0.4);
+}
+
+.pd-name {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: #fff !important;
+  letter-spacing: -0.5px !important;
+  margin: 0 0 4px !important;
+}
+
+.pd-email {
+  font-size: 13px !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  margin: 0 0 10px !important;
+  font-weight: 500 !important;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  backdrop-filter: blur(5px);
+}
+
+.pd-badge-dot {
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #fff;
+  animation: pd-glow 2s infinite ease-in-out;
+}
+
+@keyframes pd-glow {
+  0%, 100% { opacity: 0.5; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* ── Divider ─────────────────────────────────────────────── */
+.pd-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  margin: 0 24px;
+}
+
+/* ── Tabs ────────────────────────────────────────────────── */
+.pd-tabs {
+  display: flex;
+  gap: 10px;
+  padding: 16px 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.pd-tab-btn {
+  flex: 1;
+  padding: 10px 6px;
+  border: none;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: rgba(255,255,255,0.4);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--pd-transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pd-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.pd-tab-btn.pd-active {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(240, 240, 255, 1));
+  color: #0d0a18;
+  font-weight: 800;
+  box-shadow: 0 10px 25px rgba(124, 58, 237, 0.4); /* Purple glow on active tab */
+}
+
+.pd-tab-btn.pd-active span { filter: grayscale(1) invert(0); }
+.pd-tab-btn span { filter: grayscale(1) invert(1); font-size: 14px; transition: 0.3s; }
+
+/* ── Content Area ────────────────────────────────────────── */
+.pd-content {
+  padding: 4px 24px 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.pd-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.pd-stat {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 18px !important;
+  padding: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  transition: var(--pd-transition) !important;
+}
+
+.pd-stat:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  transform: translateY(-3px) translateZ(15px);
+  border-color: rgba(124, 58, 237, 0.4) !important; /* Vibrant border on hover */
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(124, 58, 237, 0.2) !important;
+}
+
+.pd-stat-icon {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 14px !important;
+  transition: 0.4s !important;
+}
+
+.pd-stat-label {
+  font-size: 9px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
+  color: rgba(255,255,255,0.4) !important;
+  font-weight: 700 !important;
+  margin-bottom: 2px !important;
+}
+
+.pd-stat-value {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ── Action Buttons ──────────────────────────────────────── */
+.pd-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.pd-action-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: var(--pd-transition);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+}
+
+.pd-upgrade {
+  background: linear-gradient(135deg, #ffffff, #f0e6ff); /* Slight purple tint */
+  color: #0d0a18;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.2);
+  border: none;
+}
+
+.pd-upgrade::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+  animation: pd-shine 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes pd-shine {
+  0% { left: -100%; }
+  20%, 100% { left: 200%; }
+}
+
+.pd-upgrade:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(124, 58, 237, 0.4);
+}
+
+.pd-danger {
+  background: rgba(220, 38, 38, 0.15);
+  color: #f87171;
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.pd-danger:hover {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(220, 38, 38, 0.4);
+}
+
+.pd-uploading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.pd-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: pd-spin 0.8s linear infinite;
+}
+
+@keyframes pd-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Link Items (Luxury List) ──────────────────────────────── */
+.pd-link-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pd-link-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid transparent;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: var(--pd-transition);
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  outline: none;
+}
+
+.pd-link-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(124, 58, 237, 0.3); /* Purple accent border on hover */
+  transform: translateX(6px) translateZ(10px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.02);
+}
+
+.pd-link-icon {
+  font-size: 22px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  transition: 0.4s;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.pd-link-item:hover .pd-link-icon {
+  background: linear-gradient(135deg, #7c3aed, #ec4899); /* Vibrant icon bg on hover */
+  color: #fff;
+  transform: scale(1.1) rotate(-5deg);
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+}
+
+.pd-link-label {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  margin-bottom: 2px !important;
+}
+
+.pd-link-desc {
+  font-size: 11px !important;
+  color: rgba(255,255,255,0.4) !important;
+}
+
+.pd-link-arrow {
+  color: rgba(255,255,255,0.2);
+  transition: transform 0.3s ease;
+}
+
+.pd-link-item:hover .pd-link-arrow {
+  transform: translateX(4px) scale(1.2);
+  color: #fff;
+}
+
+.pd-tab-desc {
+  font-size: 11px !important;
+  color: rgba(255,255,255,0.3) !important;
+  text-align: center;
+  margin: 10px 0 15px !important;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}

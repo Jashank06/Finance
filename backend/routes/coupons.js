@@ -106,6 +106,24 @@ router.put('/:id', adminAuth, async (req, res) => {
   }
 });
 
+// Toggle coupon active status (Admin only)
+router.patch('/:id/toggle-active', adminAuth, async (req, res) => {
+  try {
+    const coupon = await Coupon.findById(req.params.id);
+    if (!coupon) {
+      return res.status(404).json({ message: 'Coupon not found' });
+    }
+    
+    // Toggle the isActive boolean
+    coupon.isActive = !coupon.isActive;
+    await coupon.save();
+    
+    res.json({ message: 'Coupon status toggled successfully', coupon });
+  } catch (error) {
+    res.status(500).json({ message: 'Error toggling coupon status', error: error.message });
+  }
+});
+
 // Delete coupon (Admin only)
 router.delete('/:id', adminAuth, async (req, res) => {
   try {

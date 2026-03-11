@@ -40,7 +40,10 @@ const bankSchema = new mongoose.Schema({
   balance: {
     type: Number,
     required: true,
-    min: 0,
+    default: 0,
+  },
+  openingBalance: {
+    type: Number,
     default: 0,
   },
   // Fixed/Recurring Deposit specific fields

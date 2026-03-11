@@ -25,16 +25,13 @@ const Sidebar = () => {
 
   return (
     <div className="sidebar">
-      <div className="sidebar-header">
-        <h2>Finance App</h2>
-      </div>
+      <Link to="/dashboard" className="sidebar-header">
+        <h2>Dashboard</h2>
+      </Link>
 
       <nav className="sidebar-nav">
-        <Link to="/dashboard" className="nav-item">Dashboard</Link>
         <Link to="/net-worth" className="nav-item" style={{ color: '#a78bfa', fontWeight: 600 }}>Net Worth</Link>
         <Link to="/finance-radar" className="nav-item" style={{ color: '#fb923c', fontWeight: 600 }}>Finance Radar</Link>
-        <Link to="/family-profile" className="nav-item">Family Profile</Link>
-        <Link to="/company-profile" className="nav-item">Company Profile</Link>
 
         {/* Family Section */}
         <div className="nav-section">
@@ -87,7 +84,6 @@ const Sidebar = () => {
                 {monitoringOpen && (
                   <div className="nested-submenu">
                     <Link to="/family/monitoring/milestones" className="nested-submenu-item">Milestone & Task Timeline</Link>
-                    <Link to="/family/monitoring/targets-for-life" className="nested-submenu-item">Targets for Life</Link>
                     <Link to="/family/monitoring/bill-dates" className="nested-submenu-item">Bill Dates</Link>
                     {/* <Link to="/family/daily/bill-paying" className="nested-submenu-item">Bill Paying Checklist</Link> */}
                     <Link to="/family/monitoring/multiple-calendars" className="nested-submenu-item">Multiple Calendars</Link>
@@ -118,6 +114,7 @@ const Sidebar = () => {
                     <Link to="/family/investments/bank-schemes" className="nested-submenu-item">Bank Schemes - RD, FD</Link>
                     {/* <Link to="/family/investments/mf-insurance-shares" className="nested-submenu-item">MF, Insurance, Shares</Link> */}
                     <Link to="/family/investments/valuation-allocation" className="nested-submenu-item">Investment Valuation</Link>
+                    <Link to="/family/monitoring/targets-for-life" className="nested-submenu-item">Targets for Life</Link>
                     <Link to="/family/investments/project-income-expense" className="nested-submenu-item">Project Wise Income / Expense</Link>
                     <Link to="/family/investments/profile" className="nested-submenu-item">Online Access</Link>
                     <Link to="/family/investments/retirement" className="nested-submenu-item">Retirement Financial</Link>
@@ -207,8 +204,6 @@ const Sidebar = () => {
 
         <Link to="/libraries" className="nav-item">Libraries</Link>
         <Link to="/subscription" className="nav-item">Subscription Plan</Link>
-        <Link to="/space-management" className="nav-item">💾 Space Management</Link>
-        <Link to="/feedback" className="nav-item">Feedback</Link>
         <Link to="/contact" className="nav-item">Contact Developer</Link>
         <div onClick={handleLogout} className="nav-item logout">Logout</div>
       </nav>

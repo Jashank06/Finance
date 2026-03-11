@@ -2,7 +2,7 @@ const Folder = require('../models/Folder');
 
 // Category hierarchy - same as frontend categoryData.js
 const categoryHierarchy = {
-    "Fixed & Contractual Costs (Needs)": {
+    "Fixed & Contractual Costs": {
         "Housing": [
             "Rent / Mortgage Payment",
             "Society Maintenance",
@@ -53,7 +53,7 @@ const categoryHierarchy = {
             "Other"
         ]
     },
-    "Variable Living Expenses (Needs - Daily/Monthly)": {
+    "Variable Living Expenses": {
         "Groceries & Food, Fruits & Vegetables": [
             "Groceries & Staples",
             "Dairy & Bakery",
@@ -121,7 +121,7 @@ const categoryHierarchy = {
             "Other"
         ]
     },
-    "Financial Protection & Security (Goals - Mandatory)": {
+    "Financial Protection & Security": {
         "Emergency Fund Buffer": [
             "Emergency Fund",
             "Other"
@@ -131,7 +131,7 @@ const categoryHierarchy = {
             "Other"
         ]
     },
-    "Long-Term Savings & Investments (Goals - Future Wealth)": {
+    "Long-Term Savings & Investments": {
         "Retirement Fund": [
             "Pension Contributions",
             "Public Provident Fund",
@@ -154,7 +154,7 @@ const categoryHierarchy = {
             "Other"
         ]
     },
-    "Discretionary & Lifestyle (Wants - Flexible)": {
+    "Discretionary & Lifestyle": {
         "Entertainment & Social": [
             "Dining Out/Takeout",
             "Entertainment & Subscriptions",
@@ -185,7 +185,7 @@ const categoryHierarchy = {
             "Other"
         ]
     },
-    "Periodic & Large Expenses (Sinking Funds)": {
+    "Periodic & Large Expenses": {
         "Vacation Fund": [
             "Monthly contribution to cover annual travel/vacation expenses",
             "Domestic Travel",

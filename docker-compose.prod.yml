@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    image: jashank06/finance-backend:latest
+    image: jashank06/palbamb-backend:latest
     container_name: finance-backend
     restart: unless-stopped
     ports:
@@ -34,7 +34,7 @@ services:
       start_period: 40s
 
   frontend:
-    image: jashank06/finance-frontend:latest
+    image: jashank06/palbamb-frontend:latest
     container_name: finance-frontend
     restart: unless-stopped
     ports:

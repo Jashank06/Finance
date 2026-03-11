@@ -27,37 +27,49 @@ const mutualFundSchema = new mongoose.Schema({
   },
   fundType: {
     type: String,
-    required: true,
-    enum: ['equity', 'debt', 'hybrid', 'index', 'elss', 'other'],
+    default: 'other',
   },
   folioNumber: {
     type: String,
     required: true,
   },
+  isin: {
+    type: String,
+    default: '',
+  },
+  schemeCode: {
+    type: Number, // mfapi.in scheme code for NAV fetch
+    default: null,
+  },
   
   // SIP specific fields
   sipDate: {
-    type: String, // Day of month like "15th"
+    type: Number, // Day of month: 1-31
+    min: 1,
+    max: 31,
+  },
+  sipStartDate: {
+    type: Date, // First SIP installment date
   },
   sipAmount: {
     type: Number,
     min: 0,
   },
   
-  // Investment Details
+  // Investment Details (for SIP: derived from transactions; for lumpsum: manual)
   units: {
     type: Number,
-    required: true,
+    default: 0,
     min: 0,
   },
   purchaseNAV: {
     type: Number,
-    required: true,
+    default: 0,
     min: 0,
   },
   purchaseValue: {
     type: Number,
-    required: true,
+    default: 0,
     min: 0,
   },
   currentNAV: {

@@ -50,7 +50,6 @@ import Milestones from './pages/family/monitoring/Milestones';
 import TargetsForLife from './pages/family/monitoring/TargetsForLife';
 import Portfolio from './pages/family/monitoring/Portfolio';
 import DocumentManager from './pages/documents/DocumentManager';
-import SpaceManagement from './pages/SpaceManagement';
 import NetWorthDashboard from './pages/NetWorthDashboard';
 import FinanceRadar from './pages/FinanceRadar';
 
@@ -632,16 +631,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/space-management"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <SpaceManagement />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+
 
           <Route
             path="/libraries"
