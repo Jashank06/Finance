@@ -7,6 +7,7 @@ const Share = require('../models/Share');
 const Insurance = require('../models/Insurance');
 const Loan = require('../models/Loan');
 const navFetchService = require('../services/navFetchService');
+const stockFetchService = require('../services/stockFetchService');
 
 // Summary endpoint - get all investment valuation data
 router.get('/summary', auth, async (req, res) => {
@@ -305,6 +306,87 @@ router.delete('/shares/:id', auth, async (req, res) => {
       message: 'Error deleting share investment',
       error: error.message
     });
+  }
+});
+
+// Refresh price for a single share
+router.post('/shares/refresh/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const share = await Share.findOne({ _id: id, userId });
+    if (!share) return res.status(404).json({ success: false, message: 'Share not found' });
+
+    const stockData = await stockFetchService.getStockPrice(share.scripName, share.exchange);
+    if (!stockData) return res.status(422).json({ success: false, message: 'Could not fetch price for this scrip' });
+
+    share.currentPrice = stockData.price;
+    await share.save();
+
+    res.json({
+      success: true,
+      message: 'Share price refreshed successfully',
+      data: share
+    });
+  } catch (error) {
+    console.error('Error refreshing share price:', error);
+    res.status(500).json({ success: false, message: 'Error refreshing share price', error: error.message });
+  }
+});
+
+// Refresh prices for all shares
+router.post('/shares/refresh-all', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const shares = await Share.find({ userId });
+    
+    const results = {
+      total: shares.length,
+      success: 0,
+      failed: 0,
+      errors: []
+    };
+
+    for (const share of shares) {
+      try {
+        const stockData = await stockFetchService.getStockPrice(share.scripName, share.exchange);
+        if (stockData) {
+          share.currentPrice = stockData.price;
+          await share.save();
+          results.success++;
+        } else {
+          results.failed++;
+          results.errors.push({ scrip: share.scripName, error: 'No data returned' });
+        }
+      } catch (err) {
+        results.failed++;
+        results.errors.push({ scrip: share.scripName, error: err.message });
+        console.warn(`Failed to refresh scrip ${share.scripName}:`, err.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Refreshed ${results.success} shares. ${results.failed} failed.`,
+      data: results
+    });
+  } catch (error) {
+    console.error('Error refreshing all shares:', error);
+    res.status(500).json({ success: false, message: 'Error refreshing all shares', error: error.message });
+  }
+});
+
+// Get current price for a scrip name (not necessarily saved yet)
+router.get('/shares/price/:scrip', auth, async (req, res) => {
+  try {
+    const { scrip } = req.params;
+    const { exchange } = req.query;
+    const stockData = await stockFetchService.getStockPrice(scrip, exchange);
+    if (!stockData) return res.status(404).json({ success: false, message: 'Price not found' });
+    res.json({ success: true, data: stockData });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 

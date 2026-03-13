@@ -4,7 +4,7 @@ import { investmentValuationAPI } from '../utils/investmentValuationAPI';
 import { staticAPI } from '../utils/staticAPI';
 import './Modal.css';
 
-const ShareModal = ({ isOpen, onClose, onSuccess, editData }) => {
+const ShareModal = ({ isOpen, onClose, onSuccess, editData, shares = [] }) => {
   const [formData, setFormData] = useState({
     broker: '',
     purchaseType: 'delivery',
@@ -13,6 +13,7 @@ const ShareModal = ({ isOpen, onClose, onSuccess, editData }) => {
     tradingId: '',
     investorName: '',
     scripName: '',
+    exchange: 'NSE',
     purchasePrice: '',
     quantity: '',
     brokerage: '0',
@@ -22,10 +23,17 @@ const ShareModal = ({ isOpen, onClose, onSuccess, editData }) => {
     purchaseDate: new Date().toISOString().split('T')[0],
     currentPrice: '',
     nominee: '',
-    intraDay: false
+    intraDay: false,
+    modeOfHolding: 'Demat',
+    dematCompany: ''
   });
 
+  const [subBrokers, setSubBrokers] = useState([]);
+  const [familyMembers, setFamilyMembers] = useState([]);
+  const [showCustomInvestor, setShowCustomInvestor] = useState(false);
+
   const [loading, setLoading] = useState(false);
+  const [priceLoading, setPriceLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -55,10 +63,99 @@ const ShareModal = ({ isOpen, onClose, onSuccess, editData }) => {
         purchaseDate: new Date().toISOString().split('T')[0],
         currentPrice: '',
         nominee: '',
-        intraDay: false
+        intraDay: false,
+        modeOfHolding: 'Demat',
+        dematCompany: ''
       });
     }
   }, [editData]);
+
+  // Handle edit mode for investorName (check if it's a family member or custom)
+  useEffect(() => {
+    if (editData && familyMembers.length > 0) {
+      const isFamilyMember = familyMembers.some(m => m.name === editData.investorName);
+      if (!isFamilyMember && editData.investorName) {
+        setShowCustomInvestor(true);
+      } else {
+        setShowCustomInvestor(false);
+      }
+    }
+  }, [editData, familyMembers]);
+
+  // Fetch sub-brokers for dematCompany dropdown
+  useEffect(() => {
+    const fetchSubBrokers = async () => {
+      try {
+        const res = await staticAPI.getBasicDetails();
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setSubBrokers(res.data[0].subBrokers || []);
+        }
+      } catch (err) {
+        console.error('Error fetching sub-brokers:', err);
+      }
+    };
+    fetchSubBrokers();
+  }, []);
+
+  // Fetch family members for investorName dropdown
+  useEffect(() => {
+    const fetchFamilyMembers = async () => {
+      try {
+        const response = await staticAPI.getFamilyProfile();
+        if (response.data && response.data.length > 0) {
+          const members = response.data[0].members || [];
+          setFamilyMembers(members);
+        }
+      } catch (error) {
+        console.error('Error fetching family members:', error);
+      }
+    };
+    fetchFamilyMembers();
+  }, []);
+
+  // Auto-fetch current price when scripName or exchange changes (updates state but field is hidden)
+  useEffect(() => {
+    const scrip = formData.scripName;
+    if (!scrip || scrip.length < 2 || editData) return;
+
+    const timer = setTimeout(async () => {
+      setPriceLoading(true);
+      try {
+        const res = await investmentValuationAPI.getStockPriceByScrip(scrip, formData.exchange);
+        if (res.data?.success && res.data.data?.price) {
+          setFormData(prev => ({
+            ...prev,
+            currentPrice: String(res.data.data.price)
+          }));
+        }
+      } catch (err) {
+        console.warn('Could not auto-fetch price for scrip:', scrip);
+      } finally {
+        setPriceLoading(false);
+      }
+    }, 1000); // 1 second debounce
+
+    return () => clearTimeout(timer);
+  }, [formData.scripName, formData.exchange, editData]);
+
+  // Auto-fill profile details when broker name matches a previous entry
+  useEffect(() => {
+    if (editData || !formData.broker || formData.broker.length < 3) return;
+
+    const previousEntry = shares.find(s => 
+      s.broker.toLowerCase().includes(formData.broker.toLowerCase())
+    );
+
+    if (previousEntry) {
+      setFormData(prev => ({
+        ...prev,
+        clientId: prev.clientId || previousEntry.clientId || '',
+        dpId: prev.dpId || previousEntry.dpId || '',
+        tradingId: prev.tradingId || previousEntry.tradingId || '',
+        investorName: prev.investorName || previousEntry.investorName || ''
+      }));
+    }
+  }, [formData.broker, shares, editData]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -272,15 +369,39 @@ const ShareModal = ({ isOpen, onClose, onSuccess, editData }) => {
 
             <div className="form-field">
               <label>Investor Name *</label>
-              <input
-                type="text"
+              <select
                 name="investorName"
-                value={formData.investorName}
-                onChange={handleChange}
+                value={showCustomInvestor ? 'Other' : formData.investorName}
+                onChange={(e) => {
+                  if (e.target.value === 'Other') {
+                    setShowCustomInvestor(true);
+                    setFormData(prev => ({ ...prev, investorName: '' }));
+                  } else {
+                    setShowCustomInvestor(false);
+                    setFormData(prev => ({ ...prev, investorName: e.target.value }));
+                  }
+                }}
                 className={errors.investorName ? 'error' : ''}
-                placeholder="Enter investor name"
                 required
-              />
+              >
+                <option value="">Select Investor</option>
+                {familyMembers.map((member, idx) => (
+                  <option key={idx} value={member.name}>{member.name}</option>
+                ))}
+                <option value="Other">Other</option>
+              </select>
+              {showCustomInvestor && (
+                <input
+                  type="text"
+                  name="investorName"
+                  value={formData.investorName}
+                  onChange={handleChange}
+                  className={errors.investorName ? 'error' : ''}
+                  placeholder="Enter custom investor name"
+                  required
+                  style={{ marginTop: '8px' }}
+                />
+              )}
               {errors.investorName && <span className="error-text">{errors.investorName}</span>}
             </div>
 
@@ -297,6 +418,48 @@ const ShareModal = ({ isOpen, onClose, onSuccess, editData }) => {
               />
               {errors.scripName && <span className="error-text">{errors.scripName}</span>}
             </div>
+
+            <div className="form-field">
+              <label>Exchange</label>
+              <select
+                name="exchange"
+                value={formData.exchange}
+                onChange={handleChange}
+              >
+                <option value="NSE">NSE</option>
+                <option value="BSE">BSE</option>
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label>Mode of Holding</label>
+              <select
+                name="modeOfHolding"
+                value={formData.modeOfHolding}
+                onChange={handleChange}
+              >
+                <option value="Demat">Demat</option>
+                <option value="Physical">Physical</option>
+              </select>
+            </div>
+
+            {formData.modeOfHolding === 'Demat' && (
+              <div className="form-field">
+                <label>Demat Company</label>
+                <select
+                  name="dematCompany"
+                  value={formData.dematCompany}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Demat Company</option>
+                  {subBrokers.map((sb, idx) => (
+                    <option key={idx} value={sb.nameOfCompany}>
+                      {sb.nameOfCompany}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="form-field">
               <label>Purchase Price *</label>
@@ -392,42 +555,6 @@ const ShareModal = ({ isOpen, onClose, onSuccess, editData }) => {
                 value={formData.purchaseDate}
                 onChange={handleChange}
               />
-            </div>
-
-            <div className="form-field">
-              <label>Current Price</label>
-              <input
-                type="number"
-                name="currentPrice"
-                value={formData.currentPrice}
-                onChange={handleChange}
-                placeholder="Enter current market price"
-                min="0"
-                step="0.01"
-              />
-            </div>
-
-            <div className="form-field">
-              <label>Nominee</label>
-              <input
-                type="text"
-                name="nominee"
-                value={formData.nominee}
-                onChange={handleChange}
-                placeholder="Enter nominee name"
-              />
-            </div>
-
-            <div className="form-field">
-              <label>
-                <input
-                  type="checkbox"
-                  name="intraDay"
-                  checked={formData.intraDay}
-                  onChange={handleChange}
-                />
-                Intra Day Trading
-              </label>
             </div>
           </div>
 

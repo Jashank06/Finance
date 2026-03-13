@@ -170,9 +170,10 @@ profitLossSchema.pre('save', async function () {
     // Annualized P/L Calculations
     if (this.dateOfPurchase && this.dateOfSales) {
         const timeDiff = new Date(this.dateOfSales) - new Date(this.dateOfPurchase);
-        this.holdingDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+        // Treat same-day as 1 day for annualized calculation to avoid division by zero
+        this.holdingDays = Math.max(1, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
 
-        if (this.holdingDays > 0 && this.actualPurchaseValuation && this.profitLossValue) {
+        if (this.actualPurchaseValuation && this.profitLossValue !== undefined) {
             const annualisedReturn = (this.profitLossValue / this.actualPurchaseValuation) * (365 / this.holdingDays);
             this.annualisedProfitLossPercentage = annualisedReturn * 100;
             this.annualisedProfitLossValue = annualisedReturn * this.actualPurchaseValuation;

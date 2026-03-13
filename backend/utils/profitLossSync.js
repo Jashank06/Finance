@@ -7,127 +7,100 @@ const TradingDetails = require('../models/TradingDetails');
  */
 const autoGeneratePL = async (userId) => {
     try {
-        // Get all purchase and sale transactions
+        // 1. Reset all purchases' remainingQuantity to their original quantity and delete old P&L records
+        // This ensures we have a clean slate for recalculation
         const purchases = await TradingDetails.find({
             userId: userId,
             typeOfTransaction: 'Purchase'
-        });
+        }).sort({ dateOfPurchase: 1, createdAt: 1 }); // FIFO order
+
+        for (const p of purchases) {
+            p.remainingQuantity = p.quantity;
+            await p.save();
+        }
+
+        // Delete existing P&L records to prevent duplicates and ensure fresh sync
+        await ProfitLoss.deleteMany({ userId: userId });
 
         const sales = await TradingDetails.find({
             userId: userId,
             typeOfTransaction: 'Sell'
-        });
+        }).sort({ dateOfSale: 1, createdAt: 1 });
 
         console.log(`Auto-sync: Found ${purchases.length} purchases and ${sales.length} sales for user ${userId}`);
 
-        const generatedRecords = [];
+        let generatedCount = 0;
+        const normalize = (str) => str ? str.toString().trim().toLowerCase() : '';
 
-        // Helper function for case-insensitive comparison
-        const normalizeString = (str) => {
-            return str ? str.toString().trim().toLowerCase() : '';
-        };
-
-        // Match purchases with sales
+        // 2. Process each sale using FIFO matching across purchases
         for (const sale of sales) {
-            const matchingPurchases = purchases.filter(p => {
-                const scriptMatch = normalizeString(p.nameOfScript) === normalizeString(sale.nameOfScript);
-                const investorMatch = normalizeString(p.nameOfInvestor) === normalizeString(sale.nameOfInvestor);
-                const tradingIdMatch = normalizeString(p.tradingId) === normalizeString(sale.tradingId);
+            let remainingToSell = sale.quantity;
 
-                let dateMatch = true;
-                if (p.dateOfPurchase && sale.dateOfSale) {
-                    dateMatch = new Date(p.dateOfPurchase) <= new Date(sale.dateOfSale);
-                }
+            // Find matching purchases for this specific scrip/investor/ID
+            // only those that were bought before or on the sale date
+            const possiblePurchases = purchases.filter(p => 
+                normalize(p.nameOfScript) === normalize(sale.nameOfScript) &&
+                normalize(p.nameOfInvestor) === normalize(sale.nameOfInvestor) &&
+                normalize(p.tradingId) === normalize(sale.tradingId) &&
+                p.remainingQuantity > 0 &&
+                (!p.dateOfPurchase || !sale.dateOfSale || new Date(p.dateOfPurchase) <= new Date(sale.dateOfSale))
+            );
 
-                return scriptMatch && investorMatch && tradingIdMatch && dateMatch;
-            });
+            for (const purchase of possiblePurchases) {
+                if (remainingToSell <= 0) break;
 
-            if (matchingPurchases.length > 0) {
-                const matchingPurchase = matchingPurchases.find(p =>
-                    !generatedRecords.some(r => r.purchaseRecordId && r.purchaseRecordId.equals(p._id))
-                ) || matchingPurchases[0];
+                const sellFromThisLot = Math.min(purchase.remainingQuantity, remainingToSell);
+                
+                // Calculate proportional charges for this portion of the purchase
+                const purchaseRatio = sellFromThisLot / purchase.quantity;
+                const purchaseCharges = (
+                    (purchase.charges1 || 0) + (purchase.charges2 || 0) +
+                    (purchase.charges3 || 0) + (purchase.charges4 || 0) +
+                    (purchase.charges5 || 0)
+                ) * purchaseRatio;
 
-                // Check if P&L record already exists
-                const existingRecord = await ProfitLoss.findOne({
+                // Proportional charges for this portion of the sale
+                const saleRatio = sellFromThisLot / sale.quantity;
+                const saleCharges = (
+                    (sale.charges1 || 0) + (sale.charges2 || 0) +
+                    (sale.charges3 || 0) + (sale.charges4 || 0) +
+                    (sale.charges5 || 0)
+                ) * saleRatio;
+
+                const plRecord = new ProfitLoss({
                     userId: userId,
-                    purchaseRecordId: matchingPurchase._id,
-                    salesRecordId: sale._id
+                    purchaseRecordId: purchase._id,
+                    salesRecordId: sale._id,
+                    modeOfTransaction: purchase.modeOfTransaction,
+                    dematCompany: purchase.dematCompany,
+                    modeOfHolding: purchase.modeOfHolding,
+                    nameOfInvestor: purchase.nameOfInvestor,
+                    tradingId: purchase.tradingId,
+                    nameOfScript: purchase.nameOfScript,
+                    dateOfPurchase: purchase.dateOfPurchase,
+                    purchaseQuantity: sellFromThisLot,
+                    purchasePrice: purchase.purchasePrice,
+                    purchaseCharges: purchaseCharges,
+                    dateOfSales: sale.dateOfSale,
+                    salesQuantity: sellFromThisLot,
+                    salesPrice: sale.salePrice,
+                    salesCharges: saleCharges,
+                    status: purchase.remainingQuantity === sellFromThisLot ? 'Closed' : 'Partial'
                 });
 
-                // If doesn't exist, create it
-                if (!existingRecord) {
-                    const purchaseCharges = (matchingPurchase.charges1 || 0) +
-                        (matchingPurchase.charges2 || 0) +
-                        (matchingPurchase.charges3 || 0) +
-                        (matchingPurchase.charges4 || 0) +
-                        (matchingPurchase.charges5 || 0);
-
-                    const salesCharges = (sale.charges1 || 0) +
-                        (sale.charges2 || 0) +
-                        (sale.charges3 || 0) +
-                        (sale.charges4 || 0) +
-                        (sale.charges5 || 0);
-
-                    const plRecord = new ProfitLoss({
-                        userId: userId,
-                        purchaseRecordId: matchingPurchase._id,
-                        salesRecordId: sale._id,
-                        modeOfTransaction: matchingPurchase.modeOfTransaction,
-                        dematCompany: matchingPurchase.dematCompany,
-                        modeOfHolding: matchingPurchase.modeOfHolding,
-                        nameOfInvestor: matchingPurchase.nameOfInvestor,
-                        tradingId: matchingPurchase.tradingId,
-                        nameOfScript: matchingPurchase.nameOfScript,
-                        dateOfPurchase: matchingPurchase.dateOfPurchase,
-                        purchaseQuantity: matchingPurchase.quantity,
-                        purchasePrice: matchingPurchase.purchasePrice,
-                        purchaseCharges: purchaseCharges,
-                        dateOfSales: sale.dateOfSale,
-                        salesQuantity: sale.quantity,
-                        salesPrice: sale.salePrice,
-                        salesCharges: salesCharges
-                    });
-
-                    await plRecord.save();
-                    generatedRecords.push(plRecord);
-                    console.log(`Auto-created P&L for ${matchingPurchase.nameOfScript}`);
-                } else {
-                    // If exists, update it with latest data
-                    const purchaseCharges = (matchingPurchase.charges1 || 0) +
-                        (matchingPurchase.charges2 || 0) +
-                        (matchingPurchase.charges3 || 0) +
-                        (matchingPurchase.charges4 || 0) +
-                        (matchingPurchase.charges5 || 0);
-
-                    const salesCharges = (sale.charges1 || 0) +
-                        (sale.charges2 || 0) +
-                        (sale.charges3 || 0) +
-                        (sale.charges4 || 0) +
-                        (sale.charges5 || 0);
-
-                    existingRecord.modeOfTransaction = matchingPurchase.modeOfTransaction;
-                    existingRecord.dematCompany = matchingPurchase.dematCompany;
-                    existingRecord.modeOfHolding = matchingPurchase.modeOfHolding;
-                    existingRecord.nameOfInvestor = matchingPurchase.nameOfInvestor;
-                    existingRecord.tradingId = matchingPurchase.tradingId;
-                    existingRecord.nameOfScript = matchingPurchase.nameOfScript;
-                    existingRecord.dateOfPurchase = matchingPurchase.dateOfPurchase;
-                    existingRecord.purchaseQuantity = matchingPurchase.quantity;
-                    existingRecord.purchasePrice = matchingPurchase.purchasePrice;
-                    existingRecord.purchaseCharges = purchaseCharges;
-                    existingRecord.dateOfSales = sale.dateOfSale;
-                    existingRecord.salesQuantity = sale.quantity;
-                    existingRecord.salesPrice = sale.salePrice;
-                    existingRecord.salesCharges = salesCharges;
-
-                    await existingRecord.save();
-                    console.log(`Auto-updated P&L for ${matchingPurchase.nameOfScript}`);
-                }
+                await plRecord.save();
+                
+                // Update purchase remaining quantity
+                purchase.remainingQuantity -= sellFromThisLot;
+                await purchase.save();
+                
+                remainingToSell -= sellFromThisLot;
+                generatedCount++;
             }
         }
 
-        console.log(`Auto-sync completed: ${generatedRecords.length} new P&L records created`);
-        return { created: generatedRecords.length };
+        console.log(`Auto-sync completed: ${generatedCount} P&L segments created`);
+        return { created: generatedCount };
     } catch (error) {
         console.error('Error in auto-generate P&L:', error);
         throw error;

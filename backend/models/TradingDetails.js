@@ -41,6 +41,11 @@ const tradingDetailsSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    exchange: {
+        type: String,
+        enum: ['NSE', 'BSE'],
+        default: 'NSE'
+    },
 
     // Purchase-specific fields
     dateOfPurchase: {
@@ -90,6 +95,9 @@ const tradingDetailsSchema = new mongoose.Schema({
     value: {
         type: Number
     },
+    remainingQuantity: {
+        type: Number
+    },
 
     // Sell-specific fields
     dateOfSale: {
@@ -115,14 +123,19 @@ tradingDetailsSchema.pre('save', async function () {
         // Calculate Purchase Valuation = Quantity × Purchase Price
         if (this.quantity && this.purchasePrice) {
             this.purchaseValuation = this.quantity * this.purchasePrice;
+            // Initialize remainingQuantity if new
+            if (this.isNew || this.remainingQuantity === undefined) {
+                this.remainingQuantity = this.quantity;
+            }
         }
 
-        // Calculate Actual Price of Purchase = Purchase Price + All Charges
+        // Calculate Actual Price of Purchase = Purchase Price + (All Charges / Quantity)
         if (this.purchasePrice !== undefined) {
             const totalCharges = (this.charges1 || 0) + (this.charges2 || 0) +
                 (this.charges3 || 0) + (this.charges4 || 0) +
                 (this.charges5 || 0);
-            this.actualPriceOfPurchase = this.purchasePrice + totalCharges;
+            const qty = this.quantity || 1;
+            this.actualPriceOfPurchase = this.purchasePrice + (totalCharges / qty);
         }
 
         // Calculate Actual Valuation = Quantity × Actual Price of Purchase
@@ -135,12 +148,13 @@ tradingDetailsSchema.pre('save', async function () {
             this.salesValuation = this.quantity * this.salePrice;
         }
 
-        // Calculate Actual Price of Sales = Sale Price - All Charges
+        // Calculate Actual Price of Sales = Sale Price - (All Charges / Quantity)
         if (this.salePrice !== undefined) {
             const totalCharges = (this.charges1 || 0) + (this.charges2 || 0) +
                 (this.charges3 || 0) + (this.charges4 || 0) +
                 (this.charges5 || 0);
-            this.actualPriceOfSales = this.salePrice - totalCharges;
+            const qty = this.quantity || 1;
+            this.actualPriceOfSales = this.salePrice - (totalCharges / qty);
         }
 
         // Calculate Actual Valuation = Quantity × Actual Price of Sales

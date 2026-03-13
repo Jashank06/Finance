@@ -422,7 +422,9 @@ const CashCardsBank = () => {
       broaderCategory: '',
       mainCategory: '',
       createNew: false,
-      newRecordData: {}
+      newRecordData: {
+        interestRateType: 'annual'
+      }
     });
   };
 
@@ -769,7 +771,10 @@ const CashCardsBank = () => {
               let emiAmount = 0;
 
               if (tenureMonths > 0 && principal > 0) {
-                const r = annualRate / 100 / 12; // Monthly interest rate
+                const isMonthly = loanData.interestRateType === 'monthly';
+                const r = isMonthly
+                  ? annualRate / 100
+                  : annualRate / 100 / 12; // Monthly interest rate
                 const n = tenureMonths;
                 emiAmount = r === 0
                   ? principal / n
@@ -821,7 +826,7 @@ const CashCardsBank = () => {
                   forPurpose: loanData.purpose || bankTransactionForm.description || 'Bank Transaction', // Added purpose
                   comments: `Created from bank transaction on ${new Date().toLocaleDateString('en-IN')}`,
                   bankTransactionId: newTransaction._id,
-                  rateType: 'annual',
+                  rateType: loanData.interestRateType || 'annual',
                   tenureMonths: tenureMonths,
                   emiAmount: emiAmount,
                   milestone: bankTransactionForm.isMilestone ? 'Yes' : 'No' // Saved milestone status
@@ -1471,20 +1476,7 @@ const CashCardsBank = () => {
         return;
       }
 
-      const required = ['Account', 'Transaction Type', 'Amount', 'Broader Category', 'Date'];
-      const firstRow = jsonData[0];
-      const missing = required.filter(col => !(col in firstRow));
-
-      if (missing.length > 0) {
-        alert(`Missing required columns: ${missing.join(', ')}`);
-        setUploadingBank(false);
-        return;
-      }
-
-      let successCount = 0;
-      let errorCount = 0;
-
-      // Reuse getValue helper from Card upload scope if needed, but redefine here for safety/scoping
+      // Helper to match keys case-insensitively and ignore whitespace
       const getValue = (row, key) => {
         const normalizedKey = key.toLowerCase().replace(/\s+/g, '').trim();
         const actualKey = Object.keys(row).find(k =>
@@ -1493,7 +1485,7 @@ const CashCardsBank = () => {
         return actualKey ? row[actualKey] : undefined;
       };
 
-      // Helper to parse date from DD/MM/YY or Excel serial
+      // Helper to parse date from DD/MM/YY, DD-MM-YY, or Excel serial
       const parseExcelDate = (input) => {
         if (!input) return new Date().toISOString().split('T')[0];
 
@@ -1503,15 +1495,19 @@ const CashCardsBank = () => {
           return date.toISOString().split('T')[0];
         }
 
-        // Case 2: String DD/MM/YY or DD/MM/YYYY
+        // Case 2: String DD/MM/YY or DD-MM-YY
         if (typeof input === 'string') {
-          // check if it matches DD/MM/YY or DD/MM/YYYY
-          if (input.includes('/')) {
-            const parts = input.trim().split('/');
+          const separator = input.includes('/') ? '/' : (input.includes('-') ? '-' : null);
+          if (separator) {
+            const parts = input.trim().split(separator);
             if (parts.length === 3) {
               let [d, m, y] = parts;
+              // If first part is 4 digits, assume YYYY-MM-DD
+              if (d.length === 4) return `${d}-${m.padStart(2, '0')}-${y.padStart(2, '0')}`;
+              
               // Handle YY -> 20YY
               if (y.length === 2) y = '20' + y;
+              // Handle DD-MM-YYYY or DD-MM-YY
               return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
             }
           }
@@ -1530,6 +1526,25 @@ const CashCardsBank = () => {
         return new Date().toISOString().split('T')[0];
       };
 
+      const hasLegacyFormat = jsonData[0] && ('Amount' in jsonData[0] || getValue(jsonData[0], 'Amount')) && ('Transaction Type' in jsonData[0] || getValue(jsonData[0], 'Transaction Type'));
+      const hasNewFormat = jsonData[0] && (('Credit' in jsonData[0] || getValue(jsonData[0], 'Credit')) || ('Debit' in jsonData[0] || getValue(jsonData[0], 'Debit')));
+      const hasAccountColumn = jsonData[0] && ('Account' in jsonData[0] || getValue(jsonData[0], 'Account'));
+
+      if (!hasLegacyFormat && !hasNewFormat) {
+        alert('Missing required columns! Format must have either (Credit/Debit) or (Amount/Transaction Type).');
+        setUploadingBank(false);
+        return;
+      }
+
+      if (!hasAccountColumn && !selectedBank) {
+        alert('Account column missing! Please select a bank account first or add an "Account" column to your Excel file.');
+        setUploadingBank(false);
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
       setUploadProgress(0); // Initialize progress
       const totalRows = jsonData.length;
 
@@ -1537,29 +1552,74 @@ const CashCardsBank = () => {
         const row = jsonData[i];
         try {
           const accountName = getValue(row, 'Account');
-          // Match by Name OR Account Number (converted to string for safety)
-          const account = bankRecords.find(b =>
-            b.name === accountName ||
-            (b.accountNumber && String(b.accountNumber) === String(accountName))
-          );
+          let account = null;
+
+          if (accountName) {
+            const strippedAccountName = String(accountName).trim();
+            // 1. Exact Name/Number match
+            account = bankRecords.find(b =>
+              b.name.trim() === strippedAccountName ||
+              (b.accountNumber && String(b.accountNumber).trim() === strippedAccountName)
+            );
+
+            // 2. If no exact match and strippedAccountName is long, try matching by last 4 digits
+            if (!account && strippedAccountName.length >= 4) {
+              const last4 = strippedAccountName.slice(-4);
+              const matches = bankRecords.filter(b =>
+                b.accountNumber && String(b.accountNumber).endsWith(last4)
+              );
+              // Only auto-match if it's unique
+              if (matches.length === 1) {
+                account = matches[0];
+                console.log(`Matched account via suffix: ${account.name} (Ends with ${last4})`);
+              }
+            }
+          } else if (selectedBank) {
+            // Fallback to currently active bank
+            account = selectedBank;
+          }
 
           if (!account) {
-            console.error(`Account not found: ${accountName}`);
+            console.error(`Account not found: "${accountName}". Available accounts:`, bankRecords.map(b => `${b.name} (${b.accountNumber})`));
             errorCount++;
             continue;
           }
 
+          // Smart detection for Type and Amount
+          let type = 'withdrawal';
+          let amount = 0;
+
+          const creditVal = parseFloat(getValue(row, 'Credit')) || 0;
+          const debitVal = parseFloat(getValue(row, 'Debit')) || 0;
+
+          if (creditVal > 0 || debitVal > 0) {
+            // New Format (Credit/Debit)
+            if (creditVal >= debitVal) {
+              type = 'credit';
+              amount = creditVal;
+            } else {
+              type = 'debit';
+              amount = debitVal;
+            }
+          } else {
+            // Legacy Format (Amount & Transaction Type)
+            type = getValue(row, 'Transaction Type')?.toLowerCase() || 'withdrawal';
+            amount = parseFloat(getValue(row, 'Amount')) || 0;
+          }
+
+          if (amount === 0) continue; // Skip empty rows
+
           const transaction = {
             accountId: account._id,
-            type: getValue(row, 'Transaction Type')?.toLowerCase() || 'withdrawal',
-            amount: parseFloat(getValue(row, 'Amount')) || 0,
+            type,
+            amount,
             currency: getValue(row, 'Currency') || 'INR',
-            merchant: getValue(row, 'Merchant/Description') || '',
-            broaderCategory: getValue(row, 'Broader Category') || '',
+            merchant: getValue(row, 'Merchant/Description') || getValue(row, 'Transaction Reference') || '',
+            broaderCategory: getValue(row, 'Broader Category') || 'Other',
             mainCategory: getValue(row, 'Main Category') || '',
             subCategory: getValue(row, 'Sub Category') || '',
             customSubCategory: getValue(row, 'Custom Sub Category') || '',
-            description: getValue(row, 'Description') || '',
+            description: getValue(row, 'Description') || getValue(row, 'Narration') || '',
             date: parseExcelDate(getValue(row, 'Date')),
             transactionType: getValue(row, 'Type of Transaction') || undefined, // ensure undefined
             expenseType: getValue(row, 'Expense Type') || undefined // ensure undefined
@@ -3157,16 +3217,35 @@ const CashCardsBank = () => {
                           </div>
                           <div className="form-group">
                             <label>Interest Rate (%):</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={categoryDropdownData.newRecordData.interestRate || ''}
-                              onChange={(e) => setCategoryDropdownData({
-                                ...categoryDropdownData,
-                                newRecordData: { ...categoryDropdownData.newRecordData, interestRate: e.target.value }
-                              })}
-                              placeholder="0"
-                            />
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                              <select
+                                value={categoryDropdownData.newRecordData.interestRateType || 'annual'}
+                                onChange={(e) => setCategoryDropdownData({
+                                  ...categoryDropdownData,
+                                  newRecordData: { ...categoryDropdownData.newRecordData, interestRateType: e.target.value }
+                                })}
+                                style={{
+                                  width: '120px',
+                                  padding: '8px',
+                                  borderRadius: '4px',
+                                  border: '1px solid #ddd'
+                                }}
+                              >
+                                <option value="annual">Annual</option>
+                                <option value="monthly">Monthly</option>
+                              </select>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={categoryDropdownData.newRecordData.interestRateType === 'monthly' ? (categoryDropdownData.newRecordData.interestRate || '') : (categoryDropdownData.newRecordData.interestRate || '')}
+                                onChange={(e) => setCategoryDropdownData({
+                                  ...categoryDropdownData,
+                                  newRecordData: { ...categoryDropdownData.newRecordData, interestRate: e.target.value }
+                                })}
+                                placeholder="0"
+                                style={{ flex: 1 }}
+                              />
+                            </div>
                           </div>
                           <div className="form-group">
                             <label>Tenure (Months): *</label>
@@ -3715,38 +3794,28 @@ const CashCardsBank = () => {
                   <tbody>
                     <tr>
                       <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Account</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Account Name or Number. <b>Note:</b> If missing, we'll use the bank account you have open!</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Credit / Debit</td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Account Name OR Account Number (Use Number for unique matching)</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Separate columns for Credit/Debit (Standard Bank Format) OR single <b>Amount</b> column.</td>
                     </tr>
                     <tr>
                       <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Transaction Type</td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>deposit, withdrawal, transfer</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Amount</td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>5000.00</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Currency</td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>INR, USD</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Merchant/Description</td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Salary, Bill Payment</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>deposit, withdrawal. (Not needed if using Credit/Debit columns!)</td>
                     </tr>
                     <tr>
                       <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Broader Category</td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Personal, Business</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>No</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Defaults to "Other" if not provided.</td>
                     </tr>
                     <tr>
                       <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Date</td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>✅ Yes</td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>20/12/25 (DD/MM/YY)</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #e2e8f0' }}>Supports DD/MM/YY, DD-MM-YY, or Excel format.</td>
                     </tr>
                   </tbody>
                 </table>

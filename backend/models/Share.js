@@ -17,6 +17,20 @@ const shareSchema = new mongoose.Schema({
     enum: ['delivery', 'intraday', 'btst', 'stbt'],
     default: 'delivery',
   },
+  exchange: {
+    type: String,
+    enum: ['NSE', 'BSE'],
+    default: 'NSE',
+  },
+  modeOfHolding: {
+    type: String,
+    enum: ['Physical', 'Demat'],
+    default: 'Demat',
+  },
+  dematCompany: {
+    type: String,
+    default: '',
+  },
   clientId: {
     type: String,
     required: true,

@@ -54,119 +54,22 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Auto-generate P&L records from Trading Details
+const { autoGeneratePL } = require('../utils/profitLossSync');
+
 router.post('/auto-generate', auth, async (req, res) => {
     try {
-        // Get all purchase and sale transactions
-        const purchases = await TradingDetails.find({
-            userId: req.user.id,
-            typeOfTransaction: 'Purchase'
-        });
-
-        const sales = await TradingDetails.find({
-            userId: req.user.id,
-            typeOfTransaction: 'Sell'
-        });
-
-        console.log(`Found ${purchases.length} purchases and ${sales.length} sales for user ${req.user.id}`);
-
-        const generatedRecords = [];
-        const matchedSales = new Set();
-
-        // Helper function for case-insensitive comparison
-        const normalizeString = (str) => {
-            return str ? str.toString().trim().toLowerCase() : '';
-        };
-
-        // Match purchases with sales based on script name, investor, and trading ID
-        for (const sale of sales) {
-            // Find matching purchase with flexible matching
-            const matchingPurchases = purchases.filter(p => {
-                const scriptMatch = normalizeString(p.nameOfScript) === normalizeString(sale.nameOfScript);
-                const investorMatch = normalizeString(p.nameOfInvestor) === normalizeString(sale.nameOfInvestor);
-                const tradingIdMatch = normalizeString(p.tradingId) === normalizeString(sale.tradingId);
-
-                // Date comparison - ensure purchase is before sale
-                let dateMatch = true;
-                if (p.dateOfPurchase && sale.dateOfSale) {
-                    dateMatch = new Date(p.dateOfPurchase) <= new Date(sale.dateOfSale);
-                }
-
-                return scriptMatch && investorMatch && tradingIdMatch && dateMatch;
-            });
-
-            if (matchingPurchases.length > 0) {
-                // Use the earliest purchase that hasn't been matched yet
-                const matchingPurchase = matchingPurchases.find(p =>
-                    !generatedRecords.some(r => r.purchaseRecordId && r.purchaseRecordId.equals(p._id))
-                ) || matchingPurchases[0];
-
-                // Check if P&L record already exists for this combination
-                const existingRecord = await ProfitLoss.findOne({
-                    userId: req.user.id,
-                    purchaseRecordId: matchingPurchase._id,
-                    salesRecordId: sale._id
-                });
-
-                if (!existingRecord) {
-                    // Calculate total charges from purchase
-                    const purchaseCharges = (matchingPurchase.charges1 || 0) +
-                        (matchingPurchase.charges2 || 0) +
-                        (matchingPurchase.charges3 || 0) +
-                        (matchingPurchase.charges4 || 0) +
-                        (matchingPurchase.charges5 || 0);
-
-                    // Calculate total charges from sale
-                    const salesCharges = (sale.charges1 || 0) +
-                        (sale.charges2 || 0) +
-                        (sale.charges3 || 0) +
-                        (sale.charges4 || 0) +
-                        (sale.charges5 || 0);
-
-                    // Create P&L record
-                    const plRecord = new ProfitLoss({
-                        userId: req.user.id,
-                        purchaseRecordId: matchingPurchase._id,
-                        salesRecordId: sale._id,
-                        modeOfTransaction: matchingPurchase.modeOfTransaction,
-                        dematCompany: matchingPurchase.dematCompany,
-                        modeOfHolding: matchingPurchase.modeOfHolding,
-                        nameOfInvestor: matchingPurchase.nameOfInvestor,
-                        tradingId: matchingPurchase.tradingId,
-                        nameOfScript: matchingPurchase.nameOfScript,
-                        dateOfPurchase: matchingPurchase.dateOfPurchase,
-                        purchaseQuantity: matchingPurchase.quantity,
-                        purchasePrice: matchingPurchase.purchasePrice,
-                        purchaseCharges: purchaseCharges,
-                        dateOfSales: sale.dateOfSale,
-                        salesQuantity: sale.quantity,
-                        salesPrice: sale.salePrice,
-                        salesCharges: salesCharges
-                    });
-
-                    await plRecord.save();
-                    generatedRecords.push(plRecord);
-                    matchedSales.add(sale._id.toString());
-
-                    console.log(`Created P&L record for ${matchingPurchase.nameOfScript}`);
-                }
-            } else {
-                console.log(`No matching purchase found for sale: ${sale.nameOfScript} (Investor: ${sale.nameOfInvestor}, Trading ID: ${sale.tradingId})`);
-            }
-        }
-
-        // Log summary
-        console.log(`Generated ${generatedRecords.length} P&L records`);
-        console.log(`Unmatched sales: ${sales.length - matchedSales.size}`);
+        const result = await autoGeneratePL(req.user.id);
+        
+        // Fetch the generated records to return them
+        const generatedRecords = await ProfitLoss.find({ userId: req.user.id })
+            .sort({ dateOfSales: -1 });
 
         res.json({
             success: true,
-            message: `Generated ${generatedRecords.length} P&L records from ${purchases.length} purchases and ${sales.length} sales`,
+            message: `Successfully synchronized P&L records using FIFO matching.`,
             data: generatedRecords,
             stats: {
-                totalPurchases: purchases.length,
-                totalSales: sales.length,
-                matched: generatedRecords.length,
-                unmatchedSales: sales.length - matchedSales.size
+                matched: result.created
             }
         });
     } catch (error) {

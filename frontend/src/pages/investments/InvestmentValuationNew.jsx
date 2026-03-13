@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { FiBarChart2, FiPieChart, FiTrendingUp, FiDollarSign, FiActivity, FiPlus, FiEdit, FiTrash2, FiRefreshCw, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiBarChart2, FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, FiActivity, FiPlus, FiEdit, FiTrash2, FiRefreshCw, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { investmentValuationAPI } from '../../utils/investmentValuationAPI';
 import { staticAPI } from '../../utils/staticAPI';
@@ -11,6 +11,15 @@ import LoanModal from '../../components/LoanModal';
 import './Investment.css';
 
 import { trackFeatureUsage, trackAction } from '../../utils/featureTracking';
+
+const n2 = (v) => (v != null ? parseFloat(v).toFixed(2) : '-');
+const n3 = (v) => (v != null ? parseFloat(v).toFixed(3) : '-');
+const fmtDate = (d) => {
+  if (!d) return '-';
+  const dt = new Date(d);
+  return `${String(dt.getDate()).padStart(2, '0')}-${String(dt.getMonth() + 1).padStart(2, '0')}-${dt.getFullYear()}`;
+};
+const fmtINR = (v) => v != null ? `₹${parseFloat(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
 
 const InvestmentValuationNew = () => {
   // State for all investment data
@@ -25,6 +34,7 @@ const InvestmentValuationNew = () => {
   const [lifeInsurance, setLifeInsurance] = useState([]);
   const [healthInsurance, setHealthInsurance] = useState([]);
   const [loans, setLoans] = useState([]);
+  const [sharesRefreshing, setSharesRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('summary');
   const [error, setError] = useState(null);
@@ -255,6 +265,20 @@ const InvestmentValuationNew = () => {
   const toggleLumpsumExpand = (groupId) => {
     setLumpsumExpanded(prev => ({ ...prev, [groupId]: !prev[groupId] }));
   };
+  
+  const handleRefreshShares = async () => {
+    setSharesRefreshing(true);
+    try {
+      const res = await investmentValuationAPI.refreshAllShares();
+      await fetchAllData();
+      alert(`Refresh complete: ${res.data.message}`);
+    } catch (err) {
+      console.warn('Could not refresh Shares:', err.message);
+      alert('Could not refresh share prices: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSharesRefreshing(false);
+    }
+  };
 
   // Modal handlers
   const openModal = (type, editData = null, subType = null) => {
@@ -410,15 +434,6 @@ const InvestmentValuationNew = () => {
   );
 
   const MutualFundLumpsumSection = () => {
-    const n3 = (v) => (v != null ? parseFloat(v).toFixed(3) : '-');
-    const n2 = (v) => (v != null ? parseFloat(v).toFixed(2) : '-');
-    const fmtDate = (d) => {
-      if (!d) return '-';
-      const dt = new Date(d);
-      return `${String(dt.getDate()).padStart(2,'0')}-${String(dt.getMonth()+1).padStart(2,'0')}-${dt.getFullYear()}`;
-    };
-    const fmtINR = (v) => v != null ? `₹${parseFloat(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
-
     // Group lumpsum funds by folioNumber + fundName
     const groups = useMemo(() => {
       const g = {};
@@ -638,14 +653,6 @@ const InvestmentValuationNew = () => {
   };
 
   const MutualFundSIPSection = () => {
-    const n3 = (v) => (v != null ? parseFloat(v).toFixed(3) : '-');
-    const n2 = (v) => (v != null ? parseFloat(v).toFixed(2) : '-');
-    const fmtDate = (d) => {
-      if (!d) return '-';
-      const dt = new Date(d);
-      return `${String(dt.getDate()).padStart(2,'0')}-${String(dt.getMonth()+1).padStart(2,'0')}-${dt.getFullYear()}`;
-    };
-    const fmtINR = (v) => v != null ? `₹${parseFloat(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
 
     return (
       <div className="investment-section">
@@ -789,6 +796,7 @@ const InvestmentValuationNew = () => {
                         installmentDate: new Date(tx.installmentDate).toISOString().split('T')[0],
                         sipAmount: String(tx.sipAmount),
                         purchaseNAV: String(tx.purchaseNAV),
+                        units: String(tx.units),
                       };
                     });
                     setEditDrafts(prev => ({ ...prev, [mf._id]: init }));
@@ -808,8 +816,8 @@ const InvestmentValuationNew = () => {
                           const d = tableDrafts[tx._id] || {};
                           const amt = parseFloat(d.sipAmount ?? tx.sipAmount) || 0;
                           const nav = parseFloat(d.purchaseNAV ?? tx.purchaseNAV) || 0;
+                          const units = parseFloat(d.units ?? tx.units) || 0;
                           const dateVal = d.installmentDate ?? new Date(tx.installmentDate).toISOString().split('T')[0];
-                          const units = nav > 0 ? Math.round((amt / nav) * 1000) / 1000 : tx.units;
                           const currentValue = Math.round(units * liveCurrentNAV * 100) / 100;
                           const trnDays = Math.max(0, Math.floor((today - new Date(dateVal)) / 86400000));
                           const absReturn = amt > 0 ? Math.round(((currentValue - amt) / amt) * 10000) / 100 : 0;
@@ -839,11 +847,14 @@ const InvestmentValuationNew = () => {
                     // Parse safely — allow empty string during editing without resetting to tx value
                     const rawAmt = isTableEditing ? d.sipAmount : null;
                     const rawNav = isTableEditing ? d.purchaseNAV : null;
+                    const rawUnits = isTableEditing ? d.units : null;
+                    
                     const amt = rawAmt != null ? (parseFloat(rawAmt) || 0) : tx.sipAmount;
                     const nav = rawNav != null ? (parseFloat(rawNav) || 0) : tx.purchaseNAV;
+                    const units = rawUnits != null ? (parseFloat(rawUnits) || 0) : tx.units;
+                    
                     const dateVal = isTableEditing ? (d.installmentDate ?? new Date(tx.installmentDate).toISOString().split('T')[0]) : new Date(tx.installmentDate).toISOString().split('T')[0];
                     const liveNAV = currentNAV || tx.currentNAV || 0;
-                    const units = nav > 0 ? Math.round((amt / nav) * 1000) / 1000 : tx.units;
                     const currentValue = Math.round(units * liveNAV * 100) / 100;
                     const trnDays = Math.max(0, Math.floor((new Date() - new Date(dateVal)) / 86400000));
                     const absReturn = amt > 0 ? Math.round(((currentValue - amt) / amt) * 10000) / 100 : 0;
@@ -855,10 +866,29 @@ const InvestmentValuationNew = () => {
                   };
 
                   const setRowField = (txId, field, value) => {
-                    setEditDrafts(prev => ({
-                      ...prev,
-                      [mf._id]: { ...prev[mf._id], [txId]: { ...(prev[mf._id]?.[txId] || {}), [field]: value } }
-                    }));
+                    setEditDrafts(prev => {
+                      const fundDraft = { ...(prev[mf._id] || {}) };
+                      const rowDraft = { ...(fundDraft[txId] || {}) };
+                      rowDraft[field] = value;
+
+                      // Connection Logic
+                      if (field === 'sipAmount' || field === 'purchaseNAV') {
+                        const amt = field === 'sipAmount' ? (parseFloat(value) || 0) : (parseFloat(rowDraft.sipAmount) || 0);
+                        const nav = field === 'purchaseNAV' ? (parseFloat(value) || 0) : (parseFloat(rowDraft.purchaseNAV) || 0);
+                        if (nav > 0) {
+                          rowDraft.units = String(Math.round((amt / nav) * 1000) / 1000);
+                        }
+                      } else if (field === 'units') {
+                        const units = parseFloat(value) || 0;
+                        const nav = parseFloat(rowDraft.purchaseNAV) || 0;
+                        if (nav > 0) {
+                          rowDraft.sipAmount = String(Math.round(units * nav * 100) / 100);
+                        }
+                      }
+
+                      fundDraft[txId] = rowDraft;
+                      return { ...prev, [mf._id]: fundDraft };
+                    });
                   };
 
                   return (
@@ -894,7 +924,7 @@ const InvestmentValuationNew = () => {
                             <th>Sub Type</th>
                             <th style={{ background: isTableEditing ? '#fef3c7' : '' }}>Amount (₹)</th>
                             <th style={{ background: isTableEditing ? '#fef3c7' : '' }}>Nav (₹)</th>
-                            <th>No. of Units</th>
+                            <th style={{ background: isTableEditing ? '#fef3c7' : '' }}>No. of Units</th>
                             <th>Trn Days</th>
                             <th>Current NAV (₹)</th>
                             <th>Current Value (₹)</th>
@@ -956,7 +986,22 @@ const InvestmentValuationNew = () => {
                                       />
                                     ) : n3(tx.purchaseNAV)}
                                   </td>
-                                  <td style={{ textAlign: 'right', fontWeight: 600, color: isTableEditing ? '#d97706' : 'inherit' }}>{n3(units)}</td>
+                                  <td style={{ textAlign: 'right', fontWeight: 600, background: isTableEditing ? '#fffbeb' : '' }}>
+                                    {isTableEditing ? (
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={d.units ?? ''}
+                                        placeholder={String(tx.units)}
+                                        onChange={e => setRowField(tx._id, 'units', e.target.value)}
+                                        style={{
+                                          fontSize: 11, padding: '3px 6px', border: '1.5px solid #fbbf24',
+                                          borderRadius: 5, width: 88, textAlign: 'right',
+                                          background: '#fff', outline: 'none', boxShadow: '0 0 0 2px #fef3c7'
+                                        }}
+                                      />
+                                    ) : n3(tx.units)}
+                                  </td>
                                   <td style={{ textAlign: 'right' }}>{trnDays}</td>
                                   <td style={{ textAlign: 'right' }}>{n2(liveNAV)}</td>
                                   <td style={{ textAlign: 'right', color: isTableEditing ? '#d97706' : 'inherit' }}>{fmtINR(currentValue)}</td>
@@ -1012,9 +1057,20 @@ const InvestmentValuationNew = () => {
     <div className="investment-section">
       <div className="section-header">
         <h3>Shares</h3>
-        <button className="btn-add-investment" onClick={() => openModal('share')}>
-          <FiPlus /> Add New
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button 
+            className="btn-refresh-nav" 
+            onClick={handleRefreshShares} 
+            disabled={sharesRefreshing}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: sharesRefreshing ? 0.6 : 1 }}
+          >
+            <FiRefreshCw className={sharesRefreshing ? 'spin' : ''} /> 
+            {sharesRefreshing ? 'Refreshing...' : 'Refresh Prices'}
+          </button>
+          <button className="btn-add-investment" onClick={() => openModal('share')}>
+            <FiPlus /> Add New
+          </button>
+        </div>
       </div>
 
       <div className="table-container">
@@ -1023,11 +1079,14 @@ const InvestmentValuationNew = () => {
             <tr>
               <th>Investment Broker</th>
               <th>Type of Purchase</th>
+              <th>Holding Mode</th>
+              <th>Demat Company</th>
               <th>Client ID</th>
               <th>DP ID</th>
               <th>Trading ID</th>
               <th>Investor Name</th>
               <th>Scrip Name</th>
+              <th>Exchange</th>
               <th>Purchase Price</th>
               <th>Quantity</th>
               <th>Brokerage</th>
@@ -1042,8 +1101,6 @@ const InvestmentValuationNew = () => {
               <th>Abs. Return (%)</th>
               <th>Unrealised P&L</th>
               <th>Scrip Holding (%)</th>
-              <th>Nominee</th>
-              <th>Intra Day</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -1057,30 +1114,34 @@ const InvestmentValuationNew = () => {
                 <tr key={index}>
                   <td>{item.broker}</td>
                   <td>{item.purchaseType}</td>
+                  <td>{item.modeOfHolding || 'Demat'}</td>
+                  <td>{item.dematCompany || '-'}</td>
                   <td>{item.clientId}</td>
                   <td>{item.dpId}</td>
                   <td>{item.tradingId}</td>
                   <td>{item.investorName}</td>
                   <td>{item.scripName}</td>
-                  <td>₹{item.purchasePrice}</td>
+                  <td>{item.exchange || 'NSE'}</td>
+                  <td>{fmtINR(item.purchasePrice)}</td>
                   <td>{item.quantity}</td>
                   <td>₹{item.brokerage}</td>
                   <td>₹{item.stt}</td>
                   <td>₹{item.otherCharges}</td>
                   <td>₹{item.totalCharges}</td>
                   <td>₹{item.purchaseAmount?.toLocaleString('en-IN')}</td>
-                  <td>{item.purchaseDate}</td>
+                  <td>{fmtDate(item.purchaseDate)}</td>
                   <td>₹{item.currentPrice}</td>
-                  <td>₹{item.currentValuation?.toLocaleString('en-IN')}</td>
+                  <td className={item.unrealisedPL >= 0 ? 'profit' : 'loss'} style={{ fontWeight: 'bold' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {item.unrealisedPL >= 0 ? <FiTrendingUp /> : <FiTrendingDown />}
+                      ₹{item.currentValuation?.toLocaleString('en-IN')}
+                    </div>
+                  </td>
                   <td>{item.cagr}%</td>
                   <td>{item.absoluteReturn}%</td>
-                  <td className={item.unrealisedPL >= 0 ? 'profit' : 'loss'}>
-                    ₹{item.unrealisedPL?.toLocaleString('en-IN')}
-                  </td>
-                  <td>{item.scripHolding}%</td>
-                  <td>{item.nominee}</td>
-                  <td>{item.intraDay ? 'Yes' : 'No'}</td>
-                  <td>
+                  <td className={item.unrealisedPL >= 0 ? 'profit' : 'loss'}>{fmtINR(item.unrealisedPL)}</td>
+                  <td>{n2(item.scripHolding)}%</td>
+                  <td className="actions">
                     <div className="action-buttons">
                       <button className="edit-btn" onClick={() => openModal('share', item)}>
                         <FiEdit />
@@ -1360,6 +1421,7 @@ const InvestmentValuationNew = () => {
         onClose={() => closeModal('share')}
         onSuccess={handleModalSuccess}
         editData={modals.share.editData}
+        shares={shares}
       />
 
       <InsuranceModal

@@ -1256,7 +1256,7 @@ const BasicDetails = () => {
               <FiTrendingUp className="section-icon" />
               <h3>Mutual Funds Information</h3>
             </div>
-            <div className="section-actions">
+            {/* <div className="section-actions">
               <button
                 className={editingSection === 'mutualFunds' ? "btn-section-cancel" : "btn-section-edit"}
                 onClick={() => toggleSectionEdit('mutualFunds')}
@@ -1264,7 +1264,7 @@ const BasicDetails = () => {
               >
                 {editingSection === 'mutualFunds' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
-            </div>
+            </div> */}
           </div>
           <div className="section-content">
             {formData.mutualFunds && formData.mutualFunds.length > 0 ? (
@@ -1539,7 +1539,7 @@ const BasicDetails = () => {
               <FiTrendingUp className="section-icon" />
               <h3>Shares Information</h3>
             </div>
-            <div className="section-actions">
+            {/* <div className="section-actions">
               <button
                 className={editingSection === 'shares' ? "btn-section-cancel" : "btn-section-edit"}
                 onClick={() => toggleSectionEdit('shares')}
@@ -1547,7 +1547,7 @@ const BasicDetails = () => {
               >
                 {editingSection === 'shares' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
-            </div>
+            </div> */}
           </div>
           <div className="section-content">
             <div className="records-table">
@@ -1820,7 +1820,7 @@ const BasicDetails = () => {
               <FiHome className="section-icon" />
               <h3>Insurance Information</h3>
             </div>
-            <div className="section-actions">
+            {/* <div className="section-actions">
               <button
                 className={editingSection === 'insurance' ? "btn-section-cancel" : "btn-section-edit"}
                 onClick={() => toggleSectionEdit('insurance')}
@@ -1828,7 +1828,7 @@ const BasicDetails = () => {
               >
                 {editingSection === 'insurance' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
-            </div>
+            </div> */}
           </div>
           <div className="section-content">
             <div className="records-table">
@@ -2099,7 +2099,7 @@ const BasicDetails = () => {
               <FiBriefcase className="section-icon" />
               <h3>Bank Accounts Information</h3>
             </div>
-            <div className="section-actions">
+            {/* <div className="section-actions">
               <button
                 className={editingSection === 'banks' ? "btn-section-cancel" : "btn-section-edit"}
                 onClick={() => toggleSectionEdit('banks')}
@@ -2107,7 +2107,7 @@ const BasicDetails = () => {
               >
                 {editingSection === 'banks' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
-            </div>
+            </div> */}
           </div>
           <div className="section-content">
             <div className="records-table">
@@ -2561,7 +2561,7 @@ const BasicDetails = () => {
               <FiBriefcase className="section-icon" />
               <h3>Card Details</h3>
             </div>
-            <div className="section-actions">
+            {/* <div className="section-actions">
               <button
                 className={editingSection === 'cards' ? "btn-section-cancel" : "btn-section-edit"}
                 onClick={() => toggleSectionEdit('cards')}
@@ -2569,7 +2569,7 @@ const BasicDetails = () => {
               >
                 {editingSection === 'cards' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
-            </div>
+            </div> */}
           </div>
           <div className="section-content">
             <div className="records-table">

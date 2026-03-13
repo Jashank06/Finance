@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiRefreshCw, FiTrendingUp, FiTrendingDown, FiDollarSign, FiEdit, FiTrash2, FiDownload } from 'react-icons/fi';
+import { FiRefreshCw, FiTrendingUp, FiTrendingDown, FiDollarSign, FiEdit, FiTrash2, FiDownload, FiActivity } from 'react-icons/fi';
 import axios from 'axios';
 import '../investments/Investment.css';
 
@@ -230,6 +230,24 @@ const ProfitLoss = () => {
                                 <p style={{ fontSize: '0.9rem', opacity: 0.9 }}>Losing Trades</p>
                                 <h3 style={{ fontSize: '1.8rem', margin: '0.5rem 0' }}>
                                     {summary.losingTrades}
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="stat-card" style={{
+                        background: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
+                        color: 'white',
+                        padding: '1.5rem',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <FiActivity size={32} />
+                            <div>
+                                <p style={{ fontSize: '0.9rem', opacity: 0.9 }}>Total Trades</p>
+                                <h3 style={{ fontSize: '1.8rem', margin: '0.5rem 0' }}>
+                                    {summary.totalTrades}
                                 </h3>
                             </div>
                         </div>

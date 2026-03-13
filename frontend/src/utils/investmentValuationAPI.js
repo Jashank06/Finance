@@ -45,6 +45,9 @@ export const investmentValuationAPI = {
   updateSIPTransaction: (id, data) => api.put(`/investment-valuation/sip-transactions/${id}`, data),
   deleteSIPTransaction: (id) => api.delete(`/investment-valuation/sip-transactions/${id}`),
 
-  // NAV Refresh
+  // NAV & Stock Price Refresh
   refreshMFNav: (id) => api.post(`/investment-valuation/mutual-funds/refresh-nav/${id}`),
+  refreshSharePrice: (id) => api.post(`/investment-valuation/shares/refresh/${id}`),
+  refreshAllShares: () => api.post('/investment-valuation/shares/refresh-all'),
+  getStockPriceByScrip: (scrip, exchange = 'NSE') => api.get(`/investment-valuation/shares/price/${scrip}?exchange=${exchange}`),
 };
