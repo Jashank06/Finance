@@ -53,6 +53,17 @@ const PersonalRecords = () => {
     return { _id: inv._id, ...notes };
   };
 
+  const calculateCompletionPercentage = (entry) => {
+    const mandatoryFields = ['docType', 'idNumber', 'nameOnId', 'issuingAuthority', 'issueDate', 'expiryDate'];
+    let filledFields = 0;
+    mandatoryFields.forEach(field => {
+      if (entry[field] && entry[field].toString().trim() !== '') {
+        filledFields++;
+      }
+    });
+    return Math.round((filledFields / mandatoryFields.length) * 100);
+  };
+
   const fetchEntries = async () => {
     try {
       const res = await staticAPI.getPersonalRecords();
@@ -334,6 +345,7 @@ const PersonalRecords = () => {
                     <th>Place</th>
                     <th>Authority</th>
                     <th>File</th>
+                    <th>Completion %</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -353,6 +365,14 @@ const PersonalRecords = () => {
                         ) : (
                           '-'
                         )}
+                      </td>
+                      <td>
+                        <div className="completion-percentage">
+                          <div className={`completion-bar ${calculateCompletionPercentage(e) === 100 ? 'complete' : calculateCompletionPercentage(e) > 50 ? 'partial' : 'low'}`}>
+                            <div className="completion-fill" style={{ width: `${calculateCompletionPercentage(e)}%` }}></div>
+                          </div>
+                          <span className="completion-text">{calculateCompletionPercentage(e)}%</span>
+                        </div>
                       </td>
                       <td>
                         <div className="table-actions">

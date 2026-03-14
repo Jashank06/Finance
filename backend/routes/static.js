@@ -98,6 +98,11 @@ router.post('/family-tasks', FamilyTasksController.create);
 router.put('/family-tasks/:id', FamilyTasksController.update);
 router.delete('/family-tasks/:id', FamilyTasksController.delete);
 
+// Dashboard Integration Routes
+const { getFamilyEvents, getCommunicationsFeed } = require('../controllers/staticController');
+router.get('/family-events', getFamilyEvents);
+router.get('/communications-feed', getCommunicationsFeed);
+
 // Placeholder routes for other static types (to be implemented)
 const createPlaceholderRoutes = (routeName) => {
   router.get(`/${routeName}`, (req, res) => {

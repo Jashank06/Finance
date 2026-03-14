@@ -63,6 +63,24 @@ const MobileEmailDetails = () => {
     return { _id: inv._id, ...notes };
   };
 
+  const calculateCompletionPercentage = (entry) => {
+    const isMobile = entry.type === 'Mobile';
+    const mandatoryFields = [
+      'type',
+      'name',
+      'relation',
+      isMobile ? 'carrier' : 'provider',
+      isMobile ? 'mobile' : 'email'
+    ];
+    let filledFields = 0;
+    mandatoryFields.forEach(field => {
+      if (entry[field] && entry[field].toString().trim() !== '') {
+        filledFields++;
+      }
+    });
+    return Math.round((filledFields / mandatoryFields.length) * 100);
+  };
+
   const fetchEntries = async () => {
     try {
       const res = await staticAPI.getMobileEmailDetails();
@@ -444,6 +462,7 @@ const MobileEmailDetails = () => {
                     <th>Carrier</th>
                     <th>Email</th>
                     <th>2FA</th>
+                    <th>Completion %</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -457,6 +476,14 @@ const MobileEmailDetails = () => {
                       <td>{e.carrier}</td>
                       <td>{e.email}</td>
                       <td>{e.twoFA ? 'Enabled' : 'Disabled'}</td>
+                      <td>
+                        <div className="completion-percentage">
+                          <div className={`completion-bar ${calculateCompletionPercentage(e) === 100 ? 'complete' : calculateCompletionPercentage(e) > 50 ? 'partial' : 'low'}`}>
+                            <div className="completion-fill" style={{ width: `${calculateCompletionPercentage(e)}%` }}></div>
+                          </div>
+                          <span className="completion-text">{calculateCompletionPercentage(e)}%</span>
+                        </div>
+                      </td>
                       <td>
                         <div className="table-actions">
                           <button onClick={() => handleEdit(idx)} className="btn-edit"><FiEdit2 /></button>

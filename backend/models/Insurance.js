@@ -10,7 +10,7 @@ const insuranceSchema = new mongoose.Schema({
   // Insurance Type
   insuranceType: {
     type: String,
-    enum: ['life', 'health'],
+    enum: ['life', 'health', 'general'],
     required: true,
   },
   
@@ -35,7 +35,16 @@ const insuranceSchema = new mongoose.Schema({
   policyType: {
     type: String,
     required: true,
-    enum: ['term', 'whole-life', 'endowment', 'ulip', 'money-back', 'health', 'critical-illness', 'family-floater', 'individual'],
+    // Flexible enum to support General Insurance types as well
+    enum: [
+      'term', 'whole-life', 'endowment', 'ulip', 'money-back', // Life
+      'health', 'critical-illness', 'family-floater', 'individual', // Health
+      'motor', 'travel', 'fire', 'marine', 'liability', 'other' // General
+    ],
+  },
+  policyCategory: {
+    type: String,
+    enum: ['New', 'Renewal'],
   },
   
   // Dates
@@ -43,14 +52,23 @@ const insuranceSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  policyStartDate: {
+    type: Date,
+  },
+  policyEndDate: {
+    type: Date,
+  },
   maturityDate: {
-    type: Date, // Only for life insurance
+    type: Date, // Mainly for life insurance
   },
   
   // Premium Details
+  policyTerm: {
+    type: String, // e.g., "1 Year", "Multi-year"
+  },
   premiumPaymentMode: {
     type: String,
-    enum: ['monthly', 'quarterly', 'half-yearly', 'yearly', 'single'],
+    enum: ['monthly', 'quarterly', 'half-yearly', 'yearly', 'single', 'onetime'],
     default: 'yearly',
   },
   premiumDate: {
@@ -60,6 +78,22 @@ const insuranceSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: 0,
+  },
+  gstAmount: {
+    type: Number,
+    default: 0,
+  },
+  totalPremium: {
+    type: Number,
+  },
+  paymentMode: {
+    type: String,
+    enum: ['Cash', 'Cheque', 'Online'],
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['Paid', 'Pending'],
+    default: 'Paid',
   },
   lastPremiumDate: {
     type: Date,
@@ -71,13 +105,20 @@ const insuranceSchema = new mongoose.Schema({
     min: 0,
   },
   sumInsured: {
-    type: Number, // For health insurance
+    type: Number, // For health/general insurance
     min: 0,
   },
   maturityAmount: {
     type: Number, // For life insurance
     min: 0,
   },
+
+  // Additional Fields
+  additionalField1: String,
+  additionalField2: String,
+  additionalField3: String,
+  additionalField4: String,
+  additionalField5: String,
   
   // Status
   status: {

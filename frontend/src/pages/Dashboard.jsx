@@ -25,6 +25,8 @@ const Dashboard = () => {
   const [plStats, setPlStats] = useState(null); // New state for stats
   const [reminders, setReminders] = useState([]);
   const [comms, setComms] = useState([]);
+  const [familyEvents, setFamilyEvents] = useState([]);
+  const [commsFeed, setCommsFeed] = useState([]);
   const [financialStats, setFinancialStats] = useState({
     expectedIncome: 0,
     expectedExpense: 0,
@@ -101,44 +103,42 @@ const Dashboard = () => {
         ieSummaryRes,
         IEActualRes,
         budgetRes,
-        monthlyExpensesRes
+        monthlyExpensesRes,
+        familyEventsRes,
+        commsFeedRes
       ] = await Promise.all([
-        investmentAPI.getBillDatesAnalytics(), // CHANGED: Use analytics endpoint
+        investmentAPI.getBillDatesAnalytics(), // Includes Bills, Insurance, SIPs
         staticAPI.getFamilyTasks(),
         investmentAPI.getAll('loan-ledger'),
         investmentAPI.getAll('on-behalf'),
         api.get('/bank'),
-        api.get('/profit-loss').catch(e => ({ data: { data: [] } })), // CHANGED: Fetch records, not summary
+        api.get('/profit-loss').catch(e => ({ data: { data: [] } })),
         api.get('/profit-loss/stats/summary').catch(e => ({ data: { data: {} } })),
-        reminderAPI.getAll('').catch(e => ({ data: { reminders: [] } })), // CHANGED: Use reminderAPI
+        reminderAPI.getAll('').catch(e => ({ data: { reminders: [] } })),
         investmentAPI.getAll('daily-telephone-conversation'),
         incomeExpenseAPI.getRecords({ startDate: isoToday, endDate: isoNextWeek }),
         incomeExpenseAPI.getSummary(),
         api.get('/budget/targets-for-life').catch(() => ({ data: null })),
-        api.get('/cashflow/monthly-expenses').catch(e => ({ data: { success: false, data: { lastMonthExpenses: 0 } } }))
+        api.get('/cashflow/monthly-expenses').catch(e => ({ data: { success: false, data: { lastMonthExpenses: 0 } } })),
+        staticAPI.getFamilyEvents().catch(e => ({ data: { events: [] } })),
+        staticAPI.getCommunicationsFeed().catch(e => ({ data: { feed: [] } }))
       ]);
 
-
-
-      // Extract bills from analytics response - it has upcoming bills array
+      // Extract bills from analytics response
       const billsData = billsRes.data.upcoming || billsRes.data.investments || [];
 
-      const tasksData = tasksRes.data || [];
-      const combinedLoans = [
-        ...(loansRes.data.investments || []),
-        ...(onBehalfRes.data.investments || [])
-      ];
-
-
-
+      const loansArray = [...(loansRes.data.investments || []), ...(onBehalfRes.data.investments || [])];
+      
       setBills(billsData);
-      setTasks(tasksData);
-      setLoans(combinedLoans);
+      setTasks(tasksRes.data || []);
+      setLoans(loansArray);
       setBankBalances(bankRes.data || []);
-      setPlRecords(plRecordsRes.data.data || []); // NOW LIST OF RECORDS
+      setPlRecords(plRecordsRes.data.data || []);
       setPlStats(plStatsRes.data.data || {});
-      setReminders(remindersRes.data.reminders || []);  // reminderAPI returns {reminders: [...]}
+      setReminders(remindersRes.data.reminders || []);
       setComms(commsRes.data.investments || []);
+      setFamilyEvents(familyEventsRes.data.events || []);
+      setCommsFeed(commsFeedRes.data.feed || []);
 
       // Calculate Metrics
       const summaryData = IEActualRes.data.summary || [];
@@ -156,10 +156,11 @@ const Dashboard = () => {
         })
         .reduce((sum, b) => sum + (b.amount || 0), 0);
 
-      const upcomingLoansTotal = combinedLoans
+      // Separate loans into income (money coming back) and expense (money to pay)
+      const upcomingIncomeLoans = loansArray
         .filter(l => {
           const lDate = normalizeDate(l.maturityDate || l.finalDateOfReturn || l.startDate);
-          return lDate && lDate >= isoToday && lDate <= isoNextWeek;
+          return lDate && lDate >= isoToday && lDate <= isoNextWeek && (l.type === 'Lent' || !l.type);
         })
         .reduce((sum, l) => {
           try {
@@ -170,14 +171,26 @@ const Dashboard = () => {
           }
         }, 0);
 
-
+      const upcomingExpenseLoans = loansArray
+        .filter(l => {
+          const lDate = normalizeDate(l.maturityDate || l.finalDateOfReturn || l.startDate);
+          return lDate && lDate >= isoToday && lDate <= isoNextWeek && l.type === 'Borrowed';
+        })
+        .reduce((sum, l) => {
+          try {
+            const notes = l.notes ? JSON.parse(l.notes) : {};
+            return sum + (notes.balanceAmount || l.amount || 0);
+          } catch {
+            return sum + (l.amount || 0);
+          }
+        }, 0);
 
       const budgetData = budgetRes.data || {};
       const monthlyExpensesData = monthlyExpensesRes.data.success ? monthlyExpensesRes.data.data : null;
 
       setFinancialStats({
-        expectedIncome: expectedIncRecords || (actualInc * 0.25),
-        expectedExpense: upcomingBillsTotal + upcomingLoansTotal + expectedExpRecords,
+        expectedIncome: expectedIncRecords + upcomingIncomeLoans,
+        expectedExpense: upcomingBillsTotal + upcomingExpenseLoans + expectedExpRecords,
         actualIncome: actualInc,
         actualExpense: actualExp,
         budgetPlanned: budgetData.totalSavingsTarget || 0,
@@ -226,13 +239,26 @@ const Dashboard = () => {
     }
 
     if (activeTab === 'tasks') {
-      return tasks.filter(t => normalizeDate(t.dateForUpdate || t.dateOfTaskCreation) === isoDate)
+      const dayTasks = tasks.filter(t => normalizeDate(t.dateForUpdate || t.dateOfTaskCreation) === isoDate)
         .map(t => ({
           id: t._id,
           title: t.feature || t.taskDetailsDescription || 'Task',
           subtitle: t.status ? t.status.toUpperCase() : 'PENDING',
           type: 'task'
         }));
+
+      const dayEvents = familyEvents.filter(e => {
+        const eDate = new Date(e.date);
+        return eDate.getDate() === new Date(isoDate).getDate() && 
+               eDate.getMonth() === new Date(isoDate).getMonth();
+      }).map((e, idx) => ({
+        id: `event_${idx}`,
+        title: `${e.type === 'birthday' ? '🎂' : '🎊'} ${e.name}`,
+        subtitle: `${e.relation}'s ${e.type.charAt(0).toUpperCase() + e.type.slice(1)}`,
+        type: 'event'
+      }));
+
+      return [...dayTasks, ...dayEvents];
     }
 
     if (activeTab === 'loans') {
@@ -289,11 +315,10 @@ const Dashboard = () => {
     }
 
     if (activeTab === 'comms') {
-      return comms.filter(c => normalizeDate(c.date || c.startDate) === isoDate)
+      const dayComms = comms.filter(c => normalizeDate(c.date || c.startDate) === isoDate)
         .map(c => {
           let notes = {};
           try { notes = c.notes ? JSON.parse(c.notes) : {}; } catch { notes = {}; }
-
           return {
             id: c._id,
             title: `${notes.callType || 'Call'}: ${notes.contactName || c.name || 'Unknown'}`,
@@ -301,6 +326,16 @@ const Dashboard = () => {
             type: 'comm'
           };
         });
+
+      const dayFeed = commsFeed.filter(f => normalizeDate(f.date) === isoDate)
+        .map((f, idx) => ({
+          id: `feed_${idx}`,
+          title: f.title,
+          subtitle: f.company || f.name || '',
+          type: 'feed-item'
+        }));
+
+      return [...dayComms, ...dayFeed];
     }
 
     return [];

@@ -36,6 +36,47 @@ const InvestmentProfile = () => {
     goldBond: { isOpen: false, editData: null }
   });
 
+  const calculateCompletionPercentage = (type, item) => {
+    let mandatoryFields = [];
+    switch (type) {
+      case 'bank-account':
+        mandatoryFields = ['name', 'bank', 'accountNumber', 'loginUserId', 'password', 'ifsc'];
+        break;
+      case 'card-detail':
+        mandatoryFields = ['name', 'typeOfAccount', 'bank', 'cardNumber', 'expiryDate'];
+        break;
+      case 'insurance':
+        mandatoryFields = ['nameOfInsurer', 'nameOfPolicy', 'insuranceType', 'policyNumber'];
+        break;
+      case 'mutual-fund':
+        mandatoryFields = ['nameOfPerson', 'company', 'loginUserId', 'password'];
+        break;
+      case 'share':
+        mandatoryFields = ['company', 'loginUserId', 'password'];
+        break;
+      case 'nps-ppf':
+        mandatoryFields = ['name', 'nameOfInvestor', 'accountNumber'];
+        break;
+      case 'gold-bond':
+        mandatoryFields = ['name', 'nameOfInvestor', 'provider'];
+        break;
+      case 'payment-gateway':
+        mandatoryFields = ['url', 'login'];
+        break;
+      default:
+        return 0;
+    }
+
+    let filledFields = 0;
+    mandatoryFields.forEach(field => {
+      if (item[field] && item[field].toString().trim() !== '') {
+        filledFields++;
+      }
+    });
+
+    return Math.round((filledFields / mandatoryFields.length) * 100);
+  };
+
   useEffect(() => {
     trackFeatureUsage('/family/investments/investment-profile', 'view');
     fetchAllData();
@@ -193,13 +234,14 @@ const InvestmentProfile = () => {
               <th>Address</th>
               <th>Customer Care Number</th>
               <th>Customer Care Email ID</th>
+              <th>Completion %</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {bankAccounts.length === 0 ? (
               <tr>
-                <td colSpan="16" className="no-data">No bank accounts found. Click "Add Bank Account" to get started.</td>
+                <td colSpan="17" className="no-data">No bank accounts found. Click "Add Bank Account" to get started.</td>
               </tr>
             ) : (
               bankAccounts.map((item) => (
@@ -219,6 +261,14 @@ const InvestmentProfile = () => {
                   <td>{item.address || '-'}</td>
                   <td>{item.customerCareNumber || '-'}</td>
                   <td>{item.customerCareEmailId || '-'}</td>
+                  <td>
+                    <div className="completion-percentage">
+                      <div className={`completion-bar ${calculateCompletionPercentage('bank-account', item) === 100 ? 'complete' : calculateCompletionPercentage('bank-account', item) > 50 ? 'partial' : 'low'}`}>
+                        <div className="completion-fill" style={{ width: `${calculateCompletionPercentage('bank-account', item)}%` }}></div>
+                      </div>
+                      <span className="completion-text">{calculateCompletionPercentage('bank-account', item)}%</span>
+                    </div>
+                  </td>
                   <td>
                     <div className="action-buttons">
                       <button
@@ -270,13 +320,14 @@ const InvestmentProfile = () => {
               <th>CVV</th>
               <th>Customer Care Number</th>
               <th>Customer Care Email ID</th>
+              <th>Completion %</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {cardDetails.length === 0 ? (
               <tr>
-                <td colSpan="11" className="no-data">No card details found. Click "Add Card" to get started.</td>
+                <td colSpan="12" className="no-data">No card details found. Click "Add Card" to get started.</td>
               </tr>
             ) : (
               cardDetails.map((item) => (
@@ -291,6 +342,14 @@ const InvestmentProfile = () => {
                   <td>{item.cvv ? '•••' : '-'}</td>
                   <td>{item.customerCareNumber || '-'}</td>
                   <td>{item.customerCareEmailId || '-'}</td>
+                  <td>
+                    <div className="completion-percentage">
+                      <div className={`completion-bar ${calculateCompletionPercentage('card-detail', item) === 100 ? 'complete' : calculateCompletionPercentage('card-detail', item) > 50 ? 'partial' : 'low'}`}>
+                        <div className="completion-fill" style={{ width: `${calculateCompletionPercentage('card-detail', item)}%` }}></div>
+                      </div>
+                      <span className="completion-text">{calculateCompletionPercentage('card-detail', item)}%</span>
+                    </div>
+                  </td>
                   <td>
                     <div className="action-buttons">
                       <button
@@ -335,6 +394,7 @@ const InvestmentProfile = () => {
               <th>URL</th>
               <th>Login</th>
               <th>Password</th>
+              <th>Completion %</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -349,6 +409,14 @@ const InvestmentProfile = () => {
                   <td><a href={item.url} target="_blank" rel="noopener noreferrer">{item.url}</a></td>
                   <td>{item.login}</td>
                   <td>••••••••</td>
+                  <td>
+                    <div className="completion-percentage">
+                      <div className={`completion-bar ${calculateCompletionPercentage('payment-gateway', item) === 100 ? 'complete' : calculateCompletionPercentage('payment-gateway', item) > 50 ? 'partial' : 'low'}`}>
+                        <div className="completion-fill" style={{ width: `${calculateCompletionPercentage('payment-gateway', item)}%` }}></div>
+                      </div>
+                      <span className="completion-text">{calculateCompletionPercentage('payment-gateway', item)}%</span>
+                    </div>
+                  </td>
                   <td>
                     <div className="action-buttons">
                       <button
@@ -400,6 +468,7 @@ const InvestmentProfile = () => {
               <th>Tel No.</th>
               <th>Toll Free No.</th>
               <th>Email ID</th>
+              <th>Completion %</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -421,6 +490,14 @@ const InvestmentProfile = () => {
                   <td>{item.telNo || '-'}</td>
                   <td>{item.tollFreeNo || '-'}</td>
                   <td>{item.emailId || '-'}</td>
+                  <td>
+                    <div className="completion-percentage">
+                      <div className={`completion-bar ${calculateCompletionPercentage('insurance', item) === 100 ? 'complete' : calculateCompletionPercentage('insurance', item) > 50 ? 'partial' : 'low'}`}>
+                        <div className="completion-fill" style={{ width: `${calculateCompletionPercentage('insurance', item)}%` }}></div>
+                      </div>
+                      <span className="completion-text">{calculateCompletionPercentage('insurance', item)}%</span>
+                    </div>
+                  </td>
                   <td>
                     <div className="action-buttons">
                       <button
@@ -467,13 +544,14 @@ const InvestmentProfile = () => {
               <th>URL</th>
               <th>User ID</th>
               <th>Password</th>
+              <th>Completion %</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {mutualFunds.length === 0 ? (
               <tr>
-                <td colSpan="6" className="no-data">No mutual fund details found. Click "Add Mutual Fund" to get started.</td>
+                <td colSpan="7" className="no-data">No mutual fund details found. Click "Add Mutual Fund" to get started.</td>
               </tr>
             ) : (
               mutualFunds.map((item) => (
@@ -483,6 +561,14 @@ const InvestmentProfile = () => {
                   <td>{item.url ? <a href={item.url} target="_blank" rel="noopener noreferrer">Link</a> : '-'}</td>
                   <td>{item.loginUserId || '-'}</td>
                   <td>{item.password ? '••••••••' : '-'}</td>
+                  <td>
+                    <div className="completion-percentage">
+                      <div className={`completion-bar ${calculateCompletionPercentage('mutual-fund', item) === 100 ? 'complete' : calculateCompletionPercentage('mutual-fund', item) > 50 ? 'partial' : 'low'}`}>
+                        <div className="completion-fill" style={{ width: `${calculateCompletionPercentage('mutual-fund', item)}%` }}></div>
+                      </div>
+                      <span className="completion-text">{calculateCompletionPercentage('mutual-fund', item)}%</span>
+                    </div>
+                  </td>
                   <td>
                     <div className="action-buttons">
                       <button
@@ -528,13 +614,14 @@ const InvestmentProfile = () => {
               <th>URL</th>
               <th>User ID</th>
               <th>Password</th>
+              <th>Completion %</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {shares.length === 0 ? (
               <tr>
-                <td colSpan="5" className="no-data">No share details found. Click "Add Share" to get started.</td>
+                <td colSpan="6" className="no-data">No share details found. Click "Add Share" to get started.</td>
               </tr>
             ) : (
               shares.map((item) => (
@@ -543,6 +630,14 @@ const InvestmentProfile = () => {
                   <td>{item.url ? <a href={item.url} target="_blank" rel="noopener noreferrer">Link</a> : '-'}</td>
                   <td>{item.loginUserId || '-'}</td>
                   <td>{item.password ? '••••••••' : '-'}</td>
+                  <td>
+                    <div className="completion-percentage">
+                      <div className={`completion-bar ${calculateCompletionPercentage('share', item) === 100 ? 'complete' : calculateCompletionPercentage('share', item) > 50 ? 'partial' : 'low'}`}>
+                        <div className="completion-fill" style={{ width: `${calculateCompletionPercentage('share', item)}%` }}></div>
+                      </div>
+                      <span className="completion-text">{calculateCompletionPercentage('share', item)}%</span>
+                    </div>
+                  </td>
                   <td>
                     <div className="action-buttons">
                       <button
@@ -592,13 +687,14 @@ const InvestmentProfile = () => {
               <th>User ID</th>
               <th>Password</th>
               <th>Notes</th>
+              <th>Completion %</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {npsPpf.length === 0 ? (
               <tr>
-                <td colSpan="9" className="no-data">No details found. Click "Add NPS/PPF" to get started.</td>
+                <td colSpan="10" className="no-data">No details found. Click "Add NPS/PPF" to get started.</td>
               </tr>
             ) : (
               npsPpf.map((item) => (
@@ -611,6 +707,14 @@ const InvestmentProfile = () => {
                   <td>{item.loginUserId || '-'}</td>
                   <td>{item.password ? '••••••••' : '-'}</td>
                   <td>{item.notes || '-'}</td>
+                  <td>
+                    <div className="completion-percentage">
+                      <div className={`completion-bar ${calculateCompletionPercentage('nps-ppf', item) === 100 ? 'complete' : calculateCompletionPercentage('nps-ppf', item) > 50 ? 'partial' : 'low'}`}>
+                        <div className="completion-fill" style={{ width: `${calculateCompletionPercentage('nps-ppf', item)}%` }}></div>
+                      </div>
+                      <span className="completion-text">{calculateCompletionPercentage('nps-ppf', item)}%</span>
+                    </div>
+                  </td>
                   <td>
                     <div className="action-buttons">
                       <button
@@ -661,13 +765,14 @@ const InvestmentProfile = () => {
               <th>User ID</th>
               <th>Password</th>
               <th>Notes</th>
+              <th>Completion %</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {goldBonds.length === 0 ? (
               <tr>
-                <td colSpan="10" className="no-data">No details found. Click "Add Gold/Bond" to get started.</td>
+                <td colSpan="11" className="no-data">No details found. Click "Add Gold/Bond" to get started.</td>
               </tr>
             ) : (
               goldBonds.map((item) => (
@@ -681,6 +786,14 @@ const InvestmentProfile = () => {
                   <td>{item.loginUserId || '-'}</td>
                   <td>{item.password ? '••••••••' : '-'}</td>
                   <td>{item.notes || '-'}</td>
+                  <td>
+                    <div className="completion-percentage">
+                      <div className={`completion-bar ${calculateCompletionPercentage('gold-bond', item) === 100 ? 'complete' : calculateCompletionPercentage('gold-bond', item) > 50 ? 'partial' : 'low'}`}>
+                        <div className="completion-fill" style={{ width: `${calculateCompletionPercentage('gold-bond', item)}%` }}></div>
+                      </div>
+                      <span className="completion-text">{calculateCompletionPercentage('gold-bond', item)}%</span>
+                    </div>
+                  </td>
                   <td>
                     <div className="action-buttons">
                       <button

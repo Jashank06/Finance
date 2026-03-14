@@ -48,6 +48,8 @@ const netWorthRoutes = require('./routes/netWorth');
 const aiAdvisorRoutes = require('./routes/aiAdvisor');
 const financeRadarRoutes = require('./routes/financeRadar');
 const marketNewsRoutes = require('./routes/marketNews');
+const reportsRoutes = require('./routes/reports');
+const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
 
@@ -153,6 +155,8 @@ app.use('/api/net-worth', netWorthRoutes);
 app.use('/api/ai', aiAdvisorRoutes);
 app.use('/api/radar', financeRadarRoutes);
 app.use('/api/market-news', marketNewsRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

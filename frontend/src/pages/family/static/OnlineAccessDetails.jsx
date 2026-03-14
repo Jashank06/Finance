@@ -63,6 +63,17 @@ const OnlineAccessDetails = () => {
     }),
   });
 
+  const calculateCompletionPercentage = (entry) => {
+    const mandatoryFields = ['category', 'serviceName', 'url', 'userId', 'password', 'recoveryEmail'];
+    let filledFields = 0;
+    mandatoryFields.forEach(field => {
+      if (entry[field] && entry[field].toString().trim() !== '') {
+        filledFields++;
+      }
+    });
+    return Math.round((filledFields / mandatoryFields.length) * 100);
+  };
+
   const fromInvestment = (inv) => {
     let notes = {};
     try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { notes = {}; }
@@ -368,6 +379,7 @@ const OnlineAccessDetails = () => {
                     <th>User ID</th>
                     <th>2FA</th>
                     <th>OTP</th>
+                    <th>Completion %</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -380,6 +392,14 @@ const OnlineAccessDetails = () => {
                       <td>{e.userId}</td>
                       <td>{e.twoFA ? 'Enabled' : 'Disabled'}</td>
                       <td>{e.otpMethod}</td>
+                      <td>
+                        <div className="completion-percentage">
+                          <div className={`completion-bar ${calculateCompletionPercentage(e) === 100 ? 'complete' : calculateCompletionPercentage(e) > 50 ? 'partial' : 'low'}`}>
+                            <div className="completion-fill" style={{ width: `${calculateCompletionPercentage(e)}%` }}></div>
+                          </div>
+                          <span className="completion-text">{calculateCompletionPercentage(e)}%</span>
+                        </div>
+                      </td>
                       <td>
                         <div className="table-actions">
                           <button onClick={() => handleEdit(idx)} className="btn-edit"><FiEdit2 /></button>

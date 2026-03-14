@@ -48,10 +48,20 @@ import ChequeRegister from './pages/family/daily/ChequeRegister';
 import DailyCashRegister from './pages/family/daily/DailyCashRegister';
 import Milestones from './pages/family/monitoring/Milestones';
 import TargetsForLife from './pages/family/monitoring/TargetsForLife';
+import StatusMonitoringReport from './pages/reports/StatusMonitoringReport';
+import LearningReport from './pages/reports/LearningReport';
+import WantInActionReport from './pages/reports/WantInActionReport';
+import ExpensesSpendingReport from './pages/reports/ExpensesSpendingReport';
+import DateReport from './pages/reports/DateReport';
+import CompletionReport from './pages/reports/CompletionReport';
 import Portfolio from './pages/family/monitoring/Portfolio';
 import DocumentManager from './pages/documents/DocumentManager';
 import NetWorthDashboard from './pages/NetWorthDashboard';
 import FinanceRadar from './pages/FinanceRadar';
+import AssumptionsPage from './pages/analytics/AssumptionsPage';
+import RecommendationsPage from './pages/analytics/RecommendationsPage';
+import GoalsTargetsPage from './pages/analytics/GoalsTargetsPage';
+import ExpensesLevelsPage from './pages/analytics/ExpensesLevelsPage';
 
 // Admin Panel Imports
 import AdminLayout from './components/AdminLayout';
@@ -797,6 +807,109 @@ function App() {
                 <AdminLayout>
                   <FeedbackManagement />
                 </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          {/* Reports Routes */}
+          <Route
+            path="/reports/status-monitoring"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <StatusMonitoringReport />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports/learning"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <LearningReport />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports/want-in-action"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <WantInActionReport />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports/expenses-spending"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ExpensesSpendingReport />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports/date"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <DateReport />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports/completion"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CompletionReport />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Analytics Routes */}
+          <Route
+            path="/analytics/default-assumptions"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AssumptionsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics/recommendations"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <RecommendationsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics/goals-targets"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <GoalsTargetsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics/expenses-levels"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ExpensesLevelsPage />
+                </Layout>
               </ProtectedRoute>
             }
           />

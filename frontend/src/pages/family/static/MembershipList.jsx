@@ -44,6 +44,17 @@ const MembershipList = () => {
   const [editingId, setEditingId] = useState(null);
   const [familyMembers, setFamilyMembers] = useState([]); // Add familyMembers state
 
+  const calculateCompletionPercentage = (entry) => {
+    const mandatoryFields = ['membershipType', 'organizationName', 'memberName', 'amount', 'startDate', 'endDate'];
+    let filledFields = 0;
+    mandatoryFields.forEach(field => {
+      if (entry[field] && entry[field].toString().trim() !== '') {
+        filledFields++;
+      }
+    });
+    return Math.round((filledFields / mandatoryFields.length) * 100);
+  };
+
   useEffect(() => {
     trackFeatureUsage('/family/static/membership-list', 'view');
     fetchEntries();
@@ -219,6 +230,7 @@ const MembershipList = () => {
                         <th>Frequency</th>
                         <th>Validity</th>
                         <th>Status</th>
+                        <th>Completion %</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -253,6 +265,14 @@ const MembershipList = () => {
                             <span className={`status-badge status-${entry.status?.toLowerCase()}`}>
                               {entry.status}
                             </span>
+                          </td>
+                          <td>
+                            <div className="completion-percentage">
+                              <div className={`completion-bar ${calculateCompletionPercentage(entry) === 100 ? 'complete' : calculateCompletionPercentage(entry) > 50 ? 'partial' : 'low'}`}>
+                                <div className="completion-fill" style={{ width: `${calculateCompletionPercentage(entry)}%` }}></div>
+                              </div>
+                              <span className="completion-text">{calculateCompletionPercentage(entry)}%</span>
+                            </div>
                           </td>
                           <td>
                             <div className="table-actions">

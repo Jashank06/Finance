@@ -25,6 +25,17 @@ const CustomerSupport = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingId, setEditingId] = useState(null);
 
+  const calculateCompletionPercentage = (entry) => {
+    const mandatoryFields = ['companyName', 'type', 'serviceCategory', 'phone', 'email'];
+    let filledFields = 0;
+    mandatoryFields.forEach(field => {
+      if (entry[field] && entry[field].toString().trim() !== '') {
+        filledFields++;
+      }
+    });
+    return Math.round((filledFields / mandatoryFields.length) * 100);
+  };
+
   useEffect(() => {
     trackFeatureUsage('/family/static/customer-support', 'view');
     fetchEntries();
@@ -141,6 +152,7 @@ const CustomerSupport = () => {
                         <th>Contact Person</th>
                         <th>Phone</th>
                         <th>Email</th>
+                        <th>Completion %</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -157,6 +169,14 @@ const CustomerSupport = () => {
                           <td>{entry.contactPerson || 'N/A'}</td>
                           <td>{entry.phone || 'N/A'}</td>
                           <td>{entry.email || 'N/A'}</td>
+                          <td>
+                            <div className="completion-percentage">
+                              <div className={`completion-bar ${calculateCompletionPercentage(entry) === 100 ? 'complete' : calculateCompletionPercentage(entry) > 50 ? 'partial' : 'low'}`}>
+                                <div className="completion-fill" style={{ width: `${calculateCompletionPercentage(entry)}%` }}></div>
+                              </div>
+                              <span className="completion-text">{calculateCompletionPercentage(entry)}%</span>
+                            </div>
+                          </td>
                           <td>
                             <div className="table-actions">
                               <button className="btn-edit" onClick={() => handleEdit(index)}>

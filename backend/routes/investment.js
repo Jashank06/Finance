@@ -1,5 +1,7 @@
 const express = require('express');
 const Investment = require('../models/Investment');
+const Insurance = require('../models/Insurance');
+const MutualFund = require('../models/MutualFund');
 const authMiddleware = require('../middleware/auth');
 const { BasicDetails } = require('../controllers/staticController');
 const CalendarEvent = require('../models/monitoring/CalendarEvent');
@@ -413,9 +415,13 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
     const currentYear = !isNaN(yearParam) ? yearParam : now.getFullYear();
     const horizonDays = !isNaN(horizonDaysParam) ? horizonDaysParam : 60;
 
-    const investments = await Investment.find({ userId: req.userId, category: 'daily-bill-checklist' });
+    const [investments, insuranceList, mfList] = await Promise.all([
+      Investment.find({ userId: req.userId, category: 'daily-bill-checklist' }),
+      Insurance.find({ userId: req.userId, status: 'active' }),
+      MutualFund.find({ userId: req.userId, investmentType: 'sip', holdingStatus: 'active' })
+    ]);
 
-    const normalize = (inv) => {
+    const normalizeBill = (inv) => {
       let notes = {};
       try { notes = inv.notes ? JSON.parse(inv.notes) : {}; } catch { notes = {}; }
       return {
@@ -429,10 +435,54 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
         payableDate: inv.payableDate || (notes.payableDate ? new Date(notes.payableDate) : null),
         startDate: inv.startDate || (notes.startDate ? new Date(notes.startDate) : null),
         status: notes.status || 'pending',
+        source: 'Bill'
       };
     };
 
-    const entries = investments.map(normalize);
+    const normalizeInsurance = (ins) => {
+      const day = ins.premiumDate ? parseInt(ins.premiumDate.replace(/\D/g, '')) : 1;
+      // Default to first day of purchase month if not specified
+      const startDate = ins.purchaseDate || new Date(); 
+      
+      return {
+        billType: 'Insurance Premium',
+        billName: ins.policyName,
+        provider: ins.companyName,
+        accountNumber: ins.policyNumber,
+        cycle: ins.premiumPaymentMode === 'single' || ins.premiumPaymentMode === 'onetime' ? 'one-time' : (ins.premiumPaymentMode || 'yearly'),
+        amount: ins.premiumAmount || 0,
+        dueDate: new Date(startDate.getFullYear(), startDate.getMonth(), day),
+        payableDate: new Date(startDate.getFullYear(), startDate.getMonth(), day),
+        startDate: startDate,
+        status: ins.paymentStatus === 'Paid' ? 'paid' : 'pending',
+        source: 'Insurance'
+      };
+    };
+
+    const normalizeSIP = (mf) => {
+      const day = mf.sipDate || 5;
+      const startDate = mf.sipStartDate || mf.investmentDate || new Date();
+
+      return {
+        billType: 'SIP Installment',
+        billName: mf.fundName,
+        provider: mf.broker,
+        accountNumber: mf.folioNumber,
+        cycle: 'monthly',
+        amount: mf.sipAmount || 0,
+        dueDate: new Date(startDate.getFullYear(), startDate.getMonth(), day),
+        payableDate: new Date(startDate.getFullYear(), startDate.getMonth(), day),
+        startDate: startDate,
+        status: 'pending', // SIPs are usually pending until processed
+        source: 'Mutual Fund'
+      };
+    };
+
+    const entries = [
+      ...investments.map(normalizeBill),
+      ...insuranceList.map(normalizeInsurance),
+      ...mfList.map(normalizeSIP)
+    ];
 
     const months = Array.from({ length: 12 }, (_, i) => ({ idx: i, name: new Date(currentYear, i, 1).toLocaleString('en-US', { month: 'short' }), total: 0 }));
     const addToMonth = (monthIdx, amt) => { if (monthIdx >= 0 && monthIdx < 12) months[monthIdx].total += amt; };

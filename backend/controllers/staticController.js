@@ -146,6 +146,23 @@ const BasicDetailsSchema = new mongoose.Schema({
     insurerName: String,
     policyName: String,
     policyNumber: String,
+    policyType: String,
+    policyCategory: String,
+    policyStartDate: String,
+    policyEndDate: String,
+    policyTerm: String,
+    sumInsured: String,
+    sumAssured: String,
+    premiumAmount: String,
+    gstAmount: String,
+    totalPremium: String,
+    paymentMode: String,
+    paymentStatus: String,
+    additionalField1: String,
+    additionalField2: String,
+    additionalField3: String,
+    additionalField4: String,
+    additionalField5: String,
     registeredMobile: String,
     registeredBank: String,
     registeredAddress: String,
@@ -256,13 +273,26 @@ const BasicDetailsSchema = new mongoose.Schema({
     goalPurpose: String,
     policyName: String,
     policyNumber: String,
+    policyCategory: String,
     policyStartDate: String,
+    policyEndDate: String,
+    policyTerm: String,
     premiumMode: String,
     premiumAmount: String,
+    gstAmount: String,
+    totalPremium: String,
+    paymentMode: String,
+    paymentStatus: String,
     lastPremiumPayingDate: String,
     maturityDate: String,
     sumAssured: String,
-    nominee: String
+    sumInsured: String,
+    nominee: String,
+    additionalField1: String,
+    additionalField2: String,
+    additionalField3: String,
+    additionalField4: String,
+    additionalField5: String
   }],
   loansPortfolio: [{
     srNo: String,
@@ -973,6 +1003,98 @@ const LandRecords = mongoose.model('LandRecords', LandRecordsSchema);
 const MembershipList = mongoose.model('MembershipList', MembershipListSchema);
 const FamilyTasks = mongoose.model('FamilyTasks', FamilyTasksSchema);
 
+// Custom controllers for Dashboard integration
+const getFamilyEvents = async (req, res) => {
+  try {
+    const basicDetails = await BasicDetails.find({ userId: req.userId });
+    const events = [];
+
+    basicDetails.forEach(record => {
+      // Main user events
+      if (record.dateOfBirth) {
+        events.push({
+          type: 'birthday',
+          name: `${record.firstName || ''} ${record.lastName || ''}`.trim(),
+          date: record.dateOfBirth,
+          relation: 'Self'
+        });
+      }
+      if (record.anniversaryDate) {
+        events.push({
+          type: 'anniversary',
+          name: `${record.firstName || ''} ${record.lastName || ''}`.trim(),
+          date: record.anniversaryDate,
+          relation: 'Self'
+        });
+      }
+
+      // Family member events
+      if (record.familyMembers && record.familyMembers.length > 0) {
+        record.familyMembers.forEach(member => {
+          if (member.dateOfBirth) {
+            events.push({
+              type: 'birthday',
+              name: member.name,
+              date: member.dateOfBirth,
+              relation: member.relation
+            });
+          }
+          if (member.anniversaryDate) {
+            events.push({
+              type: 'anniversary',
+              name: member.name,
+              date: member.anniversaryDate,
+              relation: member.relation
+            });
+          }
+        });
+      }
+    });
+
+    res.json({ success: true, events });
+  } catch (error) {
+    console.error('Error fetching family events:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch family events', error: error.message });
+  }
+};
+
+const getCommunicationsFeed = async (req, res) => {
+  try {
+    const [supportTickets, contactNotes] = await Promise.all([
+      CustomerSupport.find({ userId: req.userId }).sort({ lastContactDate: -1 }).limit(20),
+      ContactManagement.find({ userId: req.userId }).sort({ updatedAt: -1 }).limit(20)
+    ]);
+
+    const feed = [
+      ...supportTickets.map(ticket => ({
+        type: 'support',
+        title: ticket.issueDescription || 'Support Ticket',
+        company: ticket.companyName,
+        date: ticket.lastContactDate || ticket.createdAt,
+        status: ticket.resolutionStatus,
+        ticketNumber: ticket.ticketNumber,
+        source: 'Customer Support'
+      })),
+      ...contactNotes.filter(contact => contact.notes).map(contact => ({
+        type: 'contact_note',
+        title: contact.notes,
+        name: contact.nameOfPerson,
+        company: contact.nameOfCompany,
+        date: contact.updatedAt,
+        source: 'Contact Management'
+      }))
+    ];
+
+    // Sort by date descending
+    feed.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    res.json({ success: true, feed });
+  } catch (error) {
+    console.error('Error fetching communications feed:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch communications feed', error: error.message });
+  }
+};
+
 // Custom DigitalAssets controller with proper validation
 // Generic controller factory function
 const createStaticController = (Model, syncCallback = null) => {
@@ -1211,6 +1333,8 @@ module.exports = {
   LandRecordsController: createStaticController(LandRecords),
   MembershipListController: createStaticController(MembershipList, syncMembershipToReminders),
   FamilyTasksController: createStaticController(FamilyTasks),
+  getFamilyEvents,
+  getCommunicationsFeed,
 
   // Export models for use in routes
   BasicDetails,

@@ -282,6 +282,75 @@ const BasicDetails = () => {
     customerCareEmailId: ''
   });
 
+  const getSectionCompletion = (section, data) => {
+    let mandatoryFields = [];
+    let filledFields = 0;
+
+    switch (section) {
+      case 'personal':
+        mandatoryFields = ['firstName', 'lastName', 'dateOfBirth', 'gender', 'maritalStatus'];
+        break;
+      case 'contact':
+        mandatoryFields = ['primaryMobile', 'primaryEmail'];
+        break;
+      case 'address':
+        mandatoryFields = ['currentAddress.street', 'currentAddress.city', 'currentAddress.state', 'currentAddress.pincode'];
+        break;
+      case 'family':
+        mandatoryFields = ['familyHead', 'totalFamilyMembers'];
+        break;
+      case 'professional':
+        mandatoryFields = ['occupation', 'companyName', 'designation'];
+        break;
+      case 'additional':
+        mandatoryFields = ['nationality', 'aadhaarNumber', 'panNumber'];
+        break;
+      case 'emergency':
+        mandatoryFields = ['emergencyContact.name', 'emergencyContact.relation', 'emergencyContact.mobile'];
+        break;
+      case 'mutual-fund':
+        mandatoryFields = ['fundHouse', 'mfName', 'investorName'];
+        break;
+      case 'share':
+        mandatoryFields = ['dematCompany', 'scriptName', 'investorName'];
+        break;
+      case 'insurance':
+        mandatoryFields = ['insuranceCompany', 'policyName', 'insurerName'];
+        break;
+      case 'bank':
+        mandatoryFields = ['bankName', 'accountNumber', 'accountHolderName'];
+        break;
+      case 'mobile-bill':
+        mandatoryFields = ['mobileNumber', 'usedBy', 'customerNumber'];
+        break;
+      case 'card':
+        mandatoryFields = ['bankName', 'cardHolderName', 'cardNumber', 'expiryDate'];
+        break;
+      case 'payment-gateway':
+        mandatoryFields = ['company', 'url', 'userId', 'password'];
+        break;
+      case 'loan':
+        mandatoryFields = ['borrowerName', 'loanType', 'principalAmount'];
+        break;
+      case 'sub-broker':
+        mandatoryFields = ['nameOfCompany', 'contactNumber', 'emailId'];
+        break;
+      default:
+        return 0;
+    }
+
+    mandatoryFields.forEach(field => {
+      const value = field.split('.').reduce((obj, key) => obj?.[key], data);
+      if (value && String(value).trim() !== '') {
+        filledFields++;
+      }
+    });
+
+    return Math.round((filledFields / mandatoryFields.length) * 100);
+  };
+
+
+
   useEffect(() => {
     trackFeatureUsage('/family/static/basic-details', 'view');
     fetchBasicDetails();
@@ -1256,15 +1325,8 @@ const BasicDetails = () => {
               <FiTrendingUp className="section-icon" />
               <h3>Mutual Funds Information</h3>
             </div>
-            {/* <div className="section-actions">
-              <button
-                className={editingSection === 'mutualFunds' ? "btn-section-cancel" : "btn-section-edit"}
-                onClick={() => toggleSectionEdit('mutualFunds')}
-                title={editingSection === 'mutualFunds' ? "Cancel" : "Add new entry"}
-              >
-                {editingSection === 'mutualFunds' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
-              </button>
-            </div> */}
+            <div className="section-header-right" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            </div>
           </div>
           <div className="section-content">
             {formData.mutualFunds && formData.mutualFunds.length > 0 ? (
@@ -1290,6 +1352,7 @@ const BasicDetails = () => {
                       <th>RM Email</th>
                       <th>Registered Address</th>
                       <th>Branch Address</th>
+                      <th>Completion %</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -1314,6 +1377,14 @@ const BasicDetails = () => {
                         <td>{fund.rmEmail || '-'}</td>
                         <td>{fund.registeredAddress || '-'}</td>
                         <td>{fund.branchAddress || '-'}</td>
+                        <td>
+                          <div className="completion-percentage">
+                            <div className={`completion-bar ${getSectionCompletion('mutual-fund', fund) === 100 ? 'complete' : getSectionCompletion('mutual-fund', fund) > 50 ? 'partial' : 'low'}`}>
+                              <div className="completion-fill" style={{ width: `${getSectionCompletion('mutual-fund', fund)}%` }}></div>
+                            </div>
+                            <span className="completion-text">{getSectionCompletion('mutual-fund', fund)}%</span>
+                          </div>
+                        </td>
                         <td>
                           <div className="table-actions">
                             <button
@@ -1539,15 +1610,8 @@ const BasicDetails = () => {
               <FiTrendingUp className="section-icon" />
               <h3>Shares Information</h3>
             </div>
-            {/* <div className="section-actions">
-              <button
-                className={editingSection === 'shares' ? "btn-section-cancel" : "btn-section-edit"}
-                onClick={() => toggleSectionEdit('shares')}
-                title={editingSection === 'shares' ? "Cancel" : "Add new entry"}
-              >
-                {editingSection === 'shares' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
-              </button>
-            </div> */}
+            <div className="section-header-right" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            </div>
           </div>
           <div className="section-content">
             <div className="records-table">
@@ -1571,9 +1635,10 @@ const BasicDetails = () => {
                       <th>RM Name</th>
                       <th>RM Mobile</th>
                       <th>RM Email</th>
-                      <th>Registered Address</th>
-                      <th>Branch Address</th>
-                      <th>Actions</th>
+                       <th>Registered Address</th>
+                       <th>Branch Address</th>
+                       <th>Completion %</th>
+                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1597,6 +1662,14 @@ const BasicDetails = () => {
                         <td>{share.rmEmail || '-'}</td>
                         <td>{share.registeredAddress || '-'}</td>
                         <td>{share.branchAddress || '-'}</td>
+                        <td>
+                          <div className="completion-percentage">
+                            <div className={`completion-bar ${getSectionCompletion('share', share) === 100 ? 'complete' : getSectionCompletion('share', share) > 50 ? 'partial' : 'low'}`}>
+                              <div className="completion-fill" style={{ width: `${getSectionCompletion('share', share)}%` }}></div>
+                            </div>
+                            <span className="completion-text">{getSectionCompletion('share', share)}%</span>
+                          </div>
+                        </td>
                         <td>
                           <div className="table-actions">
                             <button
@@ -1820,15 +1893,8 @@ const BasicDetails = () => {
               <FiHome className="section-icon" />
               <h3>Insurance Information</h3>
             </div>
-            {/* <div className="section-actions">
-              <button
-                className={editingSection === 'insurance' ? "btn-section-cancel" : "btn-section-edit"}
-                onClick={() => toggleSectionEdit('insurance')}
-                title={editingSection === 'insurance' ? "Cancel" : "Add new entry"}
-              >
-                {editingSection === 'insurance' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
-              </button>
-            </div> */}
+            <div className="section-header-right" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            </div>
           </div>
           <div className="section-content">
             <div className="records-table">
@@ -1854,6 +1920,7 @@ const BasicDetails = () => {
                       <th>RM Email</th>
                       <th>Registered Address</th>
                       <th>Branch Address</th>
+                      <th>Completion %</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -1878,6 +1945,22 @@ const BasicDetails = () => {
                         <td>{policy.rmEmail || '-'}</td>
                         <td>{policy.registeredAddress || '-'}</td>
                         <td>{policy.branchAddress || '-'}</td>
+                        <td>
+                          <div className="completion-percentage">
+                            <div className={`completion-bar ${getSectionCompletion('insurance', policy) === 100 ? 'complete' : getSectionCompletion('insurance', policy) > 50 ? 'partial' : 'low'}`}>
+                              <div className="completion-fill" style={{ width: `${getSectionCompletion('insurance', policy)}%` }}></div>
+                            </div>
+                            <span className="completion-text">{getSectionCompletion('insurance', policy)}%</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="completion-percentage">
+                            <div className={`completion-bar ${getSectionCompletion('insurance', policy) === 100 ? 'complete' : getSectionCompletion('insurance', policy) > 50 ? 'partial' : 'low'}`}>
+                              <div className="completion-fill" style={{ width: `${getSectionCompletion('insurance', policy)}%` }}></div>
+                            </div>
+                            <span className="completion-text">{getSectionCompletion('insurance', policy)}%</span>
+                          </div>
+                        </td>
                         <td>
                           <div className="table-actions">
                             <button
@@ -2099,15 +2182,8 @@ const BasicDetails = () => {
               <FiBriefcase className="section-icon" />
               <h3>Bank Accounts Information</h3>
             </div>
-            {/* <div className="section-actions">
-              <button
-                className={editingSection === 'banks' ? "btn-section-cancel" : "btn-section-edit"}
-                onClick={() => toggleSectionEdit('banks')}
-                title={editingSection === 'banks' ? "Cancel" : "Add new entry"}
-              >
-                {editingSection === 'banks' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
-              </button>
-            </div> */}
+            <div className="section-header-right" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            </div>
           </div>
           <div className="section-content">
             <div className="records-table">
@@ -2130,6 +2206,7 @@ const BasicDetails = () => {
                       <th>RM Email</th>
                       <th>Registered Address</th>
                       <th>Branch Address</th>
+                      <th>Completion %</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -2151,6 +2228,22 @@ const BasicDetails = () => {
                         <td>{bank.rmEmail || '-'}</td>
                         <td>{bank.registeredAddress || '-'}</td>
                         <td>{bank.branchAddress || '-'}</td>
+                        <td>
+                          <div className="completion-percentage">
+                            <div className={`completion-bar ${getSectionCompletion('bank', bank) === 100 ? 'complete' : getSectionCompletion('bank', bank) > 50 ? 'partial' : 'low'}`}>
+                              <div className="completion-fill" style={{ width: `${getSectionCompletion('bank', bank)}%` }}></div>
+                            </div>
+                            <span className="completion-text">{getSectionCompletion('bank', bank)}%</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="completion-percentage">
+                            <div className={`completion-bar ${getSectionCompletion('bank', bank) === 100 ? 'complete' : getSectionCompletion('bank', bank) > 50 ? 'partial' : 'low'}`}>
+                              <div className="completion-fill" style={{ width: `${getSectionCompletion('bank', bank)}%` }}></div>
+                            </div>
+                            <span className="completion-text">{getSectionCompletion('bank', bank)}%</span>
+                          </div>
+                        </td>
                         <td>
                           <div className="table-actions">
                             <button
@@ -2346,7 +2439,7 @@ const BasicDetails = () => {
               <FiPhone className="section-icon" />
               <h3>Mobile Bill Information</h3>
             </div>
-            <div className="section-actions">
+            <div className="section-header-right" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
               <button
                 className={editingSection === 'mobileBills' ? "btn-section-cancel" : "btn-section-edit"}
                 onClick={() => toggleSectionEdit('mobileBills')}
@@ -2371,8 +2464,9 @@ const BasicDetails = () => {
                       <th>Final Payment Date</th>
                       <th>Email Id</th>
                       <th>Alternate No.</th>
-                      <th>Address</th>
-                      <th>Actions</th>
+                       <th>Address</th>
+                       <th>Completion %</th>
+                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2561,7 +2655,7 @@ const BasicDetails = () => {
               <FiBriefcase className="section-icon" />
               <h3>Card Details</h3>
             </div>
-            {/* <div className="section-actions">
+            <div className="section-header-right" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
               <button
                 className={editingSection === 'cards' ? "btn-section-cancel" : "btn-section-edit"}
                 onClick={() => toggleSectionEdit('cards')}
@@ -2569,7 +2663,7 @@ const BasicDetails = () => {
               >
                 {editingSection === 'cards' ? <><FiX /> Cancel</> : <><FiPlus /> New</>}
               </button>
-            </div> */}
+            </div>
           </div>
           <div className="section-content">
             <div className="records-table">
@@ -2589,6 +2683,7 @@ const BasicDetails = () => {
                       <th>Password</th>
                       <th>Customer Care</th>
                       <th>Customer Care Email</th>
+                      <th>Completion %</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -2607,6 +2702,14 @@ const BasicDetails = () => {
                         <td>{card.password ? '****' : '-'}</td>
                         <td>{card.customerCareNumber || '-'}</td>
                         <td>{card.customerCareEmail || '-'}</td>
+                        <td>
+                          <div className="completion-percentage">
+                            <div className={`completion-bar ${getSectionCompletion('card', card) === 100 ? 'complete' : getSectionCompletion('card', card) > 50 ? 'partial' : 'low'}`}>
+                              <div className="completion-fill" style={{ width: `${getSectionCompletion('card', card)}%` }}></div>
+                            </div>
+                            <span className="completion-text">{getSectionCompletion('card', card)}%</span>
+                          </div>
+                        </td>
                         <td>
                           <div className="table-actions">
                             <button
@@ -2772,7 +2875,7 @@ const BasicDetails = () => {
               <FiTrendingUp className="section-icon" />
               <h3>Payment Gateway</h3>
             </div>
-            <div className="section-actions">
+            <div className="section-header-right" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
               <button
                 className={editingSection === 'paymentGateways' ? "btn-section-cancel" : "btn-section-edit"}
                 onClick={() => toggleSectionEdit('paymentGateways')}
@@ -2795,6 +2898,7 @@ const BasicDetails = () => {
                       <th>URL</th>
                       <th>User ID</th>
                       <th>Password</th>
+                      <th>Completion %</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -2808,6 +2912,14 @@ const BasicDetails = () => {
                         <td>{gateway.url || '-'}</td>
                         <td>{gateway.userId || '-'}</td>
                         <td>{gateway.password ? '****' : '-'}</td>
+                        <td>
+                          <div className="completion-percentage">
+                            <div className={`completion-bar ${getSectionCompletion('payment-gateway', gateway) === 100 ? 'complete' : getSectionCompletion('payment-gateway', gateway) > 50 ? 'partial' : 'low'}`}>
+                              <div className="completion-fill" style={{ width: `${getSectionCompletion('payment-gateway', gateway)}%` }}></div>
+                            </div>
+                            <span className="completion-text">{getSectionCompletion('payment-gateway', gateway)}%</span>
+                          </div>
+                        </td>
                         <td>
                           <div className="table-actions">
                             <button
@@ -2932,7 +3044,7 @@ const BasicDetails = () => {
               <FiBriefcase className="section-icon" />
               <h3>Sub Broker Information</h3>
             </div>
-            <div className="section-actions">
+            <div className="section-header-right" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
               <button
                 className={editingSection === 'subBrokers' ? "btn-section-cancel" : "btn-section-edit"}
                 onClick={() => toggleSectionEdit('subBrokers')}
@@ -2959,6 +3071,7 @@ const BasicDetails = () => {
                       <th>Pin Code</th>
                       <th>Customer Care Number</th>
                       <th>Customer Care Email Id</th>
+                      <th>Completion %</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -2976,6 +3089,14 @@ const BasicDetails = () => {
                         <td>{broker.pinCode || '-'}</td>
                         <td>{broker.customerCareNumber || '-'}</td>
                         <td>{broker.customerCareEmailId || '-'}</td>
+                        <td>
+                          <div className="completion-percentage">
+                            <div className={`completion-bar ${getSectionCompletion('sub-broker', broker) === 100 ? 'complete' : getSectionCompletion('sub-broker', broker) > 50 ? 'partial' : 'low'}`}>
+                              <div className="completion-fill" style={{ width: `${getSectionCompletion('sub-broker', broker)}%` }}></div>
+                            </div>
+                            <span className="completion-text">{getSectionCompletion('sub-broker', broker)}%</span>
+                          </div>
+                        </td>
                         <td>
                           <div className="table-actions">
                             <button

@@ -180,6 +180,27 @@ const LandRecords = () => {
     }
   };
 
+  const calculateCompletionPercentage = (entry) => {
+    const mandatoryFields = [
+      'propertyType',
+      'surveyNumber',
+      'area',
+      entry.location?.village ? 'location.village' : '',
+      entry.location?.district ? 'location.district' : '',
+      'ownershipType'
+    ].filter(f => f !== '');
+
+    let filledFields = 0;
+    if (entry.propertyType) filledFields++;
+    if (entry.surveyNumber) filledFields++;
+    if (entry.area) filledFields++;
+    if (entry.location?.village) filledFields++;
+    if (entry.location?.district) filledFields++;
+    if (entry.ownershipType) filledFields++;
+
+    return Math.round((filledFields / mandatoryFields.length) * 100);
+  };
+
   useEffect(() => {
     trackFeatureUsage('/family/static/land-records', 'view');
     fetchEntries();
@@ -366,6 +387,7 @@ const LandRecords = () => {
                         <th>Ownership</th>
                         <th>Market Value</th>
                         <th>Legal Status</th>
+                        <th>Completion %</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -402,6 +424,14 @@ const LandRecords = () => {
                             <span className={`status-badge status-${entry.legalStatus?.toLowerCase()}`}>
                               {entry.legalStatus}
                             </span>
+                          </td>
+                          <td>
+                            <div className="completion-percentage">
+                              <div className={`completion-bar ${calculateCompletionPercentage(entry) === 100 ? 'complete' : calculateCompletionPercentage(entry) > 50 ? 'partial' : 'low'}`}>
+                                <div className="completion-fill" style={{ width: `${calculateCompletionPercentage(entry)}%` }}></div>
+                              </div>
+                              <span className="completion-text">{calculateCompletionPercentage(entry)}%</span>
+                            </div>
                           </td>
                           <td>
                             <div className="table-actions">

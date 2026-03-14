@@ -122,6 +122,10 @@ export const staticAPI = {
   updateFamilyTask: (id, data) => api.put(`/static/family-tasks/${id}`, data),
   
   deleteFamilyTask: (id) => api.delete(`/static/family-tasks/${id}`),
+  
+  // Dashboard Integrated Data
+  getFamilyEvents: () => api.get('/static/family-events'),
+  getCommunicationsFeed: () => api.get('/static/communications-feed'),
 
   // Generic methods for backward compatibility
   getAll: (category) => api.get(`/static/${category}`),

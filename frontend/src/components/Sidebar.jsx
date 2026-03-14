@@ -13,6 +13,8 @@ const Sidebar = () => {
   const [dailyOpen, setDailyOpen] = useState(false);
   const [monitoringOpen, setMonitoringOpen] = useState(false);
   const [businessDailyOpen, setBusinessDailyOpen] = useState(false);
+  const [reportsOpen, setReportsOpen] = useState(false);
+  const [analyticsSubOpen, setAnalyticsSubOpen] = useState(false);
   const [upgradeModal, setUpgradeModal] = useState({ isOpen: false, featureName: '' });
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -152,7 +154,40 @@ const Sidebar = () => {
                   </div>
                 )}
               </div>
-              <Link to="/family/analytics" className="submenu-item">Analytics</Link>
+              <div className="nav-subsection">
+                <div
+                  className={`submenu-item nav-header ${reportsOpen ? 'active' : ''}`}
+                  onClick={() => setReportsOpen(!reportsOpen)}
+                >
+                  Reports
+                </div>
+                {reportsOpen && (
+                  <div className="nested-submenu">
+                    <Link to="/reports/status-monitoring" className="nested-submenu-item">Status & Monitoring</Link>
+                    <Link to="/reports/learning" className="nested-submenu-item">Learning</Link>
+                    <Link to="/reports/want-in-action" className="nested-submenu-item">Want In Action</Link>
+                    <Link to="/reports/expenses-spending" className="nested-submenu-item">Expenses / Spending</Link>
+                    <Link to="/reports/date" className="nested-submenu-item">Date</Link>
+                    <Link to="/reports/completion" className="nested-submenu-item">% Completion</Link>
+                  </div>
+                )}
+              </div>
+              <div className="nav-subsection">
+                <div
+                  className={`submenu-item nav-header ${analyticsSubOpen ? 'active' : ''}`}
+                  onClick={() => setAnalyticsSubOpen(!analyticsSubOpen)}
+                >
+                  Analytics
+                </div>
+                {analyticsSubOpen && (
+                  <div className="nested-submenu">
+                    <Link to="/analytics/default-assumptions" className="nested-submenu-item">Default Assumptions & Mannual Inputs</Link>
+                    <Link to="/analytics/recommendations" className="nested-submenu-item">Recommendations</Link>
+                    <Link to="/analytics/goals-targets" className="nested-submenu-item">Goals & Targets Planned Vs Actual Vs Projections</Link>
+                    <Link to="/analytics/expenses-levels" className="nested-submenu-item">Expenses Levels</Link>
+                  </div>
+                )}
+              </div>
               <Link to="/family/tasks" className="submenu-item">Tasks to Do</Link>
               <Link to="/family/daily/telephone-conversation" className="submenu-item">Telephone Conversation</Link>
               <Link to="/family/static/contact-management" className="submenu-item">Contact Management</Link>
@@ -201,6 +236,7 @@ const Sidebar = () => {
             </div>
           )}
         </div> */}
+
 
         <Link to="/libraries" className="nav-item">Libraries</Link>
         <Link to="/subscription" className="nav-item">Subscription Plan</Link>

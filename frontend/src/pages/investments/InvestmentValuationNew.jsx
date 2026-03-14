@@ -33,7 +33,7 @@ const InvestmentValuationNew = () => {
   const [shares, setShares] = useState([]);
   const [lifeInsurance, setLifeInsurance] = useState([]);
   const [healthInsurance, setHealthInsurance] = useState([]);
-  const [loans, setLoans] = useState([]);
+  const [generalInsurance, setGeneralInsurance] = useState([]);
   const [sharesRefreshing, setSharesRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('summary');
@@ -172,24 +172,7 @@ const InvestmentValuationNew = () => {
       const allInsurance = insuranceRes.data.data.insurance || [];
       setLifeInsurance(allInsurance.filter(ins => ins.insuranceType === 'life'));
       setHealthInsurance(allInsurance.filter(ins => ins.insuranceType === 'health'));
-
-      setLoans(loansRes.data.data.loans || []);
-
-      // Merge Amortization Loans (Lent only)
-      const lentLoans = amortizationLoans.filter(l => l.type === 'Lent').map(l => ({
-        _id: l._id,
-        debtorName: l.name, // Mapping Name to Debtor
-        companyName: 'Personal Loan',
-        loanType: 'Personal',
-        commencementDate: l.startDate,
-        closureDate: l.maturityDate,
-        emiAmount: l.monthlyPayment, // Using calculated monthly payment
-        // principalAmount: l.amount,
-        balance: l.amount, // Using original amount as balance proxy if tracking not uniform
-        source: 'Loan Amortization'
-      }));
-
-      setLoans(prev => [...prev, ...lentLoans]);
+      setGeneralInsurance(allInsurance.filter(ins => ins.insuranceType === 'general'));
 
     } catch (error) {
       console.error('Error fetching investment data:', error);
@@ -216,9 +199,6 @@ const InvestmentValuationNew = () => {
           break;
         case 'insurance':
           await investmentValuationAPI.deleteInsurance(id);
-          break;
-        case 'loan':
-          await investmentValuationAPI.deleteLoan(id);
           break;
         default:
           throw new Error('Unknown item type');
@@ -314,22 +294,20 @@ const InvestmentValuationNew = () => {
     const sharesTotal = shares.reduce((sum, item) => sum + (item.currentValuation || 0), 0);
     const lifeInsuranceTotal = lifeInsurance.reduce((sum, item) => sum + (item.sumAssured || 0), 0);
     const healthInsuranceTotal = healthInsurance.reduce((sum, item) => sum + (item.sumInsured || 0), 0);
-    const loansTotal = loans.reduce((sum, item) => sum + (item.balance || 0), 0);
+    const generalInsuranceTotal = generalInsurance.reduce((sum, item) => sum + (item.sumInsured || 0), 0);
 
     const totalInvestments = mfLumpsumTotal + mfSipTotal + sharesTotal;
-    const totalInsurance = lifeInsuranceTotal + healthInsuranceTotal;
-    const totalLoans = loansTotal;
+    const totalInsurance = lifeInsuranceTotal + healthInsuranceTotal + generalInsuranceTotal;
 
     return {
       totalInvestments,
       totalInsurance,
-      totalLoans,
-      netWorth: totalInvestments + totalInsurance - totalLoans,
+      netWorth: totalInvestments + totalInsurance,
       mutualFunds: mfLumpsumTotal + mfSipTotal,
       shares: sharesTotal,
       insurance: totalInsurance
     };
-  }, [mutualFundsLumpsum, mutualFundsSIP, shares, lifeInsurance, healthInsurance, loans]);
+  }, [mutualFundsLumpsum, mutualFundsSIP, shares, lifeInsurance, healthInsurance, generalInsurance]);
 
   const chartData = [
     { name: 'Mutual Funds', value: summary.mutualFunds, color: '#2563EB' },
@@ -373,16 +351,6 @@ const InvestmentValuationNew = () => {
           <div className="stat-content">
             <p className="stat-label">Total Insurance</p>
             <h3 className="stat-value">₹{summary.totalInsurance.toLocaleString('en-IN')}</h3>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon icon-gray">
-            <FiActivity />
-          </div>
-          <div className="stat-content">
-            <p className="stat-label">Total Loans</p>
-            <h3 className="stat-value">₹{summary.totalLoans.toLocaleString('en-IN')}</h3>
           </div>
         </div>
 
@@ -1290,11 +1258,11 @@ const InvestmentValuationNew = () => {
     </div>
   );
 
-  const LoansSection = () => (
+  const GeneralInsuranceSection = () => (
     <div className="investment-section">
       <div className="section-header">
-        <h3>Loans</h3>
-        <button className="btn-add-investment" onClick={() => openModal('loan')}>
+        <h3>General Insurance</h3>
+        <button className="btn-add-investment" onClick={() => openModal('insurance', null, 'general')}>
           <FiPlus /> Add New
         </button>
       </div>
@@ -1303,49 +1271,49 @@ const InvestmentValuationNew = () => {
         <table className="investment-table">
           <thead>
             <tr>
-              <th>Name of Debtor</th>
-              <th>Name of Company/Bank</th>
-              <th>Type of Loan</th>
-              <th>Loan Commencement Date</th>
-              <th>Loan Closure Date</th>
-              <th>EMI Amount</th>
-              <th>EMI Date</th>
-              <th>Principal Amount</th>
-              <th>Interest Amount</th>
-              <th>Penalty</th>
-              <th>Total EMI</th>
-              <th>Balance</th>
-              <th>Interest Paid</th>
+              <th>Name of Customer</th>
+              <th>Name of Company</th>
+              <th>Name of Policy</th>
+              <th>Policy Number</th>
+              <th>Type of Policy</th>
+              <th>Category</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Term</th>
+              <th>Premium Amount</th>
+              <th>GST</th>
+              <th>Total Premium</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {loans.length === 0 ? (
+            {generalInsurance.length === 0 ? (
               <tr>
-                <td colSpan="14" className="no-data">No loans found</td>
+                <td colSpan="14" className="no-data">No general insurance policies found</td>
               </tr>
             ) : (
-              loans.map((item, index) => (
+              generalInsurance.map((item, index) => (
                 <tr key={index}>
-                  <td>{item.debtorName}</td>
+                  <td>{item.customerName}</td>
                   <td>{item.companyName}</td>
-                  <td>{item.loanType}</td>
-                  <td>{item.commencementDate}</td>
-                  <td>{item.closureDate}</td>
-                  <td>₹{item.emiAmount?.toLocaleString('en-IN')}</td>
-                  <td>{item.emiDate}</td>
-                  <td>₹{item.principalAmount?.toLocaleString('en-IN')}</td>
-                  <td>₹{item.interestAmount?.toLocaleString('en-IN')}</td>
-                  <td>₹{item.penalty?.toLocaleString('en-IN')}</td>
-                  <td>₹{item.totalEmi?.toLocaleString('en-IN')}</td>
-                  <td>₹{item.balance?.toLocaleString('en-IN')}</td>
-                  <td>₹{item.interestPaid?.toLocaleString('en-IN')}</td>
+                  <td>{item.policyName}</td>
+                  <td>{item.policyNumber}</td>
+                  <td>{item.policyType}</td>
+                  <td>{item.policyCategory}</td>
+                  <td>{item.policyStartDate ? fmtDate(item.policyStartDate) : '-'}</td>
+                  <td>{item.policyEndDate ? fmtDate(item.policyEndDate) : '-'}</td>
+                  <td>{item.policyTerm}</td>
+                  <td>₹{item.premiumAmount?.toLocaleString('en-IN')}</td>
+                  <td>₹{item.gstAmount?.toLocaleString('en-IN')}</td>
+                  <td>₹{item.totalPremium?.toLocaleString('en-IN')}</td>
+                  <td><span className={`status-badge ${item.paymentStatus?.toLowerCase()}`}>{item.paymentStatus}</span></td>
                   <td>
                     <div className="action-buttons">
-                      <button className="edit-btn" onClick={() => openModal('loan', item)}>
+                      <button className="edit-btn" onClick={() => openModal('insurance', item, 'general')}>
                         <FiEdit />
                       </button>
-                      <button className="delete-btn" onClick={() => handleDelete('loan', item._id)}>
+                      <button className="delete-btn" onClick={() => handleDelete('insurance', item._id)}>
                         <FiTrash2 />
                       </button>
                     </div>
@@ -1358,6 +1326,7 @@ const InvestmentValuationNew = () => {
       </div>
     </div>
   );
+
 
   if (loading && mutualFundsLumpsum.length === 0) {
     return (
@@ -1393,7 +1362,7 @@ const InvestmentValuationNew = () => {
           <TabButton id="shares" label="Shares" isActive={activeTab === 'shares'} onClick={setActiveTab} />
           <TabButton id="life-insurance" label="Life Insurance" isActive={activeTab === 'life-insurance'} onClick={setActiveTab} />
           <TabButton id="health-insurance" label="Health Insurance" isActive={activeTab === 'health-insurance'} onClick={setActiveTab} />
-          <TabButton id="loans" label="Loans" isActive={activeTab === 'loans'} onClick={setActiveTab} />
+          <TabButton id="general-insurance" label="General Insurance" isActive={activeTab === 'general-insurance'} onClick={setActiveTab} />
         </div>
       </div>
 
@@ -1404,7 +1373,7 @@ const InvestmentValuationNew = () => {
         {activeTab === 'shares' && <SharesSection />}
         {activeTab === 'life-insurance' && <LifeInsuranceSection />}
         {activeTab === 'health-insurance' && <HealthInsuranceSection />}
-        {activeTab === 'loans' && <LoansSection />}
+        {activeTab === 'general-insurance' && <GeneralInsuranceSection />}
       </div>
 
       {/* Modals */}
@@ -1430,13 +1399,6 @@ const InvestmentValuationNew = () => {
         onSuccess={handleModalSuccess}
         editData={modals.insurance.editData}
         insuranceType={modals.insurance.type}
-      />
-
-      <LoanModal
-        isOpen={modals.loan.isOpen}
-        onClose={() => closeModal('loan')}
-        onSuccess={handleModalSuccess}
-        editData={modals.loan.editData}
       />
     </div>
   );

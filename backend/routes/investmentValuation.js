@@ -40,6 +40,7 @@ router.get('/summary', auth, async (req, res) => {
     const insuranceSummary = {
       life: insurance.filter(ins => ins.insuranceType === 'life'),
       health: insurance.filter(ins => ins.insuranceType === 'health'),
+      general: insurance.filter(ins => ins.insuranceType === 'general'),
       totalSumAssured: insurance.reduce((sum, ins) => sum + (ins.sumAssured || 0), 0),
       totalSumInsured: insurance.reduce((sum, ins) => sum + (ins.sumInsured || 0), 0),
       totalPremium: insurance.reduce((sum, ins) => sum + (ins.premiumAmount || 0), 0),
