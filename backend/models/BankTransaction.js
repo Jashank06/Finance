@@ -6,6 +6,15 @@ const bankTransactionSchema = new mongoose.Schema({
     ref: 'Bank',
     required: true
   },
+  section: {
+    type: String,
+    enum: ['family', 'business'],
+    default: 'family'
+  },
+  businessId: {
+    type: String,
+    default: null
+  },
   type: {
     type: String,
     enum: ['credit', 'debit'],

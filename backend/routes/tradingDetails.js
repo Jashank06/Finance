@@ -8,7 +8,11 @@ const { autoGeneratePL } = require('../utils/profitLossSync');
 router.get('/', auth, async (req, res) => {
     try {
         console.log('[Trading Details] Fetching records for user:', req.user.id);
-        const tradingDetails = await TradingDetails.find({ userId: req.user.id })
+        const section = req.query.section || 'family';
+        const query = { userId: req.user.id, section };
+        if (req.query.businessId) query.businessId = req.query.businessId;
+
+        const tradingDetails = await TradingDetails.find(query)
             .sort({ createdAt: -1 });
 
         console.log(`[Trading Details] Found ${tradingDetails.length} records`);
@@ -63,7 +67,9 @@ router.post('/', auth, async (req, res) => {
 
         const tradingDetailData = {
             ...req.body,
-            userId: req.user.id
+            userId: req.user.id,
+            section: req.body.section || 'family',
+            businessId: req.body.businessId || null
         };
 
         const tradingDetail = new TradingDetails(tradingDetailData);
@@ -162,8 +168,10 @@ router.delete('/:id', auth, async (req, res) => {
 
         // Delete associated P&L records
         const ProfitLoss = require('../models/ProfitLoss');
+        const section = req.query.section || 'family';
         await ProfitLoss.deleteMany({
             userId: req.user.id,
+            section,
             $or: [
                 { purchaseRecordId: req.params.id },
                 { salesRecordId: req.params.id }

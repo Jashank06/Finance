@@ -7,7 +7,11 @@ const auth = require('../middleware/auth');
 // Get all P&L records for logged-in user
 router.get('/', auth, async (req, res) => {
     try {
-        const profitLossRecords = await ProfitLoss.find({ userId: req.user.id })
+        const section = req.query.section || 'family';
+        const query = { userId: req.user.id, section };
+        if (req.query.businessId) query.businessId = req.query.businessId;
+
+        const profitLossRecords = await ProfitLoss.find(query)
             .sort({ dateOfSales: -1 });
 
         res.json({
@@ -60,8 +64,12 @@ router.post('/auto-generate', auth, async (req, res) => {
     try {
         const result = await autoGeneratePL(req.user.id);
         
+        const section = req.query.section || 'family';
+        const query = { userId: req.user.id, section };
+        if (req.query.businessId) query.businessId = req.query.businessId;
+
         // Fetch the generated records to return them
-        const generatedRecords = await ProfitLoss.find({ userId: req.user.id })
+        const generatedRecords = await ProfitLoss.find(query)
             .sort({ dateOfSales: -1 });
 
         res.json({
@@ -87,7 +95,9 @@ router.post('/', auth, async (req, res) => {
     try {
         const recordData = {
             ...req.body,
-            userId: req.user.id
+            userId: req.user.id,
+            section: req.body.section || 'family',
+            businessId: req.body.businessId || null
         };
 
         const record = new ProfitLoss(recordData);
@@ -179,7 +189,11 @@ router.delete('/:id', auth, async (req, res) => {
 // Get P&L summary/statistics
 router.get('/stats/summary', auth, async (req, res) => {
     try {
-        const records = await ProfitLoss.find({ userId: req.user.id });
+        const section = req.query.section || 'family';
+        const query = { userId: req.user.id, section };
+        if (req.query.businessId) query.businessId = req.query.businessId;
+
+        const records = await ProfitLoss.find(query);
 
         const summary = {
             totalTrades: records.length,

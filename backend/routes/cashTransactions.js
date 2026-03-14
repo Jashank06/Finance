@@ -8,7 +8,11 @@ const { syncExpenseToBillDates } = require('../utils/billExpenseSync');
 // Get all transactions for a user
 router.get('/', auth, async (req, res) => {
   try {
-    const transactions = await CashTransaction.find({ userId: req.user.id })
+    const section = req.query.section || 'family';
+    const query = { userId: req.user.id, section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+
+    const transactions = await CashTransaction.find(query)
       .populate('memberId', 'name relation')
       .sort({ date: -1 });
     res.json(transactions);
@@ -21,10 +25,15 @@ router.get('/', auth, async (req, res) => {
 // Get transactions for a specific member
 router.get('/member/:memberId', auth, async (req, res) => {
   try {
-    const transactions = await CashTransaction.find({ 
+    const section = req.query.section || 'family';
+    const query = { 
       userId: req.user.id, 
-      memberId: req.params.memberId 
-    })
+      memberId: req.params.memberId,
+      section
+    };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+
+    const transactions = await CashTransaction.find(query)
     .populate('memberId', 'name relation')
     .sort({ date: -1 });
     
@@ -38,10 +47,15 @@ router.get('/member/:memberId', auth, async (req, res) => {
 // Get single transaction
 router.get('/:id', auth, async (req, res) => {
   try {
-    const transaction = await CashTransaction.findOne({ 
+    const section = req.query.section || 'family';
+    const query = { 
       _id: req.params.id, 
-      userId: req.user.id 
-    }).populate('memberId', 'name relation');
+      userId: req.user.id,
+      section
+    };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+
+    const transaction = await CashTransaction.findOne(query).populate('memberId', 'name relation');
     
     if (!transaction) {
       return res.status(404).json({ message: 'Transaction not found' });
@@ -86,6 +100,8 @@ router.post('/', auth, async (req, res) => {
 
     const transaction = new CashTransaction({
       userId: req.user.id,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null,
       memberId,
       type,
       amount: amountNum,
@@ -163,8 +179,12 @@ router.put('/:id', auth, async (req, res) => {
       updates.amount = parseFloat(updates.amount);
     }
     
+    const section = req.body.section || req.query.section || 'family';
+    const query = { _id: req.params.id, userId: req.user.id, section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+
     const transaction = await CashTransaction.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.id },
+      query,
       updates,
       { new: true, runValidators: true }
     ).populate('memberId', 'name relation');

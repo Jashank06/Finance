@@ -6,10 +6,15 @@ const auth = require('../middleware/auth');
 // Get all projects for a user
 router.get('/', auth, async (req, res) => {
   try {
-    const projects = await Project.find({ 
+    const section = req.query.section || 'family';
+    const query = { 
       userId: req.user.id, 
-      isActive: true 
-    }).sort({ name: 1 });
+      isActive: true,
+      section 
+    };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+
+    const projects = await Project.find(query).sort({ name: 1 });
     
     res.json({
       success: true,
@@ -73,6 +78,8 @@ router.post('/', auth, async (req, res) => {
 
     const project = new Project({
       userId: req.user.id,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null,
       name: name.trim(),
       description: description?.trim() || '',
       status: status || 'active',

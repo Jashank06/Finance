@@ -18,7 +18,9 @@ router.get('/', auth, async (req, res) => {
     } = req.query;
 
     // Build query
-    const query = { userId: req.user.id, isActive: true };
+    const section = req.query.section || 'family';
+    const query = { userId: req.user.id, isActive: true, section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
     
     if (type) query.type = type;
     if (category) query.category = category;
@@ -137,6 +139,8 @@ router.post('/', auth, async (req, res) => {
 
     const record = new IncomeExpense({
       userId: req.user.id,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null,
       type,
       category,
       subcategory,
@@ -216,10 +220,13 @@ router.get('/summary/stats', auth, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     
+    const section = req.query.section || 'family';
     const matchQuery = { 
       userId: req.user.id, 
-      isActive: true 
+      isActive: true,
+      section
     };
+    if (req.query.businessId) matchQuery.businessId = req.query.businessId;
     
     if (startDate || endDate) {
       matchQuery.date = {};
@@ -312,11 +319,16 @@ router.get('/summary/stats', auth, async (req, res) => {
 // Get recurring records
 router.get('/recurring/list', auth, async (req, res) => {
   try {
-    const records = await IncomeExpense.find({
+    const section = req.query.section || 'family';
+    const query = {
       userId: req.user.id,
       isRecurring: true,
-      isActive: true
-    }).sort({ date: -1 });
+      isActive: true,
+      section
+    };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+
+    const records = await IncomeExpense.find(query).sort({ date: -1 });
 
     res.json(records);
   } catch (error) {
@@ -329,11 +341,16 @@ router.get('/recurring/list', auth, async (req, res) => {
 router.get('/tags/:tag', auth, async (req, res) => {
   try {
     const { tag } = req.params;
-    const records = await IncomeExpense.find({
+    const section = req.query.section || 'family';
+    const query = {
       userId: req.user.id,
       tags: tag,
-      isActive: true
-    }).sort({ date: -1 });
+      isActive: true,
+      section
+    };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+
+    const records = await IncomeExpense.find(query).sort({ date: -1 });
 
     res.json(records);
   } catch (error) {

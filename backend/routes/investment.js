@@ -17,11 +17,12 @@ const router = express.Router();
 // Get all investments for logged-in user
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { category } = req.query;
-    const query = { userId: req.userId };
+    const section = req.query.section || 'family';
+    const query = { userId: req.userId, section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
 
-    if (category) {
-      query.category = category;
+    if (req.query.category) {
+      query.category = req.query.category;
     }
 
     const investments = await Investment.find(query).sort({ createdAt: -1 });
@@ -34,9 +35,11 @@ router.get('/', authMiddleware, async (req, res) => {
 // Get single investment
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
+    const section = req.query.section || 'family';
     const investment = await Investment.findOne({
       _id: req.params.id,
       userId: req.userId,
+      section
     });
 
     if (!investment) {
@@ -59,6 +62,8 @@ router.post('/', authMiddleware, async (req, res) => {
     const investmentData = {
       ...req.body,
       userId: req.userId,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null,
     };
 
     // Map purchaseDate to startDate for consistency
@@ -143,8 +148,9 @@ router.put('/:id', authMiddleware, async (req, res) => {
       }
     }
 
+    const section = req.body.section || req.query.section || 'family';
     const investment = await Investment.findOneAndUpdate(
-      { _id: req.params.id, userId: req.userId },
+      { _id: req.params.id, userId: req.userId, section },
       updateData,
       { new: true }
     );
@@ -182,9 +188,11 @@ router.put('/:id', authMiddleware, async (req, res) => {
 // Delete investment
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
+    const section = req.query.section || 'family';
     const investment = await Investment.findOneAndDelete({
       _id: req.params.id,
       userId: req.userId,
+      section
     });
 
     if (!investment) {
@@ -207,7 +215,10 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 // Get investment statistics
 router.get('/stats/summary', authMiddleware, async (req, res) => {
   try {
-    const investments = await Investment.find({ userId: req.userId });
+    const section = req.query.section || 'family';
+    const query = { userId: req.userId, section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+    const investments = await Investment.find(query);
 
     const totalInvestment = investments.reduce((sum, inv) => sum + inv.amount, 0);
     const totalCurrentValue = investments.reduce((sum, inv) => sum + (inv.currentValue || inv.amount), 0);
@@ -257,10 +268,10 @@ router.get('/gold-sgb/prices', authMiddleware, async (req, res) => {
 // Get gold/sgb investment analytics
 router.get('/gold-sgb/analytics', authMiddleware, async (req, res) => {
   try {
-    const investments = await Investment.find({
-      userId: req.userId,
-      category: 'gold-sgb'
-    });
+    const section = req.query.section || 'family';
+    const query = { userId: req.userId, category: 'gold-sgb', section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+    const investments = await Investment.find(query);
 
     // Calculate analytics
     const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
@@ -338,10 +349,10 @@ router.get('/gold-sgb/analytics', authMiddleware, async (req, res) => {
 // Update current market prices for all gold/sgb investments
 router.put('/gold-sgb/update-prices', authMiddleware, async (req, res) => {
   try {
-    const investments = await Investment.find({
-      userId: req.userId,
-      category: 'gold-sgb'
-    });
+    const section = req.query.section || 'family';
+    const query = { userId: req.userId, category: 'gold-sgb', section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+    const investments = await Investment.find(query);
 
     // Mock price updates - in real app, fetch from market API
     const priceUpdates = {
@@ -375,12 +386,16 @@ router.put('/gold-sgb/update-prices', authMiddleware, async (req, res) => {
 // Get SGB maturity alerts
 router.get('/gold-sgb/maturity-alerts', authMiddleware, async (req, res) => {
   try {
-    const investments = await Investment.find({
+    const section = req.query.section || 'family';
+    const query = {
       userId: req.userId,
       category: 'gold-sgb',
       type: 'SGB',
-      maturityDate: { $exists: true }
-    });
+      maturityDate: { $exists: true },
+      section
+    };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+    const investments = await Investment.find(query);
 
     const currentDate = new Date();
     const alerts = [];
@@ -415,10 +430,14 @@ router.get('/bill-dates/analytics', authMiddleware, async (req, res) => {
     const currentYear = !isNaN(yearParam) ? yearParam : now.getFullYear();
     const horizonDays = !isNaN(horizonDaysParam) ? horizonDaysParam : 60;
 
+    const section = req.query.section || 'family';
+    const baseQuery = { userId: req.userId, section };
+    if (req.query.businessId) baseQuery.businessId = req.query.businessId;
+
     const [investments, insuranceList, mfList] = await Promise.all([
-      Investment.find({ userId: req.userId, category: 'daily-bill-checklist' }),
-      Insurance.find({ userId: req.userId, status: 'active' }),
-      MutualFund.find({ userId: req.userId, investmentType: 'sip', holdingStatus: 'active' })
+      Investment.find({ ...baseQuery, category: 'daily-bill-checklist' }),
+      Insurance.find({ ...baseQuery, status: 'active' }),
+      MutualFund.find({ ...baseQuery, investmentType: 'sip', holdingStatus: 'active' })
     ]);
 
     const normalizeBill = (inv) => {
@@ -752,8 +771,12 @@ router.get('/appointments/weekly', authMiddleware, async (req, res) => {
     weekEnd.setDate(weekStart.getDate() + 6);
     weekEnd.setHours(23, 59, 59, 999);
 
+    const section = req.query.section || 'family';
+    const baseQuery = { userId: req.userId, section };
+    if (req.query.businessId) baseQuery.businessId = req.query.businessId;
+
     const investments = await Investment.find({
-      userId: req.userId,
+      ...baseQuery,
       category: 'daily-telephone-conversation',
       $or: [
         { startDate: { $gte: weekStart, $lte: weekEnd } },
@@ -762,7 +785,7 @@ router.get('/appointments/weekly', authMiddleware, async (req, res) => {
     }).sort({ startDate: 1 });
 
     const billInvestments = await Investment.find({
-      userId: req.userId,
+      ...baseQuery,
       category: 'daily-bill-checklist',
       $or: [
         { maturityDate: { $gte: weekStart, $lte: weekEnd } },
@@ -771,7 +794,7 @@ router.get('/appointments/weekly', authMiddleware, async (req, res) => {
     }).sort({ maturityDate: 1 });
 
     const loanInvestments = await Investment.find({
-      userId: req.userId,
+      ...baseQuery,
       category: 'daily-loan-ledger',
       $or: [
         { maturityDate: { $gte: weekStart, $lte: weekEnd } },
@@ -970,7 +993,11 @@ router.get('/calendar/yearly', authMiddleware, async (req, res) => {
     const categoriesParam = (req.query.categories || '').split(',').filter(Boolean);
     const categories = categoriesParam.length ? categoriesParam : ['daily-bill-checklist', 'daily-telephone-conversation', 'daily-loan-ledger'];
 
-    const investments = await Investment.find({ userId: req.userId, category: { $in: categories } }).sort({ startDate: 1 });
+    const section = req.query.section || 'family';
+    const baseQuery = { userId: req.userId, section };
+    if (req.query.businessId) baseQuery.businessId = req.query.businessId;
+
+    const investments = await Investment.find({ ...baseQuery, category: { $in: categories } }).sort({ startDate: 1 });
     const basicDetails = await BasicDetails.find({ userId: req.userId });
 
     const normalize = (inv) => {
@@ -1140,10 +1167,12 @@ router.patch('/:id/payment/:paymentNumber', authMiddleware, async (req, res) => 
   try {
     const { isPaid, paidDate, paidAmount, extraPayment } = req.body;
 
+    const section = req.body.section || req.query.section || 'family';
     const investment = await Investment.findOne({
       _id: req.params.id,
       userId: req.userId,
-      category: 'loan-amortization'
+      category: 'loan-amortization',
+      section
     });
 
     if (!investment) {
@@ -1186,10 +1215,10 @@ router.patch('/:id/payment/:paymentNumber', authMiddleware, async (req, res) => 
 // Get all loans
 router.get('/loans/list', authMiddleware, async (req, res) => {
   try {
-    const loans = await Investment.find({
-      userId: req.userId,
-      category: 'loan-amortization'
-    }).sort({ createdAt: -1 });
+    const section = req.query.section || 'family';
+    const query = { userId: req.userId, category: 'loan-amortization', section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+    const loans = await Investment.find(query).sort({ createdAt: -1 });
 
     // Calculate summary for each loan
     const loansWithSummary = loans.map(loan => {
@@ -1244,10 +1273,12 @@ router.post('/loans/:id/record-payment', authMiddleware, async (req, res) => {
   try {
     const { amount, paymentDate, bankTransactionId, source } = req.body;
 
+    const section = req.body.section || req.query.section || 'family';
     const investment = await Investment.findOne({
       _id: req.params.id,
       userId: req.userId,
-      category: 'loan-amortization'
+      category: 'loan-amortization',
+      section
     });
 
     if (!investment) {
@@ -1307,10 +1338,10 @@ router.post('/loans/:id/record-payment', authMiddleware, async (req, res) => {
 // Get unique person names from Udhar Liya (Borrowed) records
 router.get('/loan-ledger/persons', authMiddleware, async (req, res) => {
   try {
-    const loans = await Investment.find({
-      userId: req.userId,
-      category: 'loan-ledger'
-    }).select('name type').sort({ name: 1 });
+    const section = req.query.section || 'family';
+    const query = { userId: req.userId, category: 'loan-ledger', section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+    const loans = await Investment.find(query).select('name type').sort({ name: 1 });
 
     // Extract unique person-type combinations
     const personMap = new Map();
@@ -1335,10 +1366,10 @@ router.get('/loan-ledger/persons', authMiddleware, async (req, res) => {
 // Get unique person names from On Behalf records
 router.get('/on-behalf/persons', authMiddleware, async (req, res) => {
   try {
-    const onBehalfRecords = await Investment.find({
-      userId: req.userId,
-      category: 'on-behalf'
-    }).select('name').sort({ name: 1 });
+    const section = req.query.section || 'family';
+    const query = { userId: req.userId, category: 'on-behalf', section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+    const onBehalfRecords = await Investment.find(query).select('name').sort({ name: 1 });
 
     // Extract unique person names
     const personMap = new Map();
@@ -1378,12 +1409,17 @@ router.post('/loan-ledger/sync-transaction', authMiddleware, async (req, res) =>
     console.log('Calculated:', { normalizedType, isRepayment, loanType });
 
     // Find existing record for this person
-    const existingRecord = await Investment.findOne({
+    const section = req.body.section || req.query.section || 'family';
+    const query = {
       userId: req.userId,
       category: 'loan-ledger',
       name: { $regex: new RegExp("^" + trimmedName + "$", "i") },
-      type: loanType
-    }).sort({ createdAt: -1 });
+      type: loanType,
+      section
+    };
+    if (req.body.businessId || req.query.businessId) query.businessId = req.body.businessId || req.query.businessId;
+
+    const existingRecord = await Investment.findOne(query).sort({ createdAt: -1 });
 
     if (existingRecord) {
       let notes = {};
@@ -1457,6 +1493,8 @@ router.post('/loan-ledger/sync-transaction', authMiddleware, async (req, res) =>
 
     const payload = {
       userId: req.userId,
+      section: req.body.section || req.query.section || 'family',
+      businessId: req.body.businessId || req.query.businessId || null,
       category: 'loan-ledger',
       type: loanType,
       name: personName,
@@ -1501,11 +1539,16 @@ router.post('/on-behalf/sync-transaction', authMiddleware, async (req, res) => {
     const normalizedType = type?.toLowerCase();
     const isCredit = normalizedType === 'credit';
 
-    const existingRecord = await Investment.findOne({
+    const section = req.body.section || req.query.section || 'family';
+    const query = {
       userId: req.userId,
       category: 'on-behalf',
-      name: { $regex: new RegExp("^" + trimmedName + "$", "i") }
-    }).sort({ createdAt: -1 });
+      name: { $regex: new RegExp("^" + trimmedName + "$", "i") },
+      section
+    };
+    if (req.body.businessId || req.query.businessId) query.businessId = req.body.businessId || req.query.businessId;
+
+    const existingRecord = await Investment.findOne(query).sort({ createdAt: -1 });
 
     if (existingRecord) {
       let notes = {};
@@ -1575,6 +1618,8 @@ router.post('/on-behalf/sync-transaction', authMiddleware, async (req, res) => {
 
     const payload = {
       userId: req.userId,
+      section: req.body.section || req.query.section || 'family',
+      businessId: req.body.businessId || req.query.businessId || null,
       category: 'on-behalf',
       type: 'On Behalf',
       name: trimmedName,

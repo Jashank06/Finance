@@ -6,6 +6,15 @@ const cashTransactionSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  section: {
+    type: String,
+    enum: ['family', 'business'],
+    default: 'family',
+  },
+  businessId: {
+    type: String,
+    default: null,
+  },
   memberId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'CashMember',

@@ -191,16 +191,535 @@ function App() {
           />
 
           {/* Business Routes */}
+
           <Route
             path="/business/*"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <PlaceholderPage title="Business Section" />
+                  <PlaceholderPage title="Family Section" />
                 </Layout>
               </ProtectedRoute>
             }
           />
+
+
+
+          <Route
+            path="/business/tasks"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <FamilyTasks />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/investments/nps-ppf"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <NpsPpfInvestment />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/investments/gold-sgb"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <GoldSgbInvestment />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/investments/bank-schemes"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <BankSchemesInvestment />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/investments/mf-insurance-shares"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <MfInsuranceSharesInvestment />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/investments/valuation-allocation"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <InvestmentValuationNew />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/investments/project-income-expense"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProjectIncomeExpense />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/investments/profile"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <InvestmentProfile />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/investments/retirement"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <RetirementFinancial />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/investments/trading-details"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TradingDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/investments/profit-loss"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProfitLoss />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/static/basic-details"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <BasicDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/static/online-access-details"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <OnlineAccessDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/static/mobile-email-details"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <MobileEmailDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/static/company-records"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CompanyRecords />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/static/personal-records"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <PersonalRecords />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/static/family-profile"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <FamilyProfile />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/static/inventory-record"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <InventoryRecord />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/static/contact-management"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ContactManagement />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/static/digital-assets"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <DigitalAssets />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/static/customer-support"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CustomerSupport />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/static/land-records"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <LandRecords />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/static/membership-list"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <MembershipList />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/daily/cash-cards-bank"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CashCardsBank />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+ 
+
+          <Route
+            path="/business/daily/loan-udhar"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <LoanLedger />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+ 
+
+          <Route
+            path="/business/daily/loan-amortization"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <LoanAmortization />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+ 
+
+          <Route
+            path="/business/daily/bill-paying"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <BillChecklistNew />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+ 
+
+          <Route
+            path="/business/daily/manage-finance"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ManageFinance />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/daily/income-expenses"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <IncomeExpenses />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/daily/telephone-conversation"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TelephoneConversation />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/monitoring/bill-dates"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <BillDates />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/monitoring/weekly-appointment"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <WeeklyAppointments />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/monitoring/yearly-calendar"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <YearlyCalendar />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/monitoring/multiple-calendars"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <MultipleCalendars />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/daily/cheque-register"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ChequeRegister />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/daily/daily-cash-register"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <DailyCashRegister />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/monitoring/milestones"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Milestones />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/monitoring/targets-for-life"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TargetsForLife />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/monitoring/reminders-notifications"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <RemindersNotifications />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+
+          <Route
+            path="/business/monitoring/portfolio"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Portfolio />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
 
           {/* Investment Routes under Family */}
           <Route

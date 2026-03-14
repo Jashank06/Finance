@@ -42,7 +42,8 @@ const MembershipList = () => {
   const [formData, setFormData] = useState(defaultEntry);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [familyMembers, setFamilyMembers] = useState([]); // Add familyMembers state
+  const [familyMembers, setFamilyMembers] = useState([]); 
+  const [companyRecords, setCompanyRecords] = useState([]); // Add companyRecords state
 
   const calculateCompletionPercentage = (entry) => {
     const mandatoryFields = ['membershipType', 'organizationName', 'memberName', 'amount', 'startDate', 'endDate'];
@@ -62,14 +63,16 @@ const MembershipList = () => {
 
   const fetchEntries = async () => {
     try {
-      const [res, familyRes] = await Promise.all([
+      const [res, familyRes, companyRes] = await Promise.all([
         staticAPI.getMembershipList(),
-        staticAPI.getFamilyProfile()
+        staticAPI.getFamilyProfile(),
+        staticAPI.getCompanyRecords() // Fetch companies
       ]);
       setEntries(res.data || []);
       if (familyRes.data && familyRes.data.length > 0) {
         setFamilyMembers(familyRes.data[0].members || []);
       }
+      setCompanyRecords(companyRes.data || []);
     } catch (e) {
       console.error('Error fetching data:', e);
     }
@@ -338,10 +341,19 @@ const MembershipList = () => {
                       value={formData.memberName}
                       onChange={(e) => handleInputChange('memberName', e.target.value)}
                     >
-                      <option value="">Select family member...</option>
-                      {familyMembers.map((member, index) => (
-                        <option key={index} value={member.name}>{member.name}</option>
-                      ))}
+                      <option value="">Select member...</option>
+                      <optgroup label="Family Members">
+                        {familyMembers.map((member, index) => (
+                          <option key={`fam-${index}`} value={member.name}>{member.name}</option>
+                        ))}
+                      </optgroup>
+                      {companyRecords.length > 0 && (
+                        <optgroup label="Companies / Businesses">
+                          {companyRecords.map((company, index) => (
+                            <option key={`comp-${index}`} value={company.companyName}>{company.companyName}</option>
+                          ))}
+                        </optgroup>
+                      )}
                     </select>
                   </div>
                   <div className="form-group">

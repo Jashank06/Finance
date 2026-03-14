@@ -8,7 +8,10 @@ const { syncExpenseToBillDates } = require('../utils/billExpenseSync');
 // Get all transactions for a user
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const transactions = await Transaction.find({ userId: req.user.id })
+    const section = req.query.section || 'family';
+    const filter = { userId: req.user.id, section };
+    if (req.query.businessId) filter.businessId = req.query.businessId;
+    const transactions = await Transaction.find(filter)
       .populate({
         path: 'cardId',
         select: 'name issuer type'
@@ -43,7 +46,9 @@ router.post('/', authMiddleware, async (req, res) => {
   try {
     const transactionData = {
       ...req.body,
-      userId: req.user.id
+      userId: req.user.id,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null
     };
     
     const transaction = new Transaction(transactionData);
@@ -143,8 +148,10 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 // Get transactions by card
 router.get('/card/:cardId', authMiddleware, async (req, res) => {
   try {
+    const section = req.query.section || 'family';
     const transactions = await Transaction.find({ 
       userId: req.user.id, 
+      section,
       cardId: req.params.cardId 
     }).populate('cardId', 'name issuer type').sort({ date: -1 });
     
@@ -176,9 +183,12 @@ router.get('/summary/stats', authMiddleware, async (req, res) => {
       default:
         groupBy = { $dateToString: { format: "%Y-%m", date: "$date" } };
     }
-    
+    const section = req.query.section || 'family';
+    const filter = { userId: req.user.id, section };
+    if (req.query.businessId) filter.businessId = req.query.businessId;
+
     const summary = await Transaction.aggregate([
-      { $match: { userId: req.user.id } },
+      { $match: filter },
       {
         $group: {
           _id: groupBy,
@@ -192,7 +202,7 @@ router.get('/summary/stats', authMiddleware, async (req, res) => {
     
     // Category-wise summary
     const categorySummary = await Transaction.aggregate([
-      { $match: { userId: req.user.id } },
+      { $match: filter },
       {
         $group: {
           _id: "$category",
@@ -205,7 +215,7 @@ router.get('/summary/stats', authMiddleware, async (req, res) => {
     
     // Card-wise summary
     const cardSummary = await Transaction.aggregate([
-      { $match: { userId: req.user.id } },
+      { $match: filter },
       {
         $lookup: {
           from: 'cards',

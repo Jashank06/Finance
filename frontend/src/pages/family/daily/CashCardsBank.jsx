@@ -1816,9 +1816,18 @@ const CashCardsBank = () => {
                           required
                         >
                           <option value="">Select cardholder...</option>
-                          {familyMembers.map((member, index) => (
-                            <option key={index} value={member.name}>{member.name}</option>
-                          ))}
+                          <optgroup label="Family Members">
+                            {familyMembers.map((member, index) => (
+                              <option key={`cardfam-${index}`} value={member.name}>{member.name}</option>
+                            ))}
+                          </optgroup>
+                          {companyRecords.length > 0 && (
+                            <optgroup label="Companies / Businesses">
+                              {companyRecords.map((company, index) => (
+                                <option key={`cardcomp-${index}`} value={company.companyName}>{company.companyName}</option>
+                              ))}
+                            </optgroup>
+                          )}
                         </select>
                       </div>
                       <div className="form-group">
@@ -2563,10 +2572,19 @@ const CashCardsBank = () => {
                           onChange={(e) => setBankForm({ ...bankForm, accountHolderName: e.target.value })}
                           required
                         >
-                          <option value="">Select family member...</option>
-                          {familyMembers.map((member, index) => (
-                            <option key={index} value={member.name}>{member.name}</option>
-                          ))}
+                          <option value="">Select account holder...</option>
+                          <optgroup label="Family Members">
+                            {familyMembers.map((member, index) => (
+                              <option key={`fam-${index}`} value={member.name}>{member.name}</option>
+                            ))}
+                          </optgroup>
+                          {companyRecords.length > 0 && (
+                            <optgroup label="Companies / Businesses">
+                              {companyRecords.map((company, index) => (
+                                <option key={`comp-${index}`} value={company.companyName}>{company.companyName}</option>
+                              ))}
+                            </optgroup>
+                          )}
                         </select>
                       </div>
                       <div className="form-group">

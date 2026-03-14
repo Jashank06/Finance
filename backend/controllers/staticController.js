@@ -10,6 +10,8 @@ const {
 
 // Define schemas for static data
 const BasicDetailsSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   firstName: String,
   lastName: String,
@@ -323,6 +325,8 @@ const BasicDetailsSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const CompanyRecordsSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   companyName: String,
   companyType: String,
@@ -408,6 +412,8 @@ const CompanyRecordsSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const MobileEmailDetailsSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   type: String,
   name: String,
@@ -440,6 +446,8 @@ const MobileEmailDetailsSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const PersonalRecordsSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   docType: String,
   idNumber: String,
@@ -462,6 +470,8 @@ const PersonalRecordsSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const OnlineAccessDetailsSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   category: String,
   serviceName: String,
@@ -479,6 +489,8 @@ const OnlineAccessDetailsSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const DigitalAssetsSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 
   // Basic Information
@@ -650,6 +662,8 @@ const DigitalAssetsSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const InventoryRecordSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   itemName: String,
   category: String,
@@ -684,6 +698,8 @@ const InventoryRecordSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const ContactManagementSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   nameOfPerson: String,
   reference: String,
@@ -706,6 +722,8 @@ const ContactManagementSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const CustomerSupportSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   type: String,
   companyName: String,
@@ -725,6 +743,8 @@ const CustomerSupportSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const FamilyProfileSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   // Personal Information
   firstName: String,
@@ -899,6 +919,8 @@ const FamilyProfileSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const LandRecordsSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   propertyType: String,
   surveyNumber: String,
@@ -947,6 +969,8 @@ const LandRecordsSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const MembershipListSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   membershipType: String,
   organizationName: String,
@@ -975,6 +999,8 @@ const MembershipListSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const FamilyTasksSchema = new mongoose.Schema({
+  section: { type: String, enum: ['family', 'business'], default: 'family' },
+  businessId: { type: String, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   category: String,
   feature: String,
@@ -1102,7 +1128,16 @@ const createStaticController = (Model, syncCallback = null) => {
     // Get all records for a user
     getAll: async (req, res) => {
       try {
-        const records = await Model.find({ userId: req.userId });
+        const isSharedModel = ['FamilyProfile', 'BasicDetails', 'CompanyRecords'].includes(Model.modelName);
+        const section = isSharedModel ? { $in: ['family', 'business'] } : (req.query.section || 'family');
+        const query = { userId: req.userId, section };
+        
+        // For CompanyRecords, we want to see all businesses regardless of current selected businessId
+        // Also skip businessId for other shared models to ensure they always show up
+        if (req.query.businessId && !isSharedModel) {
+          query.businessId = req.query.businessId;
+        }
+        const records = await Model.find(query);
         res.json(records);
       } catch (error) {
         console.error(`Error fetching ${Model.modelName}:`, error);
@@ -1113,7 +1148,9 @@ const createStaticController = (Model, syncCallback = null) => {
     // Get single record
     getOne: async (req, res) => {
       try {
-        const record = await Model.findOne({ _id: req.params.id, userId: req.userId });
+        const isSharedModel = ['FamilyProfile', 'BasicDetails', 'CompanyRecords'].includes(Model.modelName);
+        const section = isSharedModel ? { $in: ['family', 'business'] } : (req.query.section || 'family');
+        const record = await Model.findOne({ _id: req.params.id, userId: req.userId, section });
         if (!record) {
           return res.status(404).json({ message: 'Record not found' });
         }
@@ -1127,13 +1164,11 @@ const createStaticController = (Model, syncCallback = null) => {
     // Create new record
     create: async (req, res) => {
       try {
-        if (Model.modelName === 'BasicDetails') {
-          console.log('--- Creating BasicDetails ---');
-          console.log('Incoming subBrokers:', JSON.stringify(req.body.subBrokers, null, 2));
-        }
         const record = new Model({
           ...req.body,
-          userId: req.userId
+          userId: req.userId,
+          section: req.body.section || 'family',
+          businessId: req.body.businessId || null
         });
         await record.save();
 
@@ -1160,8 +1195,9 @@ const createStaticController = (Model, syncCallback = null) => {
           console.log('Incoming subBrokers:', JSON.stringify(req.body.subBrokers, null, 2));
         }
 
+        const section = req.body.section || req.query.section || 'family';
         const record = await Model.findOneAndUpdate(
-          { _id: req.params.id, userId: req.userId },
+          { _id: req.params.id, userId: req.userId, section },
           req.body,
           { new: true, runValidators: true }
         );
@@ -1195,7 +1231,8 @@ const createStaticController = (Model, syncCallback = null) => {
     // Delete record
     delete: async (req, res) => {
       try {
-        const record = await Model.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+        const section = req.query.section || 'family';
+        const record = await Model.findOneAndDelete({ _id: req.params.id, userId: req.userId, section });
         if (!record) {
           return res.status(404).json({ message: 'Record not found' });
         }
@@ -1212,7 +1249,10 @@ const DigitalAssetsController = {
   // Get all records for a user
   getAll: async (req, res) => {
     try {
-      const records = await DigitalAssets.find({ userId: req.userId });
+      const section = req.query.section || 'family';
+      const query = { userId: req.userId, section };
+      if (req.query.businessId) query.businessId = req.query.businessId;
+      const records = await DigitalAssets.find(query);
       res.json(records);
     } catch (error) {
       console.error('Error fetching DigitalAssets:', error);
@@ -1223,7 +1263,8 @@ const DigitalAssetsController = {
   // Get single record
   getOne: async (req, res) => {
     try {
-      const record = await DigitalAssets.findOne({ _id: req.params.id, userId: req.userId });
+      const section = req.query.section || 'family';
+      const record = await DigitalAssets.findOne({ _id: req.params.id, userId: req.userId, section });
       if (!record) {
         return res.status(404).json({ message: 'Record not found' });
       }
@@ -1247,7 +1288,9 @@ const DigitalAssetsController = {
       const recordData = {
         projectName: projectName.trim(),
         ...rest,
-        userId: req.userId
+        userId: req.userId,
+        section: req.body.section || 'family',
+        businessId: req.body.businessId || null
       };
 
       const record = new DigitalAssets(recordData);
@@ -1281,8 +1324,9 @@ const DigitalAssetsController = {
         ...rest
       };
 
+      const section = req.body.section || req.query.section || 'family';
       const record = await DigitalAssets.findOneAndUpdate(
-        { _id: req.params.id, userId: req.userId },
+        { _id: req.params.id, userId: req.userId, section },
         updateData,
         { new: true, runValidators: true }
       );
@@ -1307,7 +1351,8 @@ const DigitalAssetsController = {
   // Delete record
   delete: async (req, res) => {
     try {
-      const record = await DigitalAssets.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+      const section = req.query.section || 'family';
+      const record = await DigitalAssets.findOneAndDelete({ _id: req.params.id, userId: req.userId, section });
       if (!record) {
         return res.status(404).json({ message: 'Record not found' });
       }

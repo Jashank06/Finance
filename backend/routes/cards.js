@@ -7,7 +7,10 @@ const auth = require('../middleware/auth');
 // Get all cards for a user
 router.get('/', auth, async (req, res) => {
   try {
-    const cards = await Card.find({ userId: req.user.id }).sort({ createdAt: -1 });
+    const section = req.query.section || 'family';
+    const filter = { userId: req.user.id, section };
+    if (req.query.businessId) filter.businessId = req.query.businessId;
+    const cards = await Card.find(filter).sort({ createdAt: -1 });
     // Remove sensitive data from response
     const safeCards = cards.map(card => ({
       ...card.toObject(),
@@ -78,6 +81,8 @@ router.post('/', auth, async (req, res) => {
 
     const card = new Card({
       userId: req.user.id,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null,
       type,
       name,
       issuer,
@@ -300,8 +305,9 @@ router.patch('/:id/block', auth, async (req, res) => {
 // Get cards summary by type
 router.get('/summary/type', auth, async (req, res) => {
   try {
+    const section = req.query.section || 'family';
     const summary = await Card.aggregate([
-      { $match: { userId: req.user.id, isActive: true } },
+      { $match: { userId: req.user.id, section, isActive: true } },
       {
         $group: {
           _id: '$type',
@@ -322,8 +328,10 @@ router.get('/summary/type', auth, async (req, res) => {
 // Get cards by issuer
 router.get('/by-issuer/:issuer', auth, async (req, res) => {
   try {
+    const section = req.query.section || 'family';
     const cards = await Card.find({
       userId: req.user.id,
+      section,
       issuer: new RegExp(req.params.issuer, 'i'),
       isActive: true
     }).sort({ createdAt: -1 });

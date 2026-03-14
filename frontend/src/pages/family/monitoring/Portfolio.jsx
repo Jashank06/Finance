@@ -13,6 +13,7 @@ const Portfolio = () => {
     const [editingSection, setEditingSection] = useState(null);
     const [loading, setLoading] = useState(false);
     const [familyMembers, setFamilyMembers] = useState([]);
+    const [companyRecords, setCompanyRecords] = useState([]); // Add companyRecords state
 
     // Initialize formData with consistent structure matching BasicDetails
     const [formData, setFormData] = useState({
@@ -80,9 +81,19 @@ const Portfolio = () => {
 
     useEffect(() => {
         trackFeatureUsage('/family/monitoring/portfolio', 'view');
-        fetchBasicDetails();
         fetchFamilyMembers();
+        fetchCompanyRecords(); // Fetch companies
+        fetchBasicDetails();
     }, []);
+
+    const fetchCompanyRecords = async () => {
+        try {
+            const response = await staticAPI.getCompanyRecords();
+            setCompanyRecords(response.data || []);
+        } catch (error) {
+            console.error('Error fetching company records:', error);
+        }
+    };
 
     const fetchFamilyMembers = async () => {
         try {
@@ -493,10 +504,19 @@ const Portfolio = () => {
                                             value={newMutualFundPortfolio.investorName}
                                             onChange={(e) => setNewMutualFundPortfolio({ ...newMutualFundPortfolio, investorName: e.target.value })}
                                         >
-                                            <option value="">Select family member...</option>
-                                            {familyMembers && familyMembers.map((member, index) => (
-                                                <option key={index} value={member.name}>{member.name}</option>
-                                            ))}
+                                            <option value="">Select investor...</option>
+                                            <optgroup label="Family Members">
+                                                {familyMembers && familyMembers.map((member, index) => (
+                                                    <option key={`pf-mf-fam-${index}`} value={member.name}>{member.name}</option>
+                                                ))}
+                                            </optgroup>
+                                            {companyRecords.length > 0 && (
+                                                <optgroup label="Companies / Businesses">
+                                                    {companyRecords.map((company, index) => (
+                                                        <option key={`pf-mf-comp-${index}`} value={company.companyName}>{company.companyName}</option>
+                                                    ))}
+                                                </optgroup>
+                                            )}
                                         </select>
                                     </div>
                                     <div className="form-group">
@@ -711,10 +731,19 @@ const Portfolio = () => {
                                             value={newSharePortfolio.investorName}
                                             onChange={(e) => setNewSharePortfolio({ ...newSharePortfolio, investorName: e.target.value })}
                                         >
-                                            <option value="">Select family member...</option>
-                                            {familyMembers && familyMembers.map((member, index) => (
-                                                <option key={index} value={member.name}>{member.name}</option>
-                                            ))}
+                                            <option value="">Select investor...</option>
+                                            <optgroup label="Family Members">
+                                                {familyMembers && familyMembers.map((member, index) => (
+                                                    <option key={`pf-sh-fam-${index}`} value={member.name}>{member.name}</option>
+                                                ))}
+                                            </optgroup>
+                                            {companyRecords.length > 0 && (
+                                                <optgroup label="Companies / Businesses">
+                                                    {companyRecords.map((company, index) => (
+                                                        <option key={`pf-sh-comp-${index}`} value={company.companyName}>{company.companyName}</option>
+                                                    ))}
+                                                </optgroup>
+                                            )}
                                         </select>
                                     </div>
                                     <div className="form-group">
@@ -939,11 +968,24 @@ const Portfolio = () => {
                                     </div>
                                     <div className="form-group">
                                         <label>Name of Insurer</label>
-                                        <input
-                                            type="text"
+                                        <select
                                             value={newInsurancePortfolio.insurerName}
                                             onChange={(e) => setNewInsurancePortfolio({ ...newInsurancePortfolio, insurerName: e.target.value })}
-                                        />
+                                        >
+                                            <option value="">Select insurer...</option>
+                                            <optgroup label="Family Members">
+                                                {familyMembers && familyMembers.map((member, index) => (
+                                                    <option key={`pf-ins-fam-${index}`} value={member.name}>{member.name}</option>
+                                                ))}
+                                            </optgroup>
+                                            {companyRecords.length > 0 && (
+                                                <optgroup label="Companies / Businesses">
+                                                    {companyRecords.map((company, index) => (
+                                                        <option key={`pf-ins-comp-${index}`} value={company.companyName}>{company.companyName}</option>
+                                                    ))}
+                                                </optgroup>
+                                            )}
+                                        </select>
                                     </div>
                                     <div className="form-group">
                                         <label>Type of Policy</label>

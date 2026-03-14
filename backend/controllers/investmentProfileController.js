@@ -15,7 +15,11 @@ const createController = (Model) => {
     // Get all records for a user
     getAll: async (req, res) => {
       try {
-        const records = await Model.find({ userId: req.userId });
+        const section = req.query.section || 'family';
+        const query = { userId: req.userId, section };
+        if (req.query.businessId) query.businessId = req.query.businessId;
+
+        const records = await Model.find(query);
         res.json({ success: true, data: records });
       } catch (error) {
         console.error(`Error fetching ${Model.modelName}:`, error);
@@ -26,7 +30,8 @@ const createController = (Model) => {
     // Get single record
     getOne: async (req, res) => {
       try {
-        const record = await Model.findOne({ _id: req.params.id, userId: req.userId });
+        const section = req.query.section || 'family';
+        const record = await Model.findOne({ _id: req.params.id, userId: req.userId, section });
         if (!record) {
           return res.status(404).json({ success: false, message: 'Record not found' });
         }
@@ -42,7 +47,9 @@ const createController = (Model) => {
       try {
         const record = new Model({
           ...req.body,
-          userId: req.userId
+          userId: req.userId,
+          section: req.body.section || 'family',
+          businessId: req.body.businessId || null
         });
         await record.save();
         res.status(201).json({ success: true, data: record });
@@ -55,8 +62,9 @@ const createController = (Model) => {
     // Update record
     update: async (req, res) => {
       try {
+        const section = req.body.section || req.query.section || 'family';
         const record = await Model.findOneAndUpdate(
-          { _id: req.params.id, userId: req.userId },
+          { _id: req.params.id, userId: req.userId, section },
           req.body,
           { new: true, runValidators: true }
         );
@@ -73,7 +81,8 @@ const createController = (Model) => {
     // Delete record
     delete: async (req, res) => {
       try {
-        const record = await Model.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+        const section = req.query.section || 'family';
+        const record = await Model.findOneAndDelete({ _id: req.params.id, userId: req.userId, section });
         if (!record) {
           return res.status(404).json({ success: false, message: 'Record not found' });
         }

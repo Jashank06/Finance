@@ -7,6 +7,15 @@ const tradingDetailsSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    section: {
+        type: String,
+        enum: ['family', 'business'],
+        default: 'family'
+    },
+    businessId: {
+        type: String,
+        default: null
+    },
 
     // Transaction metadata
     modeOfTransaction: {

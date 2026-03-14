@@ -13,6 +13,15 @@ const chequeRegisterSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  section: {
+    type: String,
+    enum: ['family', 'business'],
+    default: 'family'
+  },
+  businessId: {
+    type: String,
+    default: null
+  },
   receivedDate: { type: Date, required: true },
   chequeDepositDate: { type: Date },
   difference: { type: Number },
@@ -38,6 +47,15 @@ const dailyCashSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  section: {
+    type: String,
+    enum: ['family', 'business'],
+    default: 'family'
+  },
+  businessId: {
+    type: String,
+    default: null
+  },
   date: { type: Date, required: true },
   description: { type: String },
   credit: { type: Number },
@@ -56,6 +74,15 @@ const milestoneSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  section: {
+    type: String,
+    enum: ['family', 'business'],
+    default: 'family'
+  },
+  businessId: {
+    type: String,
+    default: null
   },
   title: { type: String, required: true },
   description: { type: String },
@@ -88,7 +115,10 @@ const Milestone = mongoose.model('Milestone', milestoneSchema);
 // GET all cheque records
 router.get('/cheque-register', auth, async (req, res) => {
   try {
-    const records = await ChequeRegister.find({ userId: req.user._id }).sort({ receivedDate: -1 });
+    const section = req.query.section || 'family';
+    const query = { userId: req.user._id, section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+    const records = await ChequeRegister.find(query).sort({ receivedDate: -1 });
     res.json(records);
   } catch (error) {
     console.error('Error fetching cheque records:', error);
@@ -122,7 +152,12 @@ router.post('/cheque-register', auth, async (req, res) => {
       req.body.difference = diffDays;
     }
 
-    const record = new ChequeRegister({ ...req.body, userId: req.user._id });
+    const record = new ChequeRegister({ 
+      ...req.body, 
+      userId: req.user._id,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null
+    });
     const savedRecord = await record.save();
     res.status(201).json(savedRecord);
   } catch (error) {
@@ -178,7 +213,10 @@ router.delete('/cheque-register/:id', auth, async (req, res) => {
 // GET all cash records
 router.get('/daily-cash', auth, async (req, res) => {
   try {
-    const records = await DailyCash.find({ userId: req.user._id }).sort({ date: -1 });
+    const section = req.query.section || 'family';
+    const query = { userId: req.user._id, section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+    const records = await DailyCash.find(query).sort({ date: -1 });
     res.json(records);
   } catch (error) {
     console.error('Error fetching cash records:', error);
@@ -203,7 +241,12 @@ router.get('/daily-cash/:id', auth, async (req, res) => {
 // POST new cash record
 router.post('/daily-cash', auth, async (req, res) => {
   try {
-    const record = new DailyCash({ ...req.body, userId: req.user._id });
+    const record = new DailyCash({ 
+      ...req.body, 
+      userId: req.user._id,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null
+    });
     const savedRecord = await record.save();
     res.status(201).json(savedRecord);
   } catch (error) {
@@ -250,7 +293,10 @@ router.delete('/daily-cash/:id', auth, async (req, res) => {
 // GET all milestones
 router.get('/milestones', auth, async (req, res) => {
   try {
-    const records = await Milestone.find({ userId: req.user._id }).sort({ startDate: -1 });
+    const section = req.query.section || 'family';
+    const query = { userId: req.user._id, section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+    const records = await Milestone.find(query).sort({ startDate: -1 });
     res.json(records);
   } catch (error) {
     console.error('Error fetching milestones:', error);
@@ -275,7 +321,12 @@ router.get('/milestones/:id', auth, async (req, res) => {
 // POST new milestone
 router.post('/milestones', auth, async (req, res) => {
   try {
-    const record = new Milestone({ ...req.body, userId: req.user._id });
+    const record = new Milestone({ 
+      ...req.body, 
+      userId: req.user._id,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null
+    });
     const savedRecord = await record.save();
     res.status(201).json(savedRecord);
   } catch (error) {

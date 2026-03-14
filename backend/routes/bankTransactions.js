@@ -8,7 +8,11 @@ const { syncExpenseToBillDates } = require('../utils/billExpenseSync');
 // GET all bank transactions for a user
 router.get('/', auth, async (req, res) => {
   try {
-    const transactions = await BankTransaction.find({ user: req.user.id })
+    const section = req.query.section || 'family';
+    const filter = { user: req.user.id, section };
+    if (req.query.businessId) filter.businessId = req.query.businessId;
+    
+    const transactions = await BankTransaction.find(filter)
       .populate({ path: 'accountId', select: 'name bankName type' })
       .sort({ date: -1 });
     res.json(transactions);
@@ -45,7 +49,9 @@ router.post('/', auth, async (req, res) => {
       transactionType,
       expenseType,
       payingFor, // Include payingFor for cross-module sync
-      user: req.user.id
+      user: req.user.id,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null
     });
 
     const savedTransaction = await newTransaction.save();
@@ -197,9 +203,11 @@ router.get('/account/:accountId', auth, async (req, res) => {
       return res.status(404).json({ message: 'Bank account not found' });
     }
 
+    const section = req.query.section || 'family';
     const transactions = await BankTransaction.find({
       accountId,
-      user: req.user.id
+      user: req.user.id,
+      section
     })
       .populate({ path: 'accountId', select: 'name bankName type' })
       .sort({ date: -1 });
@@ -234,8 +242,12 @@ router.get('/summary/period', auth, async (req, res) => {
         groupBy = { $dateToString: { format: "%Y-%m", date: "$date" } };
     }
 
+    const section = req.query.section || 'family';
+    const matchCondition = { user: req.user.id, section };
+    if (req.query.businessId) matchCondition.businessId = req.query.businessId;
+
     const summary = await BankTransaction.aggregate([
-      { $match: { user: req.user.id } },
+      { $match: matchCondition },
       {
         $group: {
           _id: groupBy,
@@ -257,8 +269,12 @@ router.get('/summary/period', auth, async (req, res) => {
 // GET bank transactions summary by category
 router.get('/summary/category', auth, async (req, res) => {
   try {
+    const section = req.query.section || 'family';
+    const matchCondition = { user: req.user.id, section };
+    if (req.query.businessId) matchCondition.businessId = req.query.businessId;
+
     const summary = await BankTransaction.aggregate([
-      { $match: { user: req.user.id } },
+      { $match: matchCondition },
       {
         $group: {
           _id: "$category",
@@ -280,8 +296,12 @@ router.get('/summary/category', auth, async (req, res) => {
 // GET bank transactions summary by account
 router.get('/summary/account', auth, async (req, res) => {
   try {
+    const section = req.query.section || 'family';
+    const matchCondition = { user: req.user.id, section };
+    if (req.query.businessId) matchCondition.businessId = req.query.businessId;
+
     const summary = await BankTransaction.aggregate([
-      { $match: { user: req.user.id } },
+      { $match: matchCondition },
       {
         $lookup: {
           from: 'banks',

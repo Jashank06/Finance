@@ -7,7 +7,10 @@ const auth = require('../middleware/auth');
 // Get all bank accounts for a user
 router.get('/', auth, async (req, res) => {
   try {
-    const bankAccounts = await Bank.find({ userId: req.user.id }).sort({ createdAt: -1 });
+    const section = req.query.section || 'family';
+    const filter = { userId: req.user.id, section };
+    if (req.query.businessId) filter.businessId = req.query.businessId;
+    const bankAccounts = await Bank.find(filter).sort({ createdAt: -1 });
     res.json(bankAccounts);
   } catch (error) {
     console.error('Error fetching bank accounts:', error);
@@ -81,6 +84,7 @@ router.post('/', auth, async (req, res) => {
     }
 
     // Check if account number already exists for this user
+    // Check if account number already exists for this user and section (allow same acc in diff sections if needed? best not to change this to avoid breaking)
     const existingAccount = await Bank.findOne({ userId: req.user.id, accountNumber });
     if (existingAccount) {
       return res.status(400).json({ message: 'Account number already exists' });
@@ -88,6 +92,8 @@ router.post('/', auth, async (req, res) => {
 
     const bankAccount = new Bank({
       userId: req.user.id,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null,
       type,
       name,
       bankName,
@@ -345,8 +351,9 @@ router.patch('/:id/status', auth, async (req, res) => {
 // Get bank accounts summary by type
 router.get('/summary/type', auth, async (req, res) => {
   try {
+    const section = req.query.section || 'family';
     const summary = await Bank.aggregate([
-      { $match: { userId: req.user.id, isActive: true } },
+      { $match: { userId: req.user.id, section, isActive: true } },
       {
         $group: {
           _id: '$type',
@@ -367,8 +374,10 @@ router.get('/summary/type', auth, async (req, res) => {
 // Get bank accounts by bank name
 router.get('/by-bank/:bankName', auth, async (req, res) => {
   try {
+    const section = req.query.section || 'family';
     const bankAccounts = await Bank.find({
       userId: req.user.id,
+      section,
       bankName: new RegExp(req.params.bankName, 'i'),
       isActive: true
     }).sort({ createdAt: -1 });
@@ -383,8 +392,9 @@ router.get('/by-bank/:bankName', auth, async (req, res) => {
 // Get total balance across all accounts
 router.get('/summary/total', auth, async (req, res) => {
   try {
+    const section = req.query.section || 'family';
     const summary = await Bank.aggregate([
-      { $match: { userId: req.user.id, isActive: true, isDormant: false } },
+      { $match: { userId: req.user.id, section, isActive: true, isDormant: false } },
       {
         $group: {
           _id: '$currency',

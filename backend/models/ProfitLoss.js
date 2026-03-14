@@ -7,6 +7,15 @@ const profitLossSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    section: {
+        type: String,
+        enum: ['family', 'business'],
+        default: 'family'
+    },
+    businessId: {
+        type: String,
+        default: null
+    },
 
     // Reference to trading details if auto-generated
     purchaseRecordId: {

@@ -7,7 +7,11 @@ const auth = require('../middleware/auth');
 // Get all cash members for a user
 router.get('/', auth, async (req, res) => {
   try {
-    const members = await CashMember.find({ userId: req.user.id, isActive: true }).sort({ createdAt: -1 });
+    const section = req.query.section || 'family';
+    const query = { userId: req.user.id, isActive: true, section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+
+    const members = await CashMember.find(query).sort({ createdAt: -1 });
     res.json(members);
   } catch (error) {
     console.error('Error fetching cash members:', error);
@@ -18,7 +22,11 @@ router.get('/', auth, async (req, res) => {
 // Get single cash member with balance calculation
 router.get('/:id', auth, async (req, res) => {
   try {
-    const member = await CashMember.findOne({ _id: req.params.id, userId: req.user.id });
+    const section = req.query.section || 'family';
+    const query = { _id: req.params.id, userId: req.user.id, section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+
+    const member = await CashMember.findOne(query);
     if (!member) {
       return res.status(404).json({ message: 'Member not found' });
     }
@@ -56,6 +64,8 @@ router.post('/', auth, async (req, res) => {
 
     const member = new CashMember({
       userId: req.user.id,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null,
       name,
       relation,
       budget: parseFloat(budget) || 0,
@@ -90,8 +100,12 @@ router.put('/:id', auth, async (req, res) => {
       updates.currentBalance = parseFloat(updates.currentBalance);
     }
     
+    const section = req.body.section || req.query.section || 'family';
+    const query = { _id: req.params.id, userId: req.user.id, section };
+    if (req.query.businessId) query.businessId = req.query.businessId;
+
     const member = await CashMember.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.id },
+      query,
       updates,
       { new: true, runValidators: true }
     );

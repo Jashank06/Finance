@@ -6,7 +6,11 @@ const auth = require('../middleware/auth');
 // Get all cash records for a user
 router.get('/', auth, async (req, res) => {
   try {
-    const cashRecords = await Cash.find({ userId: req.user.id }).sort({ date: -1 });
+    const section = req.query.section || 'family';
+    const filter = { userId: req.user.id, section };
+    if (req.query.businessId) filter.businessId = req.query.businessId;
+    if (req.query.type) filter.type = req.query.type;
+    const cashRecords = await Cash.find(filter).sort({ date: -1 });
     res.json(cashRecords);
   } catch (error) {
     console.error('Error fetching cash records:', error);
@@ -68,6 +72,8 @@ router.post('/', auth, async (req, res) => {
 
     const cashRecord = new Cash({
       userId: req.user.id,
+      section: req.body.section || 'family',
+      businessId: req.body.businessId || null,
       type,
       name,
       currency,
@@ -134,8 +140,9 @@ router.delete('/:id', auth, async (req, res) => {
 // Get cash summary by type
 router.get('/summary/type', auth, async (req, res) => {
   try {
+    const section = req.query.section || 'family';
     const summary = await Cash.aggregate([
-      { $match: { userId: req.user.id, isActive: true } },
+      { $match: { userId: req.user.id, section, isActive: true } },
       {
         $group: {
           _id: '$type',
@@ -155,8 +162,9 @@ router.get('/summary/type', auth, async (req, res) => {
 // Get cash summary by currency
 router.get('/summary/currency', auth, async (req, res) => {
   try {
+    const section = req.query.section || 'family';
     const summary = await Cash.aggregate([
-      { $match: { userId: req.user.id, isActive: true } },
+      { $match: { userId: req.user.id, section, isActive: true } },
       {
         $group: {
           _id: '$currency',
