@@ -4,8 +4,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 import '../reports/Reports.css';
-
-const API_BASE = 'http://localhost:5001/api';
+import api from '../../utils/api';
 
 const EXPENSE_TYPE_COLORS = {
   'important-necessary': '#10b981',
@@ -113,13 +112,10 @@ export default function ExpensesSpendingReport() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(
-        `${API_BASE}/reports/expenses-spending?dateFrom=${dateFrom}&dateTo=${dateTo}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const json = await res.json();
-      if (json.success) setData(json);
+      const res = await api.get('/reports/expenses-spending', {
+        params: { dateFrom, dateTo }
+      });
+      if (res.data && res.data.success) setData(res.data);
     } catch (e) {
       console.error(e);
     }

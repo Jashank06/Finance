@@ -4,8 +4,7 @@ import {
   LineChart, Line, AreaChart, Area 
 } from 'recharts';
 import '../reports/Reports.css';
-
-const API_BASE = 'http://localhost:5001/api';
+import api from '../../utils/api';
 
 const formatCurrency = (amount) =>
   `₹${(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -17,13 +16,9 @@ export default function GoalsTargetsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/analytics/goals-targets`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const json = await res.json();
-      if (json.success) {
-        setData(json);
+      const res = await api.get('/analytics/goals-targets');
+      if (res.data && res.data.success) {
+        setData(res.data);
       }
     } catch (e) {
       console.error(e);

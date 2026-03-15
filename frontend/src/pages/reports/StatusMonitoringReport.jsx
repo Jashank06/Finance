@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import '../reports/Reports.css';
-
-const API_BASE = 'http://localhost:5001/api';
+import api from '../../utils/api';
 const formatCurrency = (amount) => `₹${(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -22,10 +21,8 @@ export default function StatusMonitoringReport() {
   useEffect(() => {
     (async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/reports/status-monitoring`, { headers: { Authorization: `Bearer ${token}` } });
-        const json = await res.json();
-        if (json.success) setData(json);
+        const res = await api.get('/reports/status-monitoring');
+        if (res.data && res.data.success) setData(res.data);
       } catch (e) { console.error(e); }
       setLoading(false);
     })();

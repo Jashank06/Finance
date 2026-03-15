@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import '../reports/Reports.css';
-
-const API_BASE = 'http://localhost:5001/api';
+import api from '../../utils/api';
 
 const gradeColors = { A: '#10b981', B: '#3b82f6', C: '#f59e0b', D: '#ef4444' };
 const gradeLabel = { A: 'Excellent', B: 'Good', C: 'Average', D: 'Needs Attention' };
@@ -14,10 +13,8 @@ export default function CompletionReport() {
   useEffect(() => {
     (async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/reports/completion`, { headers: { Authorization: `Bearer ${token}` } });
-        const json = await res.json();
-        if (json.success) setData(json);
+        const res = await api.get('/reports/completion');
+        if (res.data && res.data.success) setData(res.data);
       } catch (e) { console.error(e); }
       setLoading(false);
     })();

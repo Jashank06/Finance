@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { FiCheckCircle, FiClock, FiAlertCircle, FiZap, FiCalendar, FiCreditCard, FiArrowRight, FiTrendingUp, FiAward, FiStar, FiShield, FiHardDrive, FiShoppingCart, FiCheck, FiPackage, FiDatabase } from 'react-icons/fi';
 import './UserSubscription.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 const UserSubscription = () => {
   const { user, setUser } = useAuth();
@@ -27,12 +25,9 @@ const UserSubscription = () => {
 
   const fetchStorageData = async () => {
     try {
-      const token = localStorage.getItem('token');
       const [plansRes, infoRes] = await Promise.all([
-        axios.get(`${API_URL}/space-plans`),
-        axios.get(`${API_URL}/space-plans/user/storage`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        api.get('/space-plans'),
+        api.get('/space-plans/user/storage')
       ]);
       setStoragePlans(plansRes.data);
       setStorageInfo(infoRes.data);
@@ -61,16 +56,13 @@ const UserSubscription = () => {
         return;
       }
 
-      const token = localStorage.getItem('token');
-      const orderResponse = await axios.post(`${API_URL}/payment/create-order`, {
+      const orderResponse = await api.post('/payment/create-order', {
         planId: plan._id,
         amount: plan.price,
         planType: 'space',
         email: user.email,
         name: user.name,
         contact: user.mobile || ''
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
 
       const { order, razorpayKeyId } = orderResponse.data;
@@ -90,13 +82,11 @@ const UserSubscription = () => {
         theme: { color: '#000000' },
         handler: async function (response) {
           try {
-            const verifyResponse = await axios.post(`${API_URL}/payment/verify-space-payment`, {
+            const verifyResponse = await api.post('/payment/verify-space-payment', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               planId: plan._id
-            }, {
-              headers: { Authorization: `Bearer ${token}` }
             });
 
             if (verifyResponse.data.success) {
@@ -126,10 +116,7 @@ const UserSubscription = () => {
 
   const fetchUserData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/auth/me');
 
       const userData = response.data.user;
       setUser(userData);

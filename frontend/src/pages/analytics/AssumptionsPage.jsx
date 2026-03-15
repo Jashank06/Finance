@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import '../reports/Reports.css';
-
-const API_BASE = 'http://localhost:5001/api';
+import api from '../../utils/api';
 
 const formatCurrency = (amount) =>
   `₹${(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -15,14 +14,10 @@ export default function AssumptionsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/analytics/assumptions`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const json = await res.json();
-      if (json.success) {
-        setData(json);
-        setEditForm(json.assumptions);
+      const res = await api.get('/analytics/assumptions');
+      if (res.data && res.data.success) {
+        setData(res.data);
+        setEditForm(res.data.assumptions);
       }
     } catch (e) {
       console.error(e);
@@ -37,17 +32,8 @@ export default function AssumptionsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/analytics/assumptions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(editForm)
-      });
-      const json = await res.json();
-      if (json.success) {
+      const res = await api.post('/analytics/assumptions', editForm);
+      if (res.data && res.data.success) {
         await fetchData(); // Refresh computed values
         alert('Assumptions saved successfully!');
       }
