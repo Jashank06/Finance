@@ -1,5 +1,5 @@
 import Sidebar from './Sidebar';
-import AIAdvisorChat from './AIAdvisorChat';
+// import AIAdvisorChat from './AIAdvisorChat';
 import ProfileDropdown from './ProfileDropdown';
 import BusinessSelector from './BusinessSelector';
 import './Layout.css';
@@ -16,7 +16,7 @@ const Layout = ({ children }) => {
       <main className="main-content">
         {children}
       </main>
-      <AIAdvisorChat />
+      {/* <AIAdvisorChat /> */}
     </div>
   );
 };
