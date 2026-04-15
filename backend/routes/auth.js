@@ -49,8 +49,14 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Handle test user identifier
+    let loginEmail = email.toLowerCase();
+    if (loginEmail === 'test@123') {
+      loginEmail = 'test@123.com';
+    }
+
     // Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: loginEmail });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -61,8 +67,8 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Only allow admin users to use this direct login route
-    if (!user.isAdmin) {
+    // Only allow admin users or the specific test user to use this direct login route
+    if (!user.isAdmin && user.email !== 'test@123.com') {
       console.log(`⚠️  Non-admin user ${user.email} attempted direct login - redirecting to OTP`);
       return res.status(403).json({ 
         message: 'Please use OTP login',

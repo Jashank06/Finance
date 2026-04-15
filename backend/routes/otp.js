@@ -19,8 +19,14 @@ router.post('/login-request', async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
+    // Handle test user identifier
+    let loginEmail = email.toLowerCase();
+    if (loginEmail === 'test@123') {
+      loginEmail = 'test@123.com';
+    }
+
     // Find user
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: loginEmail });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -42,9 +48,9 @@ router.post('/login-request', async (req, res) => {
     console.log('DEBUG: typeof user.isAdmin:', typeof user.isAdmin);
     console.log('DEBUG: user.isAdmin === true:', user.isAdmin === true);
 
-    // Skip OTP for admin users - direct login
-    if (user.isAdmin === true) {
-      console.log(`🔐 Admin login detected for ${user.email} - Skipping OTP`);
+    // Skip OTP for admin users or specific test user - direct login
+    if (user.isAdmin === true || user.email === 'test@123.com') {
+      console.log(`🔐 Direct login granted for ${user.email} - Skipping OTP`);
       
       // Generate JWT token directly for admin
       const token = jwt.sign(
