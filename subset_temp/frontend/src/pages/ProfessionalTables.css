@@ -1,0 +1,300 @@
+/* Professional Tables Styling */
+.professional-tables-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  padding: 20px 0;
+}
+
+.info-table-section {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.info-table-section:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.table-header-professional {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  padding: 16px 24px;
+  border-bottom: 3px solid #1e40af;
+}
+
+.table-header-professional h4 {
+  color: white;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.professional-table-wrapper {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.professional-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.professional-info-table thead th {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #334155;
+  font-weight: 600;
+  padding: 16px 20px;
+  text-align: left;
+  border-bottom: 2px solid #cbd5e1;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  position: relative;
+}
+
+.professional-info-table thead th:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+}
+
+.professional-info-table tbody td {
+  padding: 18px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #475569;
+  font-weight: 500;
+  vertical-align: middle;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.professional-info-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.professional-info-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.professional-info-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Professional Badges and Styling */
+.blood-group-badge {
+  background: white;
+  color: #000000;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border: 1px solid #e2e8f0;
+}
+
+.status-badge {
+  background: white;
+  color: #000000;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border: 1px solid #e2e8f0;
+}
+
+.designation-badge {
+  background: white;
+  color: #000000;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border: 1px solid #e2e8f0;
+}
+
+.country-badge {
+  background: white;
+  color: #000000;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border: 1px solid #e2e8f0;
+}
+
+.relation-badge {
+  background: white;
+  color: #000000;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border: 1px solid #e2e8f0;
+}
+
+.document-number {
+  background: white;
+  color: #000000;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  letter-spacing: 1px;
+}
+
+.languages-text {
+  background: white;
+  color: #000000;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .professional-info-table {
+    font-size: 13px;
+  }
+  
+  .professional-info-table thead th,
+  .professional-info-table tbody td {
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .professional-tables-container {
+    gap: 20px;
+    padding: 15px 0;
+  }
+  
+  .table-header-professional {
+    padding: 12px 16px;
+  }
+  
+  .table-header-professional h4 {
+    font-size: 16px;
+  }
+  
+  .professional-info-table {
+    font-size: 12px;
+  }
+  
+  .professional-info-table thead th,
+  .professional-info-table tbody td {
+    padding: 10px 12px;
+  }
+  
+  .professional-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .info-table-section {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-color: #475569;
+  }
+  
+  .professional-info-table thead th {
+    background: linear-gradient(135deg, #334155 0%, #475569 100%);
+    color: #f1f5f9;
+  }
+  
+  .professional-info-table tbody td {
+    color: #cbd5e1;
+    border-bottom-color: #334155;
+  }
+  
+  .professional-info-table tbody tr:hover {
+    background: linear-gradient(135deg, #334155 0%, #475569 100%);
+  }
+  
+  .document-number {
+    background: #334155;
+    color: #cbd5e1;
+    border-color: #475569;
+  }
+}
+
+/* Single Table Styling */
+.single-table {
+  width: 100%;
+}
+
+.category-cell {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #1e293b;
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+  vertical-align: middle;
+  border-right: 2px solid #cbd5e1;
+  width: 200px;
+}
+
+.single-table td:nth-child(2) {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #374151;
+  width: 250px;
+}
+
+.single-table td:nth-child(3) {
+  background: white;
+  color: #111827;
+  font-weight: 500;
+}
+
+/* Print styles */
+@media print {
+  .professional-tables-container {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+  
+  .info-table-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #000;
+    margin-bottom: 20px;
+  }
+  
+  .table-header-professional {
+    background: #f5f5f5 !important;
+    color: #000 !important;
+  }
+  
+  .professional-info-table thead th {
+    background: #f5f5f5 !important;
+    color: #000 !important;
+  }
+  
+  .category-cell {
+    background: #f5f5f5 !important;
+    color: #000 !important;
+  }
+}

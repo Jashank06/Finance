@@ -1,0 +1,109 @@
+server {
+    listen 80;
+    server_name palbamb.com www.palbamb.com palbamb.in www.palbamb.in 13.235.53.147;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Proper MIME types for JavaScript modules
+    types {
+        text/html                             html htm shtml;
+        text/css                              css;
+        text/javascript                       js mjs;
+        application/javascript                js;
+        application/json                      json;
+        image/gif                             gif;
+        image/jpeg                            jpeg jpg;
+        image/png                             png;
+        image/svg+xml                         svg svgz;
+        image/webp                            webp;
+        font/woff                             woff;
+        font/woff2                            woff2;
+    }
+
+    # Serve real asset files (VERY IMPORTANT)
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # Cache static files
+    location ~* \.(jpg|jpeg|png|gif|ico|svg|webp|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location ~* \.(js|mjs|css)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # Backend API - FIXED FOR EC2 LINUX with CORS
+    location /api {
+        # Use Docker service name instead of host.docker.internal
+        proxy_pass http://finance-backend:5001;
+        proxy_http_version 1.1;
+
+        # Proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Origin $http_origin;
+
+        # CORS headers - FIX NETWORK ERRORS
+        add_header Access-Control-Allow-Origin $http_origin always;
+        add_header Access-Control-Allow-Methods 'GET, POST, PUT, DELETE, OPTIONS, PATCH' always;
+        add_header Access-Control-Allow-Headers 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+        add_header Access-Control-Allow-Credentials 'true' always;
+        add_header Access-Control-Expose-Headers 'Content-Length,Content-Range' always;
+
+        # Handle preflight OPTIONS requests
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Allow-Origin $http_origin;
+            add_header Access-Control-Allow-Methods 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
+            add_header Access-Control-Allow-Headers 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+            add_header Access-Control-Allow-Credentials 'true';
+            add_header Access-Control-Max-Age 1728000;
+            add_header Content-Type 'text/plain; charset=utf-8';
+            add_header Content-Length 0;
+            return 204;
+        }
+
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+
+        # Disable buffering for better real-time response
+        proxy_buffering off;
+    }
+
+    # Health check
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+
+    # SPA fallback (MUST be last)
+    location / {
+        try_files $uri $uri/ /index.html;
+        
+        # No cache for HTML
+        add_header Cache-Control "no-store, no-cache, must-revalidate";
+    }
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/json;
+}

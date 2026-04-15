@@ -1,0 +1,96 @@
+const mongoose = require('mongoose');
+
+const cashTransactionSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  section: {
+    type: String,
+    enum: ['family', 'business'],
+    default: 'family',
+  },
+  businessId: {
+    type: String,
+    default: null,
+  },
+  memberId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CashMember',
+    required: true,
+  },
+  type: {
+    type: String,
+    required: true,
+    enum: ['expense', 'income', 'transfer'],
+    default: 'expense',
+  },
+  amount: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  category: {
+    type: String,
+    enum: ['traveling', 'school-fees', 'grocery-household', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'inventory', 'other'],
+    default: 'other',
+  },
+  // Three-level category structure (new)
+  broaderCategory: {
+    type: String
+  },
+  mainCategory: {
+    type: String
+  },
+  subCategory: {
+    type: String
+  },
+  customSubCategory: {
+    type: String
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  date: {
+    type: Date,
+    required: true,
+    default: Date.now,
+  },
+  transactionType: {
+    type: String,
+    enum: ['credit', 'debit'],
+  },
+  modeOfTransaction: {
+    type: String,
+    enum: ['cash', 'credit-card', 'debit-card', 'upi', 'neft', 'rtgs', 'imps', 'cheque', 'dd', 'other'],
+    default: 'cash',
+  },
+  expenseType: {
+    type: String,
+    enum: ['important-necessary', 'less-important', 'avoidable-loss', 'unnecessary', 'basic-necessity'],
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['cash', 'digital-wallet', 'other'],
+    default: 'cash',
+  },
+  location: String,
+  notes: String,
+  narration: String,
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+cashTransactionSchema.pre('save', function () {
+  this.updatedAt = Date.now();
+});
+
+module.exports = mongoose.model('CashTransaction', cashTransactionSchema);

@@ -1,0 +1,395 @@
+/* ============================================
+   PRICING PAGE STYLES
+   ============================================ */
+
+.pricing-page {
+    min-height: 100vh;
+    background: var(--primary-black);
+    padding-top: 80px;
+}
+
+/* ============================================
+   HERO SECTION
+   ============================================ */
+
+.pricing-hero-section {
+    position: relative;
+    padding: 100px 0 80px;
+    background: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 50%, #0A0A0A 100%);
+    overflow: hidden;
+}
+
+.pricing-hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.pricing-hero-content {
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.pricing-hero-title {
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--pure-white);
+    margin-bottom: 25px;
+    font-family: 'Space Grotesk', sans-serif;
+    background: linear-gradient(135deg, #FFFFFF 0%, #E5E5E5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.3));
+    line-height: 1.2;
+}
+
+.pricing-hero-description {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.8;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* ============================================
+   PRICING CARDS SECTION
+   ============================================ */
+
+.pricing-cards-section {
+    padding: 80px 0;
+    position: relative;
+    background: var(--primary-black);
+}
+
+/* ============================================
+   FEATURES COMPARISON SECTION
+   ============================================ */
+
+.pricing-features-comparison {
+    padding: 80px 0;
+    background: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 50%, #0A0A0A 100%);
+    position: relative;
+}
+
+.pricing-page .section-header {
+    text-align: center;
+    margin-bottom: 60px;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.pricing-page .section-label {
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 15px;
+}
+
+.pricing-page .section-header .section-label {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.pricing-page .section-title {
+    font-size: 48px;
+    font-weight: 700;
+    color: #000000;
+    margin-bottom: 20px;
+    font-family: 'Space Grotesk', sans-serif;
+    background: linear-gradient(135deg, #000000 0%, #333333 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.pricing-page .section-description {
+    font-size: 18px;
+    color: rgba(0, 0, 0, 0.7);
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.8;
+}
+
+.comparison-note {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.comparison-note p {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 2;
+    margin: 0;
+}
+
+/* ============================================
+   FAQ SECTION
+   ============================================ */
+
+.pricing-faq-section {
+    padding: 80px 0;
+    background: var(--primary-black);
+}
+
+.faq-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.faq-item {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    padding: 40px 35px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.4s;
+    backdrop-filter: blur(10px);
+}
+
+.faq-item:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+}
+
+.faq-question {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--pure-white);
+    margin-bottom: 15px;
+}
+
+.faq-answer {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.8;
+    margin: 0;
+}
+
+/* ============================================
+   CTA SECTION
+   ============================================ */
+
+.pricing-cta-section {
+    padding: 100px 0;
+    background: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 50%, #0A0A0A 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.pricing-cta-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.pricing-cta-content {
+    text-align: center;
+    position: relative;
+    z-index: 2;
+}
+
+.pricing-cta-title {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--pure-white);
+    margin-bottom: 20px;
+    font-family: 'Space Grotesk', sans-serif;
+    background: linear-gradient(135deg, #FFFFFF 0%, #E5E5E5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.3));
+}
+
+.pricing-cta-description {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 40px;
+}
+
+.pricing-cta-btn {
+    padding: 18px 50px;
+    background: linear-gradient(135deg, #FFFFFF 0%, #E5E5E5 100%);
+    color: var(--primary-black);
+    border: none;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.4s;
+    box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
+}
+
+.pricing-cta-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(255, 255, 255, 0.3);
+    background: var(--pure-white);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+.animate-fade-in {
+    opacity: 0;
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+.delay-1 {
+    animation-delay: 0.1s;
+}
+
+.delay-2 {
+    animation-delay: 0.2s;
+}
+
+.delay-3 {
+    animation-delay: 0.3s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loader */
+.loader {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--pure-white);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   RESPONSIVE STYLES
+   ============================================ */
+
+@media (max-width: 992px) {
+    .pricing-hero-title {
+        font-size: 42px;
+    }
+
+    .section-title {
+        font-size: 36px;
+    }
+
+    .pricing-cta-title {
+        font-size: 36px;
+    }
+
+    .faq-grid {
+        grid-template-columns: 1fr;
+        max-width: 600px;
+    }
+}
+
+@media (max-width: 768px) {
+    .pricing-page {
+        padding-top: 60px;
+    }
+
+    .pricing-hero-section {
+        padding: 60px 0 40px;
+    }
+
+    .pricing-hero-title {
+        font-size: 32px;
+    }
+
+    .pricing-hero-description {
+        font-size: 16px;
+    }
+
+    .pricing-cards-section {
+        padding: 50px 0;
+    }
+
+    .section-title {
+        font-size: 28px;
+    }
+
+    .section-description {
+        font-size: 16px;
+    }
+
+    .pricing-features-comparison,
+    .pricing-faq-section,
+    .pricing-cta-section {
+        padding: 50px 0;
+    }
+
+    .comparison-note {
+        padding: 30px 25px;
+    }
+
+    .comparison-note p {
+        font-size: 14px;
+    }
+
+    .faq-item {
+        padding: 30px 25px;
+    }
+
+    .faq-question {
+        font-size: 18px;
+    }
+
+    .pricing-cta-title {
+        font-size: 28px;
+    }
+
+    .pricing-cta-description {
+        font-size: 16px;
+    }
+
+    .pricing-cta-btn {
+        padding: 15px 40px;
+        font-size: 16px;
+    }
+}

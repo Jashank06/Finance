@@ -1,0 +1,119 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
+
+const authRoutes = require('./routes/auth');
+const otpRoutes = require('./routes/otp');
+const usersRoutes = require('./routes/users');
+const paymentRoutes = require('./routes/payment');
+const staticRoutes = require('./routes/static');
+const cashRoutes = require('./routes/cash');
+const cardRoutes = require('./routes/cards');
+const bankRoutes = require('./routes/bank');
+const transactionRoutes = require('./routes/transactions');
+const bankTransactionRoutes = require('./routes/bankTransactions');
+const incomeExpenseRoutes = require('./routes/incomeExpense');
+const categoriesRoutes = require('./routes/categories');
+const testRoutes = require('./routes/test');
+const transactionCategoriesRoutes = require('./routes/transactionCategories');
+const subscriptionPlansRoutes = require('./routes/subscriptionPlans');
+const uploadRoutes = require('./routes/upload');
+const folderRoutes = require('./routes/folders');
+const documentRoutes = require('./routes/documents');
+const netWorthRoutes = require('./routes/netWorth');
+
+const app = express();
+
+// CORS Configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // Get allowed origins from environment variable or use defaults
+    const envOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : [];
+
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:5001',
+      'http://13.235.53.147',
+      'http://13.235.53.147:5001',
+      'https://jashank06.github.io',
+      // Production domains
+      'http://palbamb.com',
+      'https://palbamb.com',
+      'http://www.palbamb.com',
+      'https://www.palbamb.com',
+      'http://palbamb.in',
+      'https://palbamb.in',
+      'http://www.palbamb.in',
+      'https://www.palbamb.in',
+      ...envOrigins
+    ];
+
+    // Allow localhost in development
+    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      // In production, log rejected origins for debugging
+      console.log('CORS rejected origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  exposedHeaders: ['Content-Length', 'Content-Range', 'X-Total-Count'],
+  optionsSuccessStatus: 200
+};
+
+// Middleware
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// MongoDB Connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB Atlas Connected Successfully'))
+  .catch((err) => console.error('MongoDB connection error:', err));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/otp', otpRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/static', staticRoutes);
+app.use('/api/cash', cashRoutes);
+app.use('/api/cards', cardRoutes);
+app.use('/api/bank', bankRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/bank-transactions', bankTransactionRoutes);
+app.use('/api/income-expense', incomeExpenseRoutes);
+app.use('/api/categories', categoriesRoutes);
+app.use('/api/test', testRoutes);
+app.use('/api/transaction-categories', transactionCategoriesRoutes);
+app.use('/api/subscription-plans', subscriptionPlansRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/folders', folderRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/net-worth', netWorthRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack); // Log the error stack for debugging
+  res.status(500).json({ message: err.message || 'Something went wrong!', status: 'error' });
+});
+
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'Server is running' });
+});
+
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

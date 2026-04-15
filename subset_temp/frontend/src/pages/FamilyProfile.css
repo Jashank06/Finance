@@ -1,0 +1,57 @@
+/* Basic Information Table Styling */
+.static-section .table-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  margin-top: 20px;
+}
+
+.static-section .family-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.static-section .family-table thead {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+}
+
+.static-section .family-table thead th {
+  padding: 16px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  border-bottom: 2px solid #6d28d9;
+}
+
+.static-section .family-table tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: background 0.2s ease;
+}
+
+.static-section .family-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.static-section .family-table tbody td {
+  padding: 14px;
+  font-size: 14px;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .static-section .table-container {
+    overflow-x: auto;
+  }
+  
+  .static-section .family-table {
+    min-width: 800px;
+  }
+}

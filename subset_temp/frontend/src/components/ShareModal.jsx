@@ -1,0 +1,582 @@
+import { useState, useEffect } from 'react';
+import { FiX, FiSave, FiLoader } from 'react-icons/fi';
+import { investmentValuationAPI } from '../utils/investmentValuationAPI';
+import { staticAPI } from '../utils/staticAPI';
+import './Modal.css';
+
+const ShareModal = ({ isOpen, onClose, onSuccess, editData, shares = [] }) => {
+  const [formData, setFormData] = useState({
+    broker: '',
+    purchaseType: 'delivery',
+    clientId: '',
+    dpId: '',
+    tradingId: '',
+    investorName: '',
+    scripName: '',
+    exchange: 'NSE',
+    purchasePrice: '',
+    quantity: '',
+    brokerage: '0',
+    stt: '0',
+    otherCharges: '0',
+    purchaseAmount: '',
+    purchaseDate: new Date().toISOString().split('T')[0],
+    currentPrice: '',
+    nominee: '',
+    intraDay: false,
+    modeOfHolding: 'Demat',
+    dematCompany: ''
+  });
+
+  const [subBrokers, setSubBrokers] = useState([]);
+  const [familyMembers, setFamilyMembers] = useState([]);
+  const [showCustomInvestor, setShowCustomInvestor] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (editData) {
+      setFormData({
+        ...editData,
+        purchaseDate: editData.purchaseDate ? editData.purchaseDate.split('T')[0] : new Date().toISOString().split('T')[0],
+        brokerage: editData.brokerage || '0',
+        stt: editData.stt || '0',
+        otherCharges: editData.otherCharges || '0'
+      });
+    } else {
+      setFormData({
+        broker: '',
+        purchaseType: 'delivery',
+        clientId: '',
+        dpId: '',
+        tradingId: '',
+        investorName: '',
+        scripName: '',
+        purchasePrice: '',
+        quantity: '',
+        brokerage: '0',
+        stt: '0',
+        otherCharges: '0',
+        purchaseAmount: '',
+        purchaseDate: new Date().toISOString().split('T')[0],
+        currentPrice: '',
+        nominee: '',
+        intraDay: false,
+        modeOfHolding: 'Demat',
+        dematCompany: ''
+      });
+    }
+  }, [editData]);
+
+  // Handle edit mode for investorName (check if it's a family member or custom)
+  useEffect(() => {
+    if (editData && familyMembers.length > 0) {
+      const isFamilyMember = familyMembers.some(m => m.name === editData.investorName);
+      if (!isFamilyMember && editData.investorName) {
+        setShowCustomInvestor(true);
+      } else {
+        setShowCustomInvestor(false);
+      }
+    }
+  }, [editData, familyMembers]);
+
+  // Fetch sub-brokers for dematCompany dropdown
+  useEffect(() => {
+    const fetchSubBrokers = async () => {
+      try {
+        const res = await staticAPI.getBasicDetails();
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setSubBrokers(res.data[0].subBrokers || []);
+        }
+      } catch (err) {
+        console.error('Error fetching sub-brokers:', err);
+      }
+    };
+    fetchSubBrokers();
+  }, []);
+
+  // Fetch family members for investorName dropdown
+  useEffect(() => {
+    const fetchFamilyMembers = async () => {
+      try {
+        const response = await staticAPI.getFamilyProfile();
+        if (response.data && response.data.length > 0) {
+          const members = response.data[0].members || [];
+          setFamilyMembers(members);
+        }
+      } catch (error) {
+        console.error('Error fetching family members:', error);
+      }
+    };
+    fetchFamilyMembers();
+  }, []);
+
+  // Auto-fetch current price when scripName or exchange changes (updates state but field is hidden)
+  useEffect(() => {
+    const scrip = formData.scripName;
+    if (!scrip || scrip.length < 2 || editData) return;
+
+    const timer = setTimeout(async () => {
+      setPriceLoading(true);
+      try {
+        const res = await investmentValuationAPI.getStockPriceByScrip(scrip, formData.exchange);
+        if (res.data?.success && res.data.data?.price) {
+          setFormData(prev => ({
+            ...prev,
+            currentPrice: String(res.data.data.price)
+          }));
+        }
+      } catch (err) {
+        console.warn('Could not auto-fetch price for scrip:', scrip);
+      } finally {
+        setPriceLoading(false);
+      }
+    }, 1000); // 1 second debounce
+
+    return () => clearTimeout(timer);
+  }, [formData.scripName, formData.exchange, editData]);
+
+  // Auto-fill profile details when broker name matches a previous entry
+  useEffect(() => {
+    if (editData || !formData.broker || formData.broker.length < 3) return;
+
+    const previousEntry = shares.find(s => 
+      s.broker.toLowerCase().includes(formData.broker.toLowerCase())
+    );
+
+    if (previousEntry) {
+      setFormData(prev => ({
+        ...prev,
+        clientId: prev.clientId || previousEntry.clientId || '',
+        dpId: prev.dpId || previousEntry.dpId || '',
+        tradingId: prev.tradingId || previousEntry.tradingId || '',
+        investorName: prev.investorName || previousEntry.investorName || ''
+      }));
+    }
+  }, [formData.broker, shares, editData]);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    const fieldValue = type === 'checkbox' ? checked : value;
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: fieldValue
+    }));
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+
+    // Auto-calculate purchase amount
+    if (name === 'quantity' || name === 'purchasePrice') {
+      const quantity = name === 'quantity' ? parseFloat(value) : parseFloat(formData.quantity);
+      const price = name === 'purchasePrice' ? parseFloat(value) : parseFloat(formData.purchasePrice);
+      
+      if (quantity && price) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: fieldValue,
+          purchaseAmount: (quantity * price).toString()
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          [name]: fieldValue
+        }));
+      }
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.broker.trim()) newErrors.broker = 'Investment Broker is required';
+    if (!formData.clientId.trim()) newErrors.clientId = 'Client ID is required';
+    if (!formData.dpId.trim()) newErrors.dpId = 'DP ID is required';
+    if (!formData.tradingId.trim()) newErrors.tradingId = 'Trading ID is required';
+    if (!formData.investorName.trim()) newErrors.investorName = 'Investor Name is required';
+    if (!formData.scripName.trim()) newErrors.scripName = 'Scrip Name is required';
+    if (!formData.purchasePrice) newErrors.purchasePrice = 'Purchase Price is required';
+    if (!formData.quantity) newErrors.quantity = 'Quantity is required';
+    if (!formData.purchaseAmount) newErrors.purchaseAmount = 'Purchase Amount is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+
+    const syncToBasicDetails = async (itemData) => {
+      try {
+        const res = await staticAPI.getBasicDetails();
+        const list = Array.isArray(res.data) ? res.data : (res.data?.data ? (Array.isArray(res.data.data) ? res.data.data : [res.data.data]) : []);
+        let basicDetails = list.length > 0 ? list[0] : null;
+
+        // If no BasicDetails record, create one first
+        if (!basicDetails?._id) {
+          const created = await staticAPI.createBasicDetails({ shares: [] });
+          basicDetails = created.data;
+        }
+
+        const shares = basicDetails.shares || [];
+        const existingIdx = shares.findIndex(s => s.scriptName === itemData.scripName && s.dpId === itemData.dpId);
+        const mapped = {
+          scriptName: itemData.scripName || '',
+          dematCompany: itemData.broker || '',
+          investorName: itemData.investorName || '',
+          dpId: itemData.dpId || '',
+          tradingId: itemData.tradingId || '',
+          holdingType: 'Single'
+        };
+
+        if (existingIdx >= 0) {
+          shares[existingIdx] = { ...shares[existingIdx], ...mapped };
+        } else {
+          shares.push(mapped);
+        }
+
+        await staticAPI.updateBasicDetails(basicDetails._id, { ...basicDetails, shares });
+      } catch (err) {
+        console.warn('Failed to auto-sync Share to Basic Details:', err);
+      }
+    };
+
+    try {
+      setLoading(true);
+      
+      const submitData = {
+        ...formData,
+        purchasePrice: parseFloat(formData.purchasePrice),
+        quantity: parseFloat(formData.quantity),
+        brokerage: parseFloat(formData.brokerage) || 0,
+        stt: parseFloat(formData.stt) || 0,
+        otherCharges: parseFloat(formData.otherCharges) || 0,
+        purchaseAmount: parseFloat(formData.purchaseAmount),
+        currentPrice: parseFloat(formData.currentPrice) || parseFloat(formData.purchasePrice)
+      };
+
+      if (editData && !(editData._id && editData._id.toString().startsWith('basic-'))) {
+        await investmentValuationAPI.updateShare(editData._id, submitData);
+        await syncToBasicDetails(submitData);
+      } else if (!editData || !(editData._id && editData._id.toString().startsWith('basic-'))) {
+        await investmentValuationAPI.createShare(submitData);
+        await syncToBasicDetails(submitData);
+      }
+
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Error saving share:', error);
+      setErrors({ submit: 'Failed to save share investment. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content large">
+        <div className="modal-header">
+          <h2>{editData ? 'Edit' : 'Add'} Share Investment</h2>
+          <button className="close-btn" onClick={onClose}>
+            <FiX />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="modal-form">
+          <div className="form-grid">
+            <div className="form-field">
+              <label>Investment Broker *</label>
+              <input
+                type="text"
+                name="broker"
+                value={formData.broker}
+                onChange={handleChange}
+                className={errors.broker ? 'error' : ''}
+                placeholder="e.g., Zerodha, HDFC Securities"
+                required
+              />
+              {errors.broker && <span className="error-text">{errors.broker}</span>}
+            </div>
+
+            <div className="form-field">
+              <label>Type of Purchase</label>
+              <select
+                name="purchaseType"
+                value={formData.purchaseType}
+                onChange={handleChange}
+              >
+                <option value="delivery">Delivery</option>
+                <option value="intraday">Intraday</option>
+                <option value="btst">BTST</option>
+                <option value="stbt">STBT</option>
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label>Client ID *</label>
+              <input
+                type="text"
+                name="clientId"
+                value={formData.clientId}
+                onChange={handleChange}
+                className={errors.clientId ? 'error' : ''}
+                placeholder="Enter client ID"
+                required
+              />
+              {errors.clientId && <span className="error-text">{errors.clientId}</span>}
+            </div>
+
+            <div className="form-field">
+              <label>DP ID *</label>
+              <input
+                type="text"
+                name="dpId"
+                value={formData.dpId}
+                onChange={handleChange}
+                className={errors.dpId ? 'error' : ''}
+                placeholder="Enter DP ID"
+                required
+              />
+              {errors.dpId && <span className="error-text">{errors.dpId}</span>}
+            </div>
+
+            <div className="form-field">
+              <label>Trading ID *</label>
+              <input
+                type="text"
+                name="tradingId"
+                value={formData.tradingId}
+                onChange={handleChange}
+                className={errors.tradingId ? 'error' : ''}
+                placeholder="Enter trading ID"
+                required
+              />
+              {errors.tradingId && <span className="error-text">{errors.tradingId}</span>}
+            </div>
+
+            <div className="form-field">
+              <label>Investor Name *</label>
+              <select
+                name="investorName"
+                value={showCustomInvestor ? 'Other' : formData.investorName}
+                onChange={(e) => {
+                  if (e.target.value === 'Other') {
+                    setShowCustomInvestor(true);
+                    setFormData(prev => ({ ...prev, investorName: '' }));
+                  } else {
+                    setShowCustomInvestor(false);
+                    setFormData(prev => ({ ...prev, investorName: e.target.value }));
+                  }
+                }}
+                className={errors.investorName ? 'error' : ''}
+                required
+              >
+                <option value="">Select Investor</option>
+                {familyMembers.map((member, idx) => (
+                  <option key={idx} value={member.name}>{member.name}</option>
+                ))}
+                <option value="Other">Other</option>
+              </select>
+              {showCustomInvestor && (
+                <input
+                  type="text"
+                  name="investorName"
+                  value={formData.investorName}
+                  onChange={handleChange}
+                  className={errors.investorName ? 'error' : ''}
+                  placeholder="Enter custom investor name"
+                  required
+                  style={{ marginTop: '8px' }}
+                />
+              )}
+              {errors.investorName && <span className="error-text">{errors.investorName}</span>}
+            </div>
+
+            <div className="form-field">
+              <label>Scrip Name *</label>
+              <input
+                type="text"
+                name="scripName"
+                value={formData.scripName}
+                onChange={handleChange}
+                className={errors.scripName ? 'error' : ''}
+                placeholder="e.g., RELIANCE, TCS"
+                required
+              />
+              {errors.scripName && <span className="error-text">{errors.scripName}</span>}
+            </div>
+
+            <div className="form-field">
+              <label>Exchange</label>
+              <select
+                name="exchange"
+                value={formData.exchange}
+                onChange={handleChange}
+              >
+                <option value="NSE">NSE</option>
+                <option value="BSE">BSE</option>
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label>Mode of Holding</label>
+              <select
+                name="modeOfHolding"
+                value={formData.modeOfHolding}
+                onChange={handleChange}
+              >
+                <option value="Demat">Demat</option>
+                <option value="Physical">Physical</option>
+              </select>
+            </div>
+
+            {formData.modeOfHolding === 'Demat' && (
+              <div className="form-field">
+                <label>Demat Company</label>
+                <select
+                  name="dematCompany"
+                  value={formData.dematCompany}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Demat Company</option>
+                  {subBrokers.map((sb, idx) => (
+                    <option key={idx} value={sb.nameOfCompany}>
+                      {sb.nameOfCompany}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="form-field">
+              <label>Purchase Price *</label>
+              <input
+                type="number"
+                name="purchasePrice"
+                value={formData.purchasePrice}
+                onChange={handleChange}
+                className={errors.purchasePrice ? 'error' : ''}
+                placeholder="Enter purchase price per share"
+                min="0"
+                step="0.01"
+                required
+              />
+              {errors.purchasePrice && <span className="error-text">{errors.purchasePrice}</span>}
+            </div>
+
+            <div className="form-field">
+              <label>Quantity *</label>
+              <input
+                type="number"
+                name="quantity"
+                value={formData.quantity}
+                onChange={handleChange}
+                className={errors.quantity ? 'error' : ''}
+                placeholder="Enter number of shares"
+                min="0"
+                required
+              />
+              {errors.quantity && <span className="error-text">{errors.quantity}</span>}
+            </div>
+
+            <div className="form-field">
+              <label>Brokerage</label>
+              <input
+                type="number"
+                name="brokerage"
+                value={formData.brokerage}
+                onChange={handleChange}
+                placeholder="Enter brokerage charges"
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            <div className="form-field">
+              <label>STT</label>
+              <input
+                type="number"
+                name="stt"
+                value={formData.stt}
+                onChange={handleChange}
+                placeholder="Enter STT charges"
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            <div className="form-field">
+              <label>Other Charges</label>
+              <input
+                type="number"
+                name="otherCharges"
+                value={formData.otherCharges}
+                onChange={handleChange}
+                placeholder="Enter other charges"
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            <div className="form-field">
+              <label>Purchase Amount *</label>
+              <input
+                type="number"
+                name="purchaseAmount"
+                value={formData.purchaseAmount}
+                onChange={handleChange}
+                className={errors.purchaseAmount ? 'error' : ''}
+                placeholder="Auto-calculated or enter manually"
+                min="0"
+                step="0.01"
+                required
+              />
+              {errors.purchaseAmount && <span className="error-text">{errors.purchaseAmount}</span>}
+            </div>
+
+            <div className="form-field">
+              <label>Date of Purchase</label>
+              <input
+                type="date"
+                name="purchaseDate"
+                value={formData.purchaseDate}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          {errors.submit && (
+            <div className="error-message">
+              {errors.submit}
+            </div>
+          )}
+
+          <div className="modal-footer">
+            <button type="button" className="cancel-btn" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="save-btn" disabled={loading}>
+              {loading ? <FiLoader className="spinner" /> : <FiSave />}
+              {loading ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default ShareModal;

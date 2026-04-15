@@ -1,0 +1,297 @@
+import { useState, useEffect } from 'react';
+import { FiThumbsUp, FiShare2, FiMessageSquare, FiStar } from 'react-icons/fi';
+import axios from 'axios';
+import './InteractionSection.css';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+const InteractionSection = ({ type, slug, initialData }) => {
+    const [likes, setLikes] = useState(initialData?.likes || 0);
+    const [shares, setShares] = useState(initialData?.shares || 0);
+    const [comments, setComments] = useState(initialData?.comments || []);
+    const [liked, setLiked] = useState(false);
+    const [showCommentForm, setShowCommentForm] = useState(false);
+    const [rating, setRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [averageRating, setAverageRating] = useState(initialData?.averageRating || 0);
+    const [totalRatings, setTotalRatings] = useState(initialData?.totalRatings || 0);
+    
+    const [formData, setFormData] = useState({
+        name: '',
+        comment: ''
+    });
+    
+    const [submitting, setSubmitting] = useState(false);
+    const [message, setMessage] = useState('');
+
+    // Get or create user identifier
+    const getUserIdentifier = () => {
+        let identifier = localStorage.getItem('userIdentifier');
+        if (!identifier) {
+            identifier = 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            localStorage.setItem('userIdentifier', identifier);
+        }
+        return identifier;
+    };
+
+    // Check if user already liked
+    useEffect(() => {
+        const userIdentifier = getUserIdentifier();
+        const likedItems = JSON.parse(localStorage.getItem('likedItems') || '{}');
+        setLiked(likedItems[`${type}_${slug}`] === true);
+    }, [type, slug]);
+
+    const handleLike = async () => {
+        try {
+            const userIdentifier = getUserIdentifier();
+            const endpoint = type === 'blog' ? 'blogs' : 'success-stories';
+            const response = await axios.post(`${API_URL}/${endpoint}/public/${slug}/like`, {
+                userIdentifier
+            });
+            
+            setLikes(response.data.likes);
+            setLiked(response.data.liked);
+            
+            // Store in localStorage
+            const likedItems = JSON.parse(localStorage.getItem('likedItems') || '{}');
+            likedItems[`${type}_${slug}`] = response.data.liked;
+            localStorage.setItem('likedItems', JSON.stringify(likedItems));
+        } catch (error) {
+            console.error('Error liking:', error);
+        }
+    };
+
+    const handleShare = async () => {
+        try {
+            const endpoint = type === 'blog' ? 'blogs' : 'success-stories';
+            
+            // Try to use Web Share API
+            if (navigator.share) {
+                await navigator.share({
+                    title: initialData?.title || 'Check this out!',
+                    text: initialData?.excerpt || '',
+                    url: window.location.href
+                });
+            } else {
+                // Fallback: copy to clipboard
+                await navigator.clipboard.writeText(window.location.href);
+                setMessage('Link copied to clipboard!');
+                setTimeout(() => setMessage(''), 3000);
+            }
+            
+            // Increment share count
+            const response = await axios.post(`${API_URL}/${endpoint}/public/${slug}/share`);
+            setShares(response.data.shares);
+        } catch (error) {
+            console.error('Error sharing:', error);
+        }
+    };
+
+    const handleSubmitComment = async (e) => {
+        e.preventDefault();
+        
+        if (!formData.name.trim() || !formData.comment.trim()) {
+            setMessage('Please fill in all fields');
+            return;
+        }
+        
+        setSubmitting(true);
+        try {
+            const endpoint = type === 'blog' ? 'blogs' : 'success-stories';
+            const response = await axios.post(`${API_URL}/${endpoint}/public/${slug}/comment`, {
+                name: formData.name,
+                comment: formData.comment,
+                rating: rating > 0 ? rating : undefined
+            });
+            
+            setComments([...comments, response.data.comment]);
+            setFormData({ name: '', comment: '' });
+            setRating(0);
+            setShowCommentForm(false);
+            setMessage('Comment posted successfully!');
+            
+            if (response.data.averageRating !== undefined) {
+                setAverageRating(response.data.averageRating);
+                setTotalRatings(response.data.totalRatings);
+            }
+            
+            setTimeout(() => setMessage(''), 3000);
+        } catch (error) {
+            console.error('Error posting comment:', error);
+            setMessage('Error posting comment. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        
+        return date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+        });
+    };
+
+    return (
+        <div className="interaction-section">
+            {message && (
+                <div className="interaction-message">
+                    {message}
+                </div>
+            )}
+            
+            {/* Action Buttons */}
+            <div className="interaction-actions">
+                <button 
+                    className={`interaction-btn ${liked ? 'active' : ''}`}
+                    onClick={handleLike}
+                >
+                    <FiThumbsUp />
+                    <span>{likes} {likes === 1 ? 'Like' : 'Likes'}</span>
+                </button>
+                
+                <button className="interaction-btn" onClick={handleShare}>
+                    <FiShare2 />
+                    <span>Share</span>
+                </button>
+                
+                <button 
+                    className="interaction-btn"
+                    onClick={() => setShowCommentForm(!showCommentForm)}
+                >
+                    <FiMessageSquare />
+                    <span>Comment</span>
+                </button>
+                
+                {totalRatings > 0 && (
+                    <div className="average-rating">
+                        <FiStar fill="#f59e0b" color="#f59e0b" />
+                        <span>{averageRating.toFixed(1)} ({totalRatings} {totalRatings === 1 ? 'rating' : 'ratings'})</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Comment Form */}
+            {showCommentForm && (
+                <form className="comment-form" onSubmit={handleSubmitComment}>
+                    <h3>Leave a Comment</h3>
+                    
+                    <div className="form-group">
+                        <label>Your Name *</label>
+                        <input
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            placeholder="Enter your name"
+                            required
+                        />
+                    </div>
+                    
+                    <div className="form-group">
+                        <label>Rate this {type} *</label>
+                        <div className="star-rating">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <FiStar
+                                    key={star}
+                                    size={28}
+                                    className="star-icon"
+                                    fill={star <= (hoverRating || rating) ? '#f59e0b' : 'transparent'}
+                                    color={star <= (hoverRating || rating) ? '#f59e0b' : '#d1d5db'}
+                                    onClick={() => setRating(star)}
+                                    onMouseEnter={() => setHoverRating(star)}
+                                    onMouseLeave={() => setHoverRating(0)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div className="form-group">
+                        <label>Your Comment *</label>
+                        <textarea
+                            value={formData.comment}
+                            onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
+                            placeholder="Write your comment..."
+                            rows="4"
+                            required
+                        />
+                    </div>
+                    
+                    <div className="form-actions">
+                        <button 
+                            type="submit" 
+                            className="submit-btn"
+                            disabled={submitting}
+                        >
+                            {submitting ? 'Posting...' : 'Post Comment'}
+                        </button>
+                        <button 
+                            type="button" 
+                            className="cancel-btn"
+                            onClick={() => {
+                                setShowCommentForm(false);
+                                setFormData({ name: '', comment: '' });
+                                setRating(0);
+                            }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            )}
+
+            {/* Comments Section */}
+            <div className="comments-section">
+                <h3>Comments ({comments.length})</h3>
+                
+                {comments.length === 0 ? (
+                    <p className="no-comments">No comments yet. Be the first to comment!</p>
+                ) : (
+                    <div className="comments-list">
+                        {comments.map((comment, index) => (
+                            <div key={index} className="comment-item">
+                                <div className="comment-header">
+                                    <div className="comment-avatar">
+                                        {comment.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="comment-info">
+                                        <h4>{comment.name}</h4>
+                                        <span className="comment-date">
+                                            {formatDate(comment.createdAt)}
+                                        </span>
+                                    </div>
+                                    {comment.rating && (
+                                        <div className="comment-rating">
+                                            {[...Array(comment.rating)].map((_, i) => (
+                                                <FiStar 
+                                                    key={i} 
+                                                    size={16} 
+                                                    fill="#f59e0b" 
+                                                    color="#f59e0b" 
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="comment-text">{comment.comment}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default InteractionSection;
