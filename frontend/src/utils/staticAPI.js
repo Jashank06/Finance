@@ -66,6 +66,7 @@ export const staticAPI = {
   updateMobileEmailDetails: (id, data) => api.put(`/static/mobile-email-details/${id}`, data),
   
   deleteMobileEmailDetails: (id) => api.delete(`/static/mobile-email-details/${id}`),
+  bulkCreateMobileEmailDetails: (data) => api.post('/static/mobile-email-details/bulk', data),
   
   // Personal Records
   getPersonalRecords: () => api.get('/static/personal-records'),
@@ -84,6 +85,7 @@ export const staticAPI = {
   updateDigitalAsset: (id, data) => api.put(`/static/digital-assets/${id}`, data),
   
   deleteDigitalAsset: (id) => api.delete(`/static/digital-assets/${id}`),
+  bulkCreateDigitalAssets: (data) => api.post('/static/digital-assets/bulk', data),
   
   // Family Profile
   getFamilyProfile: () => api.get('/static/family-profile'),

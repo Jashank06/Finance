@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { FiMail, FiSmartphone, FiEdit2, FiTrash2, FiPlus, FiPhone } from 'react-icons/fi';
+import { useEffect, useState, useRef } from 'react';
+import { FiMail, FiSmartphone, FiEdit2, FiTrash2, FiPlus, FiPhone, FiUpload, FiDownload } from 'react-icons/fi';
+import * as XLSX from 'xlsx';
 import './Static.css';
 import { staticAPI } from '../../../utils/staticAPI';
 import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
@@ -44,6 +45,10 @@ const MobileEmailDetails = () => {
   const [editingId, setEditingId] = useState(null);
   const [editMode, setEditMode] = useState(false);
 
+
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const CATEGORY_KEY = 'static-mobile-email';
 
@@ -152,6 +157,198 @@ const MobileEmailDetails = () => {
     }
   };
 
+  const getValue = (row, key) => {
+    const normalizedKey = key.toLowerCase().replace(/\s+/g, '').trim();
+    const actualKey = Object.keys(row).find(k =>
+      k.toLowerCase().replace(/\s+/g, '').trim() === normalizedKey
+    );
+    return actualKey ? row[actualKey] : undefined;
+  };
+
+  const handleExcelUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        alert('Excel file is empty!');
+        setUploading(false);
+        return;
+      }
+
+      const required = ['Type'];
+      const firstRow = jsonData[0];
+      const missing = required.filter(col => !(col in firstRow));
+      if (missing.length > 0) {
+        alert(`Missing required column: ${missing.join(', ')}`);
+        setUploading(false);
+        return;
+      }
+
+      const records = jsonData.map(row => ({
+        type: getValue(row, 'Type') || 'Mobile',
+        name: getValue(row, 'Name') || '',
+        relation: getValue(row, 'Relation') || '',
+        mobile: getValue(row, 'Mobile') || '',
+        carrier: getValue(row, 'Carrier') || '',
+        simType: getValue(row, 'SIM Type') || 'Prepaid',
+        planName: getValue(row, 'Plan Name') || '',
+        planAmount: getValue(row, 'Plan Amount') || '',
+        address: getValue(row, 'Address') || '',
+        alternateNumber: getValue(row, 'Alternate Number') || '',
+        customerCareNo: getValue(row, 'Customer Care No') || '',
+        customerCareEmail: getValue(row, 'Customer Care Email') || '',
+        billingCycle: getValue(row, 'Billing Cycle') || '',
+        accountNo: getValue(row, 'Account No') || '',
+        email: getValue(row, 'Email') || '',
+        provider: getValue(row, 'Provider') || '',
+        googleAccountEmail: getValue(row, 'Google Account Email') || '',
+        recoveryEmail: getValue(row, 'Recovery Email') || '',
+        recoveryNumber: getValue(row, 'Recovery Number') || '',
+        alternateEmails: getValue(row, 'Alternate Emails') || '',
+        passkeysAndSecurityKey: getValue(row, 'Passkeys') || '',
+        password: getValue(row, 'Password') || '',
+        purpose: getValue(row, 'Purpose') || '',
+        notes: getValue(row, 'Notes') || '',
+        ownerName: getValue(row, 'Owner Name') || '',
+        relationship: getValue(row, 'Relationship') || '',
+        isPrimary: getValue(row, 'Is Primary') === 'Yes',
+        twoFA: getValue(row, '2FA') === 'Enabled',
+      }));
+
+      const res = await staticAPI.bulkCreateMobileEmailDetails({ records });
+
+      const syncPromises = [];
+      for (const record of records) {
+        syncPromises.push(
+          syncContactsFromForm(record, 'MobileEmailDetails'),
+          syncCustomerSupportFromForm(record, 'MobileEmailDetails'),
+          syncRemindersFromForm(record, 'MobileEmailDetails'),
+          syncBillScheduleFromForm(record, 'MobileEmailDetails')
+        );
+      }
+      await Promise.allSettled(syncPromises);
+
+      await fetchEntries();
+      alert(`Import completed!\nSuccess: ${res.data.created}\nErrors: ${res.data.errors?.length || 0}`);
+    } catch (error) {
+      console.error('Error processing Excel file:', error);
+      alert('Error processing Excel file. Please check the format.');
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const downloadTemplate = () => {
+    const templateData = [
+      {
+        Type: 'Mobile',
+        Name: 'Rahul Sharma',
+        Relation: 'Self',
+        Mobile: '+91 9876543210',
+        Carrier: 'Jio',
+        'SIM Type': 'Prepaid',
+        'Plan Name': 'Rs. 299 Plan',
+        'Plan Amount': '299',
+        Address: 'Mumbai, Maharashtra',
+        'Alternate Number': '+91 9876543211',
+        'Customer Care No': '1800-123-4567',
+        'Customer Care Email': 'care@jio.com',
+        'Billing Cycle': 'Monthly',
+        'Account No': 'CUST001',
+        Email: '',
+        Provider: '',
+        'Google Account Email': '',
+        'Recovery Email': '',
+        'Recovery Number': '',
+        'Alternate Emails': '',
+        Passkeys: '',
+        Password: '',
+        Purpose: '',
+        Notes: 'Primary mobile number',
+        'Owner Name': '',
+        Relationship: '',
+        'Is Primary': 'Yes',
+        '2FA': 'Disabled',
+      },
+      {
+        Type: 'Mobile',
+        Name: 'Priya Sharma',
+        Relation: 'Spouse',
+        Mobile: '+91 9876543212',
+        Carrier: 'Airtel',
+        'SIM Type': 'Postpaid',
+        'Plan Name': 'Rs. 499 Plan',
+        'Plan Amount': '499',
+        Address: 'Mumbai, Maharashtra',
+        'Alternate Number': '',
+        'Customer Care No': '1800-987-6543',
+        'Customer Care Email': 'help@airtel.com',
+        'Billing Cycle': 'Monthly',
+        'Account No': 'CUST002',
+        Email: '',
+        Provider: '',
+        'Google Account Email': '',
+        'Recovery Email': '',
+        'Recovery Number': '',
+        'Alternate Emails': '',
+        Passkeys: '',
+        Password: '',
+        Purpose: '',
+        Notes: 'Secondary mobile number',
+        'Owner Name': '',
+        Relationship: '',
+        'Is Primary': 'No',
+        '2FA': 'Disabled',
+      },
+      {
+        Type: 'Email',
+        Name: 'Rahul Sharma',
+        Relation: 'Self',
+        Mobile: '',
+        Carrier: '',
+        'SIM Type': '',
+        'Plan Name': '',
+        'Plan Amount': '',
+        Address: '',
+        'Alternate Number': '',
+        'Customer Care No': '',
+        'Customer Care Email': '',
+        'Billing Cycle': '',
+        'Account No': '',
+        Email: 'rahul.sharma@gmail.com',
+        Provider: 'Gmail',
+        'Google Account Email': 'rahul.sharma@gmail.com',
+        'Recovery Email': 'rahul.recovery@yahoo.com',
+        'Recovery Number': '+91 9876543210',
+        'Alternate Emails': 'rahul.work@outlook.com',
+        Passkeys: 'YubiKey #1234',
+        Password: '********',
+        Purpose: 'Personal email',
+        Notes: 'Primary email with 2FA',
+        'Owner Name': '',
+        Relationship: '',
+        'Is Primary': 'Yes',
+        '2FA': 'Enabled',
+      },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    XLSX.writeFile(wb, 'Mobile_Email_Template.xlsx');
+  };
+
   return (
     <div className="static-page">
       <div className="static-header" style={{ background: 'rgba(255, 255, 255, 0.95)' }}>
@@ -165,6 +362,23 @@ const MobileEmailDetails = () => {
           </div>
         </div>
         <div className="header-actions">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleExcelUpload}
+            accept=".xlsx,.xls"
+            style={{ display: 'none' }}
+          />
+          <button
+            className="btn-secondary"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            <FiUpload /> {uploading ? `Uploading... ${uploadProgress}%` : 'Upload Excel'}
+          </button>
+          <button className="btn-secondary" onClick={downloadTemplate}>
+            <FiDownload /> Template
+          </button>
           <button className="btn-success" onClick={() => {
             resetForm();
             setEditMode(true);

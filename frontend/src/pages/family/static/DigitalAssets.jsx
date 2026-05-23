@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { FiGlobe, FiServer, FiGithub, FiDatabase, FiEdit2, FiTrash2, FiPlus, FiLock, FiKey, FiFileText, FiMonitor, FiShield, FiCalendar, FiUser, FiMail, FiLink, FiSettings, FiCode, FiCheckCircle, FiAlertCircle, FiCopy } from 'react-icons/fi';
+import { useEffect, useState, useRef } from 'react';
+import { FiGlobe, FiServer, FiGithub, FiDatabase, FiEdit2, FiTrash2, FiPlus, FiLock, FiKey, FiFileText, FiMonitor, FiShield, FiCalendar, FiUser, FiMail, FiLink, FiSettings, FiCode, FiCheckCircle, FiAlertCircle, FiCopy, FiUpload, FiDownload } from 'react-icons/fi';
+import * as XLSX from 'xlsx';
 import './Static.css';
 import { staticAPI } from '../../../utils/staticAPI';
 import { syncContactsFromForm } from '../../../utils/contactSyncUtil';
@@ -189,6 +190,10 @@ const DigitalAssets = () => {
   const [customProjectType, setCustomProjectType] = useState('');
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
   const serverTypes = ['shared', 'vps', 'dedicated', 'cloud', 'serverless'];
   const databaseTypes = ['mongodb', 'mysql', 'postgresql', 'sqlite', 'firebase', 'supabase'];
   const frontendFrameworks = ['react', 'vue', 'angular', 'svelte', 'nextjs', 'gatsby', 'vanilla'];
@@ -290,6 +295,451 @@ const DigitalAssets = () => {
         alert('Failed to delete website record. Please try again.');
       }
     }
+  };
+
+  const boolVal = (v) => v === 'Yes' || v === 'Enabled' || v === true || v === 'true';
+  const arrVal = (v) => v ? String(v).split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  const columnMapping = [
+    { header: 'Project Name', path: 'projectName', required: true },
+    { header: 'Purpose', path: 'purpose' },
+    { header: 'Project Type', path: 'projectType' },
+    { header: 'Custom Project Type', path: 'customProjectTypeOther' },
+
+    { header: 'Domain Name', section: 'domain', field: 'domainName' },
+    { header: 'Domain Registrar', section: 'domain', field: 'registrar' },
+    { header: 'Domain Renewal Date', section: 'domain', field: 'renewalDate' },
+    { header: 'Domain Service Provider', section: 'domain', field: 'serviceProvider' },
+    { header: 'Domain Admin ID', section: 'domain', field: 'adminId' },
+    { header: 'Domain Admin Password', section: 'domain', field: 'adminPassword' },
+    { header: 'Domain Nameservers', section: 'domain', field: 'nameservers', type: 'array' },
+    { header: 'Domain SSL Status', section: 'domain', field: 'sslStatus' },
+    { header: 'Domain SSL Expiry', section: 'domain', field: 'sslExpiry' },
+
+    { header: 'Admin URL', section: 'admin', field: 'adminUrl' },
+    { header: 'Admin ID', section: 'admin', field: 'adminId' },
+    { header: 'Admin Password', section: 'admin', field: 'adminPassword' },
+    { header: 'Admin 2FA', section: 'admin', field: 'twoFactorEnabled', type: 'boolean' },
+    { header: 'Admin Backup Codes', section: 'admin', field: 'backupCodes' },
+    { header: 'Admin Recovery Email', section: 'admin', field: 'recoveryEmail' },
+
+    { header: 'Hosting Type', section: 'hosting', field: 'serverHosting' },
+    { header: 'Hosting Server Type', section: 'hosting', field: 'serverType' },
+    { header: 'Hosting Renewal Date', section: 'hosting', field: 'renewalDate' },
+    { header: 'Hosting Provider', section: 'hosting', field: 'serviceProvider' },
+    { header: 'Hosting User ID', section: 'hosting', field: 'userId' },
+    { header: 'Hosting Password', section: 'hosting', field: 'password' },
+    { header: 'Hosting Control Panel', section: 'hosting', field: 'controlPanel' },
+    { header: 'Hosting FTP Host', section: 'hosting', field: 'ftpHost' },
+    { header: 'Hosting FTP Username', section: 'hosting', field: 'ftpUsername' },
+    { header: 'Hosting FTP Password', section: 'hosting', field: 'ftpPassword' },
+    { header: 'Hosting SSH Access', section: 'hosting', field: 'sshAccess', type: 'boolean' },
+    { header: 'Hosting SSH Key', section: 'hosting', field: 'sshKey' },
+    { header: 'Hosting IP Addresses', section: 'hosting', field: 'ipAddresses', type: 'array' },
+    { header: 'Hosting Location', section: 'hosting', field: 'serverLocation' },
+
+    { header: 'GitHub Repo Name', section: 'github', field: 'repoName' },
+    { header: 'GitHub Repo URL', section: 'github', field: 'repoUrl' },
+    { header: 'GitHub Access Token', section: 'github', field: 'accessToken' },
+    { header: 'GitHub Branch', section: 'github', field: 'deploymentBranch' },
+    { header: 'GitHub CI/CD', section: 'github', field: 'ciCdEnabled', type: 'boolean' },
+    { header: 'GitHub Collaborators', section: 'github', field: 'collaborators', type: 'array' },
+    { header: 'GitHub Visibility', section: 'github', field: 'repoVisibility' },
+
+    { header: 'Database Type', section: 'database', field: 'type' },
+    { header: 'Database Host', section: 'database', field: 'host' },
+    { header: 'Database Port', section: 'database', field: 'port' },
+    { header: 'Database Name', section: 'database', field: 'databaseName' },
+    { header: 'Database Username', section: 'database', field: 'username' },
+    { header: 'Database Password', section: 'database', field: 'password' },
+    { header: 'Connection URL', section: 'database', field: 'connectionUrl' },
+    { header: 'Database Backup', section: 'database', field: 'backupEnabled', type: 'boolean' },
+    { header: 'Database Backup Frequency', section: 'database', field: 'backupFrequency' },
+    { header: 'Database Last Backup', section: 'database', field: 'lastBackupDate' },
+
+    { header: 'Tech Frontend', section: 'technology', field: 'frontend', type: 'array' },
+    { header: 'Tech Backend', section: 'technology', field: 'backend', type: 'array' },
+    { header: 'Tech Frameworks', section: 'technology', field: 'frameworks', type: 'array' },
+    { header: 'Tech Libraries', section: 'technology', field: 'libraries', type: 'array' },
+    { header: 'Tech APIs', section: 'technology', field: 'apis', type: 'array' },
+    { header: 'Tech Version Control', section: 'technology', field: 'versionControl' },
+    { header: 'Tech Package Manager', section: 'technology', field: 'packageManager' },
+
+    { header: 'Docs - Project Docs', section: 'documentation', field: 'projectDocs' },
+    { header: 'Docs - API Docs', section: 'documentation', field: 'apiDocs' },
+    { header: 'Docs - User Manual', section: 'documentation', field: 'userManual' },
+    { header: 'Docs - Deployment Guide', section: 'documentation', field: 'deploymentGuide' },
+    { header: 'Docs - Architecture Diagrams', section: 'documentation', field: 'architectureDiagrams' },
+    { header: 'Docs - Change Log', section: 'documentation', field: 'changeLog' },
+
+    { header: 'Env File', section: 'environment', field: 'envFile' },
+    { header: 'Staging URL', section: 'environment', field: 'stagingUrl' },
+    { header: 'Production URL', section: 'environment', field: 'productionUrl' },
+    { header: 'Testing URL', section: 'environment', field: 'testingUrl' },
+    { header: 'Dev Notes', section: 'environment', field: 'developmentNotes' },
+
+    { header: 'FE Landing Pages', section: 'frontend', field: 'landingPages', type: 'array' },
+    { header: 'FE Components', section: 'frontend', field: 'components', type: 'array' },
+    { header: 'FE Themes', section: 'frontend', field: 'themes', type: 'array' },
+    { header: 'FE Assets', section: 'frontend', field: 'assets', type: 'array' },
+    { header: 'FE Build Tools', section: 'frontend', field: 'buildTools', type: 'array' },
+    { header: 'FE Bundler', section: 'frontend', field: 'bundler' },
+
+    { header: 'BE APIs', section: 'backend', field: 'apis', type: 'array' },
+    { header: 'BE Services', section: 'backend', field: 'services', type: 'array' },
+    { header: 'BE Middleware', section: 'backend', field: 'middleware', type: 'array' },
+    { header: 'BE Authentication', section: 'backend', field: 'authentication' },
+    { header: 'BE Rate Limiting', section: 'backend', field: 'rateLimiting', type: 'boolean' },
+    { header: 'BE CORS', section: 'backend', field: 'corsEnabled', type: 'boolean' },
+
+    { header: 'Sec SSL Certificate', section: 'security', field: 'sslCertificate', type: 'boolean' },
+    { header: 'Sec Firewall', section: 'security', field: 'firewallEnabled', type: 'boolean' },
+    { header: 'Sec Monitoring', section: 'security', field: 'monitoringEnabled', type: 'boolean' },
+    { header: 'Sec Analytics', section: 'security', field: 'analytics' },
+    { header: 'Sec Error Tracking', section: 'security', field: 'errorTracking' },
+    { header: 'Sec Uptime Monitoring', section: 'security', field: 'uptimeMonitoring' },
+    { header: 'Sec Headers', section: 'security', field: 'securityHeaders', type: 'boolean' },
+
+    { header: 'Maint Last Update', section: 'maintenance', field: 'lastUpdateDate' },
+    { header: 'Maint Next Scheduled', section: 'maintenance', field: 'nextScheduledMaintenance' },
+    { header: 'Maint Support Contact', section: 'maintenance', field: 'supportContact' },
+    { header: 'Maint Emergency Contact', section: 'maintenance', field: 'emergencyContact' },
+    { header: 'Maint Window', section: 'maintenance', field: 'maintenanceWindow' },
+    { header: 'Maint Downtime History', section: 'maintenance', field: 'downtimeHistory', type: 'array' },
+
+    { header: 'Dev Name', section: 'development', field: 'developerName' },
+    { header: 'Dev Cost', section: 'development', field: 'developmentCost' },
+    { header: 'Dev Duration', section: 'development', field: 'developmentDuration' },
+    { header: 'Dev Duration Unit', section: 'development', field: 'developmentDurationUnit' },
+    { header: 'Dev Total Months', section: 'development', field: 'totalMonths' },
+
+    { header: 'Mon Provider', section: 'monitoring', field: 'monitoringProvider' },
+    { header: 'Mon Cost', section: 'monitoring', field: 'monitoringCost' },
+    { header: 'Mon Duration', section: 'monitoring', field: 'monitoringDuration' },
+    { header: 'Mon Duration Unit', section: 'monitoring', field: 'monitoringDurationUnit' },
+    { header: 'Mon Total Months', section: 'monitoring', field: 'totalMonths' },
+
+    { header: 'Tags', path: 'tags', type: 'array' },
+    { header: 'Notes', path: 'notes' },
+    { header: 'Status', path: 'status' },
+    { header: 'Priority', path: 'priority' },
+  ];
+
+  const getValue = (row, key) => {
+    const normalizedKey = key.toLowerCase().replace(/\s+/g, '').trim();
+    const actualKey = Object.keys(row).find(k =>
+      k.toLowerCase().replace(/\s+/g, '').trim() === normalizedKey
+    );
+    return actualKey ? row[actualKey] : undefined;
+  };
+
+  const buildRecordFromRow = (row) => {
+    const record = {
+      domain: {}, admin: {}, hosting: {}, github: {}, database: {},
+      technology: {}, documentation: {}, environment: {}, frontend: {},
+      backend: {}, security: {}, maintenance: {}, development: {}, monitoring: {},
+      tags: [], status: 'active', priority: 'medium'
+    };
+    for (const col of columnMapping) {
+      let val = getValue(row, col.header);
+      if (val === undefined || val === '') continue;
+      if (col.type === 'boolean') {
+        val = boolVal(val);
+      } else if (col.type === 'array') {
+        val = arrVal(val);
+      } else {
+        val = String(val);
+      }
+      if (col.section) {
+        record[col.section][col.field] = val;
+      } else {
+        record[col.path] = val;
+      }
+    }
+    return record;
+  };
+
+  const handleExcelUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        alert('Excel file is empty!');
+        setUploading(false);
+        return;
+      }
+
+      const firstRow = jsonData[0];
+      const missing = columnMapping
+        .filter(col => col.required)
+        .filter(col => !(col.header in firstRow));
+      if (missing.length > 0) {
+        alert(`Missing required columns: ${missing.map(c => c.header).join(', ')}`);
+        setUploading(false);
+        return;
+      }
+
+      const records = jsonData.map(row => buildRecordFromRow(row));
+
+      const res = await staticAPI.bulkCreateDigitalAssets({ records });
+
+      const syncPromises = [];
+      for (const record of records) {
+        syncPromises.push(
+          syncContactsFromForm(record, 'DigitalAssets'),
+          syncCustomerSupportFromForm(record, 'DigitalAssets'),
+          syncBillScheduleFromForm(record, 'DigitalAssets')
+        );
+      }
+      await Promise.allSettled(syncPromises);
+
+      await fetchWebsites();
+      alert(`Import completed!\nSuccess: ${res.data.created}\nErrors: ${res.data.errors?.length || 0}`);
+    } catch (error) {
+      console.error('Error processing Excel file:', error);
+      alert('Error processing Excel file. Please check the format.');
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const downloadTemplate = () => {
+    const templateData = [
+      {
+        'Project Name': 'Tech Solutions Website',
+        'Purpose': 'Company website and blog',
+        'Project Type': 'business',
+        'Custom Project Type': '',
+        'Domain Name': 'techsolutions.com',
+        'Domain Registrar': 'GoDaddy',
+        'Domain Renewal Date': '2026-12-31',
+        'Domain Service Provider': 'Cloudflare',
+        'Domain Admin ID': 'admin@techsolutions.com',
+        'Domain Admin Password': '',
+        'Domain Nameservers': 'ns1.cloudflare.com, ns2.cloudflare.com',
+        'Domain SSL Status': 'active',
+        'Domain SSL Expiry': '2027-01-31',
+        'Admin URL': 'https://techsolutions.com/admin',
+        'Admin ID': 'admin@techsolutions.com',
+        'Admin Password': '',
+        'Admin 2FA': 'Yes',
+        'Admin Backup Codes': 'ABCD-1234, WXYZ-5678',
+        'Admin Recovery Email': 'owner@gmail.com',
+        'Hosting Type': 'cloud',
+        'Hosting Server Type': 'Nginx',
+        'Hosting Renewal Date': '2026-06-30',
+        'Hosting Provider': 'AWS',
+        'Hosting User ID': 'ubuntu',
+        'Hosting Password': '',
+        'Hosting Control Panel': 'Custom',
+        'Hosting FTP Host': 'ftp.techsolutions.com',
+        'Hosting FTP Username': 'ftpuser',
+        'Hosting FTP Password': '',
+        'Hosting SSH Access': 'Yes',
+        'Hosting SSH Key': 'ssh-rsa AAAAB3...',
+        'Hosting IP Addresses': '192.168.1.1, 10.0.0.1',
+        'Hosting Location': 'Mumbai',
+        'GitHub Repo Name': 'techsolutions/website',
+        'GitHub Repo URL': 'https://github.com/techsolutions/website',
+        'GitHub Access Token': '',
+        'GitHub Branch': 'main',
+        'GitHub CI/CD': 'Yes',
+        'GitHub Collaborators': 'dev1, dev2',
+        'GitHub Visibility': 'private',
+        'Database Type': 'mongodb',
+        'Database Host': 'localhost',
+        'Database Port': '27017',
+        'Database Name': 'techsolutions',
+        'Database Username': 'dbadmin',
+        'Database Password': '',
+        'Connection URL': 'mongodb://localhost:27017/techsolutions',
+        'Database Backup': 'Yes',
+        'Database Backup Frequency': 'daily',
+        'Database Last Backup': '2026-05-22',
+        'Tech Frontend': 'React, Next.js',
+        'Tech Backend': 'Node.js, Express',
+        'Tech Frameworks': 'Tailwind, Material UI',
+        'Tech Libraries': 'Axios, Lodash',
+        'Tech APIs': 'REST, GraphQL',
+        'Tech Version Control': 'git',
+        'Tech Package Manager': 'npm',
+        'Docs - Project Docs': 'https://docs.techsolutions.com',
+        'Docs - API Docs': 'https://api.techsolutions.com/docs',
+        'Docs - User Manual': '',
+        'Docs - Deployment Guide': 'Deploy using Docker on ECS',
+        'Docs - Architecture Diagrams': '',
+        'Docs - Change Log': 'v2.0 - Major UI overhaul',
+        'Env File': '.env.production',
+        'Staging URL': 'https://staging.techsolutions.com',
+        'Production URL': 'https://techsolutions.com',
+        'Testing URL': 'https://testing.techsolutions.com',
+        'Dev Notes': 'Use Node 18+',
+        'FE Landing Pages': 'Home, About, Contact',
+        'FE Components': 'Header, Footer, Sidebar',
+        'FE Themes': 'Light, Dark',
+        'FE Assets': 'logo.svg, fonts',
+        'FE Build Tools': 'Webpack, Vite',
+        'FE Bundler': 'webpack',
+        'BE APIs': '/api/users, /api/auth',
+        'BE Services': 'Auth, Payment, Email',
+        'BE Middleware': 'Auth, Logger, Rate Limiter',
+        'BE Authentication': 'JWT',
+        'BE Rate Limiting': 'Yes',
+        'BE CORS': 'Yes',
+        'Sec SSL Certificate': 'Yes',
+        'Sec Firewall': 'Yes',
+        'Sec Monitoring': 'Yes',
+        'Sec Analytics': 'Google Analytics',
+        'Sec Error Tracking': 'Sentry',
+        'Sec Uptime Monitoring': 'Pingdom',
+        'Sec Headers': 'Yes',
+        'Maint Last Update': '2026-05-01',
+        'Maint Next Scheduled': '2026-06-01',
+        'Maint Support Contact': 'support@techsolutions.com',
+        'Maint Emergency Contact': '+91-9876543210',
+        'Maint Window': 'Sunday 2-4 AM',
+        'Maint Downtime History': '2026-04-15, 2026-05-10',
+        'Dev Name': 'Rahul Sharma',
+        'Dev Cost': '500000',
+        'Dev Duration': '6',
+        'Dev Duration Unit': 'months',
+        'Dev Total Months': '6',
+        'Mon Provider': 'Datadog',
+        'Mon Cost': '5000',
+        'Mon Duration': '12',
+        'Mon Duration Unit': 'months',
+        'Mon Total Months': '12',
+        'Tags': 'production, main-website',
+        'Notes': 'Production server with auto-scaling',
+        'Status': 'active',
+        'Priority': 'high',
+      },
+      {
+        'Project Name': 'Portfolio Site',
+        'Purpose': 'Personal portfolio',
+        'Project Type': 'portfolio',
+        'Custom Project Type': '',
+        'Domain Name': 'johndoe.dev',
+        'Domain Registrar': 'Namecheap',
+        'Domain Renewal Date': '2026-11-15',
+        'Domain Service Provider': 'Namecheap',
+        'Domain Admin ID': 'admin@johndoe.dev',
+        'Domain Admin Password': '',
+        'Domain Nameservers': 'dns1.namecheap.com',
+        'Domain SSL Status': 'active',
+        'Domain SSL Expiry': '2026-12-15',
+        'Admin URL': 'https://johndoe.dev/admin',
+        'Admin ID': 'admin@johndoe.dev',
+        'Admin Password': '',
+        'Admin 2FA': 'No',
+        'Admin Backup Codes': '',
+        'Admin Recovery Email': 'john@gmail.com',
+        'Hosting Type': 'shared',
+        'Hosting Server Type': 'Apache',
+        'Hosting Renewal Date': '2026-08-20',
+        'Hosting Provider': 'Hostinger',
+        'Hosting User ID': 'johndoe',
+        'Hosting Password': '',
+        'Hosting Control Panel': 'cPanel',
+        'Hosting FTP Host': 'ftp.johndoe.dev',
+        'Hosting FTP Username': 'johndoe_ftp',
+        'Hosting FTP Password': '',
+        'Hosting SSH Access': 'No',
+        'Hosting SSH Key': '',
+        'Hosting IP Addresses': '',
+        'Hosting Location': 'Singapore',
+        'GitHub Repo Name': 'johndoe/portfolio',
+        'GitHub Repo URL': 'https://github.com/johndoe/portfolio',
+        'GitHub Access Token': '',
+        'GitHub Branch': 'main',
+        'GitHub CI/CD': 'No',
+        'GitHub Collaborators': '',
+        'GitHub Visibility': 'public',
+        'Database Type': '',
+        'Database Host': '',
+        'Database Port': '',
+        'Database Name': '',
+        'Database Username': '',
+        'Database Password': '',
+        'Connection URL': '',
+        'Database Backup': '',
+        'Database Backup Frequency': '',
+        'Database Last Backup': '',
+        'Tech Frontend': 'React',
+        'Tech Backend': '',
+        'Tech Frameworks': 'Tailwind',
+        'Tech Libraries': '',
+        'Tech APIs': '',
+        'Tech Version Control': 'git',
+        'Tech Package Manager': 'npm',
+        'Docs - Project Docs': '',
+        'Docs - API Docs': '',
+        'Docs - User Manual': '',
+        'Docs - Deployment Guide': 'Deploy via Vercel',
+        'Docs - Architecture Diagrams': '',
+        'Docs - Change Log': '',
+        'Env File': '.env',
+        'Staging URL': '',
+        'Production URL': 'https://johndoe.dev',
+        'Testing URL': '',
+        'Dev Notes': '',
+        'FE Landing Pages': 'Home, Projects',
+        'FE Components': 'Navbar, Footer',
+        'FE Themes': 'Dark',
+        'FE Assets': '',
+        'FE Build Tools': 'Vite',
+        'FE Bundler': 'vite',
+        'BE APIs': '',
+        'BE Services': '',
+        'BE Middleware': '',
+        'BE Authentication': '',
+        'BE Rate Limiting': '',
+        'BE CORS': '',
+        'Sec SSL Certificate': 'Yes',
+        'Sec Firewall': 'No',
+        'Sec Monitoring': 'No',
+        'Sec Analytics': '',
+        'Sec Error Tracking': '',
+        'Sec Uptime Monitoring': '',
+        'Sec Headers': 'Yes',
+        'Maint Last Update': '',
+        'Maint Next Scheduled': '',
+        'Maint Support Contact': '',
+        'Maint Emergency Contact': '',
+        'Maint Window': '',
+        'Maint Downtime History': '',
+        'Dev Name': 'John Doe',
+        'Dev Cost': '50000',
+        'Dev Duration': '2',
+        'Dev Duration Unit': 'months',
+        'Dev Total Months': '2',
+        'Mon Provider': '',
+        'Mon Cost': '',
+        'Mon Duration': '',
+        'Mon Duration Unit': '',
+        'Mon Total Months': '',
+        'Tags': 'portfolio, personal',
+        'Notes': 'Static site built with React',
+        'Status': 'active',
+        'Priority': 'medium',
+      },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    XLSX.writeFile(wb, 'Digital_Assets_Template.xlsx');
   };
 
   const handleInputChange = (section, field, value) => {
@@ -454,10 +904,29 @@ const DigitalAssets = () => {
           </div>
         </div>
         <div className="header-actions">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleExcelUpload}
+            accept=".xlsx,.xls"
+            style={{ display: 'none' }}
+          />
           {!showForm ? (
-            <button className="btn-primary" onClick={() => setShowForm(true)}>
-              <FiPlus /> Add Website
-            </button>
+            <>
+              <button
+                className="btn-secondary"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                <FiUpload /> {uploading ? `Uploading... ${uploadProgress}%` : 'Upload Excel'}
+              </button>
+              <button className="btn-secondary" onClick={downloadTemplate}>
+                <FiDownload /> Template
+              </button>
+              <button className="btn-primary" onClick={() => setShowForm(true)}>
+                <FiPlus /> Add Website
+              </button>
+            </>
           ) : (
             <div className="edit-actions">
               <button className="btn-success" onClick={handleSubmit} disabled={loading}>

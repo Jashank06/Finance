@@ -25,6 +25,7 @@ router.delete('/company-records/:id', CompanyRecordsController.delete);
 router.get('/mobile-email-details', MobileEmailDetailsController.getAll);
 router.get('/mobile-email-details/:id', MobileEmailDetailsController.getOne);
 router.post('/mobile-email-details', MobileEmailDetailsController.create);
+router.post('/mobile-email-details/bulk', MobileEmailDetailsController.bulkCreate);
 router.put('/mobile-email-details/:id', MobileEmailDetailsController.update);
 router.delete('/mobile-email-details/:id', MobileEmailDetailsController.delete);
 
@@ -60,6 +61,7 @@ router.delete('/contact-management/:id', ContactManagementController.delete);
 router.get('/digital-assets', DigitalAssetsController.getAll);
 router.get('/digital-assets/:id', DigitalAssetsController.getOne);
 router.post('/digital-assets', DigitalAssetsController.create);
+router.post('/digital-assets/bulk', DigitalAssetsController.bulkCreate);
 router.put('/digital-assets/:id', DigitalAssetsController.update);
 router.delete('/digital-assets/:id', DigitalAssetsController.delete);
 

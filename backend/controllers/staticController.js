@@ -1187,6 +1187,46 @@ const createStaticController = (Model, syncCallback = null) => {
       }
     },
 
+    // Bulk create records
+    bulkCreate: async (req, res) => {
+      try {
+        const records = req.body.records || req.body;
+        if (!Array.isArray(records) || records.length === 0) {
+          return res.status(400).json({ message: 'Records array is required' });
+        }
+
+        const created = [];
+        const errors = [];
+
+        for (let i = 0; i < records.length; i++) {
+          try {
+            const record = new Model({
+              ...records[i],
+              userId: req.userId,
+              section: records[i].section || req.body.section || 'family',
+              businessId: records[i].businessId || null
+            });
+            await record.save();
+
+            if (syncCallback) {
+              try { await syncCallback(record); } catch (syncError) {
+                console.error(`Error syncing ${Model.modelName}:`, syncError);
+              }
+            }
+
+            created.push(record);
+          } catch (error) {
+            errors.push({ index: i, error: error.message });
+          }
+        }
+
+        res.status(201).json({ total: records.length, created: created.length, errors, records: created });
+      } catch (error) {
+        console.error(`Error in bulk create ${Model.modelName}:`, error);
+        res.status(500).json({ message: 'Bulk create failed', error: error.message });
+      }
+    },
+
     // Update record
     update: async (req, res) => {
       try {
@@ -1306,6 +1346,56 @@ const DigitalAssetsController = {
     } catch (error) {
       console.error('Error creating DigitalAssets:', error);
       res.status(500).json({ message: 'Failed to create record', error: error.message });
+    }
+  },
+
+  // Bulk create records
+  bulkCreate: async (req, res) => {
+    try {
+      const records = req.body.records || req.body;
+      if (!Array.isArray(records) || records.length === 0) {
+        return res.status(400).json({ message: 'Records array is required' });
+      }
+
+      const created = [];
+      const errors = [];
+
+      for (let i = 0; i < records.length; i++) {
+        try {
+          const { projectName, ...rest } = records[i];
+
+          if (!projectName || projectName.trim() === '') {
+            errors.push({ index: i, error: 'Project Name is required' });
+            continue;
+          }
+
+          const recordData = {
+            projectName: projectName.trim(),
+            ...rest,
+            userId: req.userId,
+            section: rest.section || req.body.section || 'family',
+            businessId: rest.businessId || null
+          };
+
+          const record = new DigitalAssets(recordData);
+          await record.save();
+
+          try {
+            await syncDigitalAssetToReminders(record);
+          } catch (syncError) {
+            console.error('Error syncing DigitalAsset reminders:', syncError);
+          }
+
+          created.push(record);
+        } catch (error) {
+          errors.push({ index: i, error: error.message });
+        }
+      }
+
+      res.status(201).json({ total: records.length, created: created.length, errors, records: created });
+    } catch (error) {
+      console.error('Error in bulk create DigitalAssets:', error);
+      res.status(500).json({ message: 'Bulk create failed', error: error.message });
     }
   },
 
